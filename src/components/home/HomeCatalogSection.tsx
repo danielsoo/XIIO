@@ -4,7 +4,7 @@ import Link from "next/link";
 import ContentCard from "@/components/ContentCard";
 import { useCatalogFeed } from "@/hooks/useCatalogFeed";
 import { useTranslations } from "@/context/LocaleContext";
-import { gradientForTitle } from "@/lib/works/catalog-ui";
+import { gradientForTitle, watchHref } from "@/lib/works/catalog-ui";
 import type { WorkSection } from "@/types/work";
 
 type Props = {
@@ -34,6 +34,7 @@ export default function HomeCatalogSection({ section, href, titleKey }: Props) {
           {items.map((item) => (
             <ContentCard
               key={item.id}
+              href={watchHref(item.ownerUid, item.workId)}
               title={item.title}
               contentCategory={item.approvedCategory}
               tags={item.approvedTags}

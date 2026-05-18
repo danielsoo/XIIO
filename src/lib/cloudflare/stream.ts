@@ -158,6 +158,15 @@ export async function resolvePlaybackUrl(streamUid: string): Promise<string | nu
   return info?.playbackHls ?? null;
 }
 
+/** Cloudflare Stream iframe player (works across browsers for HLS) */
+export function getStreamEmbedUrl(streamUid: string): string {
+  const sub = getCustomerSubdomain();
+  if (sub) {
+    return `https://${sub}/${streamUid}/iframe`;
+  }
+  return `https://iframe.cloudflarestream.com/${streamUid}`;
+}
+
 export function aspectRatioFromVideo(info: StreamVideoInfo | null, fallback = 16 / 9): number {
   if (info?.width && info?.height && info.height > 0) {
     return info.width / info.height;

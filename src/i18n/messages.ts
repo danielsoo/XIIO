@@ -457,6 +457,12 @@ export const messages = {
     catalog: {
       empty: "아직 공개된 작품이 없습니다.",
     },
+    watch: {
+      loadError: "영상 정보를 불러오지 못했습니다.",
+      notFound: "영상을 찾을 수 없거나 아직 공개되지 않았습니다.",
+      director: "감독",
+      altPlayer: "다른 플레이어로 보기",
+    },
     promoEditor: {
       title: "홍보 쇼츠 편집",
       backToWorks: "내 작품",
@@ -929,6 +935,12 @@ export const messages = {
     },
     catalog: {
       empty: "No published works yet.",
+    },
+    watch: {
+      loadError: "Could not load video.",
+      notFound: "Video not found or not published yet.",
+      director: "Director",
+      altPlayer: "Alternate player",
     },
     promoEditor: {
       title: "Promo short editor",
