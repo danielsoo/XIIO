@@ -103,13 +103,22 @@ export async function GET(request: Request) {
       const work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
       const ownerUid = doc.ref.parent.parent?.id ?? "";
       const userSnap = await db.collection("users").doc(ownerUid).get();
+      const playbackUrl =
+        work.streamUid && work.streamStatus === "ready"
+          ? await resolvePlaybackUrl(work.streamUid)
+          : undefined;
       items.push({
         kind: "full",
         workId: doc.id,
         ownerUid,
-        ownerEmail: userSnap.data()?.email,
+        ownerEmail: userSnap.data()?.email ?? null,
+        ownerName: userSnap.data()?.displayName ?? null,
         title: work.title,
+        section: work.section,
+        platformStatus: work.platformStatus,
+        streamStatus: work.streamStatus,
         deletionRequest: work.deletionRequest,
+        playbackUrl,
       });
     }
 
@@ -124,13 +133,22 @@ export async function GET(request: Request) {
         ? parseWorkDoc(workId, workSnap.data() as Record<string, unknown>)
         : null;
       const userSnap = await db.collection("users").doc(ownerUid).get();
+      const playbackUrl =
+        promo.streamUid && promo.streamStatus === "ready"
+          ? await resolvePlaybackUrl(promo.streamUid)
+          : undefined;
       items.push({
         kind: "promo",
         workId,
         ownerUid,
-        ownerEmail: userSnap.data()?.email,
+        ownerEmail: userSnap.data()?.email ?? null,
+        ownerName: userSnap.data()?.displayName ?? null,
         title: promo.title ?? work?.title,
+        section: work?.section,
+        platformStatus: promo.platformStatus,
+        streamStatus: promo.streamStatus,
         deletionRequest: promo.deletionRequest,
+        playbackUrl,
       });
     }
 

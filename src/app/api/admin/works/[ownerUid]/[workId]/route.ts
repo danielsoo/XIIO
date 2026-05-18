@@ -1,17 +1,79 @@
 import { NextResponse } from "next/server";
-import { deleteStreamVideo } from "@/lib/cloudflare/stream";
+import { deleteStreamVideo, resolvePlaybackUrl } from "@/lib/cloudflare/stream";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
+import { parseUserProfileDoc } from "@/lib/userAccess";
 import {
   FieldValue,
   getDbOrNull,
+  parsePromoDoc,
   parseWorkDoc,
   promoRef,
   worksCol,
 } from "@/lib/server/works";
 import { isRejectReasonCode } from "@/lib/works/constants";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
+import { PROMO_SHORT_DOC_ID } from "@/types/work";
+import type { AdminWorkDetail } from "@/types/admin";
 
 type Params = { params: Promise<{ ownerUid: string; workId: string }> };
+
+export async function GET(request: Request, { params }: Params) {
+  const auth = await requireAdmin(request);
+  if ("error" in auth) return auth.error;
+
+  const { ownerUid, workId } = await params;
+  const db = await getDbOrNull();
+  if (!db) return jsonError("admin_not_configured", "서버 DB를 사용할 수 없습니다.", 503);
+
+  const ref = worksCol(db, ownerUid).doc(workId);
+  const snap = await ref.get();
+  if (!snap.exists) return jsonError("not_found", "작품을 찾을 수 없습니다.", 404);
+
+  const work = parseWorkDoc(workId, snap.data() as Record<string, unknown>);
+  const userSnap = await db.collection("users").doc(ownerUid).get();
+  const ownerProfile = userSnap.exists
+    ? parseUserProfileDoc(userSnap.data() as Record<string, unknown>)
+    : null;
+
+  const playbackUrl =
+    work.streamUid && work.streamStatus === "ready"
+      ? await resolvePlaybackUrl(work.streamUid)
+      : undefined;
+
+  const promoSnap = await promoRef(db, ownerUid, workId).get();
+  let promo: AdminWorkDetail["promo"];
+  if (promoSnap.exists) {
+    const parsed = parsePromoDoc(promoSnap.data() as Record<string, unknown>);
+    const promoPlayback =
+      parsed.streamUid && parsed.streamStatus === "ready"
+        ? await resolvePlaybackUrl(parsed.streamUid)
+        : undefined;
+    promo = {
+      id: PROMO_SHORT_DOC_ID,
+      platformStatus: parsed.platformStatus,
+      streamStatus: parsed.streamStatus,
+      clipStartSec: parsed.clipStartSec,
+      clipEndSec: parsed.clipEndSec,
+      title: parsed.title,
+      playbackUrl: promoPlayback ?? undefined,
+      deletionRequest: parsed.deletionRequest,
+      rejectReason: parsed.rejectReason,
+    };
+  }
+
+  const detail: AdminWorkDetail = {
+    work,
+    owner: {
+      uid: ownerUid,
+      email: ownerProfile?.email ?? null,
+      displayName: ownerProfile?.displayName ?? ownerUid,
+    },
+    playbackUrl: playbackUrl ?? undefined,
+    promo,
+  };
+
+  return NextResponse.json(detail);
+}
 
 export async function PATCH(request: Request, { params }: Params) {
   const auth = await requireAdmin(request);

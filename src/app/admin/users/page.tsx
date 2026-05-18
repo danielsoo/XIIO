@@ -1,5 +1,5 @@
-import AdminPlaceholderPage from "@/components/admin/AdminPlaceholderPage";
+import AdminUsersLookup from "@/components/admin/AdminUsersLookup";
 
 export default function AdminUsersPage() {
-  return <AdminPlaceholderPage titleKey="admin.usersTitle" descriptionKey="admin.usersDesc" />;
+  return <AdminUsersLookup />;
 }

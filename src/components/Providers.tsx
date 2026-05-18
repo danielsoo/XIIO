@@ -6,12 +6,14 @@ import { LocaleProvider } from "@/context/LocaleContext";
 import { ProfileProvider } from "@/context/ProfileContext";
 import ProfileGuard from "@/components/ProfileGuard";
 import MemberGuard from "@/components/MemberGuard";
+import VisitRecorder from "@/components/VisitRecorder";
 
 export default function Providers({ children }: { children: ReactNode }) {
   return (
     <LocaleProvider>
       <AuthProvider>
         <ProfileProvider>
+          <VisitRecorder />
           <MemberGuard />
           <ProfileGuard />
           {children}

@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import FullWorkReviewCard, { type FullQueueItem } from "@/components/admin/FullWorkReviewCard";
-import type { PromoPlatformStatus, RejectReasonCode, WorkDoc } from "@/types/work";
+import type { PromoPlatformStatus, RejectReasonCode, StreamStatus, WorkDoc, WorkSection } from "@/types/work";
 
 type Tab = "full_pending" | "promo_pending" | "removal";
 
@@ -28,9 +30,14 @@ type RemovalItem = {
   kind: "full" | "promo";
   workId: string;
   ownerUid: string;
-  ownerEmail?: string;
+  ownerEmail: string | null;
+  ownerName: string | null;
   title?: string;
+  section?: WorkSection;
+  platformStatus?: string;
+  streamStatus?: StreamStatus;
   deletionRequest?: { reason: string };
+  playbackUrl?: string;
 };
 
 export default function AdminContentReview() {
@@ -203,12 +210,27 @@ export default function AdminContentReview() {
               className="rounded-2xl border border-white/10 bg-xiio-surface p-5"
             >
               <h2 className="text-lg font-semibold text-white">
-                {row.promo.title ?? row.work.title}
+                <Link
+                  href={`/admin/content/works/${row.ownerUid}/${row.workId}`}
+                  className="hover:text-xiio-accent transition"
+                >
+                  {row.promo.title ?? row.work.title}
+                </Link>
               </h2>
               <p className="text-xs text-xiio-muted mb-2">
-                {row.ownerName ?? row.ownerEmail} · {row.work.title} ·{" "}
-                {row.promo.clipStartSec}s–{row.promo.clipEndSec}s
+                <Link
+                  href={`/admin/users/${row.ownerUid}`}
+                  className="text-xiio-accent hover:underline"
+                >
+                  {row.ownerName ?? row.ownerEmail ?? row.ownerUid}
+                </Link>{" "}
+                · {row.work.title} · {row.promo.clipStartSec}s–{row.promo.clipEndSec}s
               </p>
+              <AdminEntityLinks
+                ownerUid={row.ownerUid}
+                workId={row.workId}
+                className="mb-3"
+              />
               {row.promo.playbackUrl && (
                 <video
                   src={row.promo.playbackUrl}
@@ -250,9 +272,42 @@ export default function AdminContentReview() {
                   ? t("admin.contentReview.kindFull")
                   : t("admin.contentReview.kindPromo")}
               </p>
-              <h2 className="text-lg font-semibold text-white">{item.title}</h2>
+              <h2 className="text-lg font-semibold text-white">
+                <Link
+                  href={`/admin/content/works/${item.ownerUid}/${item.workId}`}
+                  className="hover:text-xiio-accent transition"
+                >
+                  {item.title}
+                </Link>
+              </h2>
               <p className="text-sm text-xiio-muted mt-1">{item.deletionRequest?.reason}</p>
-              <p className="text-xs text-xiio-muted mt-1">{item.ownerEmail ?? item.ownerUid}</p>
+              <p className="text-xs text-xiio-muted mt-1">
+                <Link
+                  href={`/admin/users/${item.ownerUid}`}
+                  className="text-xiio-accent hover:underline"
+                >
+                  {item.ownerName ?? item.ownerEmail ?? item.ownerUid}
+                </Link>
+                {item.section && (
+                  <>
+                    {" "}
+                    · {t(`myWorks.section.${item.section}`)}
+                  </>
+                )}
+              </p>
+              <AdminEntityLinks
+                ownerUid={item.ownerUid}
+                workId={item.workId}
+                className="my-3"
+              />
+              {item.playbackUrl && (
+                <video
+                  src={item.playbackUrl}
+                  controls
+                  className="w-full max-w-lg rounded-lg mb-3"
+                  playsInline
+                />
+              )}
               <div className="flex flex-wrap gap-2 mt-3">
                 {item.kind === "full" ? (
                   <>

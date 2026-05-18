@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import { useTranslations } from "@/context/LocaleContext";
 import type { WorkDoc } from "@/types/work";
 import type { RejectReasonCode } from "@/types/work";
@@ -45,11 +47,24 @@ export default function FullWorkReviewCard({
     <li className="rounded-2xl border border-white/10 bg-xiio-surface p-5">
       <div className="flex flex-wrap justify-between gap-2 mb-2">
         <div>
-          <h2 className="text-lg font-semibold text-white">{item.title}</h2>
-          <p className="text-xs text-xiio-muted">
-            {item.ownerName ?? item.ownerEmail ?? item.ownerUid} · {t(`myWorks.section.${item.section}`)} ·{" "}
-            {item.streamStatus}
+          <h2 className="text-lg font-semibold text-white">
+            <Link
+              href={`/admin/content/works/${item.ownerUid}/${item.id}`}
+              className="hover:text-xiio-accent transition"
+            >
+              {item.title}
+            </Link>
+          </h2>
+          <p className="text-xs text-xiio-muted mt-0.5">
+            <Link
+              href={`/admin/users/${item.ownerUid}`}
+              className="text-xiio-accent hover:underline"
+            >
+              {item.ownerName ?? item.ownerEmail ?? item.ownerUid}
+            </Link>{" "}
+            · {t(`myWorks.section.${item.section}`)} · {item.streamStatus}
           </p>
+          <AdminEntityLinks ownerUid={item.ownerUid} workId={item.id} className="mt-2" />
         </div>
       </div>
 
