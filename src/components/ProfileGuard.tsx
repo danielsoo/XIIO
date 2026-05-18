@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 
-const EXEMPT_PATHS = ["/login", "/signup", "/profiles", "/settings"];
+const EXEMPT_PATHS = ["/login", "/signup", "/profiles", "/settings", "/admin", "/uploader"];
 
 export default function ProfileGuard() {
   const { user, loading: authLoading } = useAuth();

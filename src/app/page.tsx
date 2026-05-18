@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ContentCard from "@/components/ContentCard";
+import HomeHeroActions from "@/components/HomeHeroActions";
 
 const SECTIONS = [
   {
@@ -71,28 +72,7 @@ export default function HomePage() {
           <p className="text-xiio-muted text-base md:text-lg mb-6 max-w-lg">
             영화, 예능, 시리즈부터 학교 대항전까지 — 다음 세대가 만드는 콘텐츠 플랫폼
           </p>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <Link
-              href="/movies"
-              className="inline-flex justify-center px-6 py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-semibold transition"
-            >
-              지금 시청하기
-            </Link>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/signup"
-                className="inline-flex justify-center px-6 py-3 rounded-lg border border-white/30 text-white hover:bg-white/10 transition font-medium"
-              >
-                회원가입
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex justify-center px-6 py-3 rounded-lg border border-xiio-accent/50 text-xiio-accent hover:bg-xiio-accent/10 transition font-medium"
-              >
-                로그인
-              </Link>
-            </div>
-          </div>
+          <HomeHeroActions />
         </div>
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-xiio-bg to-transparent" />
       </section>

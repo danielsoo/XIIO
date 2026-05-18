@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { label: "학교 대항전", href: "/school-battle" },
 ];
 
-const HIDE_NAV_PATHS = ["/login", "/signup", "/profiles"];
+const HIDE_NAV_PATHS = ["/login", "/signup", "/profiles", "/admin", "/uploader"];
 
 export default function Navbar() {
   const { user } = useAuth();

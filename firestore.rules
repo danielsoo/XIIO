@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/watchProfiles/{profileId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /billingVerifications/{uid} {
+      allow read, write: if false;
+    }
+
+    match /paymentEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/private/{docId} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId}/videos/{videoId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && (request.auth.token.depositVerified == true
+            || request.auth.token.uploaderDepositVerified == true);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

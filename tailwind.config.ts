@@ -20,7 +20,14 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-noto)", "system-ui", "sans-serif"],
+        sans: [
+          "Pretendard",
+          "Apple SD Gothic Neo",
+          "Noto Sans KR",
+          "Malgun Gothic",
+          "system-ui",
+          "sans-serif",
+        ],
       },
     },
   },

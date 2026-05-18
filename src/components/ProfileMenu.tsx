@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 import ProfileAvatar from "@/components/ProfileAvatar";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 
 export default function ProfileMenu() {
   const { logout } = useAuth();
   const { activeProfile, clearActiveProfile } = useProfile();
+  const { isAdmin, checked: adminChecked } = useAdminAccess();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -69,6 +71,22 @@ export default function ProfileMenu() {
           >
             설정
           </Link>
+          <Link
+            href="/uploader/upload"
+            onClick={() => setOpen(false)}
+            className="block w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"
+          >
+            영상 업로드
+          </Link>
+          {adminChecked && isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              className="block w-full text-left px-4 py-2.5 text-sm text-xiio-accent hover:bg-white/5 transition"
+            >
+              관리자 패널
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => void handleLogout()}
