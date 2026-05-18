@@ -3,12 +3,14 @@ import type {
   PlatformStatus,
   PromoPlatformStatus,
   PromoShortDoc,
+  RejectReasonCode,
   StreamStatus,
-  WorkCategory,
   WorkDoc,
+  WorkSection,
 } from "@/types/work";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 import { getAdminDb } from "@/lib/server/firebase-admin";
+import { isRejectReasonCode, isWorkSection } from "@/lib/works/constants";
 
 export function worksCol(db: Firestore, uid: string) {
   return db.collection("users").doc(uid).collection("works");
@@ -18,18 +20,37 @@ export function promoRef(db: Firestore, uid: string, workId: string) {
   return worksCol(db, uid).doc(workId).collection("promoShort").doc(PROMO_SHORT_DOC_ID);
 }
 
+function parseSection(data: Record<string, unknown>): WorkSection {
+  const raw = data.section ?? data.category;
+  const s = String(raw ?? "movies");
+  return isWorkSection(s) ? s : "movies";
+}
+
+function parseStringArray(data: Record<string, unknown>, key: string): string[] | undefined {
+  const v = data[key];
+  if (!Array.isArray(v)) return undefined;
+  return v.map((x) => String(x)).filter(Boolean);
+}
+
 export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc & { id: string } {
+  const rejectCode = data.rejectReasonCode;
   return {
     id,
     kind: "full",
-    category: (data.category as WorkCategory) ?? "movies",
+    section: parseSection(data),
     title: String(data.title ?? "Untitled"),
     description: data.description ? String(data.description) : undefined,
     director: data.director ? String(data.director) : undefined,
+    proposedCategory: data.proposedCategory ? String(data.proposedCategory) : undefined,
+    approvedCategory: data.approvedCategory ? String(data.approvedCategory) : undefined,
+    proposedTags: parseStringArray(data, "proposedTags"),
+    approvedTags: parseStringArray(data, "approvedTags"),
     platformStatus: (data.platformStatus as PlatformStatus) ?? "pending",
     streamStatus: (data.streamStatus as StreamStatus) ?? "uploading",
     streamUid: String(data.streamUid ?? ""),
     sortOrder: typeof data.sortOrder === "number" ? data.sortOrder : 0,
+    rejectReasonCode:
+      typeof rejectCode === "string" && isRejectReasonCode(rejectCode) ? rejectCode : undefined,
     rejectReason: data.rejectReason ? String(data.rejectReason) : undefined,
     deletionRequest: data.deletionRequest as WorkDoc["deletionRequest"],
     publishedAt: data.publishedAt,

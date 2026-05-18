@@ -188,8 +188,20 @@ export default function MyWorksContent() {
                     <div>
                       <h2 className="text-lg font-semibold text-white">{work.title}</h2>
                       <p className="text-xs text-xiio-muted mt-0.5">
-                        {t(`myWorks.category.${work.category}`)} · {streamLabel(t, work.streamStatus)}
+                        {t(`myWorks.section.${work.section}`)} · {streamLabel(t, work.streamStatus)}
                       </p>
+                      {(work.proposedCategory || work.approvedCategory || (work.proposedTags?.length ?? 0) > 0) && (
+                        <p className="text-xs text-xiio-muted mt-1">
+                          {work.platformStatus === "published" && work.approvedCategory
+                            ? work.approvedCategory
+                            : work.proposedCategory}
+                          {(work.platformStatus === "published"
+                            ? work.approvedTags
+                            : work.proposedTags)?.length
+                            ? ` · ${(work.platformStatus === "published" ? work.approvedTags : work.proposedTags)!.join(", ")}`
+                            : null}
+                        </p>
+                      )}
                     </div>
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full border ${statusBadgeClass(work.platformStatus)}`}
@@ -198,8 +210,15 @@ export default function MyWorksContent() {
                     </span>
                   </div>
 
-                  {work.rejectReason && (
-                    <p className="text-sm text-red-400/90">{work.rejectReason}</p>
+                  {work.platformStatus === "rejected" && (
+                    <div className="text-sm text-red-400/90 space-y-0.5">
+                      {work.rejectReasonCode && (
+                        <p className="font-medium">
+                          {t(`myWorks.rejectReason.${work.rejectReasonCode}`)}
+                        </p>
+                      )}
+                      {work.rejectReason && <p>{work.rejectReason}</p>}
+                    </div>
                   )}
 
                   <div className="flex flex-wrap gap-2 text-xs items-center">

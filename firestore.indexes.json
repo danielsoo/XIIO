@@ -28,6 +28,14 @@
       "fields": [
         { "fieldPath": "streamUid", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "works",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "platformStatus", "order": "ASCENDING" },
+        { "fieldPath": "section", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

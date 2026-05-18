@@ -3,17 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import type { PlatformStatus, PromoPlatformStatus, WorkDoc } from "@/types/work";
+import FullWorkReviewCard, { type FullQueueItem } from "@/components/admin/FullWorkReviewCard";
+import type { PromoPlatformStatus, RejectReasonCode, WorkDoc } from "@/types/work";
 
 type Tab = "full_pending" | "promo_pending" | "removal";
-
-type FullQueueItem = WorkDoc & {
-  id: string;
-  ownerUid: string;
-  ownerEmail: string | null;
-  ownerName: string | null;
-  playbackUrl?: string;
-};
 
 type PromoQueueItem = {
   workId: string;
@@ -49,6 +42,7 @@ export default function AdminContentReview() {
   const [err, setErr] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [rejectReasonCode, setRejectReasonCode] = useState<RejectReasonCode | "">("");
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -88,7 +82,7 @@ export default function AdminContentReview() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ action, rejectReason, ...extra }),
+        body: JSON.stringify({ action, rejectReason, rejectReasonCode, ...extra }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { message?: string };
@@ -153,13 +147,24 @@ export default function AdminContentReview() {
         ))}
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-col gap-2 max-w-md">
+        <label className="text-xs text-xiio-muted">{t("admin.contentReview.rejectReasonCode")}</label>
+        <select
+          value={rejectReasonCode}
+          onChange={(e) => setRejectReasonCode(e.target.value as RejectReasonCode | "")}
+          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+        >
+          <option value="">{t("admin.contentReview.selectRejectReason")}</option>
+          <option value="category_mismatch">{t("admin.contentReview.rejectCategoryMismatch")}</option>
+          <option value="tag_mismatch">{t("admin.contentReview.rejectTagMismatch")}</option>
+          <option value="other">{t("admin.contentReview.rejectOther")}</option>
+        </select>
         <input
           type="text"
           value={rejectReason}
           onChange={(e) => setRejectReason(e.target.value)}
           placeholder={t("admin.contentReview.rejectPlaceholder")}
-          className="w-full max-w-md bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
         />
       </div>
 
@@ -174,38 +179,20 @@ export default function AdminContentReview() {
       ) : tab === "full_pending" ? (
         <ul className="space-y-4">
           {(items as FullQueueItem[]).map((item) => (
-            <li key={item.id} className="rounded-2xl border border-white/10 bg-xiio-surface p-5">
-              <div className="flex flex-wrap justify-between gap-2 mb-2">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">{item.title}</h2>
-                  <p className="text-xs text-xiio-muted">
-                    {item.ownerName ?? item.ownerEmail ?? item.ownerUid} · {item.category} ·{" "}
-                    {item.streamStatus}
-                  </p>
-                </div>
-              </div>
-              {item.playbackUrl && (
-                <video src={item.playbackUrl} controls className="w-full max-w-lg rounded-lg mb-3" playsInline />
-              )}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={busyKey === `${item.ownerUid}_${item.id}` || item.streamStatus !== "ready"}
-                  onClick={() => void patchFull(item.ownerUid, item.id, "approve")}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-emerald-600/80 text-white disabled:opacity-40"
-                >
-                  {t("admin.contentReview.approve")}
-                </button>
-                <button
-                  type="button"
-                  disabled={busyKey === `${item.ownerUid}_${item.id}`}
-                  onClick={() => void patchFull(item.ownerUid, item.id, "reject")}
-                  className="px-3 py-1.5 text-xs rounded-lg border border-red-500/40 text-red-400 disabled:opacity-40"
-                >
-                  {t("admin.contentReview.reject")}
-                </button>
-              </div>
-            </li>
+            <FullWorkReviewCard
+              key={item.id}
+              item={item}
+              busy={busyKey === `${item.ownerUid}_${item.id}`}
+              rejectReasonCode={rejectReasonCode}
+              rejectReason={rejectReason}
+              onApprove={(approvedCategory, approvedTags) =>
+                void patchFull(item.ownerUid, item.id, "approve", {
+                  approvedCategory,
+                  approvedTags,
+                })
+              }
+              onReject={() => void patchFull(item.ownerUid, item.id, "reject")}
+            />
           ))}
         </ul>
       ) : tab === "promo_pending" ? (

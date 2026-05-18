@@ -6,14 +6,17 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
 import { formatUploadApiError, type UploadApiErrorBody } from "@/lib/uploadErrors";
-import { WORK_CATEGORIES, type WorkCategory } from "@/types/work";
+import { parseTagsFromInput } from "@/lib/works/label-utils";
+import { WORK_SECTIONS, type WorkSection } from "@/types/work";
 
 export default function UploaderUploadInner() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useTranslations();
   const { depositVerified, depositEnabled, checked } = useDepositStatus();
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<WorkCategory>("movies");
+  const [section, setSection] = useState<WorkSection>("movies");
+  const [contentCategory, setContentCategory] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
   const [director, setDirector] = useState("");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,6 +41,7 @@ export default function UploaderUploadInner() {
 
     try {
       const token = await user.getIdToken();
+      const tags = parseTagsFromInput(tagsInput);
       const sessionRes = await fetch("/api/stream/upload-url", {
         method: "POST",
         headers: {
@@ -46,7 +50,9 @@ export default function UploaderUploadInner() {
         },
         body: JSON.stringify({
           title: title || file.name,
-          category,
+          section,
+          contentCategory: contentCategory.trim() || undefined,
+          tags: tags.length > 0 ? tags : undefined,
           director: director || undefined,
           description: description || undefined,
         }),
@@ -79,6 +85,8 @@ export default function UploaderUploadInner() {
 
       setDone(t("uploader.uploadSuccess"));
       setTitle("");
+      setContentCategory("");
+      setTagsInput("");
       setDirector("");
       setDescription("");
       fileInput.value = "";
@@ -147,18 +155,38 @@ export default function UploaderUploadInner() {
 
         <form onSubmit={(e) => void handleUpload(e)} className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadCategoryLabel")}</label>
+            <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadSectionLabel")}</label>
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as WorkCategory)}
+              value={section}
+              onChange={(e) => setSection(e.target.value as WorkSection)}
               className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-xiio-accent"
             >
-              {WORK_CATEGORIES.map((c) => (
-                <option key={c} value={c} className="bg-xiio-surface">
-                  {t(`myWorks.category.${c}`)}
+              {WORK_SECTIONS.map((s) => (
+                <option key={s} value={s} className="bg-xiio-surface">
+                  {t(`myWorks.section.${s}`)}
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadContentCategoryLabel")}</label>
+            <input
+              type="text"
+              value={contentCategory}
+              onChange={(e) => setContentCategory(e.target.value)}
+              placeholder={t("uploader.uploadContentCategoryPlaceholder")}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadTagsLabel")}</label>
+            <input
+              type="text"
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              placeholder={t("uploader.uploadTagsPlaceholder")}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent"
+            />
           </div>
           <div>
             <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadTitleLabel")}</label>

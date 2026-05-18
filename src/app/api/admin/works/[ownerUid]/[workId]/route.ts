@@ -8,6 +8,8 @@ import {
   promoRef,
   worksCol,
 } from "@/lib/server/works";
+import { isRejectReasonCode } from "@/lib/works/constants";
+import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
 
 type Params = { params: Promise<{ ownerUid: string; workId: string }> };
 
@@ -17,7 +19,13 @@ export async function PATCH(request: Request, { params }: Params) {
   const { session } = auth;
   const { ownerUid, workId } = await params;
 
-  let body: { action?: string; rejectReason?: string };
+  let body: {
+    action?: string;
+    rejectReason?: string;
+    rejectReasonCode?: string;
+    approvedCategory?: string;
+    approvedTags?: string[];
+  };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -40,21 +48,48 @@ export async function PATCH(request: Request, { params }: Params) {
     if (work.streamStatus !== "ready") {
       return jsonError("not_ready", "인코딩이 완료된 후 승인할 수 있습니다.", 400);
     }
+
+    const approvedCategoryRaw =
+      body.approvedCategory?.trim() || work.proposedCategory?.trim() || "";
+    const approvedCategory = approvedCategoryRaw
+      ? normalizeContentCategory(approvedCategoryRaw)
+      : null;
+    const tagSource =
+      Array.isArray(body.approvedTags) && body.approvedTags.length > 0
+        ? body.approvedTags
+        : (work.proposedTags ?? []);
+    const approvedTags = normalizeTags(tagSource);
+
     await ref.update({
       platformStatus: "published",
+      approvedCategory,
+      approvedTags: approvedTags.length > 0 ? approvedTags : null,
       publishedAt: FieldValue.serverTimestamp(),
       reviewedAt: FieldValue.serverTimestamp(),
       reviewedBy: session.uid,
       rejectReason: FieldValue.delete(),
+      rejectReasonCode: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp(),
     });
     return NextResponse.json({ ok: true, platformStatus: "published" });
   }
 
   if (action === "reject") {
-    const reason = (body.rejectReason ?? "").trim().slice(0, 500) || "반려됨";
+    const code = body.rejectReasonCode?.trim();
+    if (!code || !isRejectReasonCode(code)) {
+      return jsonError("reject_reason_code_required", "반려 사유를 선택해 주세요.", 400);
+    }
+    const reason =
+      (body.rejectReason ?? "").trim().slice(0, 500) ||
+      (code === "category_mismatch"
+        ? "카테고리 부적합"
+        : code === "tag_mismatch"
+          ? "태그 부적합"
+          : "반려됨");
+
     await ref.update({
       platformStatus: "rejected",
+      rejectReasonCode: code,
       rejectReason: reason,
       reviewedAt: FieldValue.serverTimestamp(),
       reviewedBy: session.uid,

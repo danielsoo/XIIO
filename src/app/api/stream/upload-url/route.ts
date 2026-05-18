@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createDirectUpload, isStreamConfigured } from "@/lib/cloudflare/stream";
 import { hasDepositVerifiedClaim } from "@/lib/server/deposit-verification";
 import { isUploaderDepositEnabled } from "@/lib/payments/config";
-import { isWorkCategory } from "@/lib/works/constants";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
 import {
   FieldValue,
@@ -10,6 +9,8 @@ import {
   nextWorkSortOrder,
   worksCol,
 } from "@/lib/server/works";
+import { isWorkSection } from "@/lib/works/constants";
+import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
 
 export async function POST(request: Request) {
   if (!isStreamConfigured()) {
@@ -31,17 +32,30 @@ export async function POST(request: Request) {
     }
   }
 
-  let body: { title?: string; category?: string; description?: string; director?: string };
+  let body: {
+    title?: string;
+    section?: string;
+    category?: string;
+    contentCategory?: string;
+    tags?: string[];
+    description?: string;
+    director?: string;
+  };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     body = {};
   }
 
-  const category = body.category?.trim() ?? "movies";
-  if (!isWorkCategory(category)) {
-    return jsonError("invalid_category", "유효하지 않은 카테고리입니다.", 400);
+  const sectionRaw = (body.section ?? body.category)?.trim() ?? "movies";
+  if (!isWorkSection(sectionRaw)) {
+    return jsonError("invalid_section", "유효하지 않은 노출 섹션입니다.", 400);
   }
+
+  const proposedCategory = body.contentCategory
+    ? normalizeContentCategory(body.contentCategory)
+    : "";
+  const proposedTags = normalizeTags(Array.isArray(body.tags) ? body.tags : []);
 
   const title = (body.title ?? "Untitled").trim().slice(0, 200) || "Untitled";
   const workId = crypto.randomUUID();
@@ -75,10 +89,12 @@ export async function POST(request: Request) {
       const sortOrder = await nextWorkSortOrder(db, session.uid);
       await worksCol(db, session.uid).doc(workId).set({
         kind: "full",
-        category,
+        section: sectionRaw,
         title,
         description: body.description?.trim().slice(0, 2000) || null,
         director: body.director?.trim().slice(0, 120) || null,
+        proposedCategory: proposedCategory || null,
+        proposedTags: proposedTags.length > 0 ? proposedTags : null,
         platformStatus: "pending",
         streamStatus: "uploading",
         streamUid: upload.uid,

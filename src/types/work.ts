@@ -1,4 +1,5 @@
-export const WORK_CATEGORIES = [
+/** 홈 탭 / URL 노출 구역 (기존 category 필드) */
+export const WORK_SECTIONS = [
   "movies",
   "series",
   "entertainment",
@@ -6,13 +7,20 @@ export const WORK_CATEGORIES = [
   "school-battle",
 ] as const;
 
-export type WorkCategory = (typeof WORK_CATEGORIES)[number];
+export type WorkSection = (typeof WORK_SECTIONS)[number];
+
+/** @deprecated use WORK_SECTIONS */
+export const WORK_CATEGORIES = WORK_SECTIONS;
+/** @deprecated use WorkSection */
+export type WorkCategory = WorkSection;
 
 export type PlatformStatus = "pending" | "published" | "rejected" | "removal_requested";
 
 export type PromoPlatformStatus = "draft" | "pending" | "published" | "rejected" | "removal_requested";
 
 export type StreamStatus = "uploading" | "processing" | "ready" | "error";
+
+export type RejectReasonCode = "category_mismatch" | "tag_mismatch" | "other";
 
 export type DeletionRequest = {
   reason: string;
@@ -21,14 +29,22 @@ export type DeletionRequest = {
 
 export type WorkDoc = {
   kind: "full";
-  category: WorkCategory;
+  /** 홈·카테고리 탭 배치 */
+  section: WorkSection;
   title: string;
   description?: string;
   director?: string;
+  /** 작품 유형 (영화, 드라마, …) — 업로더 제안 */
+  proposedCategory?: string;
+  /** 어드민 확정, 공개용 */
+  approvedCategory?: string;
+  proposedTags?: string[];
+  approvedTags?: string[];
   platformStatus: PlatformStatus;
   streamStatus: StreamStatus;
   streamUid: string;
   sortOrder: number;
+  rejectReasonCode?: RejectReasonCode;
   rejectReason?: string;
   deletionRequest?: DeletionRequest;
   publishedAt?: unknown;
@@ -74,4 +90,16 @@ export type PromoFeedItem = {
   videoUrl: string;
   aspectRatio: number;
   likeCount?: number;
+};
+
+export type CatalogFeedItem = {
+  id: string;
+  workId: string;
+  ownerUid: string;
+  title: string;
+  director?: string;
+  section: WorkSection;
+  approvedCategory?: string;
+  approvedTags: string[];
+  thumbnailUrl?: string;
 };
