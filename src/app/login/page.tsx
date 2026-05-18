@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { EMAIL_NOT_VERIFIED, useAuth } from "@/context/AuthContext";
@@ -12,14 +12,22 @@ import {
   getUserProfile,
   markEmailVerified,
 } from "@/lib/userProfile";
+import { loadRememberLogin, saveRememberLogin } from "@/lib/authPersistence";
 
 function LoginForm() {
   const { loginWithEmail, loginWithGoogle, logout } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const { remember, email: savedEmail } = loadRememberLogin();
+    setRememberMe(remember);
+    if (savedEmail) setEmail(savedEmail);
+  }, []);
 
   const routeAfterAuth = async (
     uid: string,
@@ -53,7 +61,8 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      await loginWithEmail(email, password);
+      saveRememberLogin(rememberMe, email);
+      await loginWithEmail(email, password, rememberMe);
       const current = auth?.currentUser;
       if (!current) throw new Error("no user");
       await routeAfterAuth(current.uid, current.email, current.displayName, false);
@@ -72,7 +81,8 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      const googleUser = await loginWithGoogle();
+      saveRememberLogin(rememberMe, email);
+      const googleUser = await loginWithGoogle(rememberMe);
       await routeAfterAuth(
         googleUser.uid,
         googleUser.email,
@@ -130,6 +140,16 @@ function LoginForm() {
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent transition"
               />
             </div>
+
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-white/5 text-xiio-accent focus:ring-xiio-accent focus:ring-offset-0"
+              />
+              <span className="text-sm text-xiio-muted">로그인 정보 기억하기</span>
+            </label>
 
             <button
               type="submit"

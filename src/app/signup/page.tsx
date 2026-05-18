@@ -24,10 +24,15 @@ const inputClass =
 
 type StepId = "basic" | "student" | "purpose" | "account";
 
-function buildStepList(googlePending: boolean, profileOnly: boolean): StepId[] {
+/** Google(또는 이미 로그인된) 가입은 프로필·설문만 — 이메일/비밀번호 단계 없음 */
+function buildStepList(skipAccountStep: boolean): StepId[] {
   const steps: StepId[] = ["basic", "student", "purpose"];
-  if (!googlePending && !profileOnly) steps.push("account");
+  if (!skipAccountStep) steps.push("account");
   return steps;
+}
+
+function isGoogleAuthUser(user: { providerData: { providerId: string }[] } | null): boolean {
+  return !!user?.providerData.some((p) => p.providerId === "google.com");
 }
 
 const STEP_LABELS: Record<StepId, string> = {
@@ -72,11 +77,15 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const steps = useMemo(
-    () => buildStepList(googlePending, profileOnlyMode),
-    [googlePending, profileOnlyMode]
-  );
+  const googleSignup = useMemo(() => {
+    if (googlePending) return true;
+    if (profileOnlyMode && isGoogleAuthUser(auth?.currentUser ?? null)) return true;
+    return isGoogleAuthUser(auth?.currentUser ?? null);
+  }, [googlePending, profileOnlyMode, auth?.currentUser]);
+
+  const steps = useMemo(() => buildStepList(googleSignup), [googleSignup]);
   const currentStep = steps[stepIndex] ?? "basic";
+  const googleEmail = auth?.currentUser?.email ?? email;
   const isLastStep = stepIndex === steps.length - 1;
   const progress = ((stepIndex + 1) / steps.length) * 100;
 
@@ -113,6 +122,14 @@ export default function SignupPage() {
     setLoading(false);
   }, [verifyPhase, googlePending]);
 
+  // Google 연결 후 account 단계로 남지 않도록
+  useEffect(() => {
+    if (!googleSignup) return;
+    if (stepIndex >= steps.length) {
+      setStepIndex(Math.max(0, steps.length - 1));
+    }
+  }, [googleSignup, stepIndex, steps.length]);
+
   // 로그인만 하고 Firestore 프로필이 없는 경우 → 가입 단계만 이어서 진행
   useEffect(() => {
     const currentUser = auth?.currentUser;
@@ -124,9 +141,13 @@ export default function SignupPage() {
       if (cancelled || exists) return;
       if (currentUser.displayName) setName(currentUser.displayName);
       if (currentUser.email) setEmail(currentUser.email);
-      const isGoogle = currentUser.providerData.some((p) => p.providerId === "google.com");
-      setGooglePending(isGoogle);
-      setProfileOnlyMode(true);
+      const isGoogle = isGoogleAuthUser(currentUser);
+      if (isGoogle) {
+        setGooglePending(true);
+        setProfileOnlyMode(true);
+      } else {
+        setProfileOnlyMode(true);
+      }
     })();
 
     return () => {
@@ -210,14 +231,16 @@ export default function SignupPage() {
     }
 
     try {
-      if (googlePending || profileOnlyMode) {
+      if (googleSignup || profileOnlyMode) {
         const currentUser = auth?.currentUser;
         if (!currentUser) {
           setError("로그인 세션이 만료되었습니다. 다시 시도해주세요.");
           return;
         }
         await updateProfile(currentUser, { displayName: profile.displayName });
-        await saveUserProfile(currentUser.uid, profile, currentUser.email);
+        await saveUserProfile(currentUser.uid, profile, currentUser.email, {
+          emailVerified: isGoogleAuthUser(currentUser) || currentUser.emailVerified,
+        });
       } else {
         await signupWithEmail(email, password, profile);
         setSentEmail(email);
@@ -303,7 +326,9 @@ export default function SignupPage() {
         return;
       }
       if (googleUser.displayName) setName(googleUser.displayName);
+      if (googleUser.email) setEmail(googleUser.email);
       setGooglePending(true);
+      setProfileOnlyMode(true);
 
       const profile = buildProfile();
       if (profile) {
@@ -311,11 +336,7 @@ export default function SignupPage() {
         return;
       }
 
-      const nextSteps = buildStepList(true, false);
-      if (!name.trim() || !age) setStepIndex(nextSteps.indexOf("basic"));
-      else if (isStudent === null || (isStudent && !school.trim()))
-        setStepIndex(nextSteps.indexOf("student"));
-      else if (!platformPurpose) setStepIndex(nextSteps.indexOf("purpose"));
+      setStepIndex(0);
     } catch {
       setError("Google 가입에 실패했습니다.");
     } finally {
@@ -419,6 +440,36 @@ export default function SignupPage() {
 
         {verifyPhase === null && (
         <div className="bg-xiio-surface rounded-2xl p-8 border border-white/10 min-h-[420px] flex flex-col">
+          {!googleSignup ? (
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={() => void handleGoogle()}
+                disabled={loading}
+                className="w-full py-3 rounded-lg border border-white/20 text-white font-medium flex items-center justify-center gap-3 hover:bg-white/5 disabled:opacity-50 transition"
+              >
+                <GoogleIcon />
+                Google로 가입
+              </button>
+              <p className="text-xs text-xiio-muted text-center mt-2">
+                Google로 연결한 뒤 프로필·설문만 입력합니다.
+              </p>
+              <div className="flex items-center gap-3 mt-5">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-xs text-xiio-muted">또는 이메일로 가입</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+            </div>
+          ) : (
+            <div className="mb-6 rounded-lg border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3">
+              <p className="text-sm text-white font-medium">Google 계정 연결됨</p>
+              <p className="text-xs text-xiio-muted mt-1">{googleEmail}</p>
+              <p className="text-xs text-xiio-muted mt-2">
+                이름·학생 여부·이용 목적만 입력하면 됩니다.
+              </p>
+            </div>
+          )}
+
           <div className="mb-6">
             <div className="flex justify-between text-xs text-xiio-muted mb-2">
               <span>{STEP_LABELS[currentStep]}</span>
@@ -433,14 +484,6 @@ export default function SignupPage() {
               />
             </div>
           </div>
-
-          {(googlePending || profileOnlyMode) && currentStep !== "account" && (
-            <p className="text-xs text-xiio-accent mb-4">
-              {profileOnlyMode && !googlePending
-                ? "프로필 정보를 입력하면 Firestore에 저장됩니다."
-                : "Google 계정이 연결되었습니다."}
-            </p>
-          )}
 
           {error && (
             <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
@@ -535,7 +578,7 @@ export default function SignupPage() {
               </StepShell>
             )}
 
-            {currentStep === "account" && (
+            {currentStep === "account" && !googleSignup && (
               <StepShell title="계정을 만들어주세요" subtitle="로그인에 사용할 정보입니다">
                 <div className="flex flex-col gap-4">
                   <Field label="이메일">
@@ -594,24 +637,6 @@ export default function SignupPage() {
           </div>
           </form>
 
-          {!googlePending && (
-            <>
-              <div className="flex items-center gap-3 mt-6">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-xiio-muted">또는</span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-              <button
-                type="button"
-                onClick={() => void handleGoogle()}
-                disabled={loading}
-                className="w-full mt-4 py-3 rounded-lg border border-white/20 text-white text-sm font-medium flex items-center justify-center gap-3 hover:bg-white/5 disabled:opacity-50 transition"
-              >
-                <GoogleIcon />
-                Google로 가입
-              </button>
-            </>
-          )}
         </div>
         )}
 

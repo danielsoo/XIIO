@@ -13,13 +13,14 @@ import {
   deleteUser,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
+import { applyAuthPersistence } from "@/lib/authPersistence";
 import { hasUserProfile, saveUserProfile } from "@/lib/userProfile";
 import type { SignupProfile } from "@/types/user";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string, remember?: boolean) => Promise<void>;
   signupWithEmail: (email: string, password: string, profile: SignupProfile) => Promise<void>;
   /** Auth만 있고 Firestore 프로필이 없을 때 같은 비밀번호로 이어서 가입 */
   resumeEmailSignup: (
@@ -27,7 +28,7 @@ interface AuthContextType {
     password: string,
     profile: SignupProfile
   ) => Promise<{ needsVerification: boolean }>;
-  loginWithGoogle: () => Promise<User>;
+  loginWithGoogle: (remember?: boolean) => Promise<User>;
   logout: () => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   reloadUser: () => Promise<boolean>;
@@ -64,8 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const loginWithEmail = async (email: string, password: string) => {
+  const loginWithEmail = async (email: string, password: string, remember = true) => {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
+    await applyAuthPersistence(remember);
     await signInWithEmailAndPassword(auth, email, password);
     const currentUser = auth.currentUser;
     if (currentUser && !currentUser.emailVerified) {
@@ -144,8 +146,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return auth.currentUser.emailVerified;
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (remember = true) => {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
+    await applyAuthPersistence(remember);
     const { user: googleUser } = await signInWithPopup(auth, googleProvider);
     return googleUser;
   };
