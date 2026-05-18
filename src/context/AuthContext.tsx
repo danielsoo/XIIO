@@ -63,17 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(newUser, { displayName: profile.displayName });
     await sendEmailVerification(newUser);
-    try {
-      await Promise.race([
-        saveUserProfile(newUser.uid, profile, newUser.email),
-        new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("profile-save-timeout")), 8000);
-        }),
-      ]);
-    } catch {
-      // Firestore 미설정·규칙 오류여도 가입·인증 메일 흐름은 계속
-      console.warn("프로필 저장에 실패했습니다. Firestore 설정을 확인해주세요.");
-    }
+    await saveUserProfile(newUser.uid, profile, newUser.email);
   };
 
   const resendVerificationEmail = async () => {

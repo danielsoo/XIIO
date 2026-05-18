@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyBearerIdToken, getAdminDb } from "@/lib/server/firebase-admin";
-import { hasAdminAccess } from "@/lib/server/admin-uids";
+import { assertAdminApiAccess } from "@/lib/server/admin-access";
 import { Timestamp } from "firebase-admin/firestore";
 
 import type { OnboardingStatsPayload } from "@/types/admin";
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (!hasAdminAccess(session.uid, session.email)) {
+  if (!(await assertAdminApiAccess(session.uid, session.email))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

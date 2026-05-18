@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyBearerIdToken, getAdminAuth } from "@/lib/server/firebase-admin";
-import { hasAdminAccess, hasSuperAdminAccess } from "@/lib/server/admin-uids";
+import { resolveAdminAccess } from "@/lib/server/admin-access";
 
 export async function GET(request: Request) {
   if (!getAdminAuth()) {
@@ -18,22 +18,17 @@ export async function GET(request: Request) {
     );
   }
 
-  const isAdmin = hasAdminAccess(session.uid, session.email);
-  const isSuperAdmin = hasSuperAdminAccess(session.uid, session.email);
-
-  if (!isAdmin) {
-    return NextResponse.json({
-      ok: true,
-      isAdmin: false,
-      isSuperAdmin: false,
-      uid: session.uid,
-    });
-  }
+  const { isAdmin, isSuperAdmin, source } = await resolveAdminAccess(
+    session.uid,
+    session.email
+  );
 
   return NextResponse.json({
     ok: true,
-    isAdmin: true,
+    isAdmin,
     isSuperAdmin,
+    source,
     uid: session.uid,
+    ...(isAdmin ? {} : { reason: "unauthorized" as const }),
   });
 }
