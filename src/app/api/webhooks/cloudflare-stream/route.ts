@@ -73,6 +73,15 @@ async function applyByStreamUidLookup(
   return false;
 }
 
+/** 브라우저 GET 확인용 — Cloudflare는 POST만 보냄 */
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    message:
+      "Cloudflare Stream webhook endpoint. Cloudflare sends POST here when a video is ready. Register via PUT /accounts/{id}/stream/webhook.",
+  });
+}
+
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const secret = process.env.CLOUDFLARE_STREAM_WEBHOOK_SECRET?.trim();
