@@ -4,8 +4,8 @@ import Link from "next/link";
 import ContentCard from "@/components/ContentCard";
 import HomeHeroActions from "@/components/HomeHeroActions";
 import PromoShortSpotlight from "@/components/home/PromoShortSpotlight";
-import { HOME_PROMO_SHORTS } from "@/data/promoShorts";
 import { useTranslations } from "@/context/LocaleContext";
+import { usePromoFeed } from "@/hooks/usePromoFeed";
 
 const SECTION_HREFS = ["/movies", "/entertainment", "/series", "/shorts", "/school-battle"] as const;
 
@@ -52,6 +52,7 @@ const DEMO_ITEMS: Record<string, { title: string; category: string; gradient: st
 
 export default function HomePageContent() {
   const { t } = useTranslations();
+  const { items: promoItems } = usePromoFeed(true);
 
   return (
     <main className="min-h-screen bg-xiio-bg">
@@ -74,7 +75,7 @@ export default function HomePageContent() {
       </section>
 
       <section className="px-4 md:px-8 -mt-2 pb-10 md:pb-14">
-        <PromoShortSpotlight items={HOME_PROMO_SHORTS} />
+        <PromoShortSpotlight items={promoItems} />
       </section>
 
       <div className="px-6 md:px-12 pb-16 space-y-12">

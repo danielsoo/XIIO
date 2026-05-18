@@ -74,6 +74,13 @@ export default function ProfileMenu() {
             {t("profileMenu.settings")}
           </Link>
           <Link
+            href="/uploader/works"
+            onClick={() => setOpen(false)}
+            className="block w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"
+          >
+            {t("profileMenu.myWorks")}
+          </Link>
+          <Link
             href="/uploader/upload"
             onClick={() => setOpen(false)}
             className="block w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"

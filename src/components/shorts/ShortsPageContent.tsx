@@ -3,33 +3,48 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import PromoShortPlayer from "@/components/shorts/PromoShortPlayer";
-import { PROMO_SHORTS } from "@/data/promoShorts";
 import { useTranslations } from "@/context/LocaleContext";
+import { usePromoFeed } from "@/hooks/usePromoFeed";
 
 export default function ShortsPageContent() {
   const { t } = useTranslations();
+  const { items, loading } = usePromoFeed(true);
   const searchParams = useSearchParams();
   const promoId = searchParams.get("promo");
 
-  const initialIndex = Math.max(
-    0,
-    PROMO_SHORTS.findIndex((s) => s.id === promoId)
-  );
+  const initialIndex = Math.max(0, items.findIndex((s) => s.id === promoId));
   const [index, setIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
-  const count = PROMO_SHORTS.length;
+  const count = items.length;
 
   useEffect(() => {
-    if (!promoId) return;
-    const i = PROMO_SHORTS.findIndex((s) => s.id === promoId);
+    if (!promoId || count === 0) return;
+    const i = items.findIndex((s) => s.id === promoId);
     if (i >= 0) setIndex(i);
-  }, [promoId]);
+  }, [promoId, items, count]);
 
   const go = useCallback(
     (delta: number) => {
+      if (count === 0) return;
       setIndex((i) => (i + delta + count) % count);
     },
     [count]
   );
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-xiio-bg pt-24 flex items-center justify-center">
+        <p className="text-xiio-muted">{t("common.loading")}</p>
+      </main>
+    );
+  }
+
+  if (count === 0) {
+    return (
+      <main className="min-h-screen bg-xiio-bg pt-24 px-4 text-center">
+        <p className="text-xiio-muted mt-20">{t("home.promoEmpty")}</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-xiio-bg pt-24 px-4 md:px-8 pb-16">
@@ -39,7 +54,7 @@ export default function ShortsPageContent() {
       </header>
 
       <div className="max-w-5xl mx-auto relative min-h-[240px]">
-        {PROMO_SHORTS.map((item, i) => (
+        {items.map((item, i) => (
           <div
             key={item.id}
             className={`w-full transition-opacity duration-500 ${
@@ -75,7 +90,7 @@ export default function ShortsPageContent() {
 
       {count > 1 && (
         <div className="max-w-5xl mx-auto mt-6 flex flex-wrap gap-2 justify-center">
-          {PROMO_SHORTS.map((item, i) => (
+          {items.map((item, i) => (
             <button
               key={item.id}
               type="button"

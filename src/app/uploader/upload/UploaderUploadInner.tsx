@@ -6,12 +6,16 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
 import { formatUploadApiError, type UploadApiErrorBody } from "@/lib/uploadErrors";
+import { WORK_CATEGORIES, type WorkCategory } from "@/types/work";
 
 export default function UploaderUploadInner() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useTranslations();
   const { depositVerified, depositEnabled, checked } = useDepositStatus();
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<WorkCategory>("movies");
+  const [director, setDirector] = useState("");
+  const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
@@ -40,7 +44,12 @@ export default function UploaderUploadInner() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ title: title || file.name }),
+        body: JSON.stringify({
+          title: title || file.name,
+          category,
+          director: director || undefined,
+          description: description || undefined,
+        }),
       });
       const sessionData = (await sessionRes.json().catch(() => ({}))) as UploadApiErrorBody;
       if (!sessionRes.ok) {
@@ -70,6 +79,8 @@ export default function UploaderUploadInner() {
 
       setDone(t("uploader.uploadSuccess"));
       setTitle("");
+      setDirector("");
+      setDescription("");
       fileInput.value = "";
     } catch {
       setErr(t("uploader.errorUploadFailed"));
@@ -136,6 +147,20 @@ export default function UploaderUploadInner() {
 
         <form onSubmit={(e) => void handleUpload(e)} className="flex flex-col gap-4">
           <div>
+            <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadCategoryLabel")}</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as WorkCategory)}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-xiio-accent"
+            >
+              {WORK_CATEGORIES.map((c) => (
+                <option key={c} value={c} className="bg-xiio-surface">
+                  {t(`myWorks.category.${c}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadTitleLabel")}</label>
             <input
               type="text"
@@ -143,6 +168,26 @@ export default function UploaderUploadInner() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t("uploader.uploadTitlePlaceholder")}
               className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadDirectorLabel")}</label>
+            <input
+              type="text"
+              value={director}
+              onChange={(e) => setDirector(e.target.value)}
+              placeholder={t("uploader.uploadDirectorPlaceholder")}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadDescriptionLabel")}</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              placeholder={t("uploader.uploadDescriptionPlaceholder")}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent resize-none"
             />
           </div>
           <div>
@@ -164,7 +209,13 @@ export default function UploaderUploadInner() {
           </button>
         </form>
 
-        <Link href="/" className="block text-center text-sm text-xiio-muted hover:text-white mt-6 transition">
+        <Link
+          href="/uploader/works"
+          className="block text-center text-sm text-xiio-accent hover:underline mt-4"
+        >
+          {t("myWorks.title")}
+        </Link>
+        <Link href="/" className="block text-center text-sm text-xiio-muted hover:text-white mt-2 transition">
           {t("common.home")}
         </Link>
       </div>

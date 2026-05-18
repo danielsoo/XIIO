@@ -6,11 +6,13 @@ import { useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
+import { useAdminWorkStats } from "@/hooks/useAdminWorkStats";
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const { isAdmin, isSuperAdmin, checked, reason } = useAdminAccess();
+  const { pendingTotal } = useAdminWorkStats(isAdmin);
   const { t } = useTranslations();
 
   const nav = useMemo(
@@ -91,11 +93,16 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
               <Link
                 key={href}
                 href={href}
-                className={`block px-3 py-2 rounded-lg text-sm whitespace-nowrap transition ${
+                className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition ${
                   active ? "bg-xiio-accent/20 text-white" : "text-xiio-muted hover:text-white hover:bg-white/5"
                 }`}
               >
-                {label}
+                <span>{label}</span>
+                {href === "/admin/content" && pendingTotal > 0 && (
+                  <span className="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-black text-xs font-bold flex items-center justify-center">
+                    {pendingTotal > 99 ? "99+" : pendingTotal}
+                  </span>
+                )}
               </Link>
             );
           })}

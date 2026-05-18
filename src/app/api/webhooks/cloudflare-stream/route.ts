@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/server/firebase-admin";
+import { mapWebhookStreamStatus } from "@/lib/works/constants";
+import { FieldValue, promoRef, worksCol } from "@/lib/server/works";
+import { PROMO_SHORT_DOC_ID } from "@/types/work";
 
 export const runtime = "nodejs";
 
@@ -29,10 +31,11 @@ export async function POST(request: Request) {
   const streamUid = payload.uid;
   const meta = payload.meta ?? {};
   const xiioUid = meta.xiio_uid;
-  const videoId = meta.xiio_video_id;
-  const state = payload.status?.state;
+  const workId = meta.xiio_work_id ?? meta.xiio_video_id;
+  const kind = meta.xiio_kind ?? "full";
+  const streamStatus = mapWebhookStreamStatus(payload.status?.state);
 
-  if (!streamUid || !xiioUid || !videoId) {
+  if (!streamUid || !xiioUid || !workId) {
     return NextResponse.json({ received: true, handled: false });
   }
 
@@ -41,22 +44,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "admin_not_configured" }, { status: 503 });
   }
 
-  const status =
-    state === "ready" ? "ready" : state === "error" ? "error" : state === "pendingupload" ? "uploading" : state ?? "processing";
-
-  await db
-    .collection("users")
-    .doc(xiioUid)
-    .collection("videos")
-    .doc(videoId)
-    .set(
+  if (kind === "promo") {
+    await promoRef(db, xiioUid, workId).set(
       {
         streamUid,
-        status,
+        streamStatus,
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true }
     );
+  } else {
+    await worksCol(db, xiioUid).doc(workId).set(
+      {
+        streamUid,
+        streamStatus,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }
 
-  return NextResponse.json({ received: true, handled: true, status });
+  return NextResponse.json({ received: true, handled: true, streamStatus, kind, workId });
 }

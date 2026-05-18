@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useTranslations } from "@/context/LocaleContext";
+import { useAdminWorkStats } from "@/hooks/useAdminWorkStats";
 
 export default function AdminDashboardCards() {
   const { t } = useTranslations();
+  const { stats } = useAdminWorkStats(true);
 
   const cards = useMemo(
     () => [
@@ -25,7 +27,11 @@ export default function AdminDashboardCards() {
         href: "/admin/content",
         title: t("admin.cardContentTitle"),
         description: t("admin.cardContentDesc"),
-        ready: false,
+        ready: true,
+        badge:
+          stats != null
+            ? stats.pendingFull + stats.pendingPromo + stats.removalRequested
+            : undefined,
       },
       {
         href: "/admin/reports",
@@ -40,7 +46,7 @@ export default function AdminDashboardCards() {
         ready: false,
       },
     ],
-    [t]
+    [t, stats]
   );
 
   return (
@@ -59,7 +65,14 @@ export default function AdminDashboardCards() {
                 : "border-dashed border-white/15 bg-white/[0.02] hover:border-white/25"
             }`}
           >
-            <h2 className="text-lg font-bold text-white mb-2">{card.title}</h2>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <h2 className="text-lg font-bold text-white">{card.title}</h2>
+              {"badge" in card && card.badge != null && card.badge > 0 && (
+                <span className="shrink-0 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-black text-xs font-bold flex items-center justify-center">
+                  {card.badge > 99 ? "99+" : card.badge}
+                </span>
+              )}
+            </div>
             <p className="text-xiio-muted text-sm mb-4">{card.description}</p>
             <span className="text-xiio-accent text-sm font-medium">{t("common.open")}</span>
           </Link>
