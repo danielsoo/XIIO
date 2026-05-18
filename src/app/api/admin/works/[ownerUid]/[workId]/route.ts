@@ -10,7 +10,9 @@ import {
   promoRef,
   worksCol,
 } from "@/lib/server/works";
+import { isVideoAspectRatio } from "@/lib/works/aspect-ratio";
 import { isRejectReasonCode } from "@/lib/works/constants";
+import type { VideoAspectRatio } from "@/types/work";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 import type { AdminWorkDetail } from "@/types/admin";
@@ -87,6 +89,7 @@ export async function PATCH(request: Request, { params }: Params) {
     rejectReasonCode?: string;
     approvedCategory?: string;
     approvedTags?: string[];
+    approvedAspectRatio?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -122,10 +125,20 @@ export async function PATCH(request: Request, { params }: Params) {
         : (work.proposedTags ?? []);
     const approvedTags = normalizeTags(tagSource);
 
+    const aspectBody = body.approvedAspectRatio?.trim();
+    let approvedAspectRatio: VideoAspectRatio | null = work.proposedAspectRatio ?? null;
+    if (aspectBody) {
+      if (!isVideoAspectRatio(aspectBody)) {
+        return jsonError("invalid_aspect_ratio", "유효하지 않은 화면 비율입니다.", 400);
+      }
+      approvedAspectRatio = aspectBody;
+    }
+
     await ref.update({
       platformStatus: "published",
       approvedCategory,
       approvedTags: approvedTags.length > 0 ? approvedTags : null,
+      approvedAspectRatio,
       publishedAt: FieldValue.serverTimestamp(),
       reviewedAt: FieldValue.serverTimestamp(),
       reviewedBy: session.uid,

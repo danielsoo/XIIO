@@ -5,7 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { formatAdminTimestamp } from "@/lib/admin/format-timestamp";
+import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import { AdminOwnerLink } from "@/components/admin/AdminEntityLinks";
+import PlaybackVideo from "@/components/PlaybackVideo";
 import type { AdminWorkDetail } from "@/types/admin";
 
 type Props = { ownerUid: string; workId: string };
@@ -113,6 +115,22 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
             label={t("admin.workDetail.createdAt")}
             value={formatAdminTimestamp(work.createdAt, loc)}
           />
+          <MetaRow
+            label={t("admin.workDetail.proposedAspectRatio")}
+            value={
+              work.proposedAspectRatio
+                ? t(aspectRatioMessageKey(work.proposedAspectRatio))
+                : "—"
+            }
+          />
+          <MetaRow
+            label={t("admin.workDetail.approvedAspectRatio")}
+            value={
+              work.approvedAspectRatio
+                ? t(aspectRatioMessageKey(work.approvedAspectRatio))
+                : "—"
+            }
+          />
         </dl>
         {work.description && (
           <p className="text-white/90 whitespace-pre-wrap pt-2 border-t border-white/10">
@@ -135,14 +153,7 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
       <section className="mb-8 w-full">
         <h2 className="text-white font-semibold text-base mb-3">{t("admin.workDetail.fullVideo")}</h2>
         {playbackUrl ? (
-          <div className="w-full rounded-xl overflow-hidden bg-black border border-white/10 aspect-video">
-            <video
-              src={playbackUrl}
-              controls
-              className="w-full h-full object-contain"
-              playsInline
-            />
-          </div>
+          <PlaybackVideo src={playbackUrl} />
         ) : (
           <p className="text-xiio-muted text-sm rounded-xl border border-dashed border-white/15 px-4 py-8 text-center">
             {t("admin.workDetail.noPlayback")}
@@ -163,14 +174,7 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
             </p>
           )}
           {promo.playbackUrl ? (
-            <div className="w-full rounded-xl overflow-hidden bg-black border border-white/10 aspect-video">
-              <video
-                src={promo.playbackUrl}
-                controls
-                className="w-full h-full object-contain"
-                playsInline
-              />
-            </div>
+            <PlaybackVideo src={promo.playbackUrl} />
           ) : (
             <p className="text-xiio-muted text-sm rounded-xl border border-dashed border-white/15 px-4 py-8 text-center">
               {t("admin.workDetail.noPlayback")}

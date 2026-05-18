@@ -11,6 +11,14 @@ import type {
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 import { getAdminDb } from "@/lib/server/firebase-admin";
 import { isRejectReasonCode, isWorkSection } from "@/lib/works/constants";
+import { isVideoAspectRatio } from "@/lib/works/aspect-ratio";
+import type { VideoAspectRatio } from "@/types/work";
+
+function parseAspectRatio(data: Record<string, unknown>, key: string): VideoAspectRatio | undefined {
+  const v = data[key];
+  if (typeof v !== "string" || !isVideoAspectRatio(v)) return undefined;
+  return v;
+}
 
 export function worksCol(db: Firestore, uid: string) {
   return db.collection("users").doc(uid).collection("works");
@@ -45,6 +53,8 @@ export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc
     approvedCategory: data.approvedCategory ? String(data.approvedCategory) : undefined,
     proposedTags: parseStringArray(data, "proposedTags"),
     approvedTags: parseStringArray(data, "approvedTags"),
+    proposedAspectRatio: parseAspectRatio(data, "proposedAspectRatio"),
+    approvedAspectRatio: parseAspectRatio(data, "approvedAspectRatio"),
     platformStatus: (data.platformStatus as PlatformStatus) ?? "pending",
     streamStatus: (data.streamStatus as StreamStatus) ?? "uploading",
     streamUid: String(data.streamUid ?? ""),

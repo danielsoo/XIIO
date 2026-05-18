@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
+import PlaybackVideo from "@/components/PlaybackVideo";
 import { useTranslations } from "@/context/LocaleContext";
+import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import type { WorkDoc } from "@/types/work";
 import type { RejectReasonCode } from "@/types/work";
 
@@ -77,10 +79,16 @@ export default function FullWorkReviewCard({
           <span className="text-white/70">{t("admin.contentReview.proposedTags")}: </span>
           {(item.proposedTags ?? []).length > 0 ? item.proposedTags!.join(", ") : "—"}
         </p>
+        <p>
+          <span className="text-white/70">{t("admin.contentReview.proposedAspectRatio")}: </span>
+          {item.proposedAspectRatio ? t(aspectRatioMessageKey(item.proposedAspectRatio)) : "—"}
+        </p>
       </div>
 
       {item.playbackUrl && (
-        <video src={item.playbackUrl} controls className="w-full max-w-lg rounded-lg mb-3" playsInline />
+        <div className="mb-3 max-w-3xl">
+          <PlaybackVideo src={item.playbackUrl} />
+        </div>
       )}
 
       <div className="grid gap-3 mb-3 max-w-lg">

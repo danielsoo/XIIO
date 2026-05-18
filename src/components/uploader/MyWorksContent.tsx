@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useMyWorks } from "@/hooks/useMyWorks";
+import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import type { PlatformStatus, PromoPlatformStatus, StreamStatus } from "@/types/work";
 
 function statusBadgeClass(status: PlatformStatus | PromoPlatformStatus): string {
@@ -189,6 +190,17 @@ export default function MyWorksContent() {
                       <h2 className="text-lg font-semibold text-white">{work.title}</h2>
                       <p className="text-xs text-xiio-muted mt-0.5">
                         {t(`myWorks.section.${work.section}`)} · {streamLabel(t, work.streamStatus)}
+                        {(work.approvedAspectRatio ?? work.proposedAspectRatio) && (
+                          <>
+                            {" "}
+                            ·{" "}
+                            {t(
+                              aspectRatioMessageKey(
+                                work.approvedAspectRatio ?? work.proposedAspectRatio!
+                              )
+                            )}
+                          </>
+                        )}
                       </p>
                       {(work.proposedCategory || work.approvedCategory || (work.proposedTags?.length ?? 0) > 0) && (
                         <p className="text-xs text-xiio-muted mt-1">

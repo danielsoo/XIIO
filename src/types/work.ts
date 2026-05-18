@@ -20,6 +20,11 @@ export type PromoPlatformStatus = "draft" | "pending" | "published" | "rejected"
 
 export type StreamStatus = "uploading" | "processing" | "ready" | "error";
 
+/** 업로드 시 선택하는 목표 화면 비율 */
+export const WORK_ASPECT_RATIOS = ["16:9", "9:16", "4:3", "1:1", "21:9"] as const;
+
+export type VideoAspectRatio = (typeof WORK_ASPECT_RATIOS)[number];
+
 export type RejectReasonCode = "category_mismatch" | "tag_mismatch" | "other";
 
 export type DeletionRequest = {
@@ -40,6 +45,10 @@ export type WorkDoc = {
   approvedCategory?: string;
   proposedTags?: string[];
   approvedTags?: string[];
+  /** 업로더가 선택한 목표 화면 비율 */
+  proposedAspectRatio?: VideoAspectRatio;
+  /** 어드민 승인 시 확정 (공개·표시용) */
+  approvedAspectRatio?: VideoAspectRatio;
   platformStatus: PlatformStatus;
   streamStatus: StreamStatus;
   streamUid: string;

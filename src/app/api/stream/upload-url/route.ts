@@ -9,8 +9,10 @@ import {
   nextWorkSortOrder,
   worksCol,
 } from "@/lib/server/works";
+import { defaultAspectRatioForSection, isVideoAspectRatio } from "@/lib/works/aspect-ratio";
 import { isWorkSection } from "@/lib/works/constants";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
+import type { VideoAspectRatio } from "@/types/work";
 
 export async function POST(request: Request) {
   if (!isStreamConfigured()) {
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
     tags?: string[];
     description?: string;
     director?: string;
+    aspectRatio?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -56,6 +59,16 @@ export async function POST(request: Request) {
     ? normalizeContentCategory(body.contentCategory)
     : "";
   const proposedTags = normalizeTags(Array.isArray(body.tags) ? body.tags : []);
+
+  const aspectRaw = body.aspectRatio?.trim();
+  let proposedAspectRatio: VideoAspectRatio;
+  if (aspectRaw && isVideoAspectRatio(aspectRaw)) {
+    proposedAspectRatio = aspectRaw;
+  } else if (aspectRaw) {
+    return jsonError("invalid_aspect_ratio", "유효하지 않은 화면 비율입니다.", 400);
+  } else {
+    proposedAspectRatio = defaultAspectRatioForSection(sectionRaw);
+  }
 
   const title = (body.title ?? "Untitled").trim().slice(0, 200) || "Untitled";
   const workId = crypto.randomUUID();
@@ -95,6 +108,7 @@ export async function POST(request: Request) {
         director: body.director?.trim().slice(0, 120) || null,
         proposedCategory: proposedCategory || null,
         proposedTags: proposedTags.length > 0 ? proposedTags : null,
+        proposedAspectRatio,
         platformStatus: "pending",
         streamStatus: "uploading",
         streamUid: upload.uid,

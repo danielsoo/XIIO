@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import PlaybackVideo from "@/components/PlaybackVideo";
 import type { PromoShortDoc, WorkDoc } from "@/types/work";
 
 type EditorData = {
@@ -200,8 +201,8 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         )}
 
         {work.playbackUrl && (
-          <div className="mb-6 rounded-xl overflow-hidden bg-black aspect-video">
-            <video src={work.playbackUrl} controls className="w-full h-full" playsInline />
+          <div className="mb-6">
+            <PlaybackVideo src={work.playbackUrl} />
           </div>
         )}
 
@@ -270,7 +271,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           {promo?.playbackUrl && promo.streamStatus === "ready" && (
             <div>
               <p className="text-sm text-xiio-muted mb-2">{t("promoEditor.preview")}</p>
-              <video src={promo.playbackUrl} controls className="w-full rounded-lg" playsInline />
+              <PlaybackVideo src={promo.playbackUrl} maxHeightClass="max-h-[70vh]" />
             </div>
           )}
 

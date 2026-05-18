@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
+import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
 import { formatUploadApiError, type UploadApiErrorBody } from "@/lib/uploadErrors";
 import { parseTagsFromInput } from "@/lib/works/label-utils";
-import { WORK_SECTIONS, type WorkSection } from "@/types/work";
+import { WORK_SECTIONS, type VideoAspectRatio, type WorkSection } from "@/types/work";
 
 export default function UploaderUploadInner() {
   const { user, loading: authLoading } = useAuth();
@@ -15,6 +17,7 @@ export default function UploaderUploadInner() {
   const { depositVerified, depositEnabled, checked } = useDepositStatus();
   const [title, setTitle] = useState("");
   const [section, setSection] = useState<WorkSection>("movies");
+  const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("16:9");
   const [contentCategory, setContentCategory] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [director, setDirector] = useState("");
@@ -24,6 +27,10 @@ export default function UploaderUploadInner() {
   const [done, setDone] = useState<string | null>(null);
 
   const needsDeposit = depositEnabled && !depositVerified;
+
+  useEffect(() => {
+    setAspectRatio(defaultAspectRatioForSection(section));
+  }, [section]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +58,7 @@ export default function UploaderUploadInner() {
         body: JSON.stringify({
           title: title || file.name,
           section,
+          aspectRatio,
           contentCategory: contentCategory.trim() || undefined,
           tags: tags.length > 0 ? tags : undefined,
           director: director || undefined,
@@ -167,6 +175,10 @@ export default function UploaderUploadInner() {
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadAspectRatioLabel")}</label>
+            <AspectRatioPicker value={aspectRatio} onChange={setAspectRatio} disabled={busy} />
           </div>
           <div>
             <label className="block text-sm text-xiio-muted mb-1.5">{t("uploader.uploadContentCategoryLabel")}</label>

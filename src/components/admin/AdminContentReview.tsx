@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
+import PlaybackVideo from "@/components/PlaybackVideo";
 import FullWorkReviewCard, { type FullQueueItem } from "@/components/admin/FullWorkReviewCard";
 import type { PromoPlatformStatus, RejectReasonCode, StreamStatus, WorkDoc, WorkSection } from "@/types/work";
 
@@ -232,12 +233,9 @@ export default function AdminContentReview() {
                 className="mb-3"
               />
               {row.promo.playbackUrl && (
-                <video
-                  src={row.promo.playbackUrl}
-                  controls
-                  className="w-full max-w-sm rounded-lg mb-3"
-                  playsInline
-                />
+                <div className="mb-3 max-w-3xl">
+                  <PlaybackVideo src={row.promo.playbackUrl} maxHeightClass="max-h-[60vh]" />
+                </div>
               )}
               <div className="flex flex-wrap gap-2">
                 <button
@@ -301,12 +299,9 @@ export default function AdminContentReview() {
                 className="my-3"
               />
               {item.playbackUrl && (
-                <video
-                  src={item.playbackUrl}
-                  controls
-                  className="w-full max-w-lg rounded-lg mb-3"
-                  playsInline
-                />
+                <div className="mb-3 max-w-3xl">
+                  <PlaybackVideo src={item.playbackUrl} maxHeightClass="max-h-[60vh]" />
+                </div>
               )}
               <div className="flex flex-wrap gap-2 mt-3">
                 {item.kind === "full" ? (
