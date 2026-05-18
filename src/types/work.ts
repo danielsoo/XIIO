@@ -61,6 +61,8 @@ export type WorkDoc = {
   reviewedBy?: string;
   createdAt?: unknown;
   updatedAt?: unknown;
+  likeCount?: number;
+  viewCount?: number;
 };
 
 export type PromoShortDoc = {
@@ -79,6 +81,8 @@ export type PromoShortDoc = {
   reviewedBy?: string;
   createdAt?: unknown;
   updatedAt?: unknown;
+  likeCount?: number;
+  viewCount?: number;
 };
 
 export const PROMO_SHORT_DOC_ID = "promo";
@@ -99,6 +103,8 @@ export type PromoFeedItem = {
   videoUrl: string;
   aspectRatio: number;
   likeCount?: number;
+  viewCount?: number;
+  likedByMe?: boolean;
 };
 
 export type CatalogFeedItem = {

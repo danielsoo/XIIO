@@ -68,7 +68,13 @@ export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc
     reviewedBy: data.reviewedBy ? String(data.reviewedBy) : undefined,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
+    likeCount: typeof data.likeCount === "number" ? data.likeCount : 0,
+    viewCount: typeof data.viewCount === "number" ? data.viewCount : 0,
   };
+}
+
+function parseCount(data: Record<string, unknown>, key: string): number {
+  return typeof data[key] === "number" ? (data[key] as number) : 0;
 }
 
 export function parsePromoDoc(data: Record<string, unknown>): PromoShortDoc {
@@ -88,6 +94,8 @@ export function parsePromoDoc(data: Record<string, unknown>): PromoShortDoc {
     reviewedBy: data.reviewedBy ? String(data.reviewedBy) : undefined,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
+    likeCount: parseCount(data, "likeCount"),
+    viewCount: parseCount(data, "viewCount"),
   };
 }
 

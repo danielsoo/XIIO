@@ -4,14 +4,19 @@ import {
   getStreamVideo,
   resolvePlaybackUrl,
 } from "@/lib/cloudflare/stream";
+import { isPromoLiked } from "@/lib/server/engagement";
+import { verifyBearerIdToken } from "@/lib/server/firebase-admin";
 import { getDbOrNull, parsePromoDoc, parseWorkDoc, worksCol } from "@/lib/server/works";
 import type { PromoFeedItem } from "@/types/work";
 
-export async function GET() {
+export async function GET(request: Request) {
   const db = await getDbOrNull();
   if (!db) {
     return NextResponse.json({ items: [] });
   }
+
+  const session = await verifyBearerIdToken(request.headers.get("authorization"));
+  const viewerUid = session?.uid ?? null;
 
   const promoSnap = await db.collectionGroup("promoShort").where("platformStatus", "==", "published").get();
 
@@ -36,6 +41,11 @@ export async function GET() {
 
     const info = await getStreamVideo(promo.streamUid);
 
+    let likedByMe = false;
+    if (viewerUid) {
+      likedByMe = await isPromoLiked(db, viewerUid, ownerUid, workId);
+    }
+
     items.push({
       id: `${ownerUid}_${workId}`,
       workId,
@@ -45,7 +55,9 @@ export async function GET() {
       description: promo.description ?? work.description ?? "",
       videoUrl,
       aspectRatio: aspectRatioFromVideo(info),
-      likeCount: 0,
+      likeCount: promo.likeCount ?? 0,
+      viewCount: promo.viewCount ?? 0,
+      likedByMe,
     });
   }
 

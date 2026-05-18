@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import PlaybackVideo from "@/components/PlaybackVideo";
+import { useRecordEngagementView } from "@/hooks/useRecordEngagementView";
 import { useTranslations } from "@/context/LocaleContext";
 import { aspectRatioMessageKey, aspectRatioNumeric } from "@/lib/works/aspect-ratio";
 import { sectionCatalogHref } from "@/lib/works/catalog-ui";
@@ -47,6 +48,8 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useRecordEngagementView(ownerUid, workId, "full", Boolean(data) && !loading && !err);
 
   if (loading) {
     return (

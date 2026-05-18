@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useElementFullscreen } from "@/hooks/useElementFullscreen";
+import { useRecordEngagementView } from "@/hooks/useRecordEngagementView";
 import type { PromoShort } from "@/types/promoShort";
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -60,10 +63,21 @@ function PlayerChrome({
   onExitFullscreen: () => void;
 }) {
   const { t } = useTranslations();
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [liked, setLiked] = useState(false);
+  const persisted = Boolean(item.ownerUid && item.workId);
+  const [liked, setLiked] = useState(item.likedByMe ?? false);
   const [likeCount, setLikeCount] = useState(item.likeCount ?? 0);
+  const [likeBusy, setLikeBusy] = useState(false);
+  const [likeHint, setLikeHint] = useState(false);
   const [shareHint, setShareHint] = useState(false);
+
+  useRecordEngagementView(item.ownerUid, item.workId, "promo", isActive && persisted);
+
+  useEffect(() => {
+    setLiked(item.likedByMe ?? false);
+    setLikeCount(item.likeCount ?? 0);
+  }, [item.id, item.likedByMe, item.likeCount]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -76,12 +90,47 @@ function PlayerChrome({
     }
   }, [isActive]);
 
-  const toggleLike = useCallback(() => {
+  const toggleLike = useCallback(async () => {
+    if (persisted) {
+      if (!user) {
+        setLikeHint(true);
+        window.setTimeout(() => setLikeHint(false), 3000);
+        return;
+      }
+      if (likeBusy) return;
+      const nextLiked = !liked;
+      setLikeBusy(true);
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/engagement/like", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ownerUid: item.ownerUid,
+            workId: item.workId,
+            liked: nextLiked,
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { likeCount?: number; liked?: boolean };
+        if (res.ok) {
+          setLiked(Boolean(data.liked ?? nextLiked));
+          if (typeof data.likeCount === "number") setLikeCount(data.likeCount);
+          else setLikeCount((c) => Math.max(0, c + (nextLiked ? 1 : -1)));
+        }
+      } finally {
+        setLikeBusy(false);
+      }
+      return;
+    }
+
     setLiked((prev) => {
       setLikeCount((c) => c + (prev ? -1 : 1));
       return !prev;
     });
-  }, []);
+  }, [persisted, user, likeBusy, liked, item.ownerUid, item.workId]);
 
   const handleShare = useCallback(async () => {
     const url =
@@ -159,8 +208,9 @@ function PlayerChrome({
             <div className="flex flex-col items-center justify-end gap-5 shrink-0 pb-0.5">
               <button
                 type="button"
-                onClick={toggleLike}
-                className="flex flex-col items-center gap-1 group"
+                onClick={() => void toggleLike()}
+                disabled={likeBusy}
+                className="flex flex-col items-center gap-1 group disabled:opacity-60"
                 aria-pressed={liked}
                 aria-label={t("home.promoLike")}
               >
@@ -168,6 +218,13 @@ function PlayerChrome({
                   <HeartIcon filled={liked} />
                 </span>
                 <span className="text-xs font-semibold text-white tabular-nums">{likeCount.toLocaleString()}</span>
+                {likeHint && (
+                  <span className="text-[10px] text-amber-200 text-center max-w-[4.5rem] leading-tight">
+                    <Link href="/login" className="underline hover:text-white">
+                      {t("engagement.loginToLike")}
+                    </Link>
+                  </span>
+                )}
               </button>
               <button
                 type="button"

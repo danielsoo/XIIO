@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { HOME_PROMO_SHORTS } from "@/data/promoShorts";
 import type { PromoShort } from "@/types/promoShort";
 import type { PromoFeedItem } from "@/types/work";
@@ -14,10 +15,15 @@ function toPromoShort(item: PromoFeedItem): PromoShort {
     director: item.director,
     description: item.description,
     likeCount: item.likeCount,
+    viewCount: item.viewCount,
+    ownerUid: item.ownerUid,
+    workId: item.workId,
+    likedByMe: item.likedByMe,
   };
 }
 
 export function usePromoFeed(fallbackToDemo = true) {
+  const { user } = useAuth();
   const [items, setItems] = useState<PromoShort[]>(fallbackToDemo ? HOME_PROMO_SHORTS : []);
   const [loading, setLoading] = useState(true);
   const [fromApi, setFromApi] = useState(false);
@@ -26,7 +32,12 @@ export function usePromoFeed(fallbackToDemo = true) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/feed/promo-shorts");
+        const headers: HeadersInit = {};
+        if (user) {
+          const token = await user.getIdToken();
+          headers.Authorization = `Bearer ${token}`;
+        }
+        const res = await fetch("/api/feed/promo-shorts", { headers });
         const data = (await res.json()) as { items?: PromoFeedItem[] };
         if (cancelled) return;
         const apiItems = (data.items ?? []).map(toPromoShort);
@@ -45,7 +56,7 @@ export function usePromoFeed(fallbackToDemo = true) {
     return () => {
       cancelled = true;
     };
-  }, [fallbackToDemo]);
+  }, [fallbackToDemo, user]);
 
   return { items, loading, fromApi };
 }

@@ -8,6 +8,10 @@ export type PromoShort = {
   title: string;
   director: string;
   description: string;
-  /** 초기 좋아요 수 (데모) */
   likeCount?: number;
+  viewCount?: number;
+  /** API 피드 항목일 때만 설정 */
+  ownerUid?: string;
+  workId?: string;
+  likedByMe?: boolean;
 };

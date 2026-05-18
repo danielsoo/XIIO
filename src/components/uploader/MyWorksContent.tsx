@@ -142,6 +142,12 @@ export default function MyWorksContent() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">{t("myWorks.title")}</h1>
             <p className="text-xiio-muted text-sm mt-1">{t("myWorks.subtitle")}</p>
+            <Link
+              href="/uploader/analytics"
+              className="inline-block mt-2 text-sm text-xiio-accent hover:underline"
+            >
+              {t("myWorks.viewAnalytics")}
+            </Link>
           </div>
           <Link
             href="/uploader/upload"
@@ -202,6 +208,23 @@ export default function MyWorksContent() {
                           </>
                         )}
                       </p>
+                      {(work.platformStatus === "published" || promoPublished) && (
+                        <p className="text-xs text-white/60 mt-1 tabular-nums">
+                          {work.platformStatus === "published" && (
+                            <span>
+                              {t("myWorks.statsFullViews")}: {(work.viewCount ?? 0).toLocaleString()}
+                            </span>
+                          )}
+                          {work.platformStatus === "published" && promoPublished && " · "}
+                          {promoPublished && work.promo && (
+                            <span>
+                              {t("myWorks.statsPromoViews")}: {(work.promo.viewCount ?? 0).toLocaleString()}
+                              {" · "}
+                              {t("myWorks.statsPromoLikes")}: {(work.promo.likeCount ?? 0).toLocaleString()}
+                            </span>
+                          )}
+                        </p>
+                      )}
                       {(work.proposedCategory || work.approvedCategory || (work.proposedTags?.length ?? 0) > 0) && (
                         <p className="text-xs text-xiio-muted mt-1">
                           {work.platformStatus === "published" && work.approvedCategory
