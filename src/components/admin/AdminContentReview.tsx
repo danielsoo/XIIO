@@ -8,9 +8,17 @@ import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import FullWorkReviewCard, { type FullQueueItem } from "@/components/admin/FullWorkReviewCard";
 import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
+import { useAdminWorkStats, type AdminWorkStats } from "@/hooks/useAdminWorkStats";
 import type { PromoPlatformStatus, StreamStatus, WorkDoc, WorkSection } from "@/types/work";
 
 type Tab = "full_pending" | "promo_pending" | "removal";
+
+function tabPendingCount(tab: Tab, stats: AdminWorkStats | null): number {
+  if (!stats) return 0;
+  if (tab === "full_pending") return stats.pendingFull;
+  if (tab === "promo_pending") return stats.pendingPromo;
+  return stats.removalRequested;
+}
 
 type PromoQueueItem = {
   workId: string;
@@ -45,6 +53,7 @@ type RemovalItem = {
 export default function AdminContentReview() {
   const { user } = useAuth();
   const { t } = useTranslations();
+  const { stats, refresh: refreshStats } = useAdminWorkStats(!!user);
   const [tab, setTab] = useState<Tab>("full_pending");
   const [items, setItems] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,8 +82,9 @@ export default function AdminContentReview() {
       setErr(t("admin.contentReview.loadError"));
     } finally {
       setLoading(false);
+      void refreshStats();
     }
-  }, [user, tab, t]);
+  }, [user, tab, t, refreshStats]);
 
   useEffect(() => {
     void load();
@@ -147,24 +157,32 @@ export default function AdminContentReview() {
       <p className="text-xiio-muted text-sm mb-6">{t("admin.contentDesc")}</p>
 
       <div className="flex flex-wrap gap-2 mb-6">
-        {tabs.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => {
-              setTab(id);
-              setPromoRejectOpenKey(null);
-              setPromoRejectReason("");
-            }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              tab === id
-                ? "bg-xiio-accent text-white"
-                : "bg-white/5 text-xiio-muted hover:text-white"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+        {tabs.map(({ id, label }) => {
+          const count = tabPendingCount(id, stats);
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => {
+                setTab(id);
+                setPromoRejectOpenKey(null);
+                setPromoRejectReason("");
+              }}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                tab === id
+                  ? "bg-xiio-accent text-white"
+                  : "bg-white/5 text-xiio-muted hover:text-white"
+              }`}
+            >
+              <span>{label}</span>
+              {count > 0 && (
+                <span className="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-black text-xs font-bold flex items-center justify-center">
+                  {count > 99 ? "99+" : count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {err && (
