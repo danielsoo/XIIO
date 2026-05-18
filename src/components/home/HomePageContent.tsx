@@ -3,6 +3,8 @@
 import Link from "next/link";
 import ContentCard from "@/components/ContentCard";
 import HomeHeroActions from "@/components/HomeHeroActions";
+import PromoShortSpotlight from "@/components/home/PromoShortSpotlight";
+import { HOME_PROMO_SHORTS } from "@/data/promoShorts";
 import { useTranslations } from "@/context/LocaleContext";
 
 const SECTION_HREFS = ["/movies", "/entertainment", "/series", "/shorts", "/school-battle"] as const;
@@ -53,10 +55,10 @@ export default function HomePageContent() {
 
   return (
     <main className="min-h-screen bg-xiio-bg">
-      <section className="relative h-[75vh] flex items-end overflow-hidden">
+      <section className="relative h-[42vh] min-h-[280px] flex items-end overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#1a0533] via-[#0a0a20] to-[#0a0a0a]" />
         <div className="absolute inset-0 bg-gradient-to-r from-xiio-accent/20 to-transparent" />
-        <div className="relative z-10 px-8 pb-16 md:px-16">
+        <div className="relative z-10 px-8 pb-12 md:px-16">
           <div className="inline-block px-3 py-1 rounded-full bg-xiio-accent/20 border border-xiio-accent/40 text-xiio-accent text-xs font-semibold mb-4">
             {t("home.heroBadge")}
           </div>
@@ -68,7 +70,11 @@ export default function HomePageContent() {
           <p className="text-xiio-muted text-base md:text-lg mb-6 max-w-lg">{t("home.heroSubtitle")}</p>
           <HomeHeroActions />
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-xiio-bg to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-xiio-bg to-transparent" />
+      </section>
+
+      <section className="px-4 md:px-8 -mt-2 pb-10 md:pb-14">
+        <PromoShortSpotlight items={HOME_PROMO_SHORTS} />
       </section>
 
       <div className="px-6 md:px-12 pb-16 space-y-12">

@@ -169,6 +169,15 @@ export const messages = {
       heroSubtitle:
         "영화, 예능, 시리즈부터 학교 대항전까지 — 다음 세대가 만드는 콘텐츠 플랫폼",
       watchNow: "지금 시청하기",
+      promoBadge: "숏폼 홍보",
+      promoSectionTitle: "지금 주목받는 작품",
+      promoSectionHint: "업로더가 올린 비율 그대로 — 우리는 그대로 게시합니다.",
+      promoDirector: "감독 · {name}",
+      promoLike: "좋아요",
+      promoShare: "공유",
+      promoShareCopied: "복사됨",
+      promoPrev: "이전 작품",
+      promoNext: "다음 작품",
     },
     category: {
       moviesTitle: "영화",
@@ -445,6 +454,15 @@ export const messages = {
       heroSubtitle:
         "Movies, variety, series, and school battles — a platform built by students",
       watchNow: "Watch now",
+      promoBadge: "Short promo",
+      promoSectionTitle: "Featured now",
+      promoSectionHint: "Shown in the aspect ratio creators upload — we publish as-is.",
+      promoDirector: "Director · {name}",
+      promoLike: "Like",
+      promoShare: "Share",
+      promoShareCopied: "Copied",
+      promoPrev: "Previous",
+      promoNext: "Next",
     },
     category: {
       moviesTitle: "Movies",
