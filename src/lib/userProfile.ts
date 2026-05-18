@@ -8,7 +8,9 @@ export const FIRESTORE_PERMISSION_DENIED = "FIRESTORE_PERMISSION_DENIED";
 function mapFirestoreError(err: unknown): Error {
   const code = (err as { code?: string })?.code;
   if (code === "permission-denied") {
-    return new Error(FIRESTORE_PERMISSION_DENIED);
+    const e = new Error(FIRESTORE_PERMISSION_DENIED);
+    Object.assign(e, { code: "permission-denied" });
+    return e;
   }
   if (err instanceof Error) return err;
   return new Error("프로필 저장에 실패했습니다.");

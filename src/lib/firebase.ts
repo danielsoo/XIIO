@@ -17,10 +17,14 @@ let auth: Auth | null = null;
 let db: Firestore | null = null;
 let storage: FirebaseStorage | null = null;
 
+/** Named Firestore DB (Console에 "xiio" 등). 비우면 (default) */
+const firestoreDatabaseId =
+  process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID?.trim() || undefined;
+
 if (firebaseConfig.apiKey) {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   auth = getAuth(app);
-  db = getFirestore(app);
+  db = firestoreDatabaseId ? getFirestore(app, firestoreDatabaseId) : getFirestore(app);
   storage = getStorage(app);
 }
 

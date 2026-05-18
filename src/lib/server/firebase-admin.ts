@@ -52,10 +52,18 @@ export function getAdminAuth() {
   return getAuth(app);
 }
 
+function getFirestoreDatabaseId(): string | undefined {
+  const id =
+    process.env.FIREBASE_FIRESTORE_DATABASE_ID?.trim() ||
+    process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID?.trim();
+  return id || undefined;
+}
+
 export function getAdminDb() {
   const app = getFirebaseAdminApp();
   if (!app) return null;
-  return getFirestore(app);
+  const databaseId = getFirestoreDatabaseId();
+  return databaseId ? getFirestore(app, databaseId) : getFirestore(app);
 }
 
 export async function verifyBearerIdToken(

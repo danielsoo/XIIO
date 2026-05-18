@@ -4,8 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { updateProfile } from "firebase/auth";
-import { useAuth } from "@/context/AuthContext";
-import { auth } from "@/lib/firebase";
+import {
+  SIGNUP_VERIFY_EMAIL_FAILED,
+  useAuth,
+} from "@/context/AuthContext";
+import { formatAuthError, formatSignupErrorMessage } from "@/lib/authErrors";
+import { auth, db } from "@/lib/firebase";
 import {
   FIRESTORE_PERMISSION_DENIED,
   hasUserProfile,
@@ -36,8 +40,14 @@ const STEP_LABELS: Record<StepId, string> = {
 type VerifyPhase = "pending" | "verified";
 
 export default function SignupPage() {
-  const { signupWithEmail, loginWithGoogle, logout, resendVerificationEmail, reloadUser } =
-    useAuth();
+  const {
+    signupWithEmail,
+    resumeEmailSignup,
+    loginWithGoogle,
+    logout,
+    resendVerificationEmail,
+    reloadUser,
+  } = useAuth();
   const router = useRouter();
 
   const [verifyPhase, setVerifyPhase] = useState<VerifyPhase | null>(null);
@@ -189,6 +199,16 @@ export default function SignupPage() {
 
   const finishSignup = async (profile: SignupProfile) => {
     setLoading(true);
+    setError("");
+
+    if (!auth || !db) {
+      setError(
+        "Firebase가 연결되지 않았습니다. 환경 변수와 NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID=xiio 설정을 확인하세요."
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
       if (googlePending || profileOnlyMode) {
         const currentUser = auth?.currentUser;
@@ -207,18 +227,44 @@ export default function SignupPage() {
       }
       router.push("/profiles");
     } catch (err: unknown) {
-      const code = (err as { code?: string })?.code;
-      const message = err instanceof Error ? err.message : "";
+      const { code, message } = formatAuthError(err);
+      console.error("[signup] failed", { code, message, err });
+
+      if (message === SIGNUP_VERIFY_EMAIL_FAILED) {
+        setSentEmail(email);
+        setVerifyPhase("pending");
+        setError("인증 메일 전송에 실패했습니다. 아래 «인증 메일 다시 보내기»를 눌러주세요.");
+        setLoading(false);
+        return;
+      }
+
       if (code === "auth/email-already-in-use") {
-        setError("이미 사용 중인 이메일입니다.");
-        const accountIdx = steps.indexOf("account");
-        if (accountIdx >= 0) setStepIndex(accountIdx);
-      } else if (message === FIRESTORE_PERMISSION_DENIED) {
+        try {
+          const { needsVerification } = await resumeEmailSignup(email, password, profile);
+          if (needsVerification) {
+            setSentEmail(email);
+            setVerifyPhase("pending");
+            setLoading(false);
+            return;
+          }
+          router.push("/profiles");
+          return;
+        } catch (resumeErr) {
+          console.error("[signup] resume failed", resumeErr);
+          setError(formatSignupErrorMessage(resumeErr));
+          const accountIdx = steps.indexOf("account");
+          if (accountIdx >= 0) setStepIndex(accountIdx);
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (message === FIRESTORE_PERMISSION_DENIED || code === "permission-denied") {
         setError(
-          "프로필을 Firestore에 저장하지 못했습니다. Firebase Console에서 Firestore를 켜고 firestore.rules를 배포해주세요."
+          "프로필을 Firestore에 저장하지 못했습니다. Console → Firestore → DB «xiio» → 규칙 탭에서 firestore.rules를 게시하세요."
         );
       } else {
-        setError("회원가입에 실패했습니다. 다시 시도해주세요.");
+        setError(formatSignupErrorMessage(err));
       }
     } finally {
       setLoading(false);
