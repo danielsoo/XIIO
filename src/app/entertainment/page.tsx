@@ -1,4 +1,4 @@
-import ContentCard from "@/components/ContentCard";
+import CategoryPageShell from "@/components/category/CategoryPageShell";
 
 const ITEMS = [
   { title: "웃음 연구소", category: "예능", gradient: "bg-gradient-to-br from-yellow-800 to-amber-900" },
@@ -13,12 +13,10 @@ const ITEMS = [
 
 export default function EntertainmentPage() {
   return (
-    <main className="min-h-screen bg-xiio-bg pt-24 px-6 md:px-12 pb-16">
-      <h1 className="text-3xl font-black text-white mb-2">예능</h1>
-      <p className="text-xiio-muted text-sm mb-8">대학생들이 직접 제작하는 신선한 예능 콘텐츠</p>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {ITEMS.map((m) => <ContentCard key={m.title} {...m} />)}
-      </div>
-    </main>
+    <CategoryPageShell
+      titleKey="category.entertainmentTitle"
+      subtitleKey="category.entertainmentSubtitle"
+      items={ITEMS}
+    />
   );
 }

@@ -2,25 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslations } from "@/context/LocaleContext";
 import ProfileMenu from "@/components/ProfileMenu";
-
-const NAV_ITEMS = [
-  { label: "영화", href: "/movies" },
-  { label: "예능", href: "/entertainment" },
-  { label: "시리즈", href: "/series" },
-  { label: "쇼츠폼", href: "/shorts" },
-  { label: "학교 대항전", href: "/school-battle" },
-];
 
 const HIDE_NAV_PATHS = ["/login", "/signup", "/profiles", "/admin", "/uploader"];
 
 export default function Navbar() {
   const { user } = useAuth();
+  const { t } = useTranslations();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const navItems = useMemo(
+    () => [
+      { label: t("nav.movies"), href: "/movies" },
+      { label: t("nav.entertainment"), href: "/entertainment" },
+      { label: t("nav.series"), href: "/series" },
+      { label: t("nav.shorts"), href: "/shorts" },
+      { label: t("nav.schoolBattle"), href: "/school-battle" },
+    ],
+    [t]
+  );
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -47,7 +52,7 @@ export default function Navbar() {
       </Link>
 
       <ul className="hidden md:flex items-center gap-7 flex-1">
-        {NAV_ITEMS.map(({ label, href }) => (
+        {navItems.map(({ label, href }) => (
           <li key={href}>
             <Link
               href={href}
@@ -69,7 +74,7 @@ export default function Navbar() {
             href="/login"
             className="text-sm px-4 py-1.5 rounded bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
           >
-            로그인
+            {t("common.login")}
           </Link>
         )}
       </div>
@@ -80,7 +85,7 @@ export default function Navbar() {
             href="/login"
             className="text-sm px-3 py-1.5 rounded bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
           >
-            로그인
+            {t("common.login")}
           </Link>
         )}
         {user && <ProfileMenu />}
@@ -88,7 +93,7 @@ export default function Navbar() {
           type="button"
           className="text-white"
           onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="메뉴 열기"
+          aria-label={t("nav.menuOpen")}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {menuOpen ? (
@@ -102,7 +107,7 @@ export default function Navbar() {
 
       {menuOpen && (
         <div className="md:hidden absolute top-16 left-0 right-0 bg-xiio-bg border-b border-white/10 px-6 py-4 flex flex-col gap-4">
-          {NAV_ITEMS.map(({ label, href }) => (
+          {navItems.map(({ label, href }) => (
             <Link
               key={href}
               href={href}
@@ -118,7 +123,7 @@ export default function Navbar() {
               onClick={() => setMenuOpen(false)}
               className="text-sm text-xiio-accent font-medium border-t border-white/10 pt-4"
             >
-              로그인
+              {t("common.login")}
             </Link>
           )}
         </div>

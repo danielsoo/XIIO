@@ -1,4 +1,4 @@
-import ContentCard from "@/components/ContentCard";
+import CategoryPageShell from "@/components/category/CategoryPageShell";
 
 const ITEMS = [
   { title: "1분 요리", category: "라이프", gradient: "bg-gradient-to-br from-lime-800 to-green-900" },
@@ -13,12 +13,6 @@ const ITEMS = [
 
 export default function ShortsPage() {
   return (
-    <main className="min-h-screen bg-xiio-bg pt-24 px-6 md:px-12 pb-16">
-      <h1 className="text-3xl font-black text-white mb-2">쇼츠폼</h1>
-      <p className="text-xiio-muted text-sm mb-8">짧고 강렬한 숏폼 콘텐츠 모음</p>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {ITEMS.map((m) => <ContentCard key={m.title} {...m} />)}
-      </div>
-    </main>
+    <CategoryPageShell titleKey="category.shortsTitle" subtitleKey="category.shortsSubtitle" items={ITEMS} />
   );
 }

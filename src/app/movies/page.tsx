@@ -1,4 +1,4 @@
-import ContentCard from "@/components/ContentCard";
+import CategoryPageShell from "@/components/category/CategoryPageShell";
 
 const MOVIES = [
   { title: "청춘의 끝에서", category: "드라마", gradient: "bg-gradient-to-br from-blue-900 to-purple-900" },
@@ -13,12 +13,6 @@ const MOVIES = [
 
 export default function MoviesPage() {
   return (
-    <main className="min-h-screen bg-xiio-bg pt-24 px-6 md:px-12 pb-16">
-      <h1 className="text-3xl font-black text-white mb-2">영화</h1>
-      <p className="text-xiio-muted text-sm mb-8">XIIO에서 선보이는 독립 · 단편 영화 컬렉션</p>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {MOVIES.map((m) => <ContentCard key={m.title} {...m} />)}
-      </div>
-    </main>
+    <CategoryPageShell titleKey="category.moviesTitle" subtitleKey="category.moviesSubtitle" items={MOVIES} />
   );
 }

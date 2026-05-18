@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslations } from "@/context/LocaleContext";
 import {
   Bar,
   BarChart,
@@ -22,6 +23,7 @@ const PIE_COLORS = ["#6366f1", "#a855f7", "#64748b"];
 
 export default function OnboardingStatsContent() {
   const { user } = useAuth();
+  const { t } = useTranslations();
   const [data, setData] = useState<OnboardingStatsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,25 +54,28 @@ export default function OnboardingStatsContent() {
     };
   }, [user]);
 
+  const pieData = useMemo(() => {
+    if (!data) return [];
+    return [
+      { name: t("admin.purposeWatch"), value: data.watch, key: "watch" },
+      { name: t("admin.purposeUploadSurvey"), value: data.upload, key: "upload" },
+      { name: t("admin.purposeOther"), value: data.other, key: "other" },
+    ].filter((d) => d.value > 0);
+  }, [data, t]);
+
   if (loading) {
-    return <p className="text-xiio-muted">통계를 불러오는 중…</p>;
+    return <p className="text-xiio-muted">{t("admin.onboardingLoading")}</p>;
   }
 
   if (error) {
     return (
       <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-400 text-sm">
-        통계를 불러오지 못했습니다: {error}
+        {t("admin.onboardingError")} {error}
       </div>
     );
   }
 
   if (!data) return null;
-
-  const pieData = [
-    { name: "시청", value: data.watch, key: "watch" },
-    { name: "업로드(설문)", value: data.upload, key: "upload" },
-    { name: "기타/미입력", value: data.other, key: "other" },
-  ].filter((d) => d.value > 0);
 
   const dailyEntries = Object.entries(data.signupsByDay)
     .map(([date, count]) => ({ date, count }))
@@ -81,20 +86,17 @@ export default function OnboardingStatsContent() {
     <div className="space-y-10">
       <div>
         <Link href="/admin" className="text-sm text-xiio-muted hover:text-xiio-accent transition mb-4 inline-block">
-          ← 대시보드
+          {t("admin.placeholderBack")}
         </Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-white">온보딩·설문 통계</h1>
-        <p className="text-xiio-muted text-sm mt-2">
-          Firestore <code className="text-white/70">users</code> 컬렉션의{" "}
-          <code className="text-white/70">platformPurpose</code> 필드 기준 집계입니다. 개인 식별 정보는 표시하지 않습니다.
-        </p>
+        <h1 className="text-2xl md:text-3xl font-bold text-white">{t("admin.onboardingTitle")}</h1>
+        <p className="text-xiio-muted text-sm mt-2">{t("admin.onboardingIntro")}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-xiio-surface p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">가입 추이 (최근 30일, UTC 일자 기준)</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">{t("admin.chartSignupsTitle")}</h2>
           {dailyChart.length === 0 ? (
-            <p className="text-xiio-muted text-sm">날짜별 데이터가 없습니다. <code>createdAt</code>이 있는 문서만 집계됩니다.</p>
+            <p className="text-xiio-muted text-sm">{t("admin.chartSignupsEmpty")}</p>
           ) : (
             <div className="h-72 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -106,7 +108,7 @@ export default function OnboardingStatsContent() {
                     contentStyle={{ backgroundColor: "#1e1b2e", border: "1px solid #ffffff22", borderRadius: 8 }}
                     labelStyle={{ color: "#e2e8f0" }}
                   />
-                  <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} name="가입 수" />
+                  <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} name={t("admin.chartSignupsBar")} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -114,10 +116,10 @@ export default function OnboardingStatsContent() {
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6">
-          <h2 className="text-lg font-semibold text-white mb-2">플랫폼 목적 비율</h2>
-          <p className="text-xs text-xiio-muted mb-4">총 {data.total}명</p>
+          <h2 className="text-lg font-semibold text-white mb-2">{t("admin.chartPurposeTitle")}</h2>
+          <p className="text-xs text-xiio-muted mb-4">{t("admin.chartPurposeTotal", { total: data.total })}</p>
           {pieData.length === 0 ? (
-            <p className="text-xiio-muted text-sm">데이터 없음</p>
+            <p className="text-xiio-muted text-sm">{t("admin.chartPurposeEmpty")}</p>
           ) : (
             <div className="h-64 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -145,15 +147,15 @@ export default function OnboardingStatsContent() {
           )}
           <dl className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
             <div>
-              <dt className="text-xiio-muted">시청</dt>
+              <dt className="text-xiio-muted">{t("admin.purposeWatch")}</dt>
               <dd className="text-white font-semibold">{data.watch}</dd>
             </div>
             <div>
-              <dt className="text-xiio-muted">업로드</dt>
+              <dt className="text-xiio-muted">{t("admin.purposeUpload")}</dt>
               <dd className="text-white font-semibold">{data.upload}</dd>
             </div>
             <div>
-              <dt className="text-xiio-muted">기타</dt>
+              <dt className="text-xiio-muted">{t("admin.purposeOtherShort")}</dt>
               <dd className="text-white font-semibold">{data.other}</dd>
             </div>
           </dl>

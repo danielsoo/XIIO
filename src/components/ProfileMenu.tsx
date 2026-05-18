@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
+import { useTranslations } from "@/context/LocaleContext";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 
@@ -12,6 +13,7 @@ export default function ProfileMenu() {
   const { logout } = useAuth();
   const { activeProfile, clearActiveProfile } = useProfile();
   const { isAdmin, checked: adminChecked } = useAdminAccess();
+  const { t } = useTranslations();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -45,7 +47,7 @@ export default function ProfileMenu() {
         type="button"
         onClick={() => setOpen(!open)}
         className="rounded-full ring-2 ring-transparent hover:ring-xiio-accent/60 transition focus:outline-none focus:ring-xiio-accent"
-        aria-label="프로필 메뉴"
+        aria-label={t("profileMenu.ariaLabel")}
         aria-expanded={open}
       >
         <ProfileAvatar profile={activeProfile} size="md" />
@@ -55,28 +57,28 @@ export default function ProfileMenu() {
         <div className="absolute right-0 top-full mt-2 w-52 py-2 rounded-xl bg-xiio-surface border border-white/10 shadow-xl z-[60]">
           <div className="px-4 py-3 border-b border-white/10">
             <p className="text-sm font-medium text-white truncate">{activeProfile.name}</p>
-            <p className="text-xs text-xiio-muted mt-0.5">시청 프로필</p>
+            <p className="text-xs text-xiio-muted mt-0.5">{t("profileMenu.watchProfile")}</p>
           </div>
           <button
             type="button"
             onClick={handleSwitchProfile}
             className="w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"
           >
-            프로필 변경
+            {t("profileMenu.switchProfile")}
           </button>
           <Link
             href="/settings"
             onClick={() => setOpen(false)}
             className="block w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"
           >
-            설정
+            {t("profileMenu.settings")}
           </Link>
           <Link
             href="/uploader/upload"
             onClick={() => setOpen(false)}
             className="block w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"
           >
-            영상 업로드
+            {t("profileMenu.uploadVideo")}
           </Link>
           {adminChecked && isAdmin && (
             <Link
@@ -84,7 +86,7 @@ export default function ProfileMenu() {
               onClick={() => setOpen(false)}
               className="block w-full text-left px-4 py-2.5 text-sm text-xiio-accent hover:bg-white/5 transition"
             >
-              관리자 패널
+              {t("profileMenu.adminPanel")}
             </Link>
           )}
           <button
@@ -92,7 +94,7 @@ export default function ProfileMenu() {
             onClick={() => void handleLogout()}
             className="w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition border-t border-white/10 mt-1"
           >
-            로그아웃
+            {t("profileMenu.logout")}
           </button>
         </div>
       )}

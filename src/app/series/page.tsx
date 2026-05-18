@@ -1,4 +1,4 @@
-import ContentCard from "@/components/ContentCard";
+import CategoryPageShell from "@/components/category/CategoryPageShell";
 
 const ITEMS = [
   { title: "미래도시 2049", category: "SF", gradient: "bg-gradient-to-br from-cyan-900 to-blue-900" },
@@ -13,12 +13,6 @@ const ITEMS = [
 
 export default function SeriesPage() {
   return (
-    <main className="min-h-screen bg-xiio-bg pt-24 px-6 md:px-12 pb-16">
-      <h1 className="text-3xl font-black text-white mb-2">시리즈</h1>
-      <p className="text-xiio-muted text-sm mb-8">에피소드로 이어지는 XIIO 오리지널 시리즈</p>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {ITEMS.map((m) => <ContentCard key={m.title} {...m} />)}
-      </div>
-    </main>
+    <CategoryPageShell titleKey="category.seriesTitle" subtitleKey="category.seriesSubtitle" items={ITEMS} />
   );
 }

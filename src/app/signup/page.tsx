@@ -18,13 +18,14 @@ import {
 } from "@/lib/userProfile";
 import type { PlatformPurpose, SignupProfile } from "@/types/user";
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
+import { useTranslations } from "@/context/LocaleContext";
 
 const inputClass =
   "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent transition";
 
 type StepId = "basic" | "student" | "purpose" | "account";
 
-/** Google(또는 이미 로그인된) 가입은 프로필·설문만 — 이메일/비밀번호 단계 없음 */
+/** Google(또는 이미 {t("common.login")}된) 가입은 프로필·설문만 — 이메일/비밀번호 단계 없음 */
 function buildStepList(skipAccountStep: boolean): StepId[] {
   const steps: StepId[] = ["basic", "student", "purpose"];
   if (!skipAccountStep) steps.push("account");
@@ -34,13 +35,6 @@ function buildStepList(skipAccountStep: boolean): StepId[] {
 function isGoogleAuthUser(user: { providerData: { providerId: string }[] } | null): boolean {
   return !!user?.providerData.some((p) => p.providerId === "google.com");
 }
-
-const STEP_LABELS: Record<StepId, string> = {
-  basic: "기본 정보",
-  student: "학생 정보",
-  purpose: "이용 목적",
-  account: "계정 만들기",
-};
 
 type VerifyPhase = "pending" | "verified";
 
@@ -53,14 +47,25 @@ export default function SignupPage() {
     resendVerificationEmail,
     reloadUser,
   } = useAuth();
+  const { t } = useTranslations();
   const router = useRouter();
+
+  const stepLabels: Record<StepId, string> = useMemo(
+    () => ({
+      basic: t("auth.signup.stepBasic"),
+      student: t("auth.signup.stepStudent"),
+      purpose: t("auth.signup.stepPurpose"),
+      account: t("auth.signup.stepAccount"),
+    }),
+    [t]
+  );
 
   const [verifyPhase, setVerifyPhase] = useState<VerifyPhase | null>(null);
   const [sentEmail, setSentEmail] = useState("");
   const [resendMessage, setResendMessage] = useState("");
 
   const [googlePending, setGooglePending] = useState(false);
-  /** Auth에는 있으나 Firestore users 문서가 없을 때 (로그인만 한 경우) */
+  /** Auth에는 있으나 Firestore users 문서가 없을 때 ({t("common.login")}만 한 경우) */
   const [profileOnlyMode, setProfileOnlyMode] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
@@ -130,7 +135,7 @@ export default function SignupPage() {
     }
   }, [googleSignup, stepIndex, steps.length]);
 
-  // 로그인만 하고 Firestore 프로필이 없는 경우 → 가입 단계만 이어서 진행
+  // {t("common.login")}만 하고 Firestore 프로필이 없는 경우 → 가입 단계만 이어서 진행
   useEffect(() => {
     const currentUser = auth?.currentUser;
     if (!currentUser || verifyPhase) return;
@@ -173,43 +178,43 @@ export default function SignupPage() {
     switch (step) {
       case "basic": {
         if (!name.trim()) {
-          setError("이름을 입력해주세요.");
+          setError(t("auth.signup.errorNameRequired"));
           return false;
         }
         const ageNum = parseInt(age, 10);
         if (!age || Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
-          setError("올바른 나이를 입력해주세요.");
+          setError(t("auth.signup.errorAgeInvalid"));
           return false;
         }
         return true;
       }
       case "student":
         if (isStudent === null) {
-          setError("학생 여부를 선택해주세요.");
+          setError(t("auth.signup.errorStudentRequired"));
           return false;
         }
         if (isStudent && !school.trim()) {
-          setError("학교명을 입력해주세요.");
+          setError(t("auth.signup.errorSchoolRequired"));
           return false;
         }
         return true;
       case "purpose":
         if (!platformPurpose) {
-          setError("이용 목적을 선택해주세요.");
+          setError(t("auth.signup.errorPurposeRequired"));
           return false;
         }
         return true;
       case "account":
         if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          setError("올바른 이메일을 입력해주세요.");
+          setError(t("auth.signup.errorEmailInvalid"));
           return false;
         }
         if (password.length < 6) {
-          setError("비밀번호는 6자 이상이어야 합니다.");
+          setError(t("auth.signup.errorPasswordMin"));
           return false;
         }
         if (password !== confirm) {
-          setError("비밀번호가 일치하지 않습니다.");
+          setError(t("auth.signup.errorPasswordMismatch"));
           return false;
         }
         return true;
@@ -223,9 +228,7 @@ export default function SignupPage() {
     setError("");
 
     if (!auth || !db) {
-      setError(
-        "Firebase가 연결되지 않았습니다. 환경 변수와 NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID=xiio 설정을 확인하세요."
-      );
+      setError(t("auth.signup.errorFirebaseNotConfigured"));
       setLoading(false);
       return;
     }
@@ -234,7 +237,7 @@ export default function SignupPage() {
       if (googleSignup || profileOnlyMode) {
         const currentUser = auth?.currentUser;
         if (!currentUser) {
-          setError("로그인 세션이 만료되었습니다. 다시 시도해주세요.");
+          setError(t("auth.signup.errorSessionExpired"));
           return;
         }
         await updateProfile(currentUser, { displayName: profile.displayName });
@@ -256,7 +259,7 @@ export default function SignupPage() {
       if (message === SIGNUP_VERIFY_EMAIL_FAILED) {
         setSentEmail(email);
         setVerifyPhase("pending");
-        setError("인증 메일 전송에 실패했습니다. 아래 «인증 메일 다시 보내기»를 눌러주세요.");
+        setError(t("auth.signup.errorVerifySendFailedResend"));
         setLoading(false);
         return;
       }
@@ -274,7 +277,7 @@ export default function SignupPage() {
           return;
         } catch (resumeErr) {
           console.error("[signup] resume failed", resumeErr);
-          setError(formatSignupErrorMessage(resumeErr));
+          setError(formatSignupErrorMessage(resumeErr, t));
           const accountIdx = steps.indexOf("account");
           if (accountIdx >= 0) setStepIndex(accountIdx);
           setLoading(false);
@@ -283,11 +286,9 @@ export default function SignupPage() {
       }
 
       if (message === FIRESTORE_PERMISSION_DENIED || code === "permission-denied") {
-        setError(
-          "프로필을 Firestore에 저장하지 못했습니다. Console → Firestore → DB «xiio» → 규칙 탭에서 firestore.rules를 게시하세요."
-        );
+        setError(t("auth.signup.errorFirestoreRules"));
       } else {
-        setError(formatSignupErrorMessage(err));
+        setError(formatSignupErrorMessage(err, t));
       }
     } finally {
       setLoading(false);
@@ -301,7 +302,7 @@ export default function SignupPage() {
     if (isLastStep) {
       const profile = buildProfile();
       if (!profile) {
-        setError("입력 정보를 다시 확인해주세요.");
+        setError(t("auth.signup.errorReviewInput"));
         return;
       }
       await finishSignup(profile);
@@ -338,7 +339,7 @@ export default function SignupPage() {
 
       setStepIndex(0);
     } catch {
-      setError("Google 가입에 실패했습니다.");
+      setError(t("auth.signup.errorGoogleFailed"));
     } finally {
       setLoading(false);
     }
@@ -367,7 +368,7 @@ export default function SignupPage() {
       await logout();
       setVerifyPhase("verified");
     } else {
-      setError("아직 이메일 인증이 완료되지 않았습니다. 메일함을 확인해주세요.");
+      setError(t("auth.signup.errorVerifyPending"));
     }
   };
 
@@ -376,9 +377,9 @@ export default function SignupPage() {
     setResendMessage("");
     try {
       await resendVerificationEmail();
-      setResendMessage("인증 메일을 다시 보냈습니다.");
+      setResendMessage(t("auth.signup.verifyResent"));
     } catch {
-      setError("인증 메일 전송에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setError(t("auth.signup.errorVerifySendFailed"));
     }
   };
 
@@ -393,10 +394,9 @@ export default function SignupPage() {
 
         {verifyPhase === "pending" && (
           <div className="bg-xiio-surface rounded-2xl p-8 border border-white/10">
-            <h1 className="text-xl font-bold text-white text-center mb-2">인증 메일을 보냈습니다</h1>
+            <h1 className="text-xl font-bold text-white text-center mb-2">{t("auth.signup.verifyPendingTitle")}</h1>
             <p className="text-sm text-xiio-muted text-center mb-6">
-              <span className="text-white">{sentEmail}</span>
-              (으)로 인증 메일을 발송했습니다. 메일함을 열어 인증 링크를 눌러 주세요.
+              {t("auth.signup.verifyPendingBody", { email: sentEmail })}
             </p>
             {error && (
               <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
@@ -413,27 +413,27 @@ export default function SignupPage() {
               onClick={() => void handleCheckVerification()}
               className="w-full py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-semibold transition mb-3"
             >
-              인증 완료 확인
+              {t("auth.signup.verifyCheck")}
             </button>
             <button
               type="button"
               onClick={() => void handleResendVerification()}
               className="w-full py-3 rounded-lg border border-white/20 text-white hover:bg-white/5 transition text-sm"
             >
-              인증 메일 다시 보내기
+              {t("auth.signup.verifyResend")}
             </button>
           </div>
         )}
 
         {verifyPhase === "verified" && (
           <div className="bg-xiio-surface rounded-2xl p-8 border border-white/10 text-center">
-            <h1 className="text-xl font-bold text-white mb-2">이메일 인증이 완료되었습니다</h1>
-            <p className="text-sm text-xiio-muted mb-6">로그인을 완료해 주세요.</p>
+            <h1 className="text-xl font-bold text-white mb-2">{t("auth.signup.verifyDoneTitle")}</h1>
+            <p className="text-sm text-xiio-muted mb-6">{t("auth.signup.verifyDoneSubtitle")}</p>
             <Link
               href="/login"
               className="inline-block w-full py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-semibold transition"
             >
-              로그인하기
+              {t("auth.signup.verifyDoneCta")}
             </Link>
           </div>
         )}
@@ -449,33 +449,31 @@ export default function SignupPage() {
                 className="w-full py-3 rounded-lg border border-white/20 text-white font-medium flex items-center justify-center gap-3 hover:bg-white/5 disabled:opacity-50 transition"
               >
                 <GoogleIcon />
-                Google로 가입
+                {t("auth.signup.googleSignup")}
               </button>
               <p className="text-xs text-xiio-muted text-center mt-2">
-                Google로 연결한 뒤 프로필·설문만 입력합니다.
+                {t("auth.signup.googleSignupHint")}
               </p>
               <div className="flex items-center gap-3 mt-5">
                 <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-xiio-muted">또는 이메일로 가입</span>
+                <span className="text-xs text-xiio-muted">{t("auth.signup.emailSignupDivider")}</span>
                 <div className="flex-1 h-px bg-white/10" />
               </div>
             </div>
           ) : (
             <div className="mb-6 rounded-lg border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3">
-              <p className="text-sm text-white font-medium">Google 계정 연결됨</p>
+              <p className="text-sm text-white font-medium">{t("auth.signup.googleConnected")}</p>
               <p className="text-xs text-xiio-muted mt-1">{googleEmail}</p>
               <p className="text-xs text-xiio-muted mt-2">
-                이름·학생 여부·이용 목적만 입력하면 됩니다.
+                {t("auth.signup.googleConnectedHint")}
               </p>
             </div>
           )}
 
           <div className="mb-6">
             <div className="flex justify-between text-xs text-xiio-muted mb-2">
-              <span>{STEP_LABELS[currentStep]}</span>
-              <span>
-                {stepIndex + 1} / {steps.length}
-              </span>
+              <span>{stepLabels[currentStep]}</span>
+              <span>{t("auth.signup.stepProgress", { current: stepIndex + 1, total: steps.length })}</span>
             </div>
             <div className="h-1 rounded-full bg-white/10 overflow-hidden">
               <div
@@ -497,26 +495,26 @@ export default function SignupPage() {
             className="flex-1 flex flex-col justify-center"
           >
             {currentStep === "basic" && (
-              <StepShell title="기본 정보를 알려주세요" subtitle="이름과 나이를 입력해주세요">
+              <StepShell title={t("auth.signup.basicTitle")} subtitle={t("auth.signup.basicSubtitle")}>
                 <div className="flex flex-col gap-4">
-                  <Field label="이름">
+                  <Field label={t("auth.signup.nameLabel")}>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       autoFocus
-                      placeholder="홍길동"
+                      placeholder={t("auth.signup.namePlaceholder")}
                       className={inputClass}
                     />
                   </Field>
-                  <Field label="나이">
+                  <Field label={t("auth.signup.ageLabel")}>
                     <input
                       type="number"
                       min={1}
                       max={120}
                       value={age}
                       onChange={(e) => setAge(e.target.value)}
-                      placeholder="예: 20"
+                      placeholder={t("auth.signup.agePlaceholder")}
                       className={inputClass}
                     />
                   </Field>
@@ -525,13 +523,13 @@ export default function SignupPage() {
             )}
 
             {currentStep === "student" && (
-              <StepShell title="학생이신가요?" subtitle="해당되는 항목을 선택해주세요">
+              <StepShell title={t("auth.signup.studentTitle")} subtitle={t("auth.signup.studentSubtitle")}>
                 <div className="flex flex-col gap-4">
                   <div className="flex gap-3">
                     <ChoiceButton
                       selected={isStudent === true}
                       onClick={() => setIsStudent(true)}
-                      label="네, 학생이에요"
+                      label={t("auth.signup.studentYes")}
                     />
                     <ChoiceButton
                       selected={isStudent === false}
@@ -539,18 +537,18 @@ export default function SignupPage() {
                         setIsStudent(false);
                         setSchool("");
                       }}
-                      label="아니요"
+                      label={t("auth.signup.studentNo")}
                     />
                   </div>
 
                   {isStudent === true && (
-                    <Field label="학교">
+                    <Field label={t("auth.signup.schoolLabel")}>
                       <input
                         type="text"
                         value={school}
                         onChange={(e) => setSchool(e.target.value)}
                         autoFocus
-                        placeholder="예: 서울대학교"
+                        placeholder={t("auth.signup.schoolPlaceholder")}
                         className={inputClass}
                       />
                     </Field>
@@ -560,28 +558,28 @@ export default function SignupPage() {
             )}
 
             {currentStep === "purpose" && (
-              <StepShell title="XIIO에 오신 목적은?" subtitle="하나를 선택해주세요">
+              <StepShell title={t("auth.signup.purposeTitle")} subtitle={t("auth.signup.purposeSubtitle")}>
                 <div className="flex flex-col gap-3">
                   <PurposeOption
                     selected={platformPurpose === "watch"}
                     onClick={() => setPlatformPurpose("watch")}
-                    title="영상을 보러 왔어요"
-                    description="콘텐츠를 시청하고 즐기고 싶어요"
+                    title={t("auth.signup.purposeWatchTitle")}
+                    description={t("auth.signup.purposeWatchDesc")}
                   />
                   <PurposeOption
                     selected={platformPurpose === "upload"}
                     onClick={() => setPlatformPurpose("upload")}
-                    title="영상을 올리러 왔어요"
-                    description="직접 콘텐츠를 업로드하고 싶어요"
+                    title={t("auth.signup.purposeUploadTitle")}
+                    description={t("auth.signup.purposeUploadDesc")}
                   />
                 </div>
               </StepShell>
             )}
 
             {currentStep === "account" && !googleSignup && (
-              <StepShell title="계정을 만들어주세요" subtitle="로그인에 사용할 정보입니다">
+              <StepShell title={t("auth.signup.accountTitle")} subtitle={t("auth.signup.accountSubtitle")}>
                 <div className="flex flex-col gap-4">
-                  <Field label="이메일">
+                  <Field label={t("auth.signup.emailLabel")}>
                     <input
                       type="email"
                       value={email}
@@ -591,16 +589,16 @@ export default function SignupPage() {
                       className={inputClass}
                     />
                   </Field>
-                  <Field label="비밀번호">
+                  <Field label={t("auth.signup.passwordLabel")}>
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="6자 이상"
+                      placeholder={t("auth.signup.passwordPlaceholder")}
                       className={inputClass}
                     />
                   </Field>
-                  <Field label="비밀번호 확인">
+                  <Field label={t("auth.signup.confirmPasswordLabel")}>
                     <input
                       type="password"
                       value={confirm}
@@ -622,7 +620,7 @@ export default function SignupPage() {
                 disabled={loading}
                 className="flex-1 py-3 rounded-lg border border-white/20 text-white hover:bg-white/5 disabled:opacity-50 transition"
               >
-                이전
+                {t("common.previous")}
               </button>
             )}
             <button
@@ -632,7 +630,7 @@ export default function SignupPage() {
                 stepIndex === 0 ? "w-full" : "flex-1"
               }`}
             >
-              {loading ? "처리 중..." : isLastStep ? "가입하기" : "다음"}
+              {loading ? t("common.processing") : isLastStep ? t("auth.signup.submitSignup") : t("common.next")}
             </button>
           </div>
           </form>
@@ -642,9 +640,9 @@ export default function SignupPage() {
 
         {verifyPhase === null && (
           <p className="mt-6 text-center text-sm text-xiio-muted">
-            이미 계정이 있으신가요?{" "}
+            {t("auth.signup.hasAccount")}{" "}
             <Link href="/login" className="text-xiio-accent hover:underline">
-              로그인
+              {t("common.login")}
             </Link>
           </p>
         )}

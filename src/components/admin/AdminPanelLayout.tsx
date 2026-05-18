@@ -2,27 +2,33 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslations } from "@/context/LocaleContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
-
-const NAV = [
-  { href: "/admin", label: "대시보드", exact: true },
-  { href: "/admin/onboarding", label: "온보딩·설문" },
-  { href: "/admin/users", label: "사용자" },
-  { href: "/admin/content", label: "콘텐츠" },
-  { href: "/admin/reports", label: "신고" },
-  { href: "/admin/payments", label: "결제" },
-];
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const { isAdmin, isSuperAdmin, checked, reason } = useAdminAccess();
+  const { t } = useTranslations();
+
+  const nav = useMemo(
+    () => [
+      { href: "/admin", label: t("admin.navDashboard"), exact: true },
+      { href: "/admin/onboarding", label: t("admin.navOnboarding") },
+      { href: "/admin/users", label: t("admin.navUsers") },
+      { href: "/admin/content", label: t("admin.navContent") },
+      { href: "/admin/reports", label: t("admin.navReports") },
+      { href: "/admin/payments", label: t("admin.navPayments") },
+    ],
+    [t]
+  );
 
   if (loading || !checked) {
     return (
       <div className="min-h-screen bg-xiio-bg flex items-center justify-center text-white">
-        <p className="text-xiio-muted">불러오는 중…</p>
+        <p className="text-xiio-muted">{t("admin.loading")}</p>
       </div>
     );
   }
@@ -30,15 +36,15 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   if (!user) {
     return (
       <div className="min-h-screen bg-xiio-bg flex flex-col items-center justify-center gap-6 px-4 text-center">
-        <p className="text-white text-lg">어드민 패널은 로그인 후 이용할 수 있습니다.</p>
+        <p className="text-white text-lg">{t("admin.loginRequired")}</p>
         <Link
           href="/login"
           className="px-6 py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
         >
-          로그인
+          {t("common.login")}
         </Link>
         <Link href="/" className="text-sm text-xiio-muted hover:text-white transition">
-          ← 홈으로
+          {t("common.backToHome")}
         </Link>
       </div>
     );
@@ -47,13 +53,10 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   if (reason === "admin_sdk_missing") {
     return (
       <div className="min-h-screen bg-xiio-bg flex flex-col items-center justify-center gap-4 px-4 max-w-lg mx-auto text-center">
-        <p className="text-amber-400 font-medium">서버 설정 필요</p>
-        <p className="text-xiio-muted text-sm">
-          Firebase Admin SDK가 구성되지 않았습니다. 배포 환경에{" "}
-          <code className="text-white/80">FIREBASE_SERVICE_ACCOUNT_JSON</code> 등을 설정한 뒤 다시 시도하세요.
-        </p>
+        <p className="text-amber-400 font-medium">{t("admin.sdkMissingTitle")}</p>
+        <p className="text-xiio-muted text-sm">{t("admin.sdkMissingBody")}</p>
         <Link href="/" className="text-sm text-xiio-accent hover:underline">
-          홈으로
+          {t("common.home")}
         </Link>
       </div>
     );
@@ -62,9 +65,9 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-xiio-bg flex flex-col items-center justify-center gap-4 px-4 text-center">
-        <p className="text-red-400">이 계정은 어드민 권한이 없습니다.</p>
+        <p className="text-red-400">{t("admin.noPermission")}</p>
         <Link href="/" className="text-sm text-xiio-muted hover:text-white transition">
-          ← 홈으로
+          {t("common.backToHome")}
         </Link>
       </div>
     );
@@ -78,11 +81,11 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
             X<span className="text-xiio-accent">II</span>O
           </Link>
           <p className="text-xs text-xiio-muted mt-1">
-            {isSuperAdmin ? "Super Admin" : "Admin"}
+            {isSuperAdmin ? t("admin.roleSuper") : t("admin.roleAdmin")}
           </p>
         </div>
         <nav className="p-2 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible">
-          {NAV.map(({ href, label, exact }) => {
+          {nav.map(({ href, label, exact }) => {
             const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link
@@ -99,7 +102,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
         </nav>
         <div className="p-4 mt-auto border-t border-white/10 hidden md:block">
           <Link href="/" className="text-sm text-xiio-muted hover:text-xiio-accent transition">
-            ← 사이트로 돌아가기
+            {t("admin.backToSite")}
           </Link>
         </div>
       </aside>
