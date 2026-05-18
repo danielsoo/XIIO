@@ -7,6 +7,7 @@ import {
   resolvePlaybackUrl,
 } from "@/lib/cloudflare/stream";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
+import { syncPromoStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
 import {
   canOwnerDeletePromo,
   FieldValue,
@@ -39,7 +40,17 @@ export async function GET(request: Request, { params }: Params) {
   const promoSnap = await promoRef(db, session.uid, workId).get();
   let promo = null;
   if (promoSnap.exists) {
-    const p = parsePromoDoc(promoSnap.data() as Record<string, unknown>);
+    let p = parsePromoDoc(promoSnap.data() as Record<string, unknown>);
+    if (p.streamUid && p.streamStatus && p.streamStatus !== "ready" && p.streamStatus !== "error") {
+      const synced = await syncPromoStreamStatusIfNeeded(
+        db,
+        session.uid,
+        workId,
+        p.streamUid,
+        p.streamStatus
+      );
+      p = { ...p, streamStatus: synced ?? p.streamStatus };
+    }
     const promoPlayback =
       p.streamUid && p.streamStatus === "ready" ? await resolvePlaybackUrl(p.streamUid) : null;
     promo = { id: PROMO_SHORT_DOC_ID, ...p, playbackUrl: promoPlayback ?? undefined };
@@ -140,7 +151,14 @@ export async function PUT(request: Request, { params }: Params) {
     { merge: true }
   );
 
-  return NextResponse.json({ ok: true, streamUid: clipUid, platformStatus: "draft" });
+  return NextResponse.json({
+    ok: true,
+    streamUid: clipUid,
+    platformStatus: "draft",
+    streamStatus: "processing",
+    clipStartSec: start,
+    clipEndSec: end,
+  });
 }
 
 export async function DELETE(request: Request, { params }: Params) {

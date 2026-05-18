@@ -5,12 +5,16 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import PlaybackVideo from "@/components/PlaybackVideo";
-import type { PromoShortDoc, WorkDoc } from "@/types/work";
+import type { PromoShortDoc, StreamStatus, WorkDoc } from "@/types/work";
 
 type EditorData = {
   work: WorkDoc & { playbackUrl?: string; durationSec?: number };
   promo: (PromoShortDoc & { id: string; playbackUrl?: string }) | null;
 };
+
+function isPromoEncoding(status: StreamStatus | undefined): boolean {
+  return status === "uploading" || status === "processing";
+}
 
 export default function PromoEditorContent({ workId }: { workId: string }) {
   const { user, loading: authLoading } = useAuth();
@@ -20,6 +24,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [justSavedClip, setJustSavedClip] = useState(false);
 
   const [clipStart, setClipStart] = useState(0);
   const [clipEnd, setClipEnd] = useState(30);
@@ -47,6 +52,9 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       setClipEnd(promo?.clipEndSec ?? Math.min(30, dur));
       setTitle(promo?.title ?? json.work.title);
       setDescription(promo?.description ?? json.work.description ?? "");
+      if (promo && !isPromoEncoding(promo.streamStatus) && promo.streamStatus === "ready") {
+        setJustSavedClip(false);
+      }
     } catch {
       setErr(t("myWorks.errorGeneric"));
     } finally {
@@ -57,6 +65,15 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const promo = data?.promo;
+  const promoEncoding = promo ? isPromoEncoding(promo.streamStatus) : false;
+
+  useEffect(() => {
+    if (!promoEncoding || !user) return;
+    const id = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(id);
+  }, [promoEncoding, user, load]);
 
   const authFetch = async (url: string, init?: RequestInit) => {
     if (!user) throw new Error("no user");
@@ -90,7 +107,8 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         setErr(body.message ?? t("myWorks.errorGeneric"));
         return;
       }
-      setMsg(t("promoEditor.saved"));
+      setJustSavedClip(true);
+      setMsg(t("promoEditor.savedEncoding"));
       await load();
     } catch {
       setErr(t("myWorks.errorGeneric"));
@@ -110,6 +128,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         return;
       }
       setMsg(t("promoEditor.submitted"));
+      setJustSavedClip(false);
       await load();
     } catch {
       setErr(t("myWorks.errorGeneric"));
@@ -128,8 +147,9 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         setErr(body.message ?? t("myWorks.errorGeneric"));
         return;
       }
+      setJustSavedClip(false);
+      setMsg(null);
       await load();
-      setMsg(t("promoEditor.deleted"));
     } catch {
       setErr(t("myWorks.errorGeneric"));
     } finally {
@@ -167,14 +187,19 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     );
   }
 
-  const { work, promo } = data;
+  const { work } = data;
   const duration = work.durationSec ?? 600;
   const locked =
     promo?.platformStatus === "pending" || promo?.platformStatus === "published";
+  const fullReady = work.streamStatus === "ready";
   const canSubmit =
     promo &&
     (promo.platformStatus === "draft" || promo.platformStatus === "rejected") &&
     promo.streamStatus === "ready";
+  const showEditor = fullReady && !locked && !promoEncoding;
+  const savedClip =
+    promo &&
+    (promoEncoding || justSavedClip || promo.platformStatus === "draft" || promo.platformStatus === "rejected");
 
   return (
     <main className="min-h-screen bg-xiio-bg px-4 py-16 md:px-8">
@@ -185,11 +210,37 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         <h1 className="text-2xl font-bold text-white mb-1">{t("promoEditor.title")}</h1>
         <p className="text-xiio-muted text-sm mb-6">{work.title}</p>
 
-        {work.streamStatus !== "ready" && (
-          <p className="mb-4 text-amber-400 text-sm">{t("promoEditor.waitEncoding")}</p>
+        {!fullReady && (
+          <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-300 text-sm">
+            {t("promoEditor.waitEncoding")}
+          </div>
         )}
 
-        {msg && (
+        {promoEncoding && (
+          <PromoStatusBanner
+            variant="encoding"
+            title={t("promoEditor.statusEncodingTitle")}
+            body={t("promoEditor.statusEncodingBody")}
+          />
+        )}
+
+        {!promoEncoding && promo?.streamStatus === "ready" && promo.platformStatus === "draft" && (
+          <PromoStatusBanner
+            variant="ready"
+            title={t("promoEditor.statusReadyTitle")}
+            body={t("promoEditor.statusReadyBody")}
+          />
+        )}
+
+        {!promoEncoding && promo?.platformStatus === "pending" && (
+          <PromoStatusBanner
+            variant="pending"
+            title={t("promoEditor.statusPendingTitle")}
+            body={t("promoEditor.statusPendingBody")}
+          />
+        )}
+
+        {msg && !promoEncoding && (
           <div className="mb-4 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-2 text-emerald-400 text-sm">
             {msg}
           </div>
@@ -202,109 +253,131 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
 
         {work.playbackUrl && (
           <div className="mb-6">
+            <p className="text-xs text-xiio-muted mb-2">{t("promoEditor.fullVideoLabel")}</p>
             <PlaybackVideo src={work.playbackUrl} />
           </div>
         )}
 
-        <div className="space-y-4 rounded-2xl border border-white/10 bg-xiio-surface p-6">
-          <p className="text-sm text-xiio-muted">{t("promoEditor.clipHint")}</p>
-
-          <div>
-            <label className="block text-sm text-xiio-muted mb-1">
-              {t("promoEditor.clipStart")} ({clipStart.toFixed(1)}s)
-            </label>
-            <input
-              type="range"
-              min={0}
-              max={Math.max(0, duration - 3)}
-              step={0.5}
-              value={clipStart}
-              disabled={locked || work.streamStatus !== "ready"}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                setClipStart(v);
-                if (clipEnd <= v + 3) setClipEnd(Math.min(v + 30, duration));
-              }}
-              className="w-full"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-xiio-muted mb-1">
-              {t("promoEditor.clipEnd")} ({clipEnd.toFixed(1)}s) —{" "}
-              {t("promoEditor.clipDuration", { sec: (clipEnd - clipStart).toFixed(1) })}
-            </label>
-            <input
-              type="range"
-              min={clipStart + 3}
-              max={Math.min(duration, clipStart + 120)}
-              step={0.5}
-              value={clipEnd}
-              disabled={locked || work.streamStatus !== "ready"}
-              onChange={(e) => setClipEnd(Number(e.target.value))}
-              className="w-full"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-xiio-muted mb-1">{t("promoEditor.promoTitle")}</label>
-            <input
-              type="text"
-              value={title}
-              disabled={locked}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white disabled:opacity-50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-xiio-muted mb-1">{t("promoEditor.promoDescription")}</label>
-            <textarea
-              value={description}
-              disabled={locked}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white disabled:opacity-50 resize-none"
-            />
-          </div>
-
-          {promo?.playbackUrl && promo.streamStatus === "ready" && (
-            <div>
-              <p className="text-sm text-xiio-muted mb-2">{t("promoEditor.preview")}</p>
-              <PlaybackVideo src={promo.playbackUrl} maxHeightClass="max-h-[70vh]" />
+        {savedClip && promo && (
+          <section className="mb-6 rounded-2xl border border-xiio-accent/30 bg-xiio-accent/10 p-5">
+            <div className="flex items-start gap-3">
+              {promoEncoding && (
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+                  <span className="h-4 w-4 rounded-full border-2 border-xiio-accent border-t-transparent animate-spin" />
+                </span>
+              )}
+              {!promoEncoding && promo.streamStatus === "ready" && (
+                <span className="mt-0.5 text-emerald-400 text-lg" aria-hidden>
+                  ✓
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <h2 className="text-white font-semibold text-sm mb-1">
+                  {promoEncoding
+                    ? t("promoEditor.savedClipEncoding")
+                    : t("promoEditor.savedClipReady")}
+                </h2>
+                <ul className="text-sm text-white/80 space-y-1">
+                  <li>
+                    {t("promoEditor.clipRange", {
+                      start: promo.clipStartSec.toFixed(1),
+                      end: promo.clipEndSec.toFixed(1),
+                      sec: (promo.clipEndSec - promo.clipStartSec).toFixed(1),
+                    })}
+                  </li>
+                  <li>{promo.title}</li>
+                  {promo.description && <li className="text-xiio-muted">{promo.description}</li>}
+                </ul>
+                <p className="text-xs text-xiio-muted mt-2">
+                  {t(`myWorks.promoStatus.${promo.platformStatus}`)} ·{" "}
+                  {t(`myWorks.stream.${promo.streamStatus ?? "processing"}`)}
+                </p>
+              </div>
             </div>
-          )}
+            {promoEncoding && (
+              <p className="text-xs text-xiio-muted mt-3 border-t border-white/10 pt-3">
+                {t("promoEditor.encodingHint")}
+              </p>
+            )}
+          </section>
+        )}
 
-          {promo && (
-            <p className="text-xs text-xiio-muted">
-              {t(`myWorks.promoStatus.${promo.platformStatus}`)} ·{" "}
-              {t(`myWorks.stream.${promo.streamStatus ?? "processing"}`)}
-            </p>
-          )}
+        {promo?.playbackUrl && promo.streamStatus === "ready" && (
+          <section className="mb-6">
+            <p className="text-sm text-xiio-muted mb-2">{t("promoEditor.preview")}</p>
+            <PlaybackVideo src={promo.playbackUrl} maxHeightClass="max-h-[70vh]" />
+          </section>
+        )}
 
-          <div className="flex flex-wrap gap-2 pt-2">
-            {!locked && work.streamStatus === "ready" && (
+        {showEditor && (
+          <div className="space-y-4 rounded-2xl border border-white/10 bg-xiio-surface p-6">
+            <p className="text-sm text-xiio-muted">{t("promoEditor.clipHint")}</p>
+
+            <div>
+              <label className="block text-sm text-xiio-muted mb-1">
+                {t("promoEditor.clipStart")} ({clipStart.toFixed(1)}s)
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={Math.max(0, duration - 3)}
+                step={0.5}
+                value={clipStart}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setClipStart(v);
+                  if (clipEnd <= v + 3) setClipEnd(Math.min(v + 30, duration));
+                }}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-xiio-muted mb-1">
+                {t("promoEditor.clipEnd")} ({clipEnd.toFixed(1)}s) —{" "}
+                {t("promoEditor.clipDuration", { sec: (clipEnd - clipStart).toFixed(1) })}
+              </label>
+              <input
+                type="range"
+                min={clipStart + 3}
+                max={Math.min(duration, clipStart + 120)}
+                step={0.5}
+                value={clipEnd}
+                onChange={(e) => setClipEnd(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-xiio-muted mb-1">{t("promoEditor.promoTitle")}</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-xiio-muted mb-1">{t("promoEditor.promoDescription")}</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white resize-none"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-2">
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void saveClip()}
-                className="px-4 py-2 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-medium disabled:opacity-40"
+                className="px-4 py-2.5 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-medium disabled:opacity-40"
               >
                 {busy ? t("common.processing") : t("promoEditor.saveClip")}
               </button>
-            )}
-            {canSubmit && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void submitReview()}
-                className="px-4 py-2 rounded-lg border border-emerald-500/40 text-emerald-400 text-sm hover:bg-emerald-500/10 disabled:opacity-40"
-              >
-                {t("promoEditor.submitReview")}
-              </button>
-            )}
-            {promo &&
-              (promo.platformStatus === "draft" || promo.platformStatus === "rejected") && (
+              {promo && (promo.platformStatus === "draft" || promo.platformStatus === "rejected") && (
                 <button
                   type="button"
                   disabled={busy}
@@ -314,9 +387,77 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
                   {t("promoEditor.deletePromo")}
                 </button>
               )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {promoEncoding && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled
+              className="px-4 py-2.5 rounded-lg bg-white/10 text-xiio-muted text-sm font-medium cursor-not-allowed"
+            >
+              {t("promoEditor.encodingButton")}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void load()}
+              className="px-4 py-2 rounded-lg border border-white/15 text-white text-sm hover:bg-white/5 disabled:opacity-40"
+            >
+              {t("promoEditor.refreshStatus")}
+            </button>
+            {promo && (promo.platformStatus === "draft" || promo.platformStatus === "rejected") && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void deletePromo()}
+                className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 text-sm hover:bg-red-500/10 disabled:opacity-40"
+              >
+                {t("promoEditor.deletePromo")}
+              </button>
+            )}
+          </div>
+        )}
+
+        {canSubmit && (
+          <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+            <p className="text-sm text-emerald-300/90 mb-3">{t("promoEditor.submitHint")}</p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void submitReview()}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium disabled:opacity-40"
+            >
+              {busy ? t("common.processing") : t("promoEditor.submitReview")}
+            </button>
+          </div>
+        )}
       </div>
     </main>
+  );
+}
+
+function PromoStatusBanner({
+  variant,
+  title,
+  body,
+}: {
+  variant: "encoding" | "ready" | "pending";
+  title: string;
+  body: string;
+}) {
+  const styles = {
+    encoding: "border-xiio-accent/40 bg-xiio-accent/10 text-white",
+    ready: "border-emerald-500/40 bg-emerald-500/10 text-emerald-100",
+    pending: "border-amber-500/40 bg-amber-500/10 text-amber-100",
+  };
+
+  return (
+    <div className={`mb-4 rounded-xl border px-4 py-3 ${styles[variant]}`}>
+      <p className="font-semibold text-sm mb-0.5">{title}</p>
+      <p className="text-sm opacity-90">{body}</p>
+    </div>
   );
 }

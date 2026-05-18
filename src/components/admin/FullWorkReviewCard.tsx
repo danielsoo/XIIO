@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
+import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useTranslations } from "@/context/LocaleContext";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
@@ -20,30 +21,38 @@ export type FullQueueItem = WorkDoc & {
 type Props = {
   item: FullQueueItem;
   busy: boolean;
-  rejectReasonCode: RejectReasonCode | "";
-  rejectReason: string;
   onApprove: (approvedCategory: string, approvedTags: string[]) => void;
-  onReject: () => void;
+  onReject: (rejectReasonCode: RejectReasonCode, rejectReason: string) => void;
 };
 
-export default function FullWorkReviewCard({
-  item,
-  busy,
-  rejectReasonCode,
-  rejectReason,
-  onApprove,
-  onReject,
-}: Props) {
+export default function FullWorkReviewCard({ item, busy, onApprove, onReject }: Props) {
   const { t } = useTranslations();
   const [approvedCategory, setApprovedCategory] = useState(item.proposedCategory ?? "");
   const [tagsText, setTagsText] = useState((item.proposedTags ?? []).join(", "));
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReasonCode, setRejectReasonCode] = useState<RejectReasonCode | "">("");
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
     setApprovedCategory(item.proposedCategory ?? "");
     setTagsText((item.proposedTags ?? []).join(", "));
+    setRejectOpen(false);
+    setRejectReasonCode("");
+    setRejectReason("");
   }, [item.id, item.proposedCategory, item.proposedTags]);
 
-  const canReject = rejectReasonCode !== "" && (rejectReasonCode !== "other" || rejectReason.trim().length > 0);
+  const canConfirmReject = canSubmitReject(rejectReasonCode, rejectReason, true);
+
+  const openReject = () => {
+    setRejectOpen(true);
+    setRejectReasonCode("");
+    setRejectReason("");
+  };
+
+  const confirmReject = () => {
+    if (!canConfirmReject || !rejectReasonCode) return;
+    onReject(rejectReasonCode, rejectReason);
+  };
 
   return (
     <li className="rounded-2xl border border-white/10 bg-xiio-surface p-5">
@@ -98,7 +107,8 @@ export default function FullWorkReviewCard({
             type="text"
             value={approvedCategory}
             onChange={(e) => setApprovedCategory(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            disabled={rejectOpen}
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white disabled:opacity-50"
           />
         </div>
         <div>
@@ -107,16 +117,17 @@ export default function FullWorkReviewCard({
             type="text"
             value={tagsText}
             onChange={(e) => setTagsText(e.target.value)}
+            disabled={rejectOpen}
             placeholder={t("admin.contentReview.tagsPlaceholder")}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white disabled:opacity-50"
           />
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-start">
         <button
           type="button"
-          disabled={busy || item.streamStatus !== "ready"}
+          disabled={busy || item.streamStatus !== "ready" || rejectOpen}
           onClick={() =>
             onApprove(
               approvedCategory,
@@ -130,15 +141,45 @@ export default function FullWorkReviewCard({
         >
           {t("admin.contentReview.approve")}
         </button>
-        <button
-          type="button"
-          disabled={busy || !canReject}
-          onClick={onReject}
-          className="px-3 py-1.5 text-xs rounded-lg border border-red-500/40 text-red-400 disabled:opacity-40"
-        >
-          {t("admin.contentReview.reject")}
-        </button>
+        {!rejectOpen ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={openReject}
+            className="px-3 py-1.5 text-xs rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 disabled:opacity-40"
+          >
+            {t("admin.contentReview.reject")}
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled={busy || !canConfirmReject}
+              onClick={confirmReject}
+              className="px-3 py-1.5 text-xs rounded-lg bg-red-600/80 text-white disabled:opacity-40"
+            >
+              {t("admin.contentReview.rejectConfirm")}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setRejectOpen(false)}
+              className="px-3 py-1.5 text-xs rounded-lg border border-white/20 text-white hover:bg-white/5 disabled:opacity-40"
+            >
+              {t("common.cancel")}
+            </button>
+          </>
+        )}
       </div>
+
+      {rejectOpen && (
+        <RejectReasonFields
+          rejectReasonCode={rejectReasonCode}
+          rejectReason={rejectReason}
+          onCodeChange={setRejectReasonCode}
+          onReasonChange={setRejectReason}
+        />
+      )}
     </li>
   );
 }
