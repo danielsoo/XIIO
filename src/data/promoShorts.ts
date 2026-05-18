@@ -1,7 +1,7 @@
 import type { PromoShort } from "@/types/promoShort";
 
-/** 홈 메인 홍보 숏폼 — 추후 Firestore `videos` 등에서 교체 */
-export const HOME_PROMO_SHORTS: PromoShort[] = [
+/** 홍보 숏폼 목록 — 추후 Firestore `videos` 등에서 교체 */
+export const PROMO_SHORTS: PromoShort[] = [
   {
     id: "promo-1",
     videoUrl:
@@ -33,3 +33,6 @@ export const HOME_PROMO_SHORTS: PromoShort[] = [
     likeCount: 2103,
   },
 ];
+
+/** @deprecated PROMO_SHORTS 사용 */
+export const HOME_PROMO_SHORTS = PROMO_SHORTS;

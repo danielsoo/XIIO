@@ -191,6 +191,11 @@ export const messages = {
       schoolBattleTitle: "학교 대항전",
       schoolBattleSubtitle: "전국 대학교가 맞붙는 XIIO만의 특별 콘텐츠",
     },
+    shorts: {
+      fullscreen: "전체 화면",
+      exitFullscreen: "전체 화면 닫기",
+      fullscreenHint: "우측 상단 버튼 또는 영상 더블 탭으로 전체 화면을 켤 수 있어요.",
+    },
     admin: {
       loading: "불러오는 중…",
       loginRequired: "어드민 패널은 로그인 후 이용할 수 있습니다.",
@@ -283,6 +288,14 @@ export const messages = {
         "업로드하려면 먼저 업로더 보증금(소액 결제)을 완료해 주세요.",
       errorNoUploadUrl: "업로드 URL을 받지 못했습니다.",
       errorStreamFailed: "Cloudflare Stream 업로드에 실패했습니다.",
+      errorStreamNotConfigured:
+        "Cloudflare Stream이 설정되지 않았습니다. CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_STREAM_API_TOKEN을 확인하세요.",
+      errorStreamApiFailed: "Cloudflare Stream API 오류",
+      errorFirestoreWriteFailed: "Firestore 저장 실패",
+      errorAdminNotConfigured:
+        "서버 Firebase Admin이 없습니다. FIREBASE_SERVICE_ACCOUNT_JSON을 설정하세요.",
+      errorUnauthorized: "로그인이 필요하거나 인증이 만료되었습니다.",
+      errorDepositDisabled: "보증금 결제가 비활성화되어 있습니다.",
       errorUploadFailed: "업로드 중 오류가 발생했습니다.",
       errorWithCode: "오류 {code}",
     },
@@ -475,6 +488,11 @@ export const messages = {
       schoolBattleTitle: "School Battle",
       schoolBattleSubtitle: "Universities compete in XIIO's signature format",
     },
+    shorts: {
+      fullscreen: "Fullscreen",
+      exitFullscreen: "Exit fullscreen",
+      fullscreenHint: "Use the top-right button or double-tap the video for fullscreen.",
+    },
     admin: {
       loading: "Loading…",
       loginRequired: "Sign in to access the admin panel.",
@@ -563,6 +581,14 @@ export const messages = {
       errorDepositRequired: "Complete the uploader deposit before uploading.",
       errorNoUploadUrl: "Could not get upload URL.",
       errorStreamFailed: "Cloudflare Stream upload failed.",
+      errorStreamNotConfigured:
+        "Cloudflare Stream is not configured. Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_STREAM_API_TOKEN.",
+      errorStreamApiFailed: "Cloudflare Stream API error",
+      errorFirestoreWriteFailed: "Could not save to Firestore",
+      errorAdminNotConfigured:
+        "Firebase Admin is not configured on the server. Set FIREBASE_SERVICE_ACCOUNT_JSON.",
+      errorUnauthorized: "Sign in required or session expired.",
+      errorDepositDisabled: "Deposit payments are disabled.",
       errorUploadFailed: "Something went wrong during upload.",
       errorWithCode: "Error {code}",
     },

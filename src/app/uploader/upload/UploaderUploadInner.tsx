@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
+import { formatUploadApiError, type UploadApiErrorBody } from "@/lib/uploadErrors";
 
 export default function UploaderUploadInner() {
   const { user, loading: authLoading } = useAuth();
@@ -41,14 +42,9 @@ export default function UploaderUploadInner() {
         },
         body: JSON.stringify({ title: title || file.name }),
       });
-      const sessionData = await sessionRes.json().catch(() => ({}));
+      const sessionData = (await sessionRes.json().catch(() => ({}))) as UploadApiErrorBody;
       if (!sessionRes.ok) {
-        const code = (sessionData as { error?: string }).error;
-        if (code === "deposit_required") {
-          setErr(t("uploader.errorDepositRequired"));
-        } else {
-          setErr(code ?? t("uploader.errorWithCode", { code: sessionRes.status }));
-        }
+        setErr(formatUploadApiError(t, sessionRes.status, sessionData));
         return;
       }
 
@@ -63,7 +59,12 @@ export default function UploaderUploadInner() {
 
       const uploadRes = await fetch(uploadURL, { method: "POST", body: form });
       if (!uploadRes.ok) {
-        setErr(t("uploader.errorStreamFailed"));
+        const streamBody = await uploadRes.text().catch(() => "");
+        setErr(
+          streamBody
+            ? `${t("uploader.errorStreamFailed")} (HTTP ${uploadRes.status}): ${streamBody.slice(0, 300)}`
+            : `${t("uploader.errorStreamFailed")} (HTTP ${uploadRes.status})`
+        );
         return;
       }
 
@@ -128,7 +129,7 @@ export default function UploaderUploadInner() {
           </div>
         )}
         {err && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm">
+          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
             {err}
           </div>
         )}
