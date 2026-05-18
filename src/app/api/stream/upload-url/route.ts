@@ -74,11 +74,15 @@ export async function POST(request: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[upload-url] Cloudflare Stream:", msg);
+    const storageFull =
+      /storage capacity exceeded|storage quota|exceeded your allocated storage/i.test(msg);
     return jsonError(
-      "stream_api_failed",
+      storageFull ? "stream_storage_full" : "stream_api_failed",
       msg || "Cloudflare Stream API 호출에 실패했습니다.",
-      502,
-      "API 토큰 권한(Stream Edit)과 계정 ID를 확인하세요."
+      storageFull ? 507 : 502,
+      storageFull
+        ? "Cloudflare 대시보드 → Stream → Videos에서 기존 영상을 삭제하거나, Plans에서 저장 용량(분)을 늘리세요."
+        : "API 토큰 권한(Stream Edit)과 계정 ID를 확인하세요."
     );
   }
 

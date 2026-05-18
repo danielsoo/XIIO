@@ -291,6 +291,8 @@ export const messages = {
       errorStreamNotConfigured:
         "Cloudflare Stream이 설정되지 않았습니다. CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_STREAM_API_TOKEN을 확인하세요.",
       errorStreamApiFailed: "Cloudflare Stream API 오류",
+      errorStreamStorageFull:
+        "Stream 저장 용량이 가득 찼습니다. Cloudflare에서 영상을 삭제하거나 저장 플랜(분)을 늘려 주세요.",
       errorFirestoreWriteFailed: "Firestore 저장 실패",
       errorAdminNotConfigured:
         "서버 Firebase Admin이 없습니다. FIREBASE_SERVICE_ACCOUNT_JSON을 설정하세요.",
@@ -584,6 +586,8 @@ export const messages = {
       errorStreamNotConfigured:
         "Cloudflare Stream is not configured. Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_STREAM_API_TOKEN.",
       errorStreamApiFailed: "Cloudflare Stream API error",
+      errorStreamStorageFull:
+        "Stream storage is full. Delete videos in Cloudflare or increase your storage plan.",
       errorFirestoreWriteFailed: "Could not save to Firestore",
       errorAdminNotConfigured:
         "Firebase Admin is not configured on the server. Set FIREBASE_SERVICE_ACCOUNT_JSON.",

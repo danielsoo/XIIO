@@ -7,6 +7,7 @@ export type UploadApiErrorBody = {
 const ERROR_I18N_KEYS: Record<string, string> = {
   stream_not_configured: "uploader.errorStreamNotConfigured",
   stream_api_failed: "uploader.errorStreamApiFailed",
+  stream_storage_full: "uploader.errorStreamStorageFull",
   firestore_write_failed: "uploader.errorFirestoreWriteFailed",
   admin_not_configured: "uploader.errorAdminNotConfigured",
   unauthorized: "uploader.errorUnauthorized",
