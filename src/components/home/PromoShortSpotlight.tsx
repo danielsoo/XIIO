@@ -175,7 +175,6 @@ export default function PromoShortSpotlight({ items }: { items: PromoShort[] }) 
             {t("home.promoBadge")}
           </p>
           <h2 className="text-2xl md:text-3xl font-black text-white">{t("home.promoSectionTitle")}</h2>
-          <p className="text-sm text-xiio-muted mt-1 max-w-xl">{t("home.promoSectionHint")}</p>
         </div>
         <Link
           href="/shorts"
