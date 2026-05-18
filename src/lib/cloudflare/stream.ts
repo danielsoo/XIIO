@@ -5,6 +5,8 @@ export type StreamDirectUpload = {
 
 export type StreamVideoInfo = {
   uid: string;
+  /** Cloudflare status.state — ready, inprogress, pendingupload, error, … */
+  statusState?: string;
   duration?: number;
   width?: number;
   height?: number;
@@ -122,6 +124,7 @@ export async function getStreamVideo(streamUid: string): Promise<StreamVideoInfo
     result?: {
       uid: string;
       duration?: number;
+      status?: { state?: string };
       input?: { width?: number; height?: number };
       playback?: { hls?: string };
       thumbnail?: string;
@@ -131,6 +134,7 @@ export async function getStreamVideo(streamUid: string): Promise<StreamVideoInfo
   const r = json.result;
   return {
     uid: r.uid,
+    statusState: r.status?.state,
     duration: r.duration,
     width: r.input?.width,
     height: r.input?.height,

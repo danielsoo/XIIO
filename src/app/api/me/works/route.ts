@@ -8,6 +8,7 @@ import {
   promoRef,
   worksCol,
 } from "@/lib/server/works";
+import { syncPromoStreamStatusIfNeeded, syncWorkStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 
 export async function GET(request: Request) {
@@ -23,13 +24,35 @@ export async function GET(request: Request) {
   const snap = await worksCol(db, session.uid).orderBy("sortOrder", "asc").get();
   const items = await Promise.all(
     snap.docs.map(async (doc) => {
-      const work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
+      let work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
+      if (work.streamUid) {
+        const synced = await syncWorkStreamStatusIfNeeded(
+          db,
+          session.uid,
+          doc.id,
+          work.streamUid,
+          work.streamStatus
+        );
+        work = { ...work, streamStatus: synced };
+      }
       const promoSnap = await promoRef(db, session.uid, doc.id).get();
       let promo = null;
       if (promoSnap.exists) {
+        const parsed = parsePromoDoc(promoSnap.data() as Record<string, unknown>);
+        let streamStatus = parsed.streamStatus;
+        if (parsed.streamUid && streamStatus) {
+          streamStatus = await syncPromoStreamStatusIfNeeded(
+            db,
+            session.uid,
+            doc.id,
+            parsed.streamUid,
+            streamStatus
+          );
+        }
         promo = {
           id: PROMO_SHORT_DOC_ID,
-          ...parsePromoDoc(promoSnap.data() as Record<string, unknown>),
+          ...parsed,
+          streamStatus,
         };
       }
       let playbackUrl: string | undefined;

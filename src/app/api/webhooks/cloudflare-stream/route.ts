@@ -1,68 +1,126 @@
 import { NextResponse } from "next/server";
+import type { Firestore } from "firebase-admin/firestore";
+import { verifyStreamWebhookSignature } from "@/lib/cloudflare/verify-stream-webhook";
 import { getAdminDb } from "@/lib/server/firebase-admin";
 import { mapWebhookStreamStatus } from "@/lib/works/constants";
 import { FieldValue, promoRef, worksCol } from "@/lib/server/works";
-import { PROMO_SHORT_DOC_ID } from "@/types/work";
 
 export const runtime = "nodejs";
 
 type StreamWebhookPayload = {
   uid?: string;
+  readyToStream?: boolean;
   status?: { state?: string };
   meta?: Record<string, string>;
 };
 
+function resolveStreamStatus(payload: StreamWebhookPayload) {
+  if (payload.status?.state) return mapWebhookStreamStatus(payload.status.state);
+  if (payload.readyToStream) return "ready" as const;
+  return "processing" as const;
+}
+
+async function applyStreamStatus(
+  db: Firestore,
+  streamUid: string,
+  streamStatus: ReturnType<typeof mapWebhookStreamStatus>,
+  xiioUid: string,
+  workId: string,
+  kind: string
+) {
+  if (kind === "promo") {
+    await promoRef(db, xiioUid, workId).set(
+      { streamUid, streamStatus, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+    return;
+  }
+  await worksCol(db, xiioUid).doc(workId).set(
+    { streamUid, streamStatus, updatedAt: FieldValue.serverTimestamp() },
+    { merge: true }
+  );
+}
+
+async function applyByStreamUidLookup(
+  db: Firestore,
+  streamUid: string,
+  streamStatus: ReturnType<typeof mapWebhookStreamStatus>
+): Promise<boolean> {
+  const workSnap = await db.collectionGroup("works").where("streamUid", "==", streamUid).limit(10).get();
+  if (!workSnap.empty) {
+    await Promise.all(
+      workSnap.docs.map((doc) =>
+        doc.ref.update({ streamStatus, updatedAt: FieldValue.serverTimestamp() })
+      )
+    );
+    return true;
+  }
+
+  const promoSnap = await db
+    .collectionGroup("promoShort")
+    .where("streamUid", "==", streamUid)
+    .limit(10).get();
+
+  if (!promoSnap.empty) {
+    await Promise.all(
+      promoSnap.docs.map((doc) =>
+        doc.ref.update({ streamStatus, updatedAt: FieldValue.serverTimestamp() })
+      )
+    );
+    return true;
+  }
+
+  return false;
+}
+
 export async function POST(request: Request) {
-  const secret = process.env.CLOUDFLARE_STREAM_WEBHOOK_SECRET;
+  const rawBody = await request.text();
+  const secret = process.env.CLOUDFLARE_STREAM_WEBHOOK_SECRET?.trim();
+
   if (secret) {
-    const header = request.headers.get("webhook-signature") ?? request.headers.get("x-webhook-signature");
-    if (header !== secret) {
-      return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
+    const sigHeader =
+      request.headers.get("webhook-signature") ??
+      request.headers.get("Webhook-Signature");
+    const verified = verifyStreamWebhookSignature(rawBody, sigHeader, secret);
+    if (!verified.ok) {
+      console.warn("[cloudflare-stream webhook] signature failed:", verified.reason);
+      return NextResponse.json({ error: "invalid_signature", reason: verified.reason }, { status: 401 });
     }
   }
 
   let payload: StreamWebhookPayload;
   try {
-    payload = (await request.json()) as StreamWebhookPayload;
+    payload = JSON.parse(rawBody) as StreamWebhookPayload;
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
   const streamUid = payload.uid;
+  if (!streamUid) {
+    return NextResponse.json({ received: true, handled: false, reason: "no_uid" });
+  }
+
   const meta = payload.meta ?? {};
   const xiioUid = meta.xiio_uid;
   const workId = meta.xiio_work_id ?? meta.xiio_video_id;
   const kind = meta.xiio_kind ?? "full";
-  const streamStatus = mapWebhookStreamStatus(payload.status?.state);
-
-  if (!streamUid || !xiioUid || !workId) {
-    return NextResponse.json({ received: true, handled: false });
-  }
+  const streamStatus = resolveStreamStatus(payload);
 
   const db = getAdminDb();
   if (!db) {
     return NextResponse.json({ error: "admin_not_configured" }, { status: 503 });
   }
 
-  if (kind === "promo") {
-    await promoRef(db, xiioUid, workId).set(
-      {
-        streamUid,
-        streamStatus,
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-  } else {
-    await worksCol(db, xiioUid).doc(workId).set(
-      {
-        streamUid,
-        streamStatus,
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
+  if (xiioUid && workId) {
+    await applyStreamStatus(db, streamUid, streamStatus, xiioUid, workId, kind);
+    return NextResponse.json({ received: true, handled: true, streamStatus, kind, workId, via: "meta" });
   }
 
-  return NextResponse.json({ received: true, handled: true, streamStatus, kind, workId });
+  const found = await applyByStreamUidLookup(db, streamUid, streamStatus);
+  return NextResponse.json({
+    received: true,
+    handled: found,
+    streamStatus,
+    via: found ? "streamUid_lookup" : "none",
+  });
 }

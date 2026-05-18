@@ -14,6 +14,20 @@
       "fields": [
         { "fieldPath": "platformStatus", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "works",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "streamUid", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "promoShort",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "streamUid", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

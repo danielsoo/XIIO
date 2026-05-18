@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { resolvePlaybackUrl } from "@/lib/cloudflare/stream";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
 import { getDbOrNull, parsePromoDoc, parseWorkDoc, promoRef, worksCol } from "@/lib/server/works";
+import {
+  syncPromoStreamStatusIfNeeded,
+  syncWorkStreamStatusIfNeeded,
+} from "@/lib/server/sync-stream-status";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 
 export async function GET(request: Request) {
@@ -17,8 +21,18 @@ export async function GET(request: Request) {
     const snap = await db.collectionGroup("works").where("platformStatus", "==", "pending").get();
     const items = await Promise.all(
       snap.docs.map(async (doc) => {
-        const work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
+        let work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
         const ownerUid = doc.ref.parent.parent?.id ?? "";
+        if (ownerUid && work.streamUid) {
+          const synced = await syncWorkStreamStatusIfNeeded(
+            db,
+            ownerUid,
+            doc.id,
+            work.streamUid,
+            work.streamStatus
+          );
+          work = { ...work, streamStatus: synced };
+        }
         const userSnap = ownerUid ? await db.collection("users").doc(ownerUid).get() : null;
         const playbackUrl =
           work.streamUid && work.streamStatus === "ready"
@@ -40,11 +54,22 @@ export async function GET(request: Request) {
     const snap = await db.collectionGroup("promoShort").where("platformStatus", "==", "pending").get();
     const items = await Promise.all(
       snap.docs.map(async (promoDoc) => {
-        const promo = parsePromoDoc(promoDoc.data() as Record<string, unknown>);
+        const parsed = parsePromoDoc(promoDoc.data() as Record<string, unknown>);
         const workRef = promoDoc.ref.parent.parent;
         if (!workRef) return null;
         const workId = workRef.id;
         const ownerUid = workRef.parent.parent?.id ?? "";
+        let streamStatus = parsed.streamStatus;
+        if (ownerUid && parsed.streamUid && streamStatus) {
+          streamStatus = await syncPromoStreamStatusIfNeeded(
+            db,
+            ownerUid,
+            workId,
+            parsed.streamUid,
+            streamStatus
+          );
+        }
+        const promo = { ...parsed, streamStatus };
         const workSnap = await worksCol(db, ownerUid).doc(workId).get();
         if (!workSnap.exists) return null;
         const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
