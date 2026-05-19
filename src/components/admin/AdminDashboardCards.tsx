@@ -44,7 +44,7 @@ export default function AdminDashboardCards() {
         href: "/admin/payments",
         title: t("admin.cardPaymentsTitle"),
         description: t("admin.cardPaymentsDesc"),
-        ready: false,
+        ready: true,
       },
     ],
     [t, stats]

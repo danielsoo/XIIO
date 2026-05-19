@@ -64,6 +64,27 @@ export type AdminUsersListResponse = {
   nextCursor: string | null;
 };
 
+export type AdminPaymentEventListItem = {
+  id: string;
+  uid: string;
+  displayName: string;
+  email: string | null;
+  provider: string;
+  amountMinor: number | null;
+  currency: string | null;
+  processedAt?: unknown;
+  depositVerified: boolean;
+};
+
+export type AdminPaymentEventsListResponse = {
+  items: AdminPaymentEventListItem[];
+  nextCursor: string | null;
+  meta: {
+    depositEnabled: boolean;
+    providers: string[];
+  };
+};
+
 export type AdminUserDetail = {
   uid: string;
   displayName: string;

@@ -1,5 +1,5 @@
-import AdminPlaceholderPage from "@/components/admin/AdminPlaceholderPage";
+import AdminPaymentEventsList from "@/components/admin/AdminPaymentEventsList";
 
 export default function AdminPaymentsPage() {
-  return <AdminPlaceholderPage titleKey="admin.paymentsTitle" descriptionKey="admin.paymentsDesc" />;
+  return <AdminPaymentEventsList />;
 }
