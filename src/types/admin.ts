@@ -85,6 +85,45 @@ export type AdminPaymentEventsListResponse = {
   };
 };
 
+export const ADMIN_USER_ACTIVITY_KINDS = [
+  "account_joined",
+  "deposit_payment",
+  "report_filed",
+  "report_received",
+  "report_resolved",
+  "work_created",
+  "work_deletion_requested",
+  "work_revision_submitted",
+  "work_published",
+  "work_reviewed",
+  "promo_created",
+  "promo_submitted",
+  "promo_published",
+  "promo_revision_submitted",
+  "promo_deletion_requested",
+  "promo_like",
+  "watch_profile_created",
+] as const;
+
+export type AdminUserActivityKind = (typeof ADMIN_USER_ACTIVITY_KINDS)[number];
+
+export type AdminUserActivityCategory = "all" | "payments" | "reports" | "content" | "engagement";
+
+export type AdminUserActivityItem = {
+  id: string;
+  kind: AdminUserActivityKind;
+  at?: unknown;
+  title: string;
+  payload?: Record<string, string | number | boolean | null>;
+  href?: string;
+};
+
+export type AdminUserActivityResponse = {
+  items: AdminUserActivityItem[];
+  nextCursor: string | null;
+  limitations: string[];
+};
+
 export type AdminUserDetail = {
   uid: string;
   displayName: string;

@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { formatAdminTimestamp } from "@/lib/admin/format-timestamp";
 import type { AdminUserDetail } from "@/types/admin";
+import AdminUserActivityTimeline from "@/components/admin/AdminUserActivityTimeline";
 import { AdminWorkLink } from "@/components/admin/AdminEntityLinks";
 
 type Props = { uid: string };
@@ -139,6 +140,8 @@ export default function AdminUserProfile({ uid }: Props) {
           </ul>
         )}
       </section>
+
+      <AdminUserActivityTimeline uid={data.uid} />
     </div>
   );
 }
