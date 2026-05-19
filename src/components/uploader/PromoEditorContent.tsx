@@ -44,10 +44,12 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!user) return;
-    setLoading(true);
-    setErr(null);
+    if (!opts?.silent) {
+      setLoading(true);
+      setErr(null);
+    }
     try {
       const token = await user.getIdToken();
       const res = await fetch(`/api/me/works/${workId}/promo`, {
@@ -73,11 +75,14 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       const encStatus = json.revisionMode ? rev?.streamStatus : promo?.streamStatus;
       if (encStatus && !isPromoEncoding(encStatus) && encStatus === "ready") {
         setJustSavedClip(false);
+        if (opts?.silent) {
+          setMsg(t("promoEditor.statusReadyBody"));
+        }
       }
     } catch {
-      setErr(t("myWorks.errorGeneric"));
+      if (!opts?.silent) setErr(t("myWorks.errorGeneric"));
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
   }, [user, workId, t]);
 
@@ -89,12 +94,6 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const pendingRevision = data?.pendingRevision;
   const activeStreamStatus = revisionMode ? pendingRevision?.streamStatus : promo?.streamStatus;
   const promoEncoding = activeStreamStatus ? isPromoEncoding(activeStreamStatus) : false;
-
-  useEffect(() => {
-    if (!promoEncoding || !user) return;
-    const id = window.setInterval(() => void load(), 5000);
-    return () => window.clearInterval(id);
-  }, [promoEncoding, user, load]);
 
   const authFetch = async (url: string, init?: RequestInit) => {
     if (!user) throw new Error("no user");
@@ -130,7 +129,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       }
       setJustSavedClip(true);
       setMsg(t("promoEditor.savedEncoding"));
-      await load();
+      await load({ silent: true });
     } catch {
       setErr(t("myWorks.errorGeneric"));
     } finally {
@@ -481,7 +480,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
             <button
               type="button"
               disabled={busy}
-              onClick={() => void load()}
+              onClick={() => void load({ silent: true })}
               className="px-4 py-2 rounded-lg border border-white/15 text-white text-sm hover:bg-white/5 disabled:opacity-40"
             >
               {t("promoEditor.refreshStatus")}

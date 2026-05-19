@@ -7,9 +7,9 @@ import { useTranslations } from "@/context/LocaleContext";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import FullWorkReviewCard, { type FullQueueItem } from "@/components/admin/FullWorkReviewCard";
-import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
+import PromoReviewCard, { type PromoReviewItem } from "@/components/admin/PromoReviewCard";
 import { useAdminWorkStats, type AdminWorkStats } from "@/hooks/useAdminWorkStats";
-import type { PromoPlatformStatus, StreamStatus, WorkDoc, WorkSection } from "@/types/work";
+import type { StreamStatus, WorkSection } from "@/types/work";
 
 type Tab = "full_pending" | "promo_pending" | "removal";
 
@@ -19,23 +19,6 @@ function tabPendingCount(tab: Tab, stats: AdminWorkStats | null): number {
   if (tab === "promo_pending") return stats.pendingPromo;
   return stats.removalRequested;
 }
-
-type PromoQueueItem = {
-  workId: string;
-  ownerUid: string;
-  ownerEmail: string | null;
-  ownerName: string | null;
-  isRevision?: boolean;
-  work: WorkDoc;
-  promo: {
-    id: string;
-    platformStatus: PromoPlatformStatus;
-    playbackUrl?: string;
-    title?: string;
-    clipStartSec: number;
-    clipEndSec: number;
-  };
-};
 
 type RemovalItem = {
   kind: "full" | "promo";
@@ -218,107 +201,33 @@ export default function AdminContentReview() {
         </ul>
       ) : tab === "promo_pending" ? (
         <ul className="space-y-4">
-          {(items as PromoQueueItem[]).map((row) => {
+          {(items as PromoReviewItem[]).map((row) => {
             const promoKey = `promo_${row.ownerUid}_${row.workId}`;
             const rejectOpen = promoRejectOpenKey === promoKey;
-            const canPromoReject = canSubmitReject("", promoRejectReason, false);
 
             return (
-            <li
-              key={`${row.ownerUid}_${row.workId}`}
-              className="rounded-2xl border border-white/10 bg-xiio-surface p-5"
-            >
-              <h2 className="text-lg font-semibold text-white flex flex-wrap items-center gap-2">
-                <Link
-                  href={`/admin/content/works/${row.ownerUid}/${row.workId}`}
-                  className="hover:text-xiio-accent transition"
-                >
-                  {row.promo.title ?? row.work.title}
-                </Link>
-                {row.isRevision && (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
-                    {t("admin.contentReview.revisionBadge")}
-                  </span>
-                )}
-              </h2>
-              <p className="text-xs text-xiio-muted mb-2">
-                <Link
-                  href={`/admin/users/${row.ownerUid}`}
-                  className="text-xiio-accent hover:underline"
-                >
-                  {row.ownerName ?? row.ownerEmail ?? row.ownerUid}
-                </Link>{" "}
-                · {row.work.title} · {row.promo.clipStartSec}s–{row.promo.clipEndSec}s
-              </p>
-              <AdminEntityLinks
-                ownerUid={row.ownerUid}
-                workId={row.workId}
-                className="mb-3"
+              <PromoReviewCard
+                key={promoKey}
+                row={row}
+                busy={busyKey === promoKey}
+                rejectOpen={rejectOpen}
+                rejectReason={promoRejectReason}
+                onRejectOpen={() => {
+                  setPromoRejectOpenKey(promoKey);
+                  setPromoRejectReason("");
+                }}
+                onRejectCancel={() => {
+                  setPromoRejectOpenKey(null);
+                  setPromoRejectReason("");
+                }}
+                onApprove={() => void patchPromo(row.ownerUid, row.workId, "approve")}
+                onRejectConfirm={() =>
+                  void patchPromo(row.ownerUid, row.workId, "reject", {
+                    rejectReason: promoRejectReason.trim(),
+                  })
+                }
+                onRejectReasonChange={setPromoRejectReason}
               />
-              {row.promo.playbackUrl && (
-                <div className="mb-3 max-w-3xl">
-                  <PlaybackVideo src={row.promo.playbackUrl} maxHeightClass="max-h-[60vh]" />
-                </div>
-              )}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={busyKey === promoKey || rejectOpen}
-                  onClick={() => void patchPromo(row.ownerUid, row.workId, "approve")}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-emerald-600/80 text-white disabled:opacity-40"
-                >
-                  {t("admin.contentReview.approve")}
-                </button>
-                {!rejectOpen ? (
-                  <button
-                    type="button"
-                    disabled={busyKey === promoKey}
-                    onClick={() => {
-                      setPromoRejectOpenKey(promoKey);
-                      setPromoRejectReason("");
-                    }}
-                    className="px-3 py-1.5 text-xs rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 disabled:opacity-40"
-                  >
-                    {t("admin.contentReview.reject")}
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      disabled={busyKey === promoKey || !canPromoReject}
-                      onClick={() =>
-                        void patchPromo(row.ownerUid, row.workId, "reject", {
-                          rejectReason: promoRejectReason.trim(),
-                        })
-                      }
-                      className="px-3 py-1.5 text-xs rounded-lg bg-red-600/80 text-white disabled:opacity-40"
-                    >
-                      {t("admin.contentReview.rejectConfirm")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busyKey === promoKey}
-                      onClick={() => {
-                        setPromoRejectOpenKey(null);
-                        setPromoRejectReason("");
-                      }}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-white/20 text-white hover:bg-white/5 disabled:opacity-40"
-                    >
-                      {t("common.cancel")}
-                    </button>
-                  </>
-                )}
-              </div>
-              {rejectOpen && (
-                <RejectReasonFields
-                  showCodeSelect={false}
-                  rejectReasonCode=""
-                  rejectReason={promoRejectReason}
-                  onCodeChange={() => {}}
-                  onReasonChange={setPromoRejectReason}
-                />
-              )}
-            </li>
             );
           })}
         </ul>

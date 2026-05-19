@@ -104,25 +104,55 @@ export async function GET(request: Request) {
           ? await syncPromoRevisionStreamStatusIfNeeded(db, ownerUid, workId, streamUid, streamStatus)
           : await syncPromoStreamStatusIfNeeded(db, ownerUid, workId, streamUid, streamStatus);
       }
+      const promoDescription = isRevision && rev ? rev.description : parsed.description;
       const promo = isRevision && rev
         ? {
             ...parsed,
             title: rev.title ?? parsed.title,
+            description: promoDescription,
             clipStartSec: rev.clipStartSec,
             clipEndSec: rev.clipEndSec,
             streamUid,
             streamStatus,
           }
-        : { ...parsed, streamStatus };
+        : { ...parsed, streamStatus, description: parsed.description };
       const workSnap = await worksCol(db, ownerUid).doc(workId).get();
       if (!workSnap.exists) return null;
       const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
       const userSnap = await db.collection("users").doc(ownerUid).get();
       const playbackUrl =
         streamUid && streamStatus === "ready" ? await resolvePlaybackUrl(streamUid) : undefined;
+
+      let livePromo: {
+        title?: string;
+        description?: string;
+        clipStartSec: number;
+        clipEndSec: number;
+        playbackUrl?: string;
+      } | undefined;
+      if (isRevision && parsed.platformStatus === "published") {
+        const livePlayback =
+          parsed.streamUid && parsed.streamStatus === "ready"
+            ? await resolvePlaybackUrl(parsed.streamUid)
+            : undefined;
+        livePromo = {
+          title: parsed.title,
+          description: parsed.description,
+          clipStartSec: parsed.clipStartSec,
+          clipEndSec: parsed.clipEndSec,
+          playbackUrl: livePlayback ?? undefined,
+        };
+      }
+
       return {
-        promo: { id: PROMO_SHORT_DOC_ID, ...promo, playbackUrl },
-        work,
+        promo: {
+          id: PROMO_SHORT_DOC_ID,
+          ...promo,
+          playbackUrl,
+          description: promoDescription ?? promo.description,
+        },
+        livePromo,
+        work: { ...work, id: workId },
         workId,
         ownerUid,
         ownerEmail: userSnap.data()?.email ?? null,

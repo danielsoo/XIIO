@@ -42,10 +42,12 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
     setDescription(rev?.description ?? w.description ?? "");
   };
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!user) return;
-    setLoading(true);
-    setErr(null);
+    if (!opts?.silent) {
+      setLoading(true);
+      setErr(null);
+    }
     try {
       const token = await user.getIdToken();
       const res = await fetch(`/api/me/works/${workId}/revision`, {
@@ -58,29 +60,25 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
         message?: string;
       };
       if (!res.ok) {
-        setErr(json.message ?? `HTTP ${res.status}`);
+        if (!opts?.silent) setErr(json.message ?? `HTTP ${res.status}`);
         return;
       }
       if (json.work) applyWork(json.work, json.work.pendingRevision);
       setLivePlayback(json.livePlayback);
       setRevisionPlayback(json.revisionPlayback);
+      if (opts?.silent && json.work?.pendingRevision?.streamStatus === "ready") {
+        setMsg(t("workRevision.videoReady"));
+      }
     } catch {
-      setErr(t("myWorks.errorGeneric"));
+      if (!opts?.silent) setErr(t("myWorks.errorGeneric"));
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
   }, [user, workId, t]);
 
   useEffect(() => {
     void load();
   }, [load]);
-
-  useEffect(() => {
-    const rev = work?.pendingRevision;
-    if (!rev?.streamUid || rev.streamStatus === "ready" || rev.streamStatus === "error") return;
-    const id = window.setInterval(() => void load(), 5000);
-    return () => window.clearInterval(id);
-  }, [work?.pendingRevision?.streamStatus, work?.pendingRevision?.streamUid, load]);
 
   useEffect(() => {
     setAspectRatio(defaultAspectRatioForSection(section));
@@ -158,7 +156,7 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
         return;
       }
       setMsg(t("workRevision.videoUploading"));
-      await load();
+      await load({ silent: true });
     } catch {
       setErr(t("myWorks.errorGeneric"));
     } finally {
@@ -364,6 +362,19 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
               </label>
             </div>
           </form>
+        )}
+
+        {revEncoding && !reviewPending && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void load({ silent: true })}
+              className="px-4 py-2 rounded-lg border border-white/15 text-white text-sm hover:bg-white/5 disabled:opacity-40"
+            >
+              {t("workRevision.refreshStatus")}
+            </button>
+          </div>
         )}
 
         {canSubmit && (
