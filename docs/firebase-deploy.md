@@ -1,6 +1,8 @@
-# Firebase rules & indexes (CI)
+# Firebase Firestore rules & indexes (CI)
 
-Next.js 앱은 **Vercel**이 배포하고, Firestore 규칙·인덱스·Storage 규칙은 **GitHub Actions**가 배포합니다.
+Next.js 앱은 **Vercel**이 배포하고, **Firestore 규칙·인덱스**만 GitHub Actions가 배포합니다.
+
+영상은 **Cloudflare Stream**을 사용합니다. Firebase Storage rules는 CI에 포함하지 않습니다(아바타 등은 추후 R2 등으로 옮길 수 있음).
 
 ## 자동 실행 조건
 
@@ -9,50 +11,51 @@ Next.js 앱은 **Vercel**이 배포하고, Firestore 규칙·인덱스·Storage 
   - `firebase.json`
   - `firestore.rules`
   - `firestore.indexes.json`
-  - `storage.rules`
 
-앱 코드만 바뀐 push에서는 이 워크플로는 **실행되지 않습니다**.
-
-## GitHub Secrets (저장소 Settings → Secrets and variables → Actions)
+## GitHub Secrets
 
 | Secret | 설명 |
 |--------|------|
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | Firebase/GCP 서비스 계정 JSON **전체** (한 줄). Vercel의 `FIREBASE_SERVICE_ACCOUNT_JSON`과 동일해도 됩니다. |
-| `FIREBASE_PROJECT_ID` | Firebase 프로젝트 ID (`NEXT_PUBLIC_FIREBASE_PROJECT_ID`와 동일) |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | 서비스 계정 JSON **전체** (한 줄). JSON 안 `project_id` 확인. |
+| `FIREBASE_PROJECT_ID` | **반드시** 위 JSON의 `project_id`와 동일 (예: `xiio-9d86b`) |
 
-서비스 계정(GCP IAM → 해당 SA → **역할 부여**)에 아래가 필요합니다.
+### 프로젝트 ID가 어긋나면 403이 납니다
 
-| 역할 (영문) | 용도 |
-|-------------|------|
-| **Service Usage Viewer** | `firebasestorage.googleapis.com` 등 API 사용 여부 조회 (`403 Permission denied to get service` 방지) |
-| **Service Usage Admin** | (선택) API가 꺼져 있을 때 CLI가 자동으로 켜도록 허용 |
-| **Firebase Rules Admin** | Firestore / Storage **rules** 배포 |
-| **Cloud Datastore Index Admin** | Firestore **indexes** 배포 |
-| **Firebase Storage Admin** | Storage rules 배포 |
+GCP 콘솔 상단 프로젝트와 Secret이 **같은 프로젝트**여야 합니다.
 
-빠르게 막을 때만: 동일 프로젝트에 **Firebase Admin** 하나로 위 권한을 대부분 커버할 수 있습니다(권한은 넓음).
+- Firebase Console URL: `.../project/xiio-9d86b/...` → Secret도 `xiio-9d86b`
+- 서비스 계정 이메일: `firebase-adminsdk-...@xiio-9d86b.iam.gserviceaccount.com` → IAM 역할도 **그 프로젝트(xiio-9d86b)** 에 부여
 
-### CI 실패: `403 ... firebasestorage.googleapis.com ... Permission denied to get service`
+다른 프로젝트(예: `xiio-496818`) IAM에만 역할을 주면 CI는 계속 실패합니다.
 
-1. [Google Cloud Console](https://console.cloud.google.com/) → 프로젝트 선택 → **IAM**
-2. CI에 쓰는 서비스 계정( JSON의 `client_email` ) 찾기
-3. **Service Usage Viewer** 추가 → 저장
-4. [Firebase Console](https://console.firebase.google.com/) → **Storage**가 아직 없으면 한 번 활성화
-5. GitHub Actions에서 **Re-run all jobs**
+### 서비스 계정 역할 (Firestore CI만)
 
-CI는 **Firestore → Storage** 순으로 별도 step입니다. Storage step만 실패해도 Firestore 규칙·인덱스는 이미 반영된 상태일 수 있습니다.
+대상 프로젝트 IAM에서 `client_email` 계정에:
 
-## 로컬에서 수동 배포
+- **Firebase Admin** (간단), 또는
+- **Firebase Rules Admin** + **Cloud Datastore Index Admin**
+
+## Storage rules (수동, 선택)
+
+아바타용 Firebase Storage를 쓰는 동안만:
 
 ```bash
-cp .firebaserc.example .firebaserc   # 프로젝트 ID 입력
+npx firebase deploy --only storage --project YOUR_PROJECT_ID
+```
+
+## 로컬 Firestore 배포
+
+```bash
+cp .firebaserc.example .firebaserc   # project id 입력
 npm run firebase:deploy
 ```
 
-## 수동 CI 실행
+## 수동 CI
 
 GitHub → **Actions** → **Deploy Firebase config** → **Run workflow**
 
-## 인덱스 빌드
+최신 워크플로는 **Firestore만** 배포합니다. 예전 Run(「Deploy Firestore and Storage rules」한 줄)은 옛 커밋이므로, 수정 후 **새 Run** 또는 **Re-run**으로 확인하세요.
 
-`firestore.indexes.json` 배포 후 Firebase Console에서 인덱스가 **Building → Enabled**가 되기까지 수 분 걸릴 수 있습니다.
+## 인덱스
+
+배포 후 Firebase Console → Firestore → Indexes에서 **Building → Enabled**까지 수 분 걸릴 수 있습니다.

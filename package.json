@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "firebase:deploy": "firebase deploy --only firestore,storage"
+    "firebase:deploy": "firebase deploy --only firestore"
   },
   "dependencies": {
     "firebase": "^11.0.0",
