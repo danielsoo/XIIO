@@ -167,7 +167,7 @@ function PlayerChrome({
     : "h-[36%] min-h-[100px] md:min-h-[112px]";
 
   const actionButtons = (
-    <div className="flex flex-col items-center justify-end gap-4 shrink-0 pb-0.5">
+    <div className="flex flex-col items-center justify-start gap-3 shrink-0 pt-0.5">
       <button
         type="button"
         onClick={() => void toggleLike()}
@@ -205,7 +205,7 @@ function PlayerChrome({
   );
 
   const metaBlock = (tall: boolean) => (
-    <div className={`flex-1 min-w-0 text-left pr-2 ${tall ? "flex flex-col justify-end min-h-0" : ""}`}>
+    <div className={`flex-1 min-w-0 text-left pr-2 ${tall ? "flex flex-col justify-start min-h-0" : ""}`}>
       <h3
         className={`font-bold leading-tight truncate ${
           tall ? "text-xl md:text-2xl text-white" : "text-lg md:text-2xl text-white"
@@ -253,10 +253,10 @@ function PlayerChrome({
   );
 
   const bottomOverlay = (
-    <div className={`absolute inset-x-0 bottom-0 flex items-stretch pointer-events-none ${overlayBandClass}`}>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent" />
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-md supports-[backdrop-filter]:bg-black/15" />
-      <div className="relative z-10 flex flex-1 min-w-0 h-full items-end justify-between gap-3 px-4 pb-4 pt-6 md:px-6 md:pb-5 md:pt-8 pointer-events-auto">
+    <div className={`absolute inset-x-0 bottom-0 flex flex-col pointer-events-none ${overlayBandClass}`}>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-black/10 backdrop-blur-[6px] supports-[backdrop-filter]:bg-black/5" />
+      <div className="relative z-10 flex flex-1 min-w-0 items-start justify-between gap-3 px-4 pt-3 pb-4 md:px-6 md:pt-3.5 md:pb-5 pointer-events-auto">
         {metaBlock(tallMeta)}
         {actionButtons}
       </div>
