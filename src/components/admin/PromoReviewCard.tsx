@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
@@ -60,12 +60,68 @@ function MetaRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function isLongDescription(value: string): boolean {
+  const text = value.trim();
+  if (!text || text === "—") return false;
+  return text.length > 160 || (text.match(/\n/g)?.length ?? 0) >= 3;
+}
+
+function DescriptionMetaRow({
+  label,
+  value,
+  clamp,
+  t,
+}: {
+  label: string;
+  value: string;
+  clamp: boolean;
+  t: TranslateFn;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const display = value || "—";
+
+  if (!clamp) {
+    return <MetaRow label={label} value={display} />;
+  }
+
+  const long = isLongDescription(display);
+  const collapsed = !expanded;
+  const boxClass = collapsed ? "h-[7.25rem] flex flex-col" : "min-h-[7.25rem] flex flex-col";
+
+  return (
+    <div className={boxClass}>
+      <span className="shrink-0 text-sm text-white/70">{label}:</span>
+      <p
+        className={`min-h-0 flex-1 overflow-hidden text-sm text-white/90 whitespace-pre-wrap break-words ${
+          collapsed && long ? "line-clamp-4" : ""
+        }`}
+      >
+        {display}
+      </p>
+      <div className="mt-1 h-5 shrink-0">
+        {long ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((prev) => !prev)}
+            className="text-xs text-xiio-accent hover:underline"
+          >
+            {expanded
+              ? t("admin.contentReview.descriptionShowLess")
+              : t("admin.contentReview.descriptionShowMore")}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function PromoMetaFields({
   title,
   description,
   clipStartSec,
   clipEndSec,
   streamStatus,
+  clampDescription = false,
   t,
 }: {
   title?: string;
@@ -73,13 +129,19 @@ function PromoMetaFields({
   clipStartSec: number;
   clipEndSec: number;
   streamStatus?: StreamStatus;
+  clampDescription?: boolean;
   t: TranslateFn;
 }) {
   const clipSec = (clipEndSec - clipStartSec).toFixed(1);
   return (
     <div className="space-y-2">
       <MetaRow label={t("admin.contentReview.promoTitle")} value={title ?? "—"} />
-      <MetaRow label={t("admin.contentReview.promoDescription")} value={description ?? "—"} />
+      <DescriptionMetaRow
+        label={t("admin.contentReview.promoDescription")}
+        value={description ?? "—"}
+        clamp={clampDescription}
+        t={t}
+      />
       <p className="text-sm text-white/90">
         <span className="text-white/70">{t("admin.contentReview.promoClip")}: </span>
         {t("admin.contentReview.promoClipRange", {
@@ -151,7 +213,7 @@ function CompareColumn({
   const isLive = variant === "live";
   return (
     <section
-      className={`flex flex-col overflow-hidden rounded-xl border ${
+      className={`flex h-full flex-col overflow-hidden rounded-xl border ${
         isLive
           ? "border-white/15 bg-white/[0.02]"
           : "border-sky-500/40 bg-sky-500/[0.06]"
@@ -191,31 +253,36 @@ function RevisionCompareSection({
   t: TranslateFn;
 }) {
   return (
-    <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="mb-4 grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
       <CompareColumn
         variant="pending"
         label={t("admin.contentReview.pendingPromo")}
         hint={t("admin.contentReview.comparePendingHint")}
         videoLabel={t("admin.contentReview.pendingPromoVideo")}
-        className="order-first lg:order-2"
+        className="order-first h-full lg:order-2"
       >
-        <PromoMetaFields
-          title={promo.title}
-          description={promo.description}
-          clipStartSec={promo.clipStartSec}
-          clipEndSec={promo.clipEndSec}
-          streamStatus={promo.streamStatus}
-          t={t}
-        />
-        {promo.playbackUrl ? (
-          <PlaybackVideo src={promo.playbackUrl} maxHeightClass="max-h-[42vh]" />
-        ) : promo.streamStatus && promo.streamStatus !== "ready" ? (
-          <p className="text-sm text-amber-300/90">
-            {t("admin.contentReview.promoNotReady", {
-              status: t(`myWorks.stream.${promo.streamStatus}`),
-            })}
-          </p>
-        ) : null}
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
+          <PromoMetaFields
+            title={promo.title}
+            description={promo.description}
+            clipStartSec={promo.clipStartSec}
+            clipEndSec={promo.clipEndSec}
+            streamStatus={promo.streamStatus}
+            clampDescription
+            t={t}
+          />
+          <div className="mt-auto">
+            {promo.playbackUrl ? (
+              <PlaybackVideo src={promo.playbackUrl} maxHeightClass="max-h-[42vh]" />
+            ) : promo.streamStatus && promo.streamStatus !== "ready" ? (
+              <p className="text-sm text-amber-300/90">
+                {t("admin.contentReview.promoNotReady", {
+                  status: t(`myWorks.stream.${promo.streamStatus}`),
+                })}
+              </p>
+            ) : null}
+          </div>
+        </div>
       </CompareColumn>
 
       <CompareColumn
@@ -223,20 +290,25 @@ function RevisionCompareSection({
         label={t("admin.contentReview.livePromo")}
         hint={t("admin.contentReview.compareLiveHint")}
         videoLabel={t("admin.contentReview.livePromoVideo")}
-        className="order-2 lg:order-1"
+        className="order-2 h-full lg:order-1"
       >
-        <PromoMetaFields
-          title={livePromo.title}
-          description={livePromo.description}
-          clipStartSec={livePromo.clipStartSec}
-          clipEndSec={livePromo.clipEndSec}
-          t={t}
-        />
-        {livePromo.playbackUrl ? (
-          <PlaybackVideo src={livePromo.playbackUrl} maxHeightClass="max-h-[42vh]" />
-        ) : (
-          <p className="text-sm text-white/50">{t("admin.contentReview.noLiveVideo")}</p>
-        )}
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
+          <PromoMetaFields
+            title={livePromo.title}
+            description={livePromo.description}
+            clipStartSec={livePromo.clipStartSec}
+            clipEndSec={livePromo.clipEndSec}
+            clampDescription
+            t={t}
+          />
+          <div className="mt-auto">
+            {livePromo.playbackUrl ? (
+              <PlaybackVideo src={livePromo.playbackUrl} maxHeightClass="max-h-[42vh]" />
+            ) : (
+              <p className="text-sm text-white/50">{t("admin.contentReview.noLiveVideo")}</p>
+            )}
+          </div>
+        </div>
       </CompareColumn>
     </div>
   );
