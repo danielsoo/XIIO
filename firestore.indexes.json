@@ -4,7 +4,7 @@
       "collectionGroup": "works",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "platformStatus", "order": "ASCENDING },
+        { "fieldPath": "platformStatus", "order": "ASCENDING" },
         { "fieldPath": "sortOrder", "order": "ASCENDING" }
       ]
     },
