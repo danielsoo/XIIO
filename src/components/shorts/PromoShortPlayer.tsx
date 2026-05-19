@@ -53,16 +53,16 @@ function PlayerChrome({
   item,
   isActive,
   isFullscreen,
-  embedded,
   layout,
+  compact,
   onToggleFullscreen,
   onExitFullscreen,
 }: {
   item: PromoShort;
   isActive: boolean;
   isFullscreen: boolean;
-  embedded: boolean;
   layout: PromoShortLayout;
+  compact?: boolean;
   onToggleFullscreen: () => void;
   onExitFullscreen: () => void;
 }) {
@@ -154,10 +154,20 @@ function PlayerChrome({
     }
   }, [item]);
 
-  const stackedLayout = !isFullscreen && layout === "stacked";
+  const tallMeta = layout === "stacked" || isFullscreen;
+
+  const cardShellClass = isFullscreen
+    ? "relative w-full h-full max-w-lg mx-auto rounded-2xl overflow-hidden bg-black"
+    : `relative mx-auto w-full max-w-lg rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${
+        compact ? "max-h-[min(72vh,680px)]" : "max-h-[min(85vh,780px)]"
+      }`;
+
+  const overlayBandClass = tallMeta
+    ? "h-[35%] min-h-[7.5rem] md:min-h-[9rem]"
+    : "h-[36%] min-h-[100px] md:min-h-[112px]";
 
   const actionButtons = (
-    <div className={`flex flex-col items-center shrink-0 ${stackedLayout ? "justify-start gap-4" : "justify-end gap-5 pb-0.5"}`}>
+    <div className="flex flex-col items-center justify-end gap-4 shrink-0 pb-0.5">
       <button
         type="button"
         onClick={() => void toggleLike()}
@@ -166,11 +176,7 @@ function PlayerChrome({
         aria-pressed={liked}
         aria-label={t("home.promoLike")}
       >
-        <span
-          className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-sm group-hover:bg-white/10 transition ${
-            stackedLayout ? "bg-white/5 border-white/15" : "bg-black/40 border-white/15"
-          }`}
-        >
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/35 border border-white/20 backdrop-blur-sm group-hover:bg-white/10 transition">
           <HeartIcon filled={liked} />
         </span>
         <span className="text-xs font-semibold text-white tabular-nums">{likeCount.toLocaleString()}</span>
@@ -188,44 +194,32 @@ function PlayerChrome({
         className="flex flex-col items-center gap-1 group"
         aria-label={t("home.promoShare")}
       >
-        <span
-          className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-sm group-hover:bg-white/10 transition ${
-            stackedLayout ? "bg-white/5 border-white/15" : "bg-black/40 border-white/15"
-          }`}
-        >
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/35 border border-white/20 backdrop-blur-sm group-hover:bg-white/10 transition">
           <ShareIcon />
         </span>
-        <span
-          className={`text-[10px] font-medium max-w-[3rem] text-center leading-tight ${
-            stackedLayout ? "text-xiio-muted" : "text-white/70"
-          }`}
-        >
+        <span className="text-[10px] font-medium text-white/75 max-w-[3rem] text-center leading-tight">
           {shareHint ? t("home.promoShareCopied") : t("home.promoShare")}
         </span>
       </button>
     </div>
   );
 
-  const metaBlock = (variant: "overlay" | "panel") => (
-    <div
-      className={`flex-1 min-w-0 text-left pr-2 ${variant === "panel" ? "flex flex-col min-h-0 h-full" : ""}`}
-    >
+  const metaBlock = (tall: boolean) => (
+    <div className={`flex-1 min-w-0 text-left pr-2 ${tall ? "flex flex-col justify-end min-h-0" : ""}`}>
       <h3
-        className={`font-bold leading-tight truncate shrink-0 ${
-          variant === "panel" ? "text-xl md:text-2xl text-white" : "text-lg md:text-2xl text-white"
+        className={`font-bold leading-tight truncate ${
+          tall ? "text-xl md:text-2xl text-white" : "text-lg md:text-2xl text-white"
         }`}
       >
         {item.title}
       </h3>
-      <p
-        className={`text-sm shrink-0 ${variant === "panel" ? "text-xiio-muted mt-1" : "text-white/80 mt-0.5 md:mt-1"}`}
-      >
+      <p className={`text-sm ${tall ? "text-white/75 mt-1" : "text-white/80 mt-0.5 md:mt-1"}`}>
         {t("home.promoDirector", { name: item.director })}
       </p>
       <p
         className={
-          variant === "panel"
-            ? "flex-1 mt-3 text-sm md:text-base text-white/80 leading-relaxed overflow-y-auto min-h-0"
+          tall
+            ? "mt-2 text-sm md:text-base text-white/85 leading-relaxed line-clamp-4 md:line-clamp-6"
             : "text-xs md:text-sm text-white/65 mt-1.5 line-clamp-3 md:line-clamp-4 leading-snug"
         }
       >
@@ -258,40 +252,23 @@ function PlayerChrome({
     </div>
   );
 
-  if (stackedLayout) {
-    return (
-      <>
-        <div className="relative mx-auto w-full flex flex-col rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50 bg-xiio-surface h-[min(85vh,780px)] max-h-[min(85vh,780px)]">
-          <div className="relative flex-[11] min-h-0 w-full flex items-center justify-center bg-black overflow-hidden">
-            <video
-              ref={videoRef}
-              src={item.videoUrl}
-              className="max-h-full max-w-full w-auto h-auto object-contain bg-black"
-              playsInline
-              muted
-              loop
-              preload={isActive ? "auto" : "none"}
-              onDoubleClick={() => onToggleFullscreen()}
-            />
-            {fullscreenControls}
-          </div>
-
-          <div className="flex-[9] min-h-[11.5rem] shrink-0 flex items-start justify-between gap-4 px-5 py-5 md:px-7 md:py-6 border-t border-white/10 bg-xiio-surface overflow-hidden">
-            {metaBlock("panel")}
-            {actionButtons}
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  const frameClass = isFullscreen
-    ? "relative w-full h-full min-h-0 flex items-center justify-center bg-black"
-    : "relative mx-auto w-full flex items-center justify-center rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 max-h-[min(68vh,720px)]";
+  const bottomOverlay = (
+    <div className={`absolute inset-x-0 bottom-0 flex items-stretch pointer-events-none ${overlayBandClass}`}>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent" />
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-md supports-[backdrop-filter]:bg-black/15" />
+      <div className="relative z-10 flex flex-1 min-w-0 h-full items-end justify-between gap-3 px-4 pb-4 pt-6 md:px-6 md:pb-5 md:pt-8 pointer-events-auto">
+        {metaBlock(tallMeta)}
+        {actionButtons}
+      </div>
+    </div>
+  );
 
   return (
     <>
-      <div className={frameClass} style={isFullscreen ? undefined : { aspectRatio: item.aspectRatio }}>
+      <div
+        className={cardShellClass}
+        style={isFullscreen ? undefined : { aspectRatio: item.aspectRatio }}
+      >
         <video
           ref={videoRef}
           src={item.videoUrl}
@@ -304,34 +281,29 @@ function PlayerChrome({
         />
 
         {fullscreenControls}
-
-        <div className="absolute inset-x-0 bottom-0 h-[36%] min-h-[100px] md:min-h-[112px] flex items-stretch pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/90 to-transparent" />
-          <div className="relative z-10 flex flex-1 min-w-0 items-end justify-between gap-3 px-4 pb-4 pt-8 md:px-7 md:pb-5 md:pt-10 pointer-events-auto">
-            {metaBlock("overlay")}
-            {actionButtons}
-          </div>
-        </div>
+        {bottomOverlay}
       </div>
     </>
   );
 }
-
 
 export default function PromoShortPlayer({
   item,
   isActive,
   embedded = true,
   layout,
+  compact = false,
   className = "",
 }: {
   item: PromoShort;
   isActive: boolean;
   embedded?: boolean;
   layout?: PromoShortLayout;
+  /** 홈 스포트라이트 등 낮은 카드 높이 */
+  compact?: boolean;
   className?: string;
 }) {
-  const resolvedLayout: PromoShortLayout = layout ?? (embedded ? "overlay" : "stacked");
+  const resolvedLayout: PromoShortLayout = layout ?? "stacked";
   const { ref, active, fallbackActive, toggle, exit } = useElementFullscreen<HTMLDivElement>();
   const [mounted, setMounted] = useState(false);
 
@@ -342,8 +314,8 @@ export default function PromoShortPlayer({
       item={item}
       isActive={isActive}
       isFullscreen={active}
-      embedded={embedded}
       layout={resolvedLayout}
+      compact={compact}
       onToggleFullscreen={() => void toggle()}
       onExitFullscreen={() => void exit()}
     />

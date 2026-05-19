@@ -39,16 +39,22 @@ export default function PromoShortSpotlight({ items }: { items: PromoShort[] }) 
         </Link>
       </div>
 
-      <div className="relative min-h-[200px]">
+      <div className="relative min-h-[min(520px,68vh)] flex justify-center">
         {items.map((item, i) => (
           <div
             key={item.id}
-            className={`w-full transition-opacity duration-500 ${
-              i === index ? "opacity-100 relative" : "opacity-0 absolute inset-0 pointer-events-none"
+            className={`w-full max-w-lg transition-opacity duration-500 ${
+              i === index ? "opacity-100 relative z-10" : "opacity-0 absolute inset-0 pointer-events-none z-0"
             }`}
             aria-hidden={i !== index}
           >
-            <PromoShortPlayer item={item} isActive={i === index} embedded className="w-full" />
+            <PromoShortPlayer
+              item={item}
+              isActive={i === index}
+              layout="stacked"
+              compact
+              className="w-full"
+            />
           </div>
         ))}
 
@@ -57,7 +63,7 @@ export default function PromoShortSpotlight({ items }: { items: PromoShort[] }) 
             <button
               type="button"
               onClick={() => go(-1)}
-              className="absolute left-2 md:left-3 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
+              className="absolute left-0 md:left-2 top-[38%] -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
               aria-label={t("home.promoPrev")}
             >
               ‹
@@ -65,7 +71,7 @@ export default function PromoShortSpotlight({ items }: { items: PromoShort[] }) 
             <button
               type="button"
               onClick={() => go(1)}
-              className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
+              className="absolute right-0 md:right-2 top-[38%] -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
               aria-label={t("home.promoNext")}
             >
               ›
