@@ -14,7 +14,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      className={`w-7 h-7 transition ${filled ? "fill-xiio-accent text-xiio-accent" : "fill-none text-white"}`}
+      className={`w-7 h-7 transition drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] ${filled ? "fill-xiio-accent text-xiio-accent" : "fill-none text-white"}`}
       stroke="currentColor"
       strokeWidth={filled ? 0 : 1.75}
       aria-hidden
@@ -26,15 +26,49 @@ function HeartIcon({ filled }: { filled: boolean }) {
 
 function ShareIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v14" />
+    </svg>
+  );
+}
+
+function ReportIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1-1-4-1-5 2-8 2-4-1-4-1z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 22v-3" />
     </svg>
   );
 }
 
 function ExpandIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
     </svg>
   );
@@ -42,7 +76,14 @@ function ExpandIcon() {
 
 function CollapseIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v3a2 2 0 01-2 2H3m18 0h-3a2 2 0 01-2-2V3m0 18v-3a2 2 0 012-2h3M3 16h3a2 2 0 012 2v3" />
     </svg>
   );
@@ -169,21 +210,21 @@ function PlayerChrome({
     : "h-[36%] min-h-[100px] md:min-h-[112px]";
 
   const actionButtons = (
-    <div className="flex flex-col items-center justify-start gap-3 shrink-0 pt-0.5">
+    <div className="flex flex-col items-center justify-start gap-5 shrink-0 pt-0.5">
       <button
         type="button"
         onClick={() => void toggleLike()}
         disabled={likeBusy}
-        className="flex flex-col items-center gap-1 group disabled:opacity-60"
+        className="flex flex-col items-center gap-1 disabled:opacity-60 hover:opacity-80 transition-opacity"
         aria-pressed={liked}
         aria-label={t("home.promoLike")}
       >
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/35 border border-white/20 backdrop-blur-sm group-hover:bg-white/10 transition">
-          <HeartIcon filled={liked} />
+        <HeartIcon filled={liked} />
+        <span className="text-xs font-semibold text-white tabular-nums drop-shadow-sm">
+          {likeCount.toLocaleString()}
         </span>
-        <span className="text-xs font-semibold text-white tabular-nums">{likeCount.toLocaleString()}</span>
         {likeHint && (
-          <span className="text-[10px] text-amber-200 text-center max-w-[4.5rem] leading-tight">
+          <span className="text-[10px] text-amber-200 text-center max-w-[4.5rem] leading-tight drop-shadow-sm">
             <Link href="/login" className="underline hover:text-white">
               {t("engagement.loginToLike")}
             </Link>
@@ -193,15 +234,15 @@ function PlayerChrome({
       <button
         type="button"
         onClick={() => void handleShare()}
-        className="flex flex-col items-center gap-1 group"
+        className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
         aria-label={t("home.promoShare")}
       >
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/35 border border-white/20 backdrop-blur-sm group-hover:bg-white/10 transition">
-          <ShareIcon />
-        </span>
-        <span className="text-[10px] font-medium text-white/75 max-w-[3rem] text-center leading-tight">
-          {shareHint ? t("home.promoShareCopied") : t("home.promoShare")}
-        </span>
+        <ShareIcon />
+        {shareHint && (
+          <span className="text-[10px] font-medium text-white/90 drop-shadow-sm">
+            {t("home.promoShareCopied")}
+          </span>
+        )}
       </button>
       {persisted && item.ownerUid && item.workId && (
         <button
@@ -213,15 +254,10 @@ function PlayerChrome({
             }
             setReportOpen(true);
           }}
-          className="flex flex-col items-center gap-1 group"
+          className="hover:opacity-80 transition-opacity"
           aria-label={t("watch.report")}
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/35 border border-white/20 backdrop-blur-sm group-hover:bg-white/10 transition text-[10px] font-semibold text-white/90">
-            !
-          </span>
-          <span className="text-[10px] font-medium text-white/75 max-w-[3.5rem] text-center leading-tight">
-            {t("watch.report")}
-          </span>
+          <ReportIcon />
         </button>
       )}
     </div>
@@ -252,12 +288,12 @@ function PlayerChrome({
   );
 
   const fullscreenControls = (
-    <div className="absolute top-3 right-3 z-20 flex gap-2">
+    <div className="absolute top-3 right-3 z-20">
       {isFullscreen ? (
         <button
           type="button"
           onClick={onExitFullscreen}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 border border-white/20 backdrop-blur-sm hover:bg-black/70 transition"
+          className="hover:opacity-80 transition-opacity"
           aria-label={t("shorts.exitFullscreen")}
         >
           <CollapseIcon />
@@ -266,7 +302,7 @@ function PlayerChrome({
         <button
           type="button"
           onClick={onToggleFullscreen}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 border border-white/20 backdrop-blur-sm hover:bg-black/70 transition"
+          className="hover:opacity-80 transition-opacity"
           aria-label={t("shorts.fullscreen")}
         >
           <ExpandIcon />
