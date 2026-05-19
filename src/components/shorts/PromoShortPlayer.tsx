@@ -47,11 +47,14 @@ function CollapseIcon() {
   );
 }
 
+export type PromoShortLayout = "overlay" | "stacked";
+
 function PlayerChrome({
   item,
   isActive,
   isFullscreen,
   embedded,
+  layout,
   onToggleFullscreen,
   onExitFullscreen,
 }: {
@@ -59,6 +62,7 @@ function PlayerChrome({
   isActive: boolean;
   isFullscreen: boolean;
   embedded: boolean;
+  layout: PromoShortLayout;
   onToggleFullscreen: () => void;
   onExitFullscreen: () => void;
 }) {
@@ -150,7 +154,7 @@ function PlayerChrome({
     }
   }, [item]);
 
-  const stackedLayout = !isFullscreen && !embedded;
+  const stackedLayout = !isFullscreen && layout === "stacked";
 
   const actionButtons = (
     <div className={`flex flex-col items-center shrink-0 ${stackedLayout ? "justify-start gap-4" : "justify-end gap-5 pb-0.5"}`}>
@@ -203,21 +207,25 @@ function PlayerChrome({
   );
 
   const metaBlock = (variant: "overlay" | "panel") => (
-    <div className="flex-1 min-w-0 text-left pr-2">
+    <div
+      className={`flex-1 min-w-0 text-left pr-2 ${variant === "panel" ? "flex flex-col min-h-0 h-full" : ""}`}
+    >
       <h3
-        className={`font-bold leading-tight truncate ${
+        className={`font-bold leading-tight truncate shrink-0 ${
           variant === "panel" ? "text-xl md:text-2xl text-white" : "text-lg md:text-2xl text-white"
         }`}
       >
         {item.title}
       </h3>
-      <p className={`text-sm ${variant === "panel" ? "text-xiio-muted mt-1" : "text-white/80 mt-0.5 md:mt-1"}`}>
+      <p
+        className={`text-sm shrink-0 ${variant === "panel" ? "text-xiio-muted mt-1" : "text-white/80 mt-0.5 md:mt-1"}`}
+      >
         {t("home.promoDirector", { name: item.director })}
       </p>
       <p
         className={
           variant === "panel"
-            ? "mt-3 text-sm md:text-base text-white/80 leading-relaxed line-clamp-5 md:line-clamp-8 min-h-[6.5rem] md:min-h-[8.5rem]"
+            ? "flex-1 mt-3 text-sm md:text-base text-white/80 leading-relaxed overflow-y-auto min-h-0"
             : "text-xs md:text-sm text-white/65 mt-1.5 line-clamp-3 md:line-clamp-4 leading-snug"
         }
       >
@@ -253,15 +261,12 @@ function PlayerChrome({
   if (stackedLayout) {
     return (
       <>
-        <div className="relative mx-auto w-full max-w-lg flex flex-col rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50 bg-xiio-surface">
-          <div
-            className="relative w-full shrink-0 flex items-center justify-center bg-black max-h-[min(42vh,400px)]"
-            style={{ aspectRatio: item.aspectRatio }}
-          >
+        <div className="relative mx-auto w-full flex flex-col rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50 bg-xiio-surface h-[min(85vh,780px)] max-h-[min(85vh,780px)]">
+          <div className="relative flex-[11] min-h-0 w-full flex items-center justify-center bg-black overflow-hidden">
             <video
               ref={videoRef}
               src={item.videoUrl}
-              className="absolute inset-0 w-full h-full object-contain bg-black"
+              className="max-h-full max-w-full w-auto h-auto object-contain bg-black"
               playsInline
               muted
               loop
@@ -271,7 +276,7 @@ function PlayerChrome({
             {fullscreenControls}
           </div>
 
-          <div className="flex items-start justify-between gap-4 px-5 py-5 md:px-7 md:py-6 min-h-[12rem] md:min-h-[14rem] border-t border-white/10 bg-xiio-surface">
+          <div className="flex-[9] min-h-[11.5rem] shrink-0 flex items-start justify-between gap-4 px-5 py-5 md:px-7 md:py-6 border-t border-white/10 bg-xiio-surface overflow-hidden">
             {metaBlock("panel")}
             {actionButtons}
           </div>
@@ -317,13 +322,16 @@ export default function PromoShortPlayer({
   item,
   isActive,
   embedded = true,
+  layout,
   className = "",
 }: {
   item: PromoShort;
   isActive: boolean;
   embedded?: boolean;
+  layout?: PromoShortLayout;
   className?: string;
 }) {
+  const resolvedLayout: PromoShortLayout = layout ?? (embedded ? "overlay" : "stacked");
   const { ref, active, fallbackActive, toggle, exit } = useElementFullscreen<HTMLDivElement>();
   const [mounted, setMounted] = useState(false);
 
@@ -335,6 +343,7 @@ export default function PromoShortPlayer({
       isActive={isActive}
       isFullscreen={active}
       embedded={embedded}
+      layout={resolvedLayout}
       onToggleFullscreen={() => void toggle()}
       onExitFullscreen={() => void exit()}
     />

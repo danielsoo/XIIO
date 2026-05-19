@@ -53,16 +53,22 @@ export default function ShortsPageContent() {
         <p className="text-xiio-muted text-sm">{t("category.shortsSubtitle")}</p>
       </header>
 
-      <div className="max-w-5xl mx-auto relative min-h-[240px]">
+      <div className="max-w-lg mx-auto relative min-h-[min(85vh,780px)] w-full">
         {items.map((item, i) => (
           <div
             key={item.id}
             className={`w-full transition-opacity duration-500 ${
-              i === index ? "opacity-100 relative" : "opacity-0 absolute inset-0 pointer-events-none"
+              i === index ? "opacity-100 relative z-10" : "opacity-0 absolute inset-0 pointer-events-none z-0"
             }`}
             aria-hidden={i !== index}
           >
-            <PromoShortPlayer item={item} isActive={i === index} embedded={false} className="w-full" />
+            <PromoShortPlayer
+              item={item}
+              isActive={i === index}
+              embedded={false}
+              layout="stacked"
+              className="w-full"
+            />
           </div>
         ))}
 
@@ -71,7 +77,7 @@ export default function ShortsPageContent() {
             <button
               type="button"
               onClick={() => go(-1)}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
+              className="absolute -left-2 md:left-0 top-[38%] -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
               aria-label={t("home.promoPrev")}
             >
               ‹
@@ -79,7 +85,7 @@ export default function ShortsPageContent() {
             <button
               type="button"
               onClick={() => go(1)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
+              className="absolute -right-2 md:right-0 top-[38%] -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
               aria-label={t("home.promoNext")}
             >
               ›
