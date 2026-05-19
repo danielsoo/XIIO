@@ -34,9 +34,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Deploy Firestore and Storage rules
+      - name: Deploy Firestore rules and indexes
         run: >
           npx firebase deploy
-          --only firestore,storage
+          --only firestore
+          --non-interactive
+          --project "${{ secrets.FIREBASE_PROJECT_ID }}"
+
+      - name: Deploy Storage rules
+        run: >
+          npx firebase deploy
+          --only storage
           --non-interactive
           --project "${{ secrets.FIREBASE_PROJECT_ID }}"
