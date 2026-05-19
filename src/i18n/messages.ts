@@ -268,6 +268,9 @@ export const messages = {
         pendingPromo: "심사 대상 (수정본)",
         livePromoVideo: "현재 게시 중 영상",
         pendingPromoVideo: "심사 대상 영상",
+        compareLiveHint: "승인해도 이 내용은 그대로 유지됩니다.",
+        comparePendingHint: "승인 시 아래 내용으로 교체됩니다.",
+        noLiveVideo: "게시 중 재생 URL이 없습니다.",
         promoNotReady: "영상이 아직 준비되지 않았습니다 ({status}). 인코딩 완료 후 승인할 수 있습니다.",
       },
       userProfile: {
@@ -838,6 +841,9 @@ export const messages = {
         pendingPromo: "Under review (revision)",
         livePromoVideo: "Current live video",
         pendingPromoVideo: "Video under review",
+        compareLiveHint: "This content stays as-is if you approve the revision.",
+        comparePendingHint: "If approved, the content below replaces what is live.",
+        noLiveVideo: "No playback URL for the live version.",
         promoNotReady: "Video not ready yet ({status}). Approve after encoding completes.",
       },
       userProfile: {
