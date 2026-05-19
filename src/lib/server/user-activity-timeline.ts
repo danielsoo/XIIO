@@ -1,4 +1,5 @@
 import { Timestamp, type Firestore } from "firebase-admin/firestore";
+import { adminTimestampToMillis } from "@/lib/admin/format-timestamp";
 import { parsePaymentEventDoc } from "@/lib/server/payment-events";
 import { parseReportDoc } from "@/lib/server/reports";
 import { parseUserProfileDoc } from "@/lib/userAccess";
@@ -41,11 +42,7 @@ export const ACTIVITY_LIMITATION_KEYS = [
 
 function atMillis(at: unknown): number | null {
   if (at instanceof Timestamp) return at.toMillis();
-  if (at && typeof at === "object" && "seconds" in at) {
-    const sec = (at as { seconds: number }).seconds;
-    if (typeof sec === "number") return sec * 1000;
-  }
-  return null;
+  return adminTimestampToMillis(at);
 }
 
 function workAdminHref(ownerUid: string, workId: string): string {

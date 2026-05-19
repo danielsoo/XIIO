@@ -83,7 +83,10 @@ export default function AdminUserProfile({ uid }: Props) {
             label={t("admin.userProfile.lastVisit")}
             value={formatAdminTimestamp(data.lastVisitAt, loc)}
           />
-          <Row label={t("admin.userProfile.purpose")} value={t(`admin.userProfile.purpose.${data.platformPurpose}`)} />
+          <Row
+            label={t("admin.userProfile.purposeLabel")}
+            value={t(`admin.userProfile.purpose.${data.platformPurpose}`)}
+          />
           <Row label={t("admin.userProfile.role")} value={data.role} />
           <Row
             label={t("admin.userProfile.deposit")}
