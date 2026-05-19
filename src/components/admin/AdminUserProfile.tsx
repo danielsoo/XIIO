@@ -54,8 +54,8 @@ export default function AdminUserProfile({ uid }: Props) {
     return (
       <div>
         <p className="text-red-400 text-sm mb-4">{err ?? t("admin.userProfile.notFound")}</p>
-        <Link href="/admin/content" className="text-sm text-xiio-accent hover:underline">
-          {t("admin.userProfile.backToContent")}
+        <Link href="/admin/users" className="text-sm text-xiio-accent hover:underline">
+          {t("admin.userProfile.backToUsers")}
         </Link>
       </div>
     );
@@ -64,10 +64,10 @@ export default function AdminUserProfile({ uid }: Props) {
   return (
     <div>
       <Link
-        href="/admin/content"
+        href="/admin/users"
         className="text-sm text-xiio-muted hover:text-xiio-accent transition mb-6 inline-block"
       >
-        {t("admin.userProfile.backToContent")}
+        {t("admin.userProfile.backToUsers")}
       </Link>
 
       <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">{data.displayName || data.uid}</h1>

@@ -20,6 +20,21 @@ export type AdminUserWorkSummary = {
   createdAt?: unknown;
 };
 
+export type AdminUserListItem = {
+  uid: string;
+  displayName: string;
+  email: string | null;
+  platformPurpose: PlatformPurpose;
+  role: UserRole;
+  emailVerified: boolean;
+  createdAt?: unknown;
+};
+
+export type AdminUsersListResponse = {
+  items: AdminUserListItem[];
+  nextCursor: string | null;
+};
+
 export type AdminUserDetail = {
   uid: string;
   displayName: string;

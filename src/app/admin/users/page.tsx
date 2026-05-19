@@ -1,5 +1,5 @@
-import AdminUsersLookup from "@/components/admin/AdminUsersLookup";
+import AdminUsersList from "@/components/admin/AdminUsersList";
 
 export default function AdminUsersPage() {
-  return <AdminUsersLookup />;
+  return <AdminUsersList />;
 }

@@ -21,7 +21,7 @@ export default function AdminDashboardCards() {
         href: "/admin/users",
         title: t("admin.cardUsersTitle"),
         description: t("admin.cardUsersDesc"),
-        ready: false,
+        ready: true,
       },
       {
         href: "/admin/content",
