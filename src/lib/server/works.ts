@@ -1,4 +1,9 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
+import {
+  parsePromoPendingRevision,
+  parseRevisionReviewStatus,
+  parseWorkPendingRevision,
+} from "@/lib/server/revision-parse";
 import type {
   PlatformStatus,
   PromoPlatformStatus,
@@ -70,6 +75,8 @@ export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc
     updatedAt: data.updatedAt,
     likeCount: typeof data.likeCount === "number" ? data.likeCount : 0,
     viewCount: typeof data.viewCount === "number" ? data.viewCount : 0,
+    pendingRevision: parseWorkPendingRevision(data),
+    revisionReviewStatus: parseRevisionReviewStatus(data),
   };
 }
 
@@ -96,6 +103,8 @@ export function parsePromoDoc(data: Record<string, unknown>): PromoShortDoc {
     updatedAt: data.updatedAt,
     likeCount: parseCount(data, "likeCount"),
     viewCount: parseCount(data, "viewCount"),
+    pendingRevision: parsePromoPendingRevision(data),
+    revisionReviewStatus: parseRevisionReviewStatus(data),
   };
 }
 

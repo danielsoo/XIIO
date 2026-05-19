@@ -29,7 +29,6 @@ export default function ProfileMenu() {
   if (!activeProfile) return null;
 
   const handleLogout = async () => {
-    clearActiveProfile();
     await logout();
     router.push("/");
     setOpen(false);

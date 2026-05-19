@@ -7,6 +7,7 @@ import { EMAIL_NOT_VERIFIED, useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { auth } from "@/lib/firebase";
+import { resolvePostLoginPath } from "@/lib/activeWatchProfile";
 import {
   createGoogleMemberProfile,
   getPostAuthPath,
@@ -55,7 +56,7 @@ function LoginForm() {
       await markEmailVerified(uid);
     }
 
-    router.push(await getPostAuthPath(uid));
+    router.push(resolvePostLoginPath(uid, await getPostAuthPath(uid)));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

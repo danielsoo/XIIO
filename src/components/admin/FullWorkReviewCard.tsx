@@ -16,6 +16,7 @@ export type FullQueueItem = WorkDoc & {
   ownerEmail: string | null;
   ownerName: string | null;
   playbackUrl?: string;
+  isRevision?: boolean;
 };
 
 type Props = {
@@ -58,13 +59,18 @@ export default function FullWorkReviewCard({ item, busy, onApprove, onReject }: 
     <li className="rounded-2xl border border-white/10 bg-xiio-surface p-5">
       <div className="flex flex-wrap justify-between gap-2 mb-2">
         <div>
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="text-lg font-semibold text-white flex flex-wrap items-center gap-2">
             <Link
               href={`/admin/content/works/${item.ownerUid}/${item.id}`}
               className="hover:text-xiio-accent transition"
             >
               {item.title}
             </Link>
+            {item.isRevision && (
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                {t("admin.contentReview.revisionBadge")}
+              </span>
+            )}
           </h2>
           <p className="text-xs text-xiio-muted mt-0.5">
             <Link

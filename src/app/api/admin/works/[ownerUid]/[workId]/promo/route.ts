@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { deleteStreamVideo } from "@/lib/cloudflare/stream";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
 import {
+  approvePromoRevision,
+  rejectPromoRevision,
+} from "@/lib/server/content-revisions";
+import {
   FieldValue,
   getDbOrNull,
   parsePromoDoc,
@@ -9,6 +13,7 @@ import {
   promoRef,
   worksCol,
 } from "@/lib/server/works";
+import { parseRevisionReviewStatus } from "@/lib/server/revision-parse";
 
 type Params = { params: Promise<{ ownerUid: string; workId: string }> };
 
@@ -38,10 +43,30 @@ export async function PATCH(request: Request, { params }: Params) {
   const snap = await ref.get();
   if (!snap.exists) return jsonError("not_found", "홍보 쇼츠가 없습니다.", 404);
 
-  const promo = parsePromoDoc(snap.data() as Record<string, unknown>);
+  const raw = snap.data() as Record<string, unknown>;
+  const promo = parsePromoDoc(raw);
   const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
+  const isRevision =
+    promo.platformStatus === "published" &&
+    parseRevisionReviewStatus(raw) === "pending" &&
+    promo.pendingRevision?.platformStatus === "pending";
 
   if (action === "approve") {
+    if (isRevision) {
+      try {
+        await approvePromoRevision(db, ownerUid, workId, session.uid);
+        return NextResponse.json({ ok: true, platformStatus: "published", revisionApplied: true });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg === "not_ready") {
+          return jsonError("not_ready", "클립 인코딩이 완료된 후 승인할 수 있습니다.", 400);
+        }
+        if (msg === "invalid_state") {
+          return jsonError("invalid_state", "수정 심사 상태가 아닙니다.", 400);
+        }
+        throw e;
+      }
+    }
     if (promo.streamStatus !== "ready") {
       return jsonError("not_ready", "클립 인코딩이 완료된 후 승인할 수 있습니다.", 400);
     }
@@ -58,6 +83,14 @@ export async function PATCH(request: Request, { params }: Params) {
 
   if (action === "reject") {
     const reason = (body.rejectReason ?? "").trim().slice(0, 500) || "반려됨";
+    if (isRevision) {
+      try {
+        await rejectPromoRevision(db, ownerUid, workId, session.uid, reason);
+        return NextResponse.json({ ok: true, revisionReviewStatus: "rejected" });
+      } catch {
+        return jsonError("invalid_state", "수정 심사 상태가 아닙니다.", 400);
+      }
+    }
     await ref.update({
       platformStatus: "rejected",
       rejectReason: reason,

@@ -10,6 +10,7 @@ import {
 } from "@/context/AuthContext";
 import { formatAuthError, formatSignupErrorMessage } from "@/lib/authErrors";
 import { auth, db } from "@/lib/firebase";
+import { resolvePostLoginPath } from "@/lib/activeWatchProfile";
 import {
   FIRESTORE_PERMISSION_DENIED,
   hasUserProfile,
@@ -273,7 +274,7 @@ export default function SignupPage() {
             setLoading(false);
             return;
           }
-          router.push("/profiles");
+          router.push(resolvePostLoginPath(auth!.currentUser!.uid, "/profiles"));
           return;
         } catch (resumeErr) {
           console.error("[signup] resume failed", resumeErr);
@@ -323,7 +324,7 @@ export default function SignupPage() {
     try {
       const googleUser = await loginWithGoogle();
       if (await hasUserProfile(googleUser.uid)) {
-        router.push("/profiles");
+        router.push(resolvePostLoginPath(googleUser.uid, "/profiles"));
         return;
       }
       if (googleUser.displayName) setName(googleUser.displayName);

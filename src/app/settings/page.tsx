@@ -10,12 +10,11 @@ import ProfileAvatar from "@/components/ProfileAvatar";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
-  const { activeProfile, clearActiveProfile } = useProfile();
+  const { activeProfile } = useProfile();
   const { t, locale, setLocale } = useTranslations();
   const router = useRouter();
 
   const handleLogout = async () => {
-    clearActiveProfile();
     await logout();
     router.push("/");
   };

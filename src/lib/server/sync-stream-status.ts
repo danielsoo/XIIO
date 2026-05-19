@@ -48,3 +48,49 @@ export async function syncPromoStreamStatusIfNeeded(
   });
   return next;
 }
+
+export async function syncPromoRevisionStreamStatusIfNeeded(
+  db: Firestore,
+  ownerUid: string,
+  workId: string,
+  streamUid: string,
+  current: StreamStatus | undefined
+): Promise<StreamStatus | undefined> {
+  if (!streamUid || !current || current === "ready" || current === "error") return current;
+
+  const info = await getStreamVideo(streamUid);
+  if (!info?.statusState) return current;
+
+  const next = mapWebhookStreamStatus(info.statusState);
+  if (next === current) return current;
+
+  await promoRef(db, ownerUid, workId).update({
+    "pendingRevision.streamStatus": next,
+    "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  return next;
+}
+
+export async function syncWorkRevisionStreamStatusIfNeeded(
+  db: Firestore,
+  ownerUid: string,
+  workId: string,
+  streamUid: string,
+  current: StreamStatus | undefined
+): Promise<StreamStatus | undefined> {
+  if (!streamUid || !current || current === "ready" || current === "error") return current;
+
+  const info = await getStreamVideo(streamUid);
+  if (!info?.statusState) return current;
+
+  const next = mapWebhookStreamStatus(info.statusState);
+  if (next === current) return current;
+
+  await worksCol(db, ownerUid).doc(workId).update({
+    "pendingRevision.streamStatus": next,
+    "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  return next;
+}

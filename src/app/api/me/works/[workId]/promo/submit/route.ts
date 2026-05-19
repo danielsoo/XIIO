@@ -20,6 +20,28 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const promo = parsePromoDoc(snap.data() as Record<string, unknown>);
+
+  if (promo.platformStatus === "published") {
+    const rev = promo.pendingRevision;
+    if (!rev || (rev.platformStatus !== "draft" && rev.platformStatus !== "rejected")) {
+      return jsonError("invalid_state", "제출할 수정본이 없습니다.", 400);
+    }
+    if (rev.streamStatus !== "ready") {
+      return jsonError("not_ready", "클립 인코딩이 끝난 후 제출할 수 있습니다.", 400);
+    }
+    const { rejectReason: _ignored, ...revRest } = rev;
+    await ref.update({
+      pendingRevision: {
+        ...revRest,
+        platformStatus: "pending",
+        submittedAt: FieldValue.serverTimestamp(),
+      },
+      revisionReviewStatus: "pending",
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    return NextResponse.json({ ok: true, revisionMode: true, revisionReviewStatus: "pending" });
+  }
+
   if (promo.platformStatus !== "draft" && promo.platformStatus !== "rejected") {
     return jsonError("invalid_state", "제출할 수 없는 상태입니다.", 400);
   }

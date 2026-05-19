@@ -28,9 +28,33 @@ async function applyStreamStatus(
   workId: string,
   kind: string
 ) {
+  if (kind === "promo_revision") {
+    await promoRef(db, xiioUid, workId).set(
+      {
+        "pendingRevision.streamUid": streamUid,
+        "pendingRevision.streamStatus": streamStatus,
+        "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    return;
+  }
   if (kind === "promo") {
     await promoRef(db, xiioUid, workId).set(
       { streamUid, streamStatus, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+    return;
+  }
+  if (kind === "full_revision") {
+    await worksCol(db, xiioUid).doc(workId).set(
+      {
+        "pendingRevision.streamUid": streamUid,
+        "pendingRevision.streamStatus": streamStatus,
+        "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
       { merge: true }
     );
     return;
@@ -65,6 +89,42 @@ async function applyByStreamUidLookup(
     await Promise.all(
       promoSnap.docs.map((doc) =>
         doc.ref.update({ streamStatus, updatedAt: FieldValue.serverTimestamp() })
+      )
+    );
+    return true;
+  }
+
+  const workRevSnap = await db
+    .collectionGroup("works")
+    .where("pendingRevision.streamUid", "==", streamUid)
+    .limit(10)
+    .get();
+  if (!workRevSnap.empty) {
+    await Promise.all(
+      workRevSnap.docs.map((doc) =>
+        doc.ref.update({
+          "pendingRevision.streamStatus": streamStatus,
+          "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        })
+      )
+    );
+    return true;
+  }
+
+  const promoRevSnap = await db
+    .collectionGroup("promoShort")
+    .where("pendingRevision.streamUid", "==", streamUid)
+    .limit(10)
+    .get();
+  if (!promoRevSnap.empty) {
+    await Promise.all(
+      promoRevSnap.docs.map((doc) =>
+        doc.ref.update({
+          "pendingRevision.streamStatus": streamStatus,
+          "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        })
       )
     );
     return true;

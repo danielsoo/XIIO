@@ -15,16 +15,19 @@ export async function GET(request: Request) {
     });
   }
 
-  const [fullPending, promoPending, fullRemoval, promoRemoval] = await Promise.all([
-    db.collectionGroup("works").where("platformStatus", "==", "pending").get(),
-    db.collectionGroup("promoShort").where("platformStatus", "==", "pending").get(),
-    db.collectionGroup("works").where("platformStatus", "==", "removal_requested").get(),
-    db.collectionGroup("promoShort").where("platformStatus", "==", "removal_requested").get(),
-  ]);
+  const [fullPending, fullRevision, promoPending, promoRevision, fullRemoval, promoRemoval] =
+    await Promise.all([
+      db.collectionGroup("works").where("platformStatus", "==", "pending").get(),
+      db.collectionGroup("works").where("revisionReviewStatus", "==", "pending").get(),
+      db.collectionGroup("promoShort").where("platformStatus", "==", "pending").get(),
+      db.collectionGroup("promoShort").where("revisionReviewStatus", "==", "pending").get(),
+      db.collectionGroup("works").where("platformStatus", "==", "removal_requested").get(),
+      db.collectionGroup("promoShort").where("platformStatus", "==", "removal_requested").get(),
+    ]);
 
   return NextResponse.json({
-    pendingFull: fullPending.size,
-    pendingPromo: promoPending.size,
+    pendingFull: fullPending.size + fullRevision.size,
+    pendingPromo: promoPending.size + promoRevision.size,
     removalRequested: fullRemoval.size + promoRemoval.size,
   });
 }

@@ -3,6 +3,10 @@ import { deleteStreamVideo, resolvePlaybackUrl } from "@/lib/cloudflare/stream";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
 import { parseUserProfileDoc } from "@/lib/userAccess";
 import {
+  approveWorkRevision,
+  rejectWorkRevision,
+} from "@/lib/server/content-revisions";
+import {
   FieldValue,
   getDbOrNull,
   parsePromoDoc,
@@ -10,6 +14,7 @@ import {
   promoRef,
   worksCol,
 } from "@/lib/server/works";
+import { parseRevisionReviewStatus } from "@/lib/server/revision-parse";
 import { isVideoAspectRatio } from "@/lib/works/aspect-ratio";
 import { isRejectReasonCode } from "@/lib/works/constants";
 import type { VideoAspectRatio } from "@/types/work";
@@ -107,9 +112,41 @@ export async function PATCH(request: Request, { params }: Params) {
   const snap = await ref.get();
   if (!snap.exists) return jsonError("not_found", "작품을 찾을 수 없습니다.", 404);
 
-  const work = parseWorkDoc(workId, snap.data() as Record<string, unknown>);
+  const raw = snap.data() as Record<string, unknown>;
+  const work = parseWorkDoc(workId, raw);
+  const isRevision =
+    work.platformStatus === "published" &&
+    parseRevisionReviewStatus(raw) === "pending" &&
+    work.pendingRevision?.platformStatus === "pending";
 
   if (action === "approve") {
+    if (isRevision) {
+      const aspectBody = body.approvedAspectRatio?.trim();
+      let approvedAspectRatio: VideoAspectRatio | undefined;
+      if (aspectBody) {
+        if (!isVideoAspectRatio(aspectBody)) {
+          return jsonError("invalid_aspect_ratio", "유효하지 않은 화면 비율입니다.", 400);
+        }
+        approvedAspectRatio = aspectBody;
+      }
+      try {
+        await approveWorkRevision(db, ownerUid, workId, session.uid, {
+          approvedCategory: body.approvedCategory,
+          approvedTags: body.approvedTags,
+          approvedAspectRatio,
+        });
+        return NextResponse.json({ ok: true, platformStatus: "published", revisionApplied: true });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg === "not_ready") {
+          return jsonError("not_ready", "인코딩이 완료된 후 승인할 수 있습니다.", 400);
+        }
+        if (msg === "invalid_state") {
+          return jsonError("invalid_state", "수정 심사 상태가 아닙니다.", 400);
+        }
+        throw e;
+      }
+    }
     if (work.streamStatus !== "ready") {
       return jsonError("not_ready", "인코딩이 완료된 후 승인할 수 있습니다.", 400);
     }
@@ -161,6 +198,15 @@ export async function PATCH(request: Request, { params }: Params) {
         : code === "tag_mismatch"
           ? "태그 부적합"
           : "반려됨");
+
+    if (isRevision) {
+      try {
+        await rejectWorkRevision(db, ownerUid, workId, session.uid, code, reason);
+        return NextResponse.json({ ok: true, revisionReviewStatus: "rejected" });
+      } catch {
+        return jsonError("invalid_state", "수정 심사 상태가 아닙니다.", 400);
+      }
+    }
 
     await ref.update({
       platformStatus: "rejected",

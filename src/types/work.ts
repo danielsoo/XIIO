@@ -32,6 +32,39 @@ export type DeletionRequest = {
   requestedAt: unknown;
 };
 
+/** 게시 후 수정 제안 — 승인 전까지 공개본은 유지 */
+export type RevisionReviewStatus = "pending" | "rejected";
+
+export type WorkPendingRevision = {
+  platformStatus: "draft" | "pending" | "rejected";
+  streamUid?: string;
+  streamStatus?: StreamStatus;
+  section?: WorkSection;
+  title?: string;
+  description?: string;
+  director?: string;
+  proposedCategory?: string;
+  proposedTags?: string[];
+  proposedAspectRatio?: VideoAspectRatio;
+  rejectReason?: string;
+  rejectReasonCode?: RejectReasonCode;
+  submittedAt?: unknown;
+  updatedAt?: unknown;
+};
+
+export type PromoPendingRevision = {
+  platformStatus: "draft" | "pending" | "rejected";
+  streamUid?: string;
+  streamStatus?: StreamStatus;
+  clipStartSec: number;
+  clipEndSec: number;
+  title?: string;
+  description?: string;
+  rejectReason?: string;
+  submittedAt?: unknown;
+  updatedAt?: unknown;
+};
+
 export type WorkDoc = {
   kind: "full";
   /** 홈·카테고리 탭 배치 */
@@ -63,6 +96,8 @@ export type WorkDoc = {
   updatedAt?: unknown;
   likeCount?: number;
   viewCount?: number;
+  pendingRevision?: WorkPendingRevision;
+  revisionReviewStatus?: RevisionReviewStatus;
 };
 
 export type PromoShortDoc = {
@@ -83,6 +118,8 @@ export type PromoShortDoc = {
   updatedAt?: unknown;
   likeCount?: number;
   viewCount?: number;
+  pendingRevision?: PromoPendingRevision;
+  revisionReviewStatus?: RevisionReviewStatus;
 };
 
 export const PROMO_SHORT_DOC_ID = "promo";

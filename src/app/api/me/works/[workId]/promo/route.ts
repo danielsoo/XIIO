@@ -7,7 +7,11 @@ import {
   resolvePlaybackUrl,
 } from "@/lib/cloudflare/stream";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
-import { syncPromoStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
+import { parseRevisionReviewStatus } from "@/lib/server/revision-parse";
+import {
+  syncPromoRevisionStreamStatusIfNeeded,
+  syncPromoStreamStatusIfNeeded,
+} from "@/lib/server/sync-stream-status";
 import {
   canOwnerDeletePromo,
   FieldValue,
@@ -39,8 +43,12 @@ export async function GET(request: Request, { params }: Params) {
 
   const promoSnap = await promoRef(db, session.uid, workId).get();
   let promo = null;
+  let pendingRevision = null;
+  let pendingRevisionPlayback: string | undefined;
+
   if (promoSnap.exists) {
-    let p = parsePromoDoc(promoSnap.data() as Record<string, unknown>);
+    const raw = promoSnap.data() as Record<string, unknown>;
+    let p = parsePromoDoc(raw);
     if (p.streamUid && p.streamStatus && p.streamStatus !== "ready" && p.streamStatus !== "error") {
       const synced = await syncPromoStreamStatusIfNeeded(
         db,
@@ -51,14 +59,48 @@ export async function GET(request: Request, { params }: Params) {
       );
       p = { ...p, streamStatus: synced ?? p.streamStatus };
     }
+
+    if (p.pendingRevision?.streamUid && p.pendingRevision.streamStatus) {
+      const revSynced = await syncPromoRevisionStreamStatusIfNeeded(
+        db,
+        session.uid,
+        workId,
+        p.pendingRevision.streamUid,
+        p.pendingRevision.streamStatus
+      );
+      p = {
+        ...p,
+        pendingRevision: { ...p.pendingRevision, streamStatus: revSynced ?? p.pendingRevision.streamStatus },
+      };
+    }
+
     const promoPlayback =
       p.streamUid && p.streamStatus === "ready" ? await resolvePlaybackUrl(p.streamUid) : null;
     promo = { id: PROMO_SHORT_DOC_ID, ...p, playbackUrl: promoPlayback ?? undefined };
+
+    if (p.pendingRevision) {
+      pendingRevision = p.pendingRevision;
+      if (
+        p.pendingRevision.streamUid &&
+        p.pendingRevision.streamStatus === "ready"
+      ) {
+        pendingRevisionPlayback =
+          (await resolvePlaybackUrl(p.pendingRevision.streamUid)) ?? undefined;
+      }
+    }
   }
+
+  const revisionMode = promo?.platformStatus === "published";
 
   return NextResponse.json({
     work: { ...work, playbackUrl: fullPlayback ?? undefined, durationSec: fullInfo?.duration },
     promo,
+    revisionMode,
+    pendingRevision,
+    pendingRevisionPlayback,
+    revisionReviewStatus: promoSnap.exists
+      ? parseRevisionReviewStatus(promoSnap.data() as Record<string, unknown>)
+      : undefined,
   });
 }
 
@@ -103,22 +145,37 @@ export async function PUT(request: Request, { params }: Params) {
 
   const promoDocRef = promoRef(db, session.uid, workId);
   const existing = await promoDocRef.get();
-  if (existing.exists) {
-    const existingData = parsePromoDoc(existing.data() as Record<string, unknown>);
-    if (existingData.platformStatus === "published" || existingData.platformStatus === "pending") {
-      return jsonError("promo_locked", "심사 중이거나 게시된 쇼츠는 수정할 수 없습니다.", 403);
+  const existingData = existing.exists
+    ? parsePromoDoc(existing.data() as Record<string, unknown>)
+    : null;
+
+  if (existingData?.platformStatus === "pending") {
+    return jsonError("promo_locked", "심사 중인 쇼츠는 수정할 수 없습니다.", 403);
+  }
+  if (existingData?.revisionReviewStatus === "pending") {
+    return jsonError("revision_pending", "수정본 심사가 끝난 후 다시 편집할 수 있습니다.", 403);
+  }
+
+  const isPublishedRevision = existingData?.platformStatus === "published";
+
+  if (!isPublishedRevision && existingData?.streamUid) {
+    try {
+      await deleteStreamVideo(existingData.streamUid);
+    } catch {
+      /* ignore */
     }
-    const oldUid = existingData.streamUid;
-    if (oldUid) {
-      try {
-        await deleteStreamVideo(oldUid);
-      } catch {
-        /* ignore */
-      }
+  }
+
+  if (isPublishedRevision && existingData.pendingRevision?.streamUid) {
+    try {
+      await deleteStreamVideo(existingData.pendingRevision.streamUid);
+    } catch {
+      /* ignore */
     }
   }
 
   let clipUid: string;
+  const streamKind = isPublishedRevision ? "promo_revision" : "promo";
   try {
     const clip = await createClip({
       clippedFromVideoUID: work.streamUid,
@@ -127,13 +184,48 @@ export async function PUT(request: Request, { params }: Params) {
       meta: {
         xiio_uid: session.uid,
         xiio_work_id: workId,
-        xiio_kind: "promo",
+        xiio_kind: streamKind,
       },
     });
     clipUid = clip.uid;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return jsonError("stream_api_failed", msg, 502);
+  }
+
+  const clipTitle = body.title?.trim().slice(0, 200) || existingData?.title || work.title;
+  const clipDescription =
+    body.description?.trim().slice(0, 2000) ||
+    existingData?.description ||
+    work.description ||
+    null;
+
+  if (isPublishedRevision) {
+    await promoDocRef.set(
+      {
+        pendingRevision: {
+          platformStatus: "draft",
+          streamStatus: "processing",
+          streamUid: clipUid,
+          clipStartSec: start,
+          clipEndSec: end,
+          title: clipTitle,
+          description: clipDescription,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        revisionReviewStatus: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    return NextResponse.json({
+      ok: true,
+      revisionMode: true,
+      streamUid: clipUid,
+      streamStatus: "processing",
+      clipStartSec: start,
+      clipEndSec: end,
+    });
   }
 
   await promoDocRef.set(
@@ -143,8 +235,8 @@ export async function PUT(request: Request, { params }: Params) {
       streamUid: clipUid,
       clipStartSec: start,
       clipEndSec: end,
-      title: body.title?.trim().slice(0, 200) || work.title,
-      description: body.description?.trim().slice(0, 2000) || work.description || null,
+      title: clipTitle,
+      description: clipDescription,
       updatedAt: FieldValue.serverTimestamp(),
       ...(existing.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
     },

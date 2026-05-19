@@ -185,6 +185,9 @@ export default function MyWorksContent() {
                 work.platformStatus === "pending" || work.platformStatus === "rejected";
               const canRequestRemoval = work.platformStatus === "published";
               const promoPublished = promoStatus === "published";
+              const workPublished = work.platformStatus === "published";
+              const promoRevisionPending = work.promo?.revisionReviewStatus === "pending";
+              const workRevisionPending = work.revisionReviewStatus === "pending";
 
               return (
                 <li
@@ -287,13 +290,34 @@ export default function MyWorksContent() {
                     >
                       ↓
                     </button>
-                    {work.streamStatus === "ready" && (
+                    {work.streamStatus === "ready" && !promoPublished && (
                       <Link
                         href={`/uploader/works/${work.id}/promo`}
                         className="px-3 py-1.5 text-xs rounded-lg bg-xiio-accent/20 text-xiio-accent hover:bg-xiio-accent/30 transition"
                       >
                         {work.promo ? t("myWorks.editPromo") : t("myWorks.createPromo")}
                       </Link>
+                    )}
+                    {promoPublished && (
+                      <Link
+                        href={`/uploader/works/${work.id}/promo`}
+                        className="px-3 py-1.5 text-xs rounded-lg border border-white/15 text-white hover:bg-white/5 transition"
+                      >
+                        {t("myWorks.editPromo")}
+                      </Link>
+                    )}
+                    {workPublished && (
+                      <Link
+                        href={`/uploader/works/${work.id}/edit`}
+                        className="px-3 py-1.5 text-xs rounded-lg border border-white/15 text-white hover:bg-white/5 transition"
+                      >
+                        {t("myWorks.editVideo")}
+                      </Link>
+                    )}
+                    {(workRevisionPending || promoRevisionPending) && (
+                      <span className="px-2 py-1 text-[10px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        {t("myWorks.revisionReviewPending")}
+                      </span>
                     )}
                     {canDelete && (
                       <button

@@ -10,6 +10,10 @@ import {
 } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
+  loadStoredActiveWatchProfile,
+  saveStoredActiveWatchProfile,
+} from "@/lib/activeWatchProfile";
+import {
   createWatchProfile,
   deleteWatchProfile,
   fetchWatchProfiles,
@@ -17,8 +21,6 @@ import {
 } from "@/lib/watchProfiles";
 import type { WatchProfile } from "@/types/profile";
 import { MAX_WATCH_PROFILES } from "@/types/profile";
-
-const ACTIVE_PROFILE_KEY = "xiio-active-watch-profile";
 
 interface ProfileContextType {
   profiles: WatchProfile[];
@@ -44,18 +46,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [activeProfile, setActiveProfile] = useState<WatchProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const persistActive = (profile: WatchProfile | null) => {
-    if (profile) {
-      localStorage.setItem(ACTIVE_PROFILE_KEY, JSON.stringify(profile));
-    } else {
-      localStorage.removeItem(ACTIVE_PROFILE_KEY);
-    }
+  const persistActive = useCallback((profile: WatchProfile | null, uid: string) => {
+    saveStoredActiveWatchProfile(uid, profile);
     setActiveProfile(profile);
-  };
+  }, []);
 
   const clearActiveProfile = useCallback(() => {
-    persistActive(null);
-  }, []);
+    if (user) saveStoredActiveWatchProfile(user.uid, null);
+    setActiveProfile(null);
+  }, [user]);
 
   const refreshProfiles = useCallback(async () => {
     if (!user) {
@@ -68,32 +67,36 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       const list = await fetchWatchProfiles(user.uid);
       setProfiles(list);
 
-      const stored = localStorage.getItem(ACTIVE_PROFILE_KEY);
+      const stored = loadStoredActiveWatchProfile(user.uid);
       if (stored) {
-        const parsed = JSON.parse(stored) as WatchProfile;
-        const match = list.find((p) => p.id === parsed.id);
-        if (match) persistActive(match);
-        else persistActive(null);
+        const match = list.find((p) => p.id === stored.id);
+        if (match) persistActive(match, user.uid);
+        else persistActive(null, user.uid);
       }
     } catch {
       setProfiles([]);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, persistActive]);
 
   useEffect(() => {
     if (!user) {
       setProfiles([]);
-      persistActive(null);
+      setActiveProfile(null);
       setLoading(false);
       return;
     }
+
+    const stored = loadStoredActiveWatchProfile(user.uid);
+    if (stored) setActiveProfile(stored);
+
     void refreshProfiles();
   }, [user, refreshProfiles]);
 
   const selectProfile = (profile: WatchProfile) => {
-    persistActive(profile);
+    if (!user) return;
+    persistActive(profile, user.uid);
   };
 
   const addProfile = async (name: string, avatarFile?: File) => {
@@ -114,7 +117,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (!user) throw new Error("로그인이 필요합니다.");
     const updated = await updateWatchProfile(user.uid, profileId, updates);
     setProfiles((prev) => prev.map((p) => (p.id === profileId ? updated : p)));
-    if (activeProfile?.id === profileId) persistActive(updated);
+    if (activeProfile?.id === profileId) persistActive(updated, user.uid);
     void refreshProfiles();
     return updated;
   };
@@ -122,7 +125,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const removeProfile = async (profileId: string) => {
     if (!user) throw new Error("로그인이 필요합니다.");
     await deleteWatchProfile(user.uid, profileId);
-    if (activeProfile?.id === profileId) persistActive(null);
+    if (activeProfile?.id === profileId) persistActive(null, user.uid);
     await refreshProfiles();
   };
 

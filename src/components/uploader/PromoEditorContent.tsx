@@ -5,11 +5,21 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import PlaybackVideo from "@/components/PlaybackVideo";
-import type { PromoShortDoc, StreamStatus, WorkDoc } from "@/types/work";
+import type {
+  PromoPendingRevision,
+  PromoShortDoc,
+  RevisionReviewStatus,
+  StreamStatus,
+  WorkDoc,
+} from "@/types/work";
 
 type EditorData = {
   work: WorkDoc & { playbackUrl?: string; durationSec?: number };
   promo: (PromoShortDoc & { id: string; playbackUrl?: string }) | null;
+  revisionMode?: boolean;
+  revisionReviewStatus?: RevisionReviewStatus;
+  pendingRevision?: PromoPendingRevision | null;
+  pendingRevisionPlayback?: string;
 };
 
 function isPromoEncoding(status: StreamStatus | undefined): boolean {
@@ -20,6 +30,9 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const { user, loading: authLoading } = useAuth();
   const { t } = useTranslations();
   const [data, setData] = useState<EditorData | null>(null);
+  const [revisionMode, setRevisionMode] = useState(false);
+  const [revisionReviewStatus, setRevisionReviewStatus] = useState<RevisionReviewStatus | undefined>();
+  const [pendingRevisionPlayback, setPendingRevisionPlayback] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -46,13 +59,19 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         return;
       }
       setData(json);
+      setRevisionMode(Boolean(json.revisionMode));
+      setRevisionReviewStatus(json.revisionReviewStatus);
+      setPendingRevisionPlayback(json.pendingRevisionPlayback);
       const dur = json.work.durationSec ?? 120;
       const promo = json.promo;
-      setClipStart(promo?.clipStartSec ?? 0);
-      setClipEnd(promo?.clipEndSec ?? Math.min(30, dur));
-      setTitle(promo?.title ?? json.work.title);
-      setDescription(promo?.description ?? json.work.description ?? "");
-      if (promo && !isPromoEncoding(promo.streamStatus) && promo.streamStatus === "ready") {
+      const rev = json.pendingRevision;
+      const source = json.revisionMode && rev ? rev : promo;
+      setClipStart(source?.clipStartSec ?? promo?.clipStartSec ?? 0);
+      setClipEnd(source?.clipEndSec ?? promo?.clipEndSec ?? Math.min(30, dur));
+      setTitle(source?.title ?? promo?.title ?? json.work.title);
+      setDescription(source?.description ?? promo?.description ?? json.work.description ?? "");
+      const encStatus = json.revisionMode ? rev?.streamStatus : promo?.streamStatus;
+      if (encStatus && !isPromoEncoding(encStatus) && encStatus === "ready") {
         setJustSavedClip(false);
       }
     } catch {
@@ -67,7 +86,9 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   }, [load]);
 
   const promo = data?.promo;
-  const promoEncoding = promo ? isPromoEncoding(promo.streamStatus) : false;
+  const pendingRevision = data?.pendingRevision;
+  const activeStreamStatus = revisionMode ? pendingRevision?.streamStatus : promo?.streamStatus;
+  const promoEncoding = activeStreamStatus ? isPromoEncoding(activeStreamStatus) : false;
 
   useEffect(() => {
     if (!promoEncoding || !user) return;
@@ -189,17 +210,37 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
 
   const { work } = data;
   const duration = work.durationSec ?? 600;
-  const locked =
-    promo?.platformStatus === "pending" || promo?.platformStatus === "published";
+  const locked = revisionMode
+    ? revisionReviewStatus === "pending"
+    : promo?.platformStatus === "pending" || promo?.platformStatus === "published";
   const fullReady = work.streamStatus === "ready";
-  const canSubmit =
-    promo &&
-    (promo.platformStatus === "draft" || promo.platformStatus === "rejected") &&
-    promo.streamStatus === "ready";
+  const canSubmit = revisionMode
+    ? Boolean(
+        pendingRevision &&
+          (pendingRevision.platformStatus === "draft" || pendingRevision.platformStatus === "rejected") &&
+          pendingRevision.streamStatus === "ready"
+      )
+    : Boolean(
+        promo &&
+          (promo.platformStatus === "draft" || promo.platformStatus === "rejected") &&
+          promo.streamStatus === "ready"
+      );
   const showEditor = fullReady && !locked && !promoEncoding;
-  const savedClip =
-    promo &&
-    (promoEncoding || justSavedClip || promo.platformStatus === "draft" || promo.platformStatus === "rejected");
+  const savedClip = revisionMode
+    ? Boolean(
+        pendingRevision &&
+          (promoEncoding ||
+            justSavedClip ||
+            pendingRevision.platformStatus === "draft" ||
+            pendingRevision.platformStatus === "rejected")
+      )
+    : Boolean(
+        promo &&
+          (promoEncoding ||
+            justSavedClip ||
+            promo.platformStatus === "draft" ||
+            promo.platformStatus === "rejected")
+      );
 
   return (
     <main className="min-h-screen bg-xiio-bg px-4 py-16 md:px-8">
@@ -209,6 +250,20 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         </Link>
         <h1 className="text-2xl font-bold text-white mb-1">{t("promoEditor.title")}</h1>
         <p className="text-xiio-muted text-sm mb-6">{work.title}</p>
+
+        {revisionMode && (
+          <div className="mb-4 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sky-100 text-sm">
+            {t("promoEditor.revisionModeHint")}
+          </div>
+        )}
+
+        {revisionMode && revisionReviewStatus === "pending" && (
+          <PromoStatusBanner
+            variant="pending"
+            title={t("promoEditor.revisionPendingTitle")}
+            body={t("promoEditor.revisionPendingBody")}
+          />
+        )}
 
         {!fullReady && (
           <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-300 text-sm">
@@ -232,7 +287,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           />
         )}
 
-        {!promoEncoding && promo?.platformStatus === "pending" && (
+        {!revisionMode && !promoEncoding && promo?.platformStatus === "pending" && (
           <PromoStatusBanner
             variant="pending"
             title={t("promoEditor.statusPendingTitle")}
@@ -258,7 +313,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           </div>
         )}
 
-        {savedClip && promo && (
+        {savedClip && (revisionMode ? pendingRevision : promo) && (
           <section className="mb-6 rounded-2xl border border-xiio-accent/30 bg-xiio-accent/10 p-5">
             <div className="flex items-start gap-3">
               {promoEncoding && (
@@ -266,7 +321,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
                   <span className="h-4 w-4 rounded-full border-2 border-xiio-accent border-t-transparent animate-spin" />
                 </span>
               )}
-              {!promoEncoding && promo.streamStatus === "ready" && (
+              {!promoEncoding && activeStreamStatus === "ready" && (
                 <span className="mt-0.5 text-emerald-400 text-lg" aria-hidden>
                   ✓
                 </span>
@@ -280,17 +335,36 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
                 <ul className="text-sm text-white/80 space-y-1">
                   <li>
                     {t("promoEditor.clipRange", {
-                      start: promo.clipStartSec.toFixed(1),
-                      end: promo.clipEndSec.toFixed(1),
-                      sec: (promo.clipEndSec - promo.clipStartSec).toFixed(1),
+                      start: (revisionMode && pendingRevision
+                        ? pendingRevision.clipStartSec
+                        : promo!.clipStartSec
+                      ).toFixed(1),
+                      end: (revisionMode && pendingRevision
+                        ? pendingRevision.clipEndSec
+                        : promo!.clipEndSec
+                      ).toFixed(1),
+                      sec: (
+                        (revisionMode && pendingRevision
+                          ? pendingRevision.clipEndSec - pendingRevision.clipStartSec
+                          : promo!.clipEndSec - promo!.clipStartSec)
+                      ).toFixed(1),
                     })}
                   </li>
-                  <li>{promo.title}</li>
-                  {promo.description && <li className="text-xiio-muted">{promo.description}</li>}
+                  <li>{revisionMode && pendingRevision ? pendingRevision.title : promo!.title}</li>
+                  {(revisionMode && pendingRevision
+                    ? pendingRevision.description
+                    : promo!.description) && (
+                    <li className="text-xiio-muted">
+                      {revisionMode && pendingRevision
+                        ? pendingRevision.description
+                        : promo!.description}
+                    </li>
+                  )}
                 </ul>
                 <p className="text-xs text-xiio-muted mt-2">
-                  {t(`myWorks.promoStatus.${promo.platformStatus}`)} ·{" "}
-                  {t(`myWorks.stream.${promo.streamStatus ?? "processing"}`)}
+                  {revisionMode
+                    ? t(`myWorks.stream.${activeStreamStatus ?? "processing"}`)
+                    : `${t(`myWorks.promoStatus.${promo!.platformStatus}`)} · ${t(`myWorks.stream.${promo!.streamStatus ?? "processing"}`)}`}
                 </p>
               </div>
             </div>
@@ -302,10 +376,14 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           </section>
         )}
 
-        {promo?.playbackUrl && promo.streamStatus === "ready" && (
+        {((revisionMode && pendingRevisionPlayback) ||
+          (!revisionMode && promo?.playbackUrl && promo.streamStatus === "ready")) && (
           <section className="mb-6">
             <p className="text-sm text-xiio-muted mb-2">{t("promoEditor.preview")}</p>
-            <PlaybackVideo src={promo.playbackUrl} maxHeightClass="max-h-[70vh]" />
+            <PlaybackVideo
+              src={revisionMode ? pendingRevisionPlayback! : promo!.playbackUrl!}
+              maxHeightClass="max-h-[70vh]"
+            />
           </section>
         )}
 
