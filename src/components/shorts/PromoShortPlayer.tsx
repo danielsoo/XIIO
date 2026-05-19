@@ -150,11 +150,139 @@ function PlayerChrome({
     }
   }, [item]);
 
+  const stackedLayout = !isFullscreen && !embedded;
+
+  const actionButtons = (
+    <div className={`flex flex-col items-center shrink-0 ${stackedLayout ? "justify-start gap-4" : "justify-end gap-5 pb-0.5"}`}>
+      <button
+        type="button"
+        onClick={() => void toggleLike()}
+        disabled={likeBusy}
+        className="flex flex-col items-center gap-1 group disabled:opacity-60"
+        aria-pressed={liked}
+        aria-label={t("home.promoLike")}
+      >
+        <span
+          className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-sm group-hover:bg-white/10 transition ${
+            stackedLayout ? "bg-white/5 border-white/15" : "bg-black/40 border-white/15"
+          }`}
+        >
+          <HeartIcon filled={liked} />
+        </span>
+        <span className="text-xs font-semibold text-white tabular-nums">{likeCount.toLocaleString()}</span>
+        {likeHint && (
+          <span className="text-[10px] text-amber-200 text-center max-w-[4.5rem] leading-tight">
+            <Link href="/login" className="underline hover:text-white">
+              {t("engagement.loginToLike")}
+            </Link>
+          </span>
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={() => void handleShare()}
+        className="flex flex-col items-center gap-1 group"
+        aria-label={t("home.promoShare")}
+      >
+        <span
+          className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-sm group-hover:bg-white/10 transition ${
+            stackedLayout ? "bg-white/5 border-white/15" : "bg-black/40 border-white/15"
+          }`}
+        >
+          <ShareIcon />
+        </span>
+        <span
+          className={`text-[10px] font-medium max-w-[3rem] text-center leading-tight ${
+            stackedLayout ? "text-xiio-muted" : "text-white/70"
+          }`}
+        >
+          {shareHint ? t("home.promoShareCopied") : t("home.promoShare")}
+        </span>
+      </button>
+    </div>
+  );
+
+  const metaBlock = (variant: "overlay" | "panel") => (
+    <div className="flex-1 min-w-0 text-left pr-2">
+      <h3
+        className={`font-bold leading-tight truncate ${
+          variant === "panel" ? "text-xl md:text-2xl text-white" : "text-lg md:text-2xl text-white"
+        }`}
+      >
+        {item.title}
+      </h3>
+      <p className={`text-sm ${variant === "panel" ? "text-xiio-muted mt-1" : "text-white/80 mt-0.5 md:mt-1"}`}>
+        {t("home.promoDirector", { name: item.director })}
+      </p>
+      <p
+        className={
+          variant === "panel"
+            ? "mt-3 text-sm md:text-base text-white/80 leading-relaxed line-clamp-5 md:line-clamp-8 min-h-[6.5rem] md:min-h-[8.5rem]"
+            : "text-xs md:text-sm text-white/65 mt-1.5 line-clamp-3 md:line-clamp-4 leading-snug"
+        }
+      >
+        {item.description}
+      </p>
+    </div>
+  );
+
+  const fullscreenControls = (
+    <div className="absolute top-3 right-3 z-20 flex gap-2">
+      {isFullscreen ? (
+        <button
+          type="button"
+          onClick={onExitFullscreen}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 border border-white/20 backdrop-blur-sm hover:bg-black/70 transition"
+          aria-label={t("shorts.exitFullscreen")}
+        >
+          <CollapseIcon />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onToggleFullscreen}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 border border-white/20 backdrop-blur-sm hover:bg-black/70 transition"
+          aria-label={t("shorts.fullscreen")}
+        >
+          <ExpandIcon />
+        </button>
+      )}
+    </div>
+  );
+
+  if (stackedLayout) {
+    return (
+      <>
+        <div className="relative mx-auto w-full max-w-lg flex flex-col rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50 bg-xiio-surface">
+          <div
+            className="relative w-full shrink-0 flex items-center justify-center bg-black max-h-[min(42vh,400px)]"
+            style={{ aspectRatio: item.aspectRatio }}
+          >
+            <video
+              ref={videoRef}
+              src={item.videoUrl}
+              className="absolute inset-0 w-full h-full object-contain bg-black"
+              playsInline
+              muted
+              loop
+              preload={isActive ? "auto" : "none"}
+              onDoubleClick={() => onToggleFullscreen()}
+            />
+            {fullscreenControls}
+          </div>
+
+          <div className="flex items-start justify-between gap-4 px-5 py-5 md:px-7 md:py-6 min-h-[12rem] md:min-h-[14rem] border-t border-white/10 bg-xiio-surface">
+            {metaBlock("panel")}
+            {actionButtons}
+          </div>
+        </div>
+      </>
+    );
+  }
+
   const frameClass = isFullscreen
     ? "relative w-full h-full min-h-0 flex items-center justify-center bg-black"
-    : `relative mx-auto w-full flex items-center justify-center rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${
-        embedded ? "max-h-[min(78vh,860px)]" : "max-h-[min(85vh,900px)]"
-      }`;
+    : "relative mx-auto w-full flex items-center justify-center rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 max-h-[min(68vh,720px)]";
 
   return (
     <>
@@ -170,82 +298,20 @@ function PlayerChrome({
           onDoubleClick={() => onToggleFullscreen()}
         />
 
-        <div className="absolute top-3 right-3 z-20 flex gap-2">
-          {isFullscreen && (
-            <button
-              type="button"
-              onClick={onExitFullscreen}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 border border-white/20 backdrop-blur-sm hover:bg-black/70 transition"
-              aria-label={t("shorts.exitFullscreen")}
-            >
-              <CollapseIcon />
-            </button>
-          )}
-          {!isFullscreen && (
-            <button
-              type="button"
-              onClick={onToggleFullscreen}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 border border-white/20 backdrop-blur-sm hover:bg-black/70 transition"
-              aria-label={t("shorts.fullscreen")}
-            >
-              <ExpandIcon />
-            </button>
-          )}
-        </div>
+        {fullscreenControls}
 
-        <div className="absolute inset-x-0 bottom-0 h-1/4 min-h-[88px] flex items-stretch pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/85 to-transparent" />
-          <div className="relative z-10 flex flex-1 min-w-0 items-end justify-between gap-3 px-4 pb-4 pt-6 md:px-7 md:pb-5 pointer-events-auto">
-            <div className="flex-1 min-w-0 text-left pr-2">
-              <h3 className="text-lg md:text-2xl font-bold text-white leading-tight truncate">{item.title}</h3>
-              <p className="text-sm text-white/80 mt-0.5 md:mt-1">
-                {t("home.promoDirector", { name: item.director })}
-              </p>
-              <p className="text-xs md:text-sm text-white/65 mt-1.5 line-clamp-2 md:line-clamp-3 leading-snug">
-                {item.description}
-              </p>
-            </div>
-            <div className="flex flex-col items-center justify-end gap-5 shrink-0 pb-0.5">
-              <button
-                type="button"
-                onClick={() => void toggleLike()}
-                disabled={likeBusy}
-                className="flex flex-col items-center gap-1 group disabled:opacity-60"
-                aria-pressed={liked}
-                aria-label={t("home.promoLike")}
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 border border-white/15 backdrop-blur-sm group-hover:bg-white/10 transition">
-                  <HeartIcon filled={liked} />
-                </span>
-                <span className="text-xs font-semibold text-white tabular-nums">{likeCount.toLocaleString()}</span>
-                {likeHint && (
-                  <span className="text-[10px] text-amber-200 text-center max-w-[4.5rem] leading-tight">
-                    <Link href="/login" className="underline hover:text-white">
-                      {t("engagement.loginToLike")}
-                    </Link>
-                  </span>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleShare()}
-                className="flex flex-col items-center gap-1 group"
-                aria-label={t("home.promoShare")}
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/40 border border-white/15 backdrop-blur-sm group-hover:bg-white/10 transition">
-                  <ShareIcon />
-                </span>
-                <span className="text-[10px] font-medium text-white/70 max-w-[3rem] text-center leading-tight">
-                  {shareHint ? t("home.promoShareCopied") : t("home.promoShare")}
-                </span>
-              </button>
-            </div>
+        <div className="absolute inset-x-0 bottom-0 h-[36%] min-h-[100px] md:min-h-[112px] flex items-stretch pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/90 to-transparent" />
+          <div className="relative z-10 flex flex-1 min-w-0 items-end justify-between gap-3 px-4 pb-4 pt-8 md:px-7 md:pb-5 md:pt-10 pointer-events-auto">
+            {metaBlock("overlay")}
+            {actionButtons}
           </div>
         </div>
       </div>
     </>
   );
 }
+
 
 export default function PromoShortPlayer({
   item,
