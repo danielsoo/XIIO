@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { formatAdminTimestamp } from "@/lib/admin/format-timestamp";
 import type { AdminUserListItem, AdminUsersListResponse } from "@/types/admin";
 import type { PlatformPurpose, UserRole } from "@/types/user";
 
@@ -14,9 +13,8 @@ type RoleFilter = "" | UserRole;
 
 export default function AdminUsersList() {
   const { user } = useAuth();
-  const { t, locale } = useTranslations();
+  const { t, formatDateTime } = useTranslations();
   const router = useRouter();
-  const loc = locale === "en" ? "en-US" : "ko-KR";
 
   const [purpose, setPurpose] = useState<PurposeFilter>("");
   const [role, setRole] = useState<RoleFilter>("");
@@ -186,7 +184,7 @@ export default function AdminUsersList() {
                   </td>
                   <td className="py-3 pr-4 text-white/80">{row.role}</td>
                   <td className="py-3 text-white/80">
-                    {formatAdminTimestamp(row.createdAt, loc)}
+                    {formatDateTime(row.createdAt)}
                   </td>
                 </tr>
               ))}

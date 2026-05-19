@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { verifyBearerIdToken, getFirebaseAdminApp } from "@/lib/server/firebase-admin";
+import { verifyBearerIdToken, getAdminDb, getFirebaseAdminApp } from "@/lib/server/firebase-admin";
 import { assertAdminApiAccess } from "@/lib/server/admin-access";
+import { parseUserProfileDoc } from "@/lib/userAccess";
 
 export function jsonError(error: string, message: string, status: number, detail?: string) {
   return NextResponse.json(
@@ -28,12 +29,32 @@ export async function requireUser(request: Request) {
   return { session };
 }
 
-export async function requireAdmin(request: Request) {
+type AdminAuthOk = {
+  session: { uid: string; email?: string };
+  isSuperAdmin: boolean;
+};
+
+export async function requireAdmin(
+  request: Request
+): Promise<{ error: NextResponse } | AdminAuthOk> {
   const result = await requireUser(request);
-  if ("error" in result) return result;
+  if (result.error) {
+    return { error: result.error };
+  }
   const ok = await assertAdminApiAccess(result.session.uid, result.session.email);
   if (!ok) {
     return { error: jsonError("forbidden", "권한이 없습니다.", 403) };
   }
-  return result;
+
+  let isSuperAdmin = false;
+  const db = getAdminDb();
+  if (db) {
+    const snap = await db.collection("users").doc(result.session.uid).get();
+    if (snap.exists) {
+      const profile = parseUserProfileDoc(snap.data() as Record<string, unknown>);
+      isSuperAdmin = profile.role === "super_admin";
+    }
+  }
+
+  return { session: result.session, isSuperAdmin };
 }

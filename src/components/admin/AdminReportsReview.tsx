@@ -6,15 +6,13 @@ import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { formatAdminTimestamp } from "@/lib/admin/format-timestamp";
 import type { AdminReportListItem, AdminReportsListResponse } from "@/types/admin";
 
 type Tab = "pending" | "resolved";
 
 export default function AdminReportsReview() {
   const { user } = useAuth();
-  const { t, locale } = useTranslations();
-  const loc = locale === "en" ? "en-US" : "ko-KR";
+  const { t, formatDateTime } = useTranslations();
 
   const [tab, setTab] = useState<Tab>("pending");
   const [items, setItems] = useState<AdminReportListItem[]>([]);
@@ -171,7 +169,7 @@ export default function AdminReportsReview() {
               </Link>
               {" · "}
               {t("admin.reportsReview.reportedAt")}:{" "}
-              {formatAdminTimestamp(item.createdAt, loc)}
+              {formatDateTime(item.createdAt)}
             </p>
             <AdminEntityLinks
               ownerUid={item.targetOwnerUid}

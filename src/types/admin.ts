@@ -103,11 +103,24 @@ export const ADMIN_USER_ACTIVITY_KINDS = [
   "promo_deletion_requested",
   "promo_like",
   "watch_profile_created",
+  "admin_audit",
 ] as const;
 
 export type AdminUserActivityKind = (typeof ADMIN_USER_ACTIVITY_KINDS)[number];
 
-export type AdminUserActivityCategory = "all" | "payments" | "reports" | "content" | "engagement";
+export type AdminUserActivityCategory =
+  | "all"
+  | "payments"
+  | "reports"
+  | "content"
+  | "engagement"
+  | "admin";
+
+export type AdminActivityActor = {
+  uid: string;
+  displayName: string;
+  email: string | null;
+};
 
 export type AdminUserActivityItem = {
   id: string;
@@ -116,12 +129,24 @@ export type AdminUserActivityItem = {
   title: string;
   payload?: Record<string, string | number | boolean | null>;
   href?: string;
+  /** Set only when the viewer is super_admin */
+  actor?: AdminActivityActor | null;
 };
 
 export type AdminUserActivityResponse = {
   items: AdminUserActivityItem[];
   nextCursor: string | null;
   limitations: string[];
+  viewerIsSuperAdmin: boolean;
+};
+
+export type AdminWorkAuditItem = {
+  id: string;
+  action: string;
+  at?: unknown;
+  workTitle?: string;
+  note?: string;
+  actor?: AdminActivityActor | null;
 };
 
 export type AdminUserDetail = {
@@ -152,6 +177,7 @@ export type AdminWorkDetail = {
   work: WorkDoc & { id: string };
   owner: AdminWorkDetailOwner;
   playbackUrl?: string;
+  auditLog?: AdminWorkAuditItem[];
   promo?: {
     id: string;
     platformStatus: PromoPlatformStatus;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
+import { recordAdminAudit } from "@/lib/server/admin-audit";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
 import { parseReportDoc } from "@/lib/server/reports";
 import {
@@ -52,10 +53,29 @@ export async function PATCH(request: Request, { params }: Params) {
     adminNote: adminNote || null,
   };
 
+  let workTitle = report.targetWorkId;
+  const workSnapForTitle = await worksCol(db, report.targetOwnerUid)
+    .doc(report.targetWorkId)
+    .get();
+  if (workSnapForTitle.exists) {
+    workTitle = parseWorkDoc(report.targetWorkId, workSnapForTitle.data() as Record<string, unknown>)
+      .title;
+  }
+
   if (action === "dismiss") {
     await reportRef.update({
       status: "dismissed",
       ...resolvedFields,
+    });
+    await recordAdminAudit(db, {
+      actorUid: session.uid,
+      action: "report_dismiss",
+      targetOwnerUid: report.targetOwnerUid,
+      targetWorkId: report.targetWorkId,
+      targetType: "report",
+      targetReportId: reportId,
+      workTitle,
+      note: adminNote || undefined,
     });
     return NextResponse.json({ ok: true, status: "dismissed" });
   }
@@ -97,6 +117,17 @@ export async function PATCH(request: Request, { params }: Params) {
   await reportRef.update({
     status: "action_taken",
     ...resolvedFields,
+  });
+
+  await recordAdminAudit(db, {
+    actorUid: session.uid,
+    action: "report_uphold",
+    targetOwnerUid: report.targetOwnerUid,
+    targetWorkId: report.targetWorkId,
+    targetType: "report",
+    targetReportId: reportId,
+    workTitle,
+    note: adminNote || undefined,
   });
 
   return NextResponse.json({ ok: true, status: "action_taken" });

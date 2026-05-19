@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteStreamVideo } from "@/lib/cloudflare/stream";
+import { recordAdminAudit } from "@/lib/server/admin-audit";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
 import {
   approvePromoRevision,
@@ -55,6 +56,14 @@ export async function PATCH(request: Request, { params }: Params) {
     if (isRevision) {
       try {
         await approvePromoRevision(db, ownerUid, workId, session.uid);
+        await recordAdminAudit(db, {
+          actorUid: session.uid,
+          action: "promo_revision_approve",
+          targetOwnerUid: ownerUid,
+          targetWorkId: workId,
+          targetType: "promo",
+          workTitle: work.title,
+        });
         return NextResponse.json({ ok: true, platformStatus: "published", revisionApplied: true });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -78,6 +87,14 @@ export async function PATCH(request: Request, { params }: Params) {
       rejectReason: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp(),
     });
+    await recordAdminAudit(db, {
+      actorUid: session.uid,
+      action: "promo_approve",
+      targetOwnerUid: ownerUid,
+      targetWorkId: workId,
+      targetType: "promo",
+      workTitle: work.title,
+    });
     return NextResponse.json({ ok: true, platformStatus: "published" });
   }
 
@@ -86,6 +103,15 @@ export async function PATCH(request: Request, { params }: Params) {
     if (isRevision) {
       try {
         await rejectPromoRevision(db, ownerUid, workId, session.uid, reason);
+        await recordAdminAudit(db, {
+          actorUid: session.uid,
+          action: "promo_revision_reject",
+          targetOwnerUid: ownerUid,
+          targetWorkId: workId,
+          targetType: "promo",
+          workTitle: work.title,
+          note: reason,
+        });
         return NextResponse.json({ ok: true, revisionReviewStatus: "rejected" });
       } catch {
         return jsonError("invalid_state", "수정 심사 상태가 아닙니다.", 400);
@@ -97,6 +123,15 @@ export async function PATCH(request: Request, { params }: Params) {
       reviewedAt: FieldValue.serverTimestamp(),
       reviewedBy: session.uid,
       updatedAt: FieldValue.serverTimestamp(),
+    });
+    await recordAdminAudit(db, {
+      actorUid: session.uid,
+      action: "promo_reject",
+      targetOwnerUid: ownerUid,
+      targetWorkId: workId,
+      targetType: "promo",
+      workTitle: work.title,
+      note: reason,
     });
     return NextResponse.json({ ok: true, platformStatus: "rejected" });
   }
@@ -112,6 +147,14 @@ export async function PATCH(request: Request, { params }: Params) {
         /* ignore */
       }
     }
+    await recordAdminAudit(db, {
+      actorUid: session.uid,
+      action: "promo_removal_approve",
+      targetOwnerUid: ownerUid,
+      targetWorkId: workId,
+      targetType: "promo",
+      workTitle: work.title,
+    });
     await ref.delete();
     return NextResponse.json({ ok: true, deleted: true });
   }
@@ -124,6 +167,14 @@ export async function PATCH(request: Request, { params }: Params) {
       platformStatus: "published",
       deletionRequest: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp(),
+    });
+    await recordAdminAudit(db, {
+      actorUid: session.uid,
+      action: "promo_removal_reject",
+      targetOwnerUid: ownerUid,
+      targetWorkId: workId,
+      targetType: "promo",
+      workTitle: work.title,
     });
     return NextResponse.json({ ok: true, platformStatus: "published" });
   }

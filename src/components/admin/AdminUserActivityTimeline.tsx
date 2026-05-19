@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { formatAdminTimestamp } from "@/lib/admin/format-timestamp";
 import { formatPaymentAmount } from "@/lib/payments/format-amount";
 import type {
   AdminUserActivityCategory,
@@ -21,6 +20,7 @@ const TABS: { id: AdminUserActivityCategory; labelKey: string }[] = [
   { id: "reports", labelKey: "admin.userActivity.tabReports" },
   { id: "content", labelKey: "admin.userActivity.tabContent" },
   { id: "engagement", labelKey: "admin.userActivity.tabEngagement" },
+  { id: "admin", labelKey: "admin.userActivity.tabAdmin" },
 ];
 
 const PAYMENT_KINDS = new Set<AdminUserActivityKind>(["deposit_payment"]);
@@ -29,6 +29,8 @@ const REPORT_KINDS = new Set<AdminUserActivityKind>([
   "report_received",
   "report_resolved",
 ]);
+const ADMIN_KINDS = new Set<AdminUserActivityKind>(["admin_audit"]);
+
 const CONTENT_KINDS = new Set<AdminUserActivityKind>([
   "work_created",
   "work_deletion_requested",
@@ -56,7 +58,7 @@ function payloadStrings(
 
 export default function AdminUserActivityTimeline({ uid }: Props) {
   const { user } = useAuth();
-  const { t, locale } = useTranslations();
+  const { t, locale, formatDateTime } = useTranslations();
   const loc = locale === "en" ? "en-US" : "ko-KR";
 
   const [category, setCategory] = useState<AdminUserActivityCategory>("all");
@@ -66,6 +68,7 @@ export default function AdminUserActivityTimeline({ uid }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [viewerIsSuperAdmin, setViewerIsSuperAdmin] = useState(false);
 
   const formatLabel = useCallback(
     (item: AdminUserActivityItem): string => {
@@ -104,6 +107,15 @@ export default function AdminUserActivityTimeline({ uid }: Props) {
         return `${t("admin.userActivity.kind.deposit_payment", p)}${amount ? ` · ${amount}` : ""}`;
       }
 
+      if (item.kind === "admin_audit" && p.action) {
+        const actionKey = `admin.userActivity.audit.${p.action}`;
+        let label = t(actionKey, { workTitle: p.workTitle || p.targetWorkId });
+        if (p.perspective === "by_actor") {
+          label = t("admin.userActivity.audit.byActor", { actionLabel: label });
+        }
+        return label;
+      }
+
       return t(`admin.userActivity.kind.${item.kind}`, p);
     },
     [t, loc]
@@ -135,7 +147,10 @@ export default function AdminUserActivityTimeline({ uid }: Props) {
         }
         setItems((prev) => (append ? [...prev, ...body.items] : body.items));
         setNextCursor(body.nextCursor ?? null);
-        if (!append) setLimitations(body.limitations ?? []);
+        if (!append) {
+          setLimitations(body.limitations ?? []);
+          setViewerIsSuperAdmin(!!body.viewerIsSuperAdmin);
+        }
       } catch {
         setErr(t("admin.userActivity.loadError"));
         if (!append) setItems([]);
@@ -152,6 +167,7 @@ export default function AdminUserActivityTimeline({ uid }: Props) {
   }, [fetchActivity]);
 
   const kindColor = (kind: AdminUserActivityKind) => {
+    if (ADMIN_KINDS.has(kind)) return "text-violet-300/90";
     if (PAYMENT_KINDS.has(kind)) return "text-amber-300/90";
     if (REPORT_KINDS.has(kind)) return "text-red-300/90";
     if (CONTENT_KINDS.has(kind)) return "text-sky-300/90";
@@ -169,6 +185,9 @@ export default function AdminUserActivityTimeline({ uid }: Props) {
             <li key={key}>{t(key)}</li>
           ))}
         </ul>
+      )}
+      {!viewerIsSuperAdmin && (
+        <p className="text-xs text-xiio-muted mb-4">{t("admin.userActivity.actorHiddenHint")}</p>
       )}
 
       <div className="flex flex-wrap gap-2 mb-6">
@@ -204,11 +223,23 @@ export default function AdminUserActivityTimeline({ uid }: Props) {
             >
               <div className="min-w-0">
                 <p className="text-xs text-white/50 mb-1">
-                  {formatAdminTimestamp(item.at, loc)}
+                  {formatDateTime(item.at)}
                 </p>
                 <p className={`text-sm font-medium ${kindColor(item.kind)}`}>
                   {formatLabel(item)}
                 </p>
+                {item.actor && (
+                  <p className="text-xs text-white/60 mt-1">
+                    {t("admin.userActivity.actorLabel")}:{" "}
+                    <Link
+                      href={`/admin/users/${item.actor.uid}`}
+                      className="text-xiio-accent hover:underline"
+                    >
+                      {item.actor.displayName}
+                    </Link>
+                    {item.actor.email ? ` (${item.actor.email})` : ""}
+                  </p>
+                )}
               </div>
               {item.href && (
                 <Link

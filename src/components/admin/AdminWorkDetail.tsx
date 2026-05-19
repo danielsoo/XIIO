@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { formatAdminTimestamp } from "@/lib/admin/format-timestamp";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import { AdminOwnerLink } from "@/components/admin/AdminEntityLinks";
 import PlaybackVideo from "@/components/PlaybackVideo";
@@ -14,7 +13,7 @@ type Props = { ownerUid: string; workId: string };
 
 export default function AdminWorkDetail({ ownerUid, workId }: Props) {
   const { user } = useAuth();
-  const { t, locale } = useTranslations();
+  const { t, formatDateTime } = useTranslations();
   const [data, setData] = useState<AdminWorkDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -45,8 +44,6 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const loc = locale === "en" ? "en-US" : "ko-KR";
 
   if (loading) {
     return <p className="text-xiio-muted">{t("admin.loading")}</p>;
@@ -113,7 +110,7 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
           />
           <MetaRow
             label={t("admin.workDetail.createdAt")}
-            value={formatAdminTimestamp(work.createdAt, loc)}
+            value={formatDateTime(work.createdAt)}
           />
           <MetaRow
             label={t("admin.workDetail.proposedAspectRatio")}
@@ -160,6 +157,41 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
           </p>
         )}
       </section>
+
+      {data.auditLog && data.auditLog.length > 0 && (
+        <section className="mb-8 rounded-2xl border border-white/10 bg-xiio-surface p-5">
+          <h2 className="text-white font-semibold text-base mb-4">{t("admin.workDetail.auditTitle")}</h2>
+          <ul className="space-y-3">
+            {data.auditLog.map((entry) => (
+              <li
+                key={entry.id}
+                className="text-sm border-b border-white/5 pb-3 last:border-0 last:pb-0"
+              >
+                <p className="text-xs text-white/50 mb-1">{formatDateTime(entry.at)}</p>
+                <p className="text-violet-200/90">
+                  {t(`admin.userActivity.audit.${entry.action}`, {
+                    workTitle: entry.workTitle ?? work.title,
+                  })}
+                </p>
+                {entry.note && (
+                  <p className="text-xs text-white/50 mt-1">{entry.note}</p>
+                )}
+                {entry.actor && (
+                  <p className="text-xs text-white/60 mt-1">
+                    {t("admin.userActivity.actorLabel")}:{" "}
+                    <Link
+                      href={`/admin/users/${entry.actor.uid}`}
+                      className="text-xiio-accent hover:underline"
+                    >
+                      {entry.actor.displayName}
+                    </Link>
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {promo && (
         <section className="w-full">

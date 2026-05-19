@@ -1,5 +1,6 @@
 import { Timestamp, type Firestore } from "firebase-admin/firestore";
 import { adminTimestampToMillis } from "@/lib/admin/format-timestamp";
+import { parseAdminAuditDoc, resolveActorProfiles } from "@/lib/server/admin-audit";
 import { parsePaymentEventDoc } from "@/lib/server/payment-events";
 import { parseReportDoc } from "@/lib/server/reports";
 import { parseUserProfileDoc } from "@/lib/userAccess";
@@ -9,6 +10,7 @@ import type {
   AdminUserActivityItem,
   AdminUserActivityKind,
 } from "@/types/admin";
+import { ADMIN_AUDIT_ACTIONS } from "@/types/admin-audit";
 
 const SOURCE_LIMIT = 100;
 
@@ -34,6 +36,9 @@ const ENGAGEMENT_KINDS = new Set<AdminUserActivityKind>([
   "promo_like",
   "watch_profile_created",
 ]);
+const ADMIN_KINDS = new Set<AdminUserActivityKind>(["admin_audit"]);
+
+const AUDIT_ACTION_SET = new Set<string>(ADMIN_AUDIT_ACTIONS);
 
 export const ACTIVITY_LIMITATION_KEYS = [
   "admin.userActivity.limitationNoViews",
@@ -53,10 +58,7 @@ function watchHref(ownerUid: string, workId: string): string {
   return `/watch/${ownerUid}/${workId}`;
 }
 
-function pushEvent(
-  events: AdminUserActivityItem[],
-  item: Omit<AdminUserActivityItem, "at"> & { at: unknown }
-): void {
+function pushEvent(events: AdminUserActivityItem[], item: AdminUserActivityItem): void {
   if (atMillis(item.at) == null) return;
   events.push(item);
 }
@@ -67,7 +69,94 @@ function matchesCategory(kind: AdminUserActivityKind, category: AdminUserActivit
   if (category === "reports") return REPORT_KINDS.has(kind);
   if (category === "content") return CONTENT_KINDS.has(kind);
   if (category === "engagement") return ENGAGEMENT_KINDS.has(kind);
+  if (category === "admin") return ADMIN_KINDS.has(kind);
   return true;
+}
+
+async function attachActorProfiles(
+  db: Firestore,
+  events: AdminUserActivityItem[],
+  showActorIdentity: boolean
+): Promise<void> {
+  if (!showActorIdentity) return;
+  const uids: string[] = [];
+  for (const e of events) {
+    const fromPayload = e.payload?.actorUid;
+    if (typeof fromPayload === "string" && fromPayload) uids.push(fromPayload);
+  }
+  if (uids.length === 0) return;
+  const profiles = await resolveActorProfiles(db, uids);
+  for (const e of events) {
+    const actorUid = e.payload?.actorUid;
+    if (typeof actorUid === "string" && actorUid) {
+      e.actor = profiles.get(actorUid) ?? { uid: actorUid, displayName: actorUid, email: null };
+    }
+  }
+}
+
+function auditToActivityItem(
+  audit: ReturnType<typeof parseAdminAuditDoc> & { id: string },
+  perspective: "on_member" | "by_actor"
+): AdminUserActivityItem | null {
+  if (!AUDIT_ACTION_SET.has(audit.action)) return null;
+  const href =
+    audit.targetWorkId && audit.targetOwnerUid
+      ? workAdminHref(audit.targetOwnerUid, audit.targetWorkId)
+      : undefined;
+
+  return {
+    id: `audit:${audit.id}`,
+    kind: "admin_audit",
+    at: audit.createdAt,
+    title: "admin_audit",
+    payload: {
+      action: audit.action,
+      actorUid: audit.actorUid,
+      targetOwnerUid: audit.targetOwnerUid,
+      targetWorkId: audit.targetWorkId ?? "",
+      targetType: audit.targetType ?? "",
+      workTitle: audit.workTitle ?? "",
+      note: audit.note ?? "",
+      perspective,
+    },
+    href,
+  };
+}
+
+async function collectAdminAuditEvents(
+  db: Firestore,
+  uid: string
+): Promise<AdminUserActivityItem[]> {
+  const events: AdminUserActivityItem[] = [];
+
+  const onMemberSnap = await db
+    .collection("adminAuditLog")
+    .where("targetOwnerUid", "==", uid)
+    .orderBy("createdAt", "desc")
+    .limit(SOURCE_LIMIT)
+    .get();
+
+  for (const doc of onMemberSnap.docs) {
+    const audit = parseAdminAuditDoc(doc.id, doc.data() as Record<string, unknown>);
+    const item = auditToActivityItem(audit, "on_member");
+    if (item) pushEvent(events, item);
+  }
+
+  const byActorSnap = await db
+    .collection("adminAuditLog")
+    .where("actorUid", "==", uid)
+    .orderBy("createdAt", "desc")
+    .limit(SOURCE_LIMIT)
+    .get();
+
+  for (const doc of byActorSnap.docs) {
+    const audit = parseAdminAuditDoc(doc.id, doc.data() as Record<string, unknown>);
+    if (audit.targetOwnerUid === uid) continue;
+    const item = auditToActivityItem(audit, "by_actor");
+    if (item) pushEvent(events, { ...item, id: `audit:actor:${doc.id}` });
+  }
+
+  return events;
 }
 
 function compareItems(a: AdminUserActivityItem, b: AdminUserActivityItem): number {
@@ -109,7 +198,11 @@ function isBeforeCursor(
   return item.id < cursor.id;
 }
 
-async function collectEvents(db: Firestore, uid: string): Promise<AdminUserActivityItem[]> {
+async function collectEvents(
+  db: Firestore,
+  uid: string,
+  showActorIdentity: boolean
+): Promise<AdminUserActivityItem[]> {
   const events: AdminUserActivityItem[] = [];
 
   const userSnap = await db.collection("users").doc(uid).get();
@@ -210,6 +303,7 @@ async function collectEvents(db: Firestore, uid: string): Promise<AdminUserActiv
           targetType: r.targetType,
           targetWorkId: r.targetWorkId,
           status: r.status,
+          actorUid: r.resolvedByUid ?? "",
         },
         href,
       });
@@ -269,6 +363,7 @@ async function collectEvents(db: Firestore, uid: string): Promise<AdminUserActiv
           workId: w.id,
           workTitle: w.title,
           platformStatus: w.platformStatus,
+          actorUid: w.reviewedBy ?? "",
         },
         href,
       });
@@ -366,6 +461,11 @@ async function collectEvents(db: Firestore, uid: string): Promise<AdminUserActiv
     });
   }
 
+  const auditEvents = await collectAdminAuditEvents(db, uid);
+  events.push(...auditEvents);
+
+  await attachActorProfiles(db, events, showActorIdentity);
+
   events.sort(compareItems);
   return events;
 }
@@ -377,9 +477,10 @@ export async function aggregateUserActivity(
     category: AdminUserActivityCategory;
     limit: number;
     cursor: string | null;
+    showActorIdentity: boolean;
   }
 ): Promise<{ items: AdminUserActivityItem[]; nextCursor: string | null }> {
-  let events = await collectEvents(db, uid);
+  let events = await collectEvents(db, uid, opts.showActorIdentity);
   events = events.filter((e) => matchesCategory(e.kind, opts.category));
 
   const decoded = opts.cursor ? decodeActivityCursor(opts.cursor) : null;

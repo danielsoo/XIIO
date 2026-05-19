@@ -50,8 +50,43 @@ export function adminTimestampToMillis(value: unknown): number | null {
   return d ? d.getTime() : null;
 }
 
-export function formatAdminTimestamp(value: unknown, locale = "ko-KR"): string {
+import { formatTimezoneAbbrev } from "@/lib/timezone";
+
+export type FormatAdminTimestampOptions = {
+  locale?: string;
+  timeZone?: string;
+};
+
+export function formatAdminTimestamp(
+  value: unknown,
+  localeOrOptions: string | FormatAdminTimestampOptions = "ko-KR"
+): string {
   const d = parseAdminTimestampToDate(value);
   if (!d) return "—";
-  return d.toLocaleString(locale);
+
+  const opts: FormatAdminTimestampOptions =
+    typeof localeOrOptions === "string" ? { locale: localeOrOptions } : localeOrOptions;
+
+  const locale = opts.locale ?? "ko-KR";
+  const timeZone =
+    opts.timeZone ??
+    (typeof Intl !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : "Asia/Seoul");
+
+  try {
+    const dateTime = d.toLocaleString(locale, {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: locale.startsWith("en"),
+    });
+    const tzLabel = formatTimezoneAbbrev(timeZone, locale, d);
+    return `${dateTime} (${tzLabel})`;
+  } catch {
+    return d.toLocaleString(locale);
+  }
 }

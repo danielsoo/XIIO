@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { formatAdminTimestamp } from "@/lib/admin/format-timestamp";
 import { formatPaymentAmount } from "@/lib/payments/format-amount";
 import type {
   AdminPaymentEventListItem,
@@ -13,7 +12,7 @@ import type {
 
 export default function AdminPaymentEventsList() {
   const { user } = useAuth();
-  const { t, locale } = useTranslations();
+  const { t, locale, formatDateTime } = useTranslations();
   const loc = locale === "en" ? "en-US" : "ko-KR";
 
   const [provider, setProvider] = useState("");
@@ -172,7 +171,7 @@ export default function AdminPaymentEventsList() {
               {items.map((row) => (
                 <tr key={row.id} className="border-b border-white/5 hover:bg-white/[0.03]">
                   <td className="py-3 pr-4 text-white/80 whitespace-nowrap">
-                    {formatAdminTimestamp(row.processedAt, loc)}
+                    {formatDateTime(row.processedAt)}
                   </td>
                   <td className="py-3 pr-4">
                     <Link

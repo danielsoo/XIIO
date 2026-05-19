@@ -18,6 +18,7 @@ const CATEGORIES: AdminUserActivityCategory[] = [
   "reports",
   "content",
   "engagement",
+  "admin",
 ];
 
 export async function GET(request: Request, { params }: Params) {
@@ -47,12 +48,14 @@ export async function GET(request: Request, { params }: Params) {
     category,
     limit,
     cursor,
+    showActorIdentity: auth.isSuperAdmin,
   });
 
   const payload: AdminUserActivityResponse = {
     items,
     nextCursor,
     limitations: [...ACTIVITY_LIMITATION_KEYS],
+    viewerIsSuperAdmin: auth.isSuperAdmin,
   };
 
   return NextResponse.json(payload);

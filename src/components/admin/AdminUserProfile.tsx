@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { formatAdminTimestamp } from "@/lib/admin/format-timestamp";
 import type { AdminUserDetail } from "@/types/admin";
 import AdminUserActivityTimeline from "@/components/admin/AdminUserActivityTimeline";
 import { AdminWorkLink } from "@/components/admin/AdminEntityLinks";
@@ -13,7 +12,7 @@ type Props = { uid: string };
 
 export default function AdminUserProfile({ uid }: Props) {
   const { user } = useAuth();
-  const { t, locale } = useTranslations();
+  const { t, formatDateTime } = useTranslations();
   const [data, setData] = useState<AdminUserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -45,8 +44,6 @@ export default function AdminUserProfile({ uid }: Props) {
     void load();
   }, [load]);
 
-  const loc = locale === "en" ? "en-US" : "ko-KR";
-
   if (loading) {
     return <p className="text-xiio-muted">{t("admin.loading")}</p>;
   }
@@ -77,11 +74,11 @@ export default function AdminUserProfile({ uid }: Props) {
       <div className="grid gap-6 md:grid-cols-2 mb-10">
         <section className="rounded-2xl border border-white/10 bg-xiio-surface p-5 space-y-3 text-sm">
           <h2 className="text-white font-semibold mb-2">{t("admin.userProfile.accountSection")}</h2>
-          <Row label={t("admin.userProfile.joinedAt")} value={formatAdminTimestamp(data.createdAt, loc)} />
+          <Row label={t("admin.userProfile.joinedAt")} value={formatDateTime(data.createdAt)} />
           <Row label={t("admin.userProfile.visitCount")} value={String(data.visitCount)} />
           <Row
             label={t("admin.userProfile.lastVisit")}
-            value={formatAdminTimestamp(data.lastVisitAt, loc)}
+            value={formatDateTime(data.lastVisitAt)}
           />
           <Row
             label={t("admin.userProfile.purposeLabel")}

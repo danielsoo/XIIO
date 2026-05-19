@@ -6,12 +6,21 @@ import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { LOCALES, type Locale } from "@/i18n";
+import type { XiioTimezoneId } from "@/lib/timezone";
+
+const TIMEZONE_OPTIONS: { id: XiioTimezoneId; labelKey: string }[] = [
+  { id: "auto", labelKey: "settings.timezoneAuto" },
+  { id: "korea", labelKey: "settings.timezoneKorea" },
+  { id: "us_eastern", labelKey: "settings.timezoneUsEastern" },
+  { id: "us_pacific", labelKey: "settings.timezoneUsPacific" },
+  { id: "utc", labelKey: "settings.timezoneUtc" },
+];
 import ProfileAvatar from "@/components/ProfileAvatar";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const { activeProfile } = useProfile();
-  const { t, locale, setLocale } = useTranslations();
+  const { t, locale, setLocale, timezone, setTimezone } = useTranslations();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -50,6 +59,27 @@ export default function SettingsPage() {
                 }`}
               >
                 {label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">
+          <h2 className="text-sm font-semibold text-xiio-muted mb-2">{t("settings.timezone")}</h2>
+          <p className="text-xs text-xiio-muted mb-4">{t("settings.timezoneHint")}</p>
+          <div className="flex flex-col gap-2">
+            {TIMEZONE_OPTIONS.map(({ id, labelKey }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTimezone(id)}
+                className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium text-left transition border ${
+                  timezone === id
+                    ? "bg-xiio-accent border-xiio-accent text-white"
+                    : "border-white/20 text-xiio-muted hover:text-white hover:border-white/40"
+                }`}
+              >
+                {t(labelKey)}
               </button>
             ))}
           </div>

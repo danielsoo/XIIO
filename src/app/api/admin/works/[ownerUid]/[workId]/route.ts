@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteStreamVideo, resolvePlaybackUrl } from "@/lib/cloudflare/stream";
+import { listWorkAuditLog, recordAdminAudit } from "@/lib/server/admin-audit";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
 import { parseUserProfileDoc } from "@/lib/userAccess";
 import {
@@ -68,6 +69,8 @@ export async function GET(request: Request, { params }: Params) {
     };
   }
 
+  const auditLog = await listWorkAuditLog(db, ownerUid, workId, auth.isSuperAdmin);
+
   const detail: AdminWorkDetail = {
     work,
     owner: {
@@ -77,6 +80,7 @@ export async function GET(request: Request, { params }: Params) {
     },
     playbackUrl: playbackUrl ?? undefined,
     promo,
+    auditLog,
   };
 
   return NextResponse.json(detail);
@@ -135,6 +139,14 @@ export async function PATCH(request: Request, { params }: Params) {
           approvedTags: body.approvedTags,
           approvedAspectRatio,
         });
+        await recordAdminAudit(db, {
+          actorUid: session.uid,
+          action: "work_revision_approve",
+          targetOwnerUid: ownerUid,
+          targetWorkId: workId,
+          targetType: "full",
+          workTitle: work.title,
+        });
         return NextResponse.json({ ok: true, platformStatus: "published", revisionApplied: true });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -183,6 +195,14 @@ export async function PATCH(request: Request, { params }: Params) {
       rejectReasonCode: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp(),
     });
+    await recordAdminAudit(db, {
+      actorUid: session.uid,
+      action: "work_approve",
+      targetOwnerUid: ownerUid,
+      targetWorkId: workId,
+      targetType: "full",
+      workTitle: work.title,
+    });
     return NextResponse.json({ ok: true, platformStatus: "published" });
   }
 
@@ -202,6 +222,15 @@ export async function PATCH(request: Request, { params }: Params) {
     if (isRevision) {
       try {
         await rejectWorkRevision(db, ownerUid, workId, session.uid, code, reason);
+        await recordAdminAudit(db, {
+          actorUid: session.uid,
+          action: "work_revision_reject",
+          targetOwnerUid: ownerUid,
+          targetWorkId: workId,
+          targetType: "full",
+          workTitle: work.title,
+          note: reason,
+        });
         return NextResponse.json({ ok: true, revisionReviewStatus: "rejected" });
       } catch {
         return jsonError("invalid_state", "수정 심사 상태가 아닙니다.", 400);
@@ -215,6 +244,15 @@ export async function PATCH(request: Request, { params }: Params) {
       reviewedAt: FieldValue.serverTimestamp(),
       reviewedBy: session.uid,
       updatedAt: FieldValue.serverTimestamp(),
+    });
+    await recordAdminAudit(db, {
+      actorUid: session.uid,
+      action: "work_reject",
+      targetOwnerUid: ownerUid,
+      targetWorkId: workId,
+      targetType: "full",
+      workTitle: work.title,
+      note: reason,
     });
     return NextResponse.json({ ok: true, platformStatus: "rejected" });
   }
@@ -242,6 +280,14 @@ export async function PATCH(request: Request, { params }: Params) {
         /* ignore */
       }
     }
+    await recordAdminAudit(db, {
+      actorUid: session.uid,
+      action: "work_removal_approve",
+      targetOwnerUid: ownerUid,
+      targetWorkId: workId,
+      targetType: "full",
+      workTitle: work.title,
+    });
     await ref.delete();
     return NextResponse.json({ ok: true, deleted: true });
   }
@@ -254,6 +300,14 @@ export async function PATCH(request: Request, { params }: Params) {
       platformStatus: "published",
       deletionRequest: FieldValue.delete(),
       updatedAt: FieldValue.serverTimestamp(),
+    });
+    await recordAdminAudit(db, {
+      actorUid: session.uid,
+      action: "work_removal_reject",
+      targetOwnerUid: ownerUid,
+      targetWorkId: workId,
+      targetType: "full",
+      workTitle: work.title,
     });
     return NextResponse.json({ ok: true, platformStatus: "published" });
   }

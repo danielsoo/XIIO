@@ -63,6 +63,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /adminAuditLog/{logId} {
+      allow read, write: if false;
+    }
+
     // 레거시 업로드 경로 (읽기만)
     match /users/{userId}/videos/{videoId} {
       allow read: if request.auth != null

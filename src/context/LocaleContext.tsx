@@ -9,6 +9,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { formatAdminTimestamp } from "@/lib/admin/format-timestamp";
+import {
+  dateLocaleForAppLocale,
+  getStoredTimezone,
+  resolveTimezoneIana,
+  setStoredTimezone,
+  type XiioTimezoneId,
+} from "@/lib/timezone";
 import {
   getStoredLocale,
   setStoredLocale,
@@ -19,6 +27,10 @@ import {
 type LocaleContextValue = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
+  timezone: XiioTimezoneId;
+  setTimezone: (timezone: XiioTimezoneId) => void;
+  dateLocale: string;
+  formatDateTime: (value: unknown) => string;
   t: (key: string, vars?: Record<string, string | number>) => string;
 };
 
@@ -26,10 +38,12 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("ko");
+  const [timezone, setTimezoneState] = useState<XiioTimezoneId>("korea");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setLocaleState(getStoredLocale());
+    setTimezoneState(getStoredTimezone());
     setReady(true);
   }, []);
 
@@ -38,12 +52,40 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     setStoredLocale(next);
   }, []);
 
+  const setTimezone = useCallback((next: XiioTimezoneId) => {
+    setTimezoneState(next);
+    setStoredTimezone(next);
+  }, []);
+
+  const dateLocale = dateLocaleForAppLocale(locale);
+  const timeZoneIana = resolveTimezoneIana(timezone);
+
+  const formatDateTime = useCallback(
+    (value: unknown) =>
+      formatAdminTimestamp(value, {
+        locale: dateLocale,
+        timeZone: timeZoneIana,
+      }),
+    [dateLocale, timeZoneIana]
+  );
+
   const t = useCallback(
     (key: string, vars?: Record<string, string | number>) => translate(locale, key, vars),
     [locale]
   );
 
-  const value = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t]);
+  const value = useMemo(
+    () => ({
+      locale,
+      setLocale,
+      timezone,
+      setTimezone,
+      dateLocale,
+      formatDateTime,
+      t,
+    }),
+    [locale, setLocale, timezone, setTimezone, dateLocale, formatDateTime, t]
+  );
 
   useEffect(() => {
     if (!ready) return;
