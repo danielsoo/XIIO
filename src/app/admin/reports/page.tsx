@@ -1,5 +1,5 @@
-import AdminPlaceholderPage from "@/components/admin/AdminPlaceholderPage";
+import AdminReportsReview from "@/components/admin/AdminReportsReview";
 
 export default function AdminReportsPage() {
-  return <AdminPlaceholderPage titleKey="admin.reportsTitle" descriptionKey="admin.reportsDesc" />;
+  return <AdminReportsReview />;
 }

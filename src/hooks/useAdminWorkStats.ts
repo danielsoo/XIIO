@@ -7,6 +7,7 @@ export type AdminWorkStats = {
   pendingFull: number;
   pendingPromo: number;
   removalRequested: number;
+  pendingReports: number;
 };
 
 export function useAdminWorkStats(enabled: boolean) {

@@ -58,6 +58,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // 신고 — 서버 API(Admin SDK)만
+    match /reports/{reportId} {
+      allow read, write: if false;
+    }
+
     // 레거시 업로드 경로 (읽기만)
     match /users/{userId}/videos/{videoId} {
       allow read: if request.auth != null

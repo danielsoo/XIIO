@@ -37,7 +37,8 @@ export default function AdminDashboardCards() {
         href: "/admin/reports",
         title: t("admin.cardReportsTitle"),
         description: t("admin.cardReportsDesc"),
-        ready: false,
+        ready: true,
+        badge: stats?.pendingReports,
       },
       {
         href: "/admin/payments",

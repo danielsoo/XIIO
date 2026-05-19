@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import ReportContentModal from "@/components/report/ReportContentModal";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useElementFullscreen } from "@/hooks/useElementFullscreen";
@@ -75,6 +76,7 @@ function PlayerChrome({
   const [likeBusy, setLikeBusy] = useState(false);
   const [likeHint, setLikeHint] = useState(false);
   const [shareHint, setShareHint] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   useRecordEngagementView(item.ownerUid, item.workId, "promo", isActive && persisted);
 
@@ -201,6 +203,27 @@ function PlayerChrome({
           {shareHint ? t("home.promoShareCopied") : t("home.promoShare")}
         </span>
       </button>
+      {persisted && item.ownerUid && item.workId && (
+        <button
+          type="button"
+          onClick={() => {
+            if (!user) {
+              setLikeHint(true);
+              return;
+            }
+            setReportOpen(true);
+          }}
+          className="flex flex-col items-center gap-1 group"
+          aria-label={t("watch.report")}
+        >
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/35 border border-white/20 backdrop-blur-sm group-hover:bg-white/10 transition text-[10px] font-semibold text-white/90">
+            !
+          </span>
+          <span className="text-[10px] font-medium text-white/75 max-w-[3.5rem] text-center leading-tight">
+            {t("watch.report")}
+          </span>
+        </button>
+      )}
     </div>
   );
 
@@ -265,6 +288,15 @@ function PlayerChrome({
 
   return (
     <>
+      {persisted && item.ownerUid && item.workId && (
+        <ReportContentModal
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          targetType="promo"
+          targetOwnerUid={item.ownerUid}
+          targetWorkId={item.workId}
+        />
+      )}
       <div
         className={cardShellClass}
         style={isFullscreen ? undefined : { aspectRatio: item.aspectRatio }}

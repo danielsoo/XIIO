@@ -1,3 +1,9 @@
+import type {
+  ReportReasonCode,
+  ReportStatus,
+  ReportTargetType,
+} from "@/types/report";
+
 export type OnboardingStatsPayload = {
   total: number;
   watch: number;
@@ -18,6 +24,29 @@ export type AdminUserWorkSummary = {
   proposedCategory?: string;
   approvedCategory?: string;
   createdAt?: unknown;
+};
+
+export type AdminReportListItem = {
+  id: string;
+  targetType: ReportTargetType;
+  targetOwnerUid: string;
+  targetWorkId: string;
+  targetTitle: string;
+  reporterUid: string;
+  reporterName: string;
+  reporterEmail: string | null;
+  reasonCode: ReportReasonCode;
+  reasonDetail?: string;
+  status: ReportStatus;
+  createdAt?: unknown;
+  resolvedAt?: unknown;
+  adminNote?: string;
+  playbackUrl?: string;
+};
+
+export type AdminReportsListResponse = {
+  items: AdminReportListItem[];
+  nextCursor: string | null;
 };
 
 export type AdminUserListItem = {

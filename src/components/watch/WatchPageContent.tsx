@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import ReportContentModal from "@/components/report/ReportContentModal";
 import PlaybackVideo from "@/components/PlaybackVideo";
+import { useAuth } from "@/context/AuthContext";
 import { useRecordEngagementView } from "@/hooks/useRecordEngagementView";
 import { useTranslations } from "@/context/LocaleContext";
 import { aspectRatioMessageKey, aspectRatioNumeric } from "@/lib/works/aspect-ratio";
@@ -21,10 +23,12 @@ const SECTION_TITLE_KEYS: Record<PublicWorkWatch["section"], string> = {
 };
 
 export default function WatchPageContent({ ownerUid, workId }: Props) {
+  const { user } = useAuth();
   const { t } = useTranslations();
   const [data, setData] = useState<PublicWorkWatch | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,7 +88,22 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
           ← {t(SECTION_TITLE_KEYS[data.section])}
         </Link>
 
-        <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">{data.title}</h1>
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+          <h1 className="text-2xl md:text-4xl font-bold text-white">{data.title}</h1>
+          <button
+            type="button"
+            onClick={() => {
+              if (!user) {
+                window.location.href = "/login";
+                return;
+              }
+              setReportOpen(true);
+            }}
+            className="shrink-0 text-sm text-white/60 hover:text-red-400 border border-white/15 rounded-lg px-3 py-1.5 transition"
+          >
+            {t("watch.report")}
+          </button>
+        </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-xiio-muted mb-6">
           {data.approvedCategory && <span>{data.approvedCategory}</span>}
           {tagLine && <span>{tagLine}</span>}
@@ -126,6 +145,14 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
           </details>
         )}
       </div>
+
+      <ReportContentModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType="full"
+        targetOwnerUid={ownerUid}
+        targetWorkId={workId}
+      />
     </main>
   );
 }
