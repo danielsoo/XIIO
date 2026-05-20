@@ -4,11 +4,6 @@
       "database": "xiio",
       "rules": "firestore.rules",
       "indexes": "firestore.indexes.json"
-    },
-    {
-      "database": "(default)",
-      "rules": "firestore.rules",
-      "indexes": "firestore.indexes.json"
     }
   ],
   "storage": {

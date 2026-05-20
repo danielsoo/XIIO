@@ -68,4 +68,6 @@ GitHub → **Actions** → **Deploy Firebase config** → **Run workflow**
 
 ## 인덱스
 
-배포 후 Firebase Console → Firestore → Indexes에서 **Building → Enabled**까지 수 분 걸릴 수 있습니다.
+배포 후 Firebase Console → Firestore → **데이터베이스 `xiio`** → Indexes에서 **Building → Enabled**까지 수 분 걸릴 수 있습니다.
+
+`(default)` DB가 없는 프로젝트는 [`firebase.json`](../firebase.json)에 `xiio`만 둡니다. `(default)`를 넣으면 CI에서 `database '(default)' does not exist` 404가 납니다.
