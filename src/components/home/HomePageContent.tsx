@@ -21,7 +21,7 @@ export default function HomePageContent() {
 
   return (
     <main className="min-h-screen bg-xiio-bg">
-      <section className="relative h-[42vh] min-h-[280px] flex items-end overflow-hidden">
+      <section className="relative flex h-[42vh] min-h-[320px] flex-col justify-end overflow-visible pt-16">
         <div className="absolute inset-0 bg-gradient-to-br from-[#1a0533] via-[#0a0a20] to-[#0a0a0a]" />
         <div className="absolute inset-0 bg-gradient-to-r from-xiio-accent/20 to-transparent" />
         <div className="relative z-10 px-8 pb-12 md:px-16">
@@ -39,7 +39,7 @@ export default function HomePageContent() {
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-xiio-bg to-transparent" />
       </section>
 
-      <section className="px-4 md:px-8 -mt-2 pb-10 md:pb-14">
+      <section className="relative z-10 mt-8 px-4 pt-2 pb-10 md:mt-12 md:px-8 md:pb-14">
         <PromoShortSpotlight items={promoItems} />
       </section>
 
