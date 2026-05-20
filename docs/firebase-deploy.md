@@ -30,10 +30,20 @@ GCP 콘솔 상단 프로젝트와 Secret이 **같은 프로젝트**여야 합니
 
 ### 서비스 계정 역할 (Firestore CI만)
 
-대상 프로젝트 IAM에서 `client_email` 계정에:
+`xiio-9d86b` 프로젝트 IAM에서 `client_email` 계정에:
 
-- **Firebase Admin** (간단), 또는
+- **Firebase Admin** (권장), 또는
 - **Firebase Rules Admin** + **Cloud Datastore Index Admin**
+- (선택) **Cloud Functions Viewer** — `firebase-tools`가 부가 API를 조회할 때 403 방지
+
+### `firebaserules.googleapis.com` 403이 계속될 때
+
+1. Secret `FIREBASE_PROJECT_ID` = `xiio-9d86b` (**앞뒤 공백·줄바꿈 없음**)
+2. JSON `project_id`·`client_email`이 IAM과 동일한지
+3. 노출된 키는 **삭제 후 새 JSON**으로 Secret 교체
+4. IAM 변경 후 **5~10분** 대기 후 Re-run
+5. Actions 로그 **「Verify identity」** 에서 `JSON project_id` / `gcloud config` 확인
+6. [Firebase Rules API](https://console.cloud.google.com/apis/library/firebaserules.googleapis.com?project=xiio-9d86b) 사용 설정
 
 ## Storage rules (수동, 선택)
 
