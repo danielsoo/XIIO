@@ -43,7 +43,7 @@ GCP 콘솔 상단 프로젝트와 Secret이 **같은 프로젝트**여야 합니
 3. 노출된 키는 **삭제 후 새 JSON**으로 Secret 교체
 4. IAM 변경 후 **5~10분** 대기 후 Re-run
 5. Actions 로그 **「Verify identity」** 에서 `JSON project_id` / `gcloud config` 확인
-6. [Firebase Rules API](https://console.cloud.google.com/apis/library/firebaserules.googleapis.com?project=xiio-9d86b) 사용 설정
+6. [Firebase Rules API](https://console.cloud.google.com/apis/library/firebaserules.googleapis.com?project=xiio-9d86b) · [Cloud Firestore API](https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=xiio-9d86b) — 콘솔에서 **사용 설정** (CI는 API enable 권한 없음)
 
 ## Storage rules (수동, 선택)
 

@@ -43,11 +43,6 @@ jobs:
             console.log('JSON client_email:', j.client_email);
           "
 
-      - name: Enable required APIs
-        run: |
-          gcloud services enable firebaserules.googleapis.com firestore.googleapis.com \
-            --project="${{ secrets.FIREBASE_PROJECT_ID }}"
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
