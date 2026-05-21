@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useRef, type RefObject } from "react";
+import { useCallback, useRef } from "react";
+import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
 import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
   type PromoShortVariant,
   HOME_HERO_PEEK_VIEWPORT_CLASS,
+  HOME_HERO_TEASER_FRAME_CLASS,
 } from "@/components/shorts/PromoShortPlayer";
 import { useTranslations } from "@/context/LocaleContext";
 import type { PromoShort } from "@/types/promoShort";
@@ -40,38 +42,6 @@ const NAV_CLASSES: Record<NavPosition, { prev: string; next: string }> = {
   },
 };
 
-const PEEK_SIDE_WRAP =
-  "relative shrink-0 scale-90 opacity-40 pointer-events-none after:absolute after:inset-0 after:rounded-2xl after:bg-black/55 after:pointer-events-none";
-
-function renderPlayer(
-  item: PromoShort,
-  isActive: boolean,
-  opts: {
-    variant: PromoShortVariant;
-    playerSize: PromoShortPlayerSize;
-    compact: boolean;
-    layout: PromoShortLayout;
-    scrollExpand: boolean;
-    scrollRootRef?: RefObject<HTMLDivElement | null>;
-    peekSide: boolean;
-  }
-) {
-  return (
-    <PromoShortPlayer
-      item={item}
-      isActive={isActive}
-      variant={opts.variant}
-      playerSize={opts.playerSize}
-      peekSide={opts.peekSide}
-      layout={opts.layout}
-      compact={opts.compact}
-      scrollExpand={opts.scrollExpand}
-      scrollRootRef={opts.scrollRootRef}
-      className="mx-auto"
-    />
-  );
-}
-
 function HomeHeroPeekCarousel({
   items,
   index,
@@ -90,7 +60,6 @@ function HomeHeroPeekCarousel({
   viewportClassName?: string;
 }) {
   const { t } = useTranslations();
-  const viewportRef = useRef<HTMLDivElement>(null);
   const count = items.length;
   const current = items[index];
   const prevItem = items[(index - 1 + count) % count];
@@ -104,26 +73,36 @@ function HomeHeroPeekCarousel({
     [count, index, onIndexChange]
   );
 
-  const playerOpts = {
-    variant: "teaser" as const,
-    playerSize,
-    compact,
-    layout,
-    scrollExpand: false,
-    scrollRootRef: undefined,
-  };
-
   return (
-    <div
-      ref={viewportRef}
-      className={viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS}
-    >
-      <div className={`${PEEK_SIDE_WRAP} -mr-2 sm:-mr-3 z-0`}>
-        {renderPlayer(prevItem, false, { ...playerOpts, peekSide: true })}
+    <div className={viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS}>
+      <div className="shrink-0 -mr-1 sm:-mr-2 z-0">
+        <PromoShortPeekPreview item={prevItem} />
       </div>
 
-      <div className="relative z-10 shrink-0">
-        {renderPlayer(current, true, { ...playerOpts, peekSide: false })}
+      <div className={`relative z-10 shrink-0 ${HOME_HERO_TEASER_FRAME_CLASS}`}>
+        {items.map((item, i) => (
+          <div
+            key={item.id}
+            className={`transition-opacity duration-300 ${
+              i === index
+                ? "relative z-10 opacity-100"
+                : "absolute inset-0 opacity-0 pointer-events-none z-0"
+            }`}
+            aria-hidden={i !== index}
+          >
+            <PromoShortPlayer
+              item={item}
+              isActive={i === index}
+              variant="teaser"
+              playerSize={playerSize}
+              peekSide={false}
+              layout={layout}
+              compact={compact}
+              scrollExpand={false}
+              className="mx-auto"
+            />
+          </div>
+        ))}
         {count > 1 && (
           <div
             className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 pointer-events-auto"
@@ -145,8 +124,8 @@ function HomeHeroPeekCarousel({
         )}
       </div>
 
-      <div className={`${PEEK_SIDE_WRAP} -ml-2 sm:-ml-3 z-0`}>
-        {renderPlayer(nextItem, false, { ...playerOpts, peekSide: true })}
+      <div className="shrink-0 -ml-1 sm:-ml-2 z-0">
+        <PromoShortPeekPreview item={nextItem} />
       </div>
 
       {count > 1 && (
@@ -154,7 +133,7 @@ function HomeHeroPeekCarousel({
           <button
             type="button"
             onClick={() => go(-1)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-30 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-40 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
             aria-label={t("home.promoPrev")}
           >
             ‹
@@ -162,7 +141,7 @@ function HomeHeroPeekCarousel({
           <button
             type="button"
             onClick={() => go(1)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-30 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-40 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
             aria-label={t("home.promoNext")}
           >
             ›

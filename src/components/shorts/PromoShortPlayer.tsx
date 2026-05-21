@@ -110,7 +110,7 @@ export const HOME_HERO_TEASER_VIEWPORT_CLASS = `relative mx-auto ${HOME_HERO_TEA
 export const HOME_HERO_PEEK_SIDE_FRAME_CLASS =
   "w-[160px] sm:w-[180px] aspect-[9/16] shrink-0";
 export const HOME_HERO_PEEK_VIEWPORT_CLASS =
-  "relative w-full max-w-[420px] mx-auto flex items-center justify-center gap-0 sm:gap-1 px-10 sm:px-12";
+  "relative w-full max-w-[480px] mx-auto flex items-center justify-center gap-0 sm:gap-1 px-11 sm:px-14";
 
 function PromoDescriptionBlock({
   description,
@@ -384,7 +384,9 @@ function PlayerChrome({
     : `relative mx-auto ${fixedTeaserFrame ? "" : "w-full "} ${maxWidthClass} rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
 
   const cardAspectStyle =
-    isFullscreen || fixedTeaserFrame ? undefined : { aspectRatio: item.aspectRatio };
+    isFullscreen || fixedTeaserFrame || peekSideFrame
+      ? undefined
+      : { aspectRatio: item.aspectRatio };
 
   const overlayBandClass = compact
     ? "h-auto min-h-[5rem] max-h-[min(38%,12rem)]"
