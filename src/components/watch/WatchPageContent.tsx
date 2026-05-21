@@ -112,7 +112,7 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
             {t("watch.report")}
           </button>
         </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-xiio-muted mb-6">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-xiio-muted mb-4">
           {data.approvedCategory && <span>{data.approvedCategory}</span>}
           {tagLine && <span>{tagLine}</span>}
           <span>{t(aspectRatioMessageKey(ratioId))}</span>
@@ -123,14 +123,8 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
           )}
         </div>
 
-        {data.description && (
-          <p className="text-white/80 text-sm md:text-base mb-6 whitespace-pre-wrap max-w-3xl">
-            {data.description}
-          </p>
-        )}
-
         <div
-          className="w-full mx-auto mb-8 rounded-xl overflow-hidden bg-black border border-white/10"
+          className="w-full mx-auto mb-6 rounded-xl overflow-hidden bg-black border border-white/10"
           style={{ maxWidth: numericRatio >= 1 ? "100%" : "min(420px, 100%)" }}
         >
           <div className="relative w-full" style={{ aspectRatio: numericRatio }}>
@@ -143,6 +137,12 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
             />
           </div>
         </div>
+
+        {data.description && (
+          <p className="text-white/80 text-sm md:text-base mb-6 whitespace-pre-wrap max-w-3xl">
+            {data.description}
+          </p>
+        )}
 
         {data.playbackUrl && (
           <details className="text-sm text-xiio-muted">
