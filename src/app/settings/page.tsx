@@ -16,6 +16,7 @@ const TIMEZONE_OPTIONS: { id: XiioTimezoneId; labelKey: string }[] = [
   { id: "utc", labelKey: "settings.timezoneUtc" },
 ];
 import ProfileAvatar from "@/components/ProfileAvatar";
+import DirectorNameSettingsSection from "@/components/settings/DirectorNameSettingsSection";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -84,6 +85,8 @@ export default function SettingsPage() {
             ))}
           </div>
         </section>
+
+        <DirectorNameSettingsSection />
 
         {activeProfile && (
           <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">

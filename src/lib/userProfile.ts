@@ -55,9 +55,9 @@ export async function saveUserProfile(
       ref,
       {
         displayName: profile.displayName,
-        age: profile.age,
-        isStudent: profile.isStudent,
-        schoolName: profile.isStudent ? profile.schoolName ?? "" : null,
+        age: profile.age ?? null,
+        isStudent: false,
+        schoolName: null,
         platformPurpose: profile.platformPurpose,
         email: email?.toLowerCase() ?? null,
         emailVerified,
@@ -82,8 +82,6 @@ export async function createGoogleMemberProfile(
     uid,
     {
       displayName: displayName?.trim() || email?.split("@")[0] || "User",
-      age: 0,
-      isStudent: false,
       platformPurpose: "watch",
     },
     email,
@@ -102,9 +100,7 @@ export async function markEmailVerified(uid: string): Promise<void> {
 
 export function isProfileComplete(profile: UserProfileDoc): boolean {
   if (!profile.displayName.trim()) return false;
-  if (!profile.age || profile.age < 1) return false;
   if (!profile.platformPurpose) return false;
-  if (profile.isStudent && !profile.schoolName?.trim()) return false;
   return true;
 }
 

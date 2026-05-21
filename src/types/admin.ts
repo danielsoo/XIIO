@@ -8,11 +8,12 @@ export type OnboardingStatsPayload = {
   total: number;
   watch: number;
   upload: number;
+  both: number;
   other: number;
   signupsByDay: Record<string, number>;
 };
 
-import type { PlatformPurpose, UserRole } from "@/types/user";
+import type { DirectorNameChangeRequest, PlatformPurpose, UserRole } from "@/types/user";
 import type { PlatformStatus, PromoPlatformStatus, StreamStatus, WorkDoc, WorkSection } from "@/types/work";
 
 export type AdminUserWorkSummary = {
@@ -154,11 +155,13 @@ export type AdminUserDetail = {
   displayName: string;
   email: string | null;
   emailVerified: boolean;
-  age: number;
+  age?: number | null;
   isStudent: boolean;
   schoolName?: string;
   platformPurpose: PlatformPurpose;
   role: UserRole;
+  defaultDirectorName?: string;
+  directorNameChangeRequest?: DirectorNameChangeRequest;
   createdAt?: unknown;
   updatedAt?: unknown;
   visitCount: number;

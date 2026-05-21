@@ -23,10 +23,21 @@ export async function GET(request: Request) {
 
   const worksSnap = await worksCol(db, session.uid).limit(1).get();
   const defaultDirectorName = profile?.defaultDirectorName?.trim() || null;
+  const req = profile?.directorNameChangeRequest;
 
   return NextResponse.json({
     defaultDirectorName,
     hasWorks: !worksSnap.empty,
+    directorNameChangeRequest: req
+      ? {
+          requestedName: req.requestedName,
+          reason: req.reason,
+          status: req.status,
+          requestedAt: req.requestedAt,
+          resolvedAt: req.resolvedAt,
+          adminNote: req.adminNote,
+        }
+      : null,
   });
 }
 
@@ -50,6 +61,18 @@ export async function PATCH(request: Request) {
   const name = body.defaultDirectorName?.trim().slice(0, MAX_DIRECTOR_LEN) ?? "";
   if (!name) {
     return jsonError("invalid_body", "감독 이름을 입력해 주세요.", 400);
+  }
+
+  const userSnap = await db.collection("users").doc(session.uid).get();
+  const profile = userSnap.exists
+    ? parseUserProfileDoc(userSnap.data() as Record<string, unknown>)
+    : null;
+  if (profile?.defaultDirectorName?.trim()) {
+    return jsonError(
+      "director_name_locked",
+      "감독 이름은 이미 설정되어 있습니다. 변경은 설정에서 신청해 주세요.",
+      409
+    );
   }
 
   await db.collection("users").doc(session.uid).set(

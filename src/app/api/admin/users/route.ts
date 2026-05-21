@@ -6,7 +6,7 @@ import { getDbOrNull } from "@/lib/server/works";
 import type { AdminUserListItem, AdminUsersListResponse } from "@/types/admin";
 import type { PlatformPurpose, UserRole } from "@/types/user";
 
-const PURPOSES: PlatformPurpose[] = ["watch", "upload"];
+const PURPOSES: PlatformPurpose[] = ["watch", "upload", "both"];
 const ROLES: UserRole[] = ["member", "admin", "super_admin"];
 
 function docToListItem(uid: string, data: Record<string, unknown>): AdminUserListItem {

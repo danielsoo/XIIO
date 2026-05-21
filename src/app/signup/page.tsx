@@ -24,11 +24,11 @@ import { useTranslations } from "@/context/LocaleContext";
 const inputClass =
   "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent transition";
 
-type StepId = "basic" | "student" | "purpose" | "account";
+type StepId = "basic" | "purpose" | "account";
 
-/** Google(또는 이미 {t("common.login")}된) 가입은 프로필·설문만 — 이메일/비밀번호 단계 없음 */
+/** Google(또는 이미 로그인된) 가입은 프로필·설문만 — 이메일/비밀번호 단계 없음 */
 function buildStepList(skipAccountStep: boolean): StepId[] {
-  const steps: StepId[] = ["basic", "student", "purpose"];
+  const steps: StepId[] = ["basic", "purpose"];
   if (!skipAccountStep) steps.push("account");
   return steps;
 }
@@ -54,7 +54,6 @@ export default function SignupPage() {
   const stepLabels: Record<StepId, string> = useMemo(
     () => ({
       basic: t("auth.signup.stepBasic"),
-      student: t("auth.signup.stepStudent"),
       purpose: t("auth.signup.stepPurpose"),
       account: t("auth.signup.stepAccount"),
     }),
@@ -72,8 +71,6 @@ export default function SignupPage() {
 
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
-  const [isStudent, setIsStudent] = useState<boolean | null>(null);
-  const [school, setSchool] = useState("");
   const [platformPurpose, setPlatformPurpose] = useState<PlatformPurpose | "">("");
 
   const [email, setEmail] = useState("");
@@ -162,15 +159,16 @@ export default function SignupPage() {
   }, [verifyPhase]);
 
   const buildProfile = (): SignupProfile | null => {
-    const ageNum = parseInt(age, 10);
-    if (!name.trim() || !age || Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120) return null;
-    if (isStudent === null || !platformPurpose) return null;
-    if (isStudent && !school.trim()) return null;
+    if (!name.trim() || !platformPurpose) return null;
+    const ageTrimmed = age.trim();
+    let ageNum: number | undefined;
+    if (ageTrimmed) {
+      ageNum = parseInt(ageTrimmed, 10);
+      if (Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120) return null;
+    }
     return {
       displayName: name.trim(),
-      age: ageNum,
-      isStudent,
-      schoolName: isStudent ? school.trim() : undefined,
+      ...(ageNum != null ? { age: ageNum } : {}),
       platformPurpose,
     };
   };
@@ -182,23 +180,16 @@ export default function SignupPage() {
           setError(t("auth.signup.errorNameRequired"));
           return false;
         }
-        const ageNum = parseInt(age, 10);
-        if (!age || Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
-          setError(t("auth.signup.errorAgeInvalid"));
-          return false;
+        const ageTrimmed = age.trim();
+        if (ageTrimmed) {
+          const ageNum = parseInt(ageTrimmed, 10);
+          if (Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
+            setError(t("auth.signup.errorAgeInvalid"));
+            return false;
+          }
         }
         return true;
       }
-      case "student":
-        if (isStudent === null) {
-          setError(t("auth.signup.errorStudentRequired"));
-          return false;
-        }
-        if (isStudent && !school.trim()) {
-          setError(t("auth.signup.errorSchoolRequired"));
-          return false;
-        }
-        return true;
       case "purpose":
         if (!platformPurpose) {
           setError(t("auth.signup.errorPurposeRequired"));
@@ -354,8 +345,6 @@ export default function SignupPage() {
   const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
     if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
     if (currentStep === "purpose" && !platformPurpose) return;
-    if (currentStep === "student" && isStudent === null) return;
-    if (currentStep === "student" && isStudent && !school.trim()) return;
     e.preventDefault();
     void handleNext();
   };
@@ -523,41 +512,6 @@ export default function SignupPage() {
               </StepShell>
             )}
 
-            {currentStep === "student" && (
-              <StepShell title={t("auth.signup.studentTitle")} subtitle={t("auth.signup.studentSubtitle")}>
-                <div className="flex flex-col gap-4">
-                  <div className="flex gap-3">
-                    <ChoiceButton
-                      selected={isStudent === true}
-                      onClick={() => setIsStudent(true)}
-                      label={t("auth.signup.studentYes")}
-                    />
-                    <ChoiceButton
-                      selected={isStudent === false}
-                      onClick={() => {
-                        setIsStudent(false);
-                        setSchool("");
-                      }}
-                      label={t("auth.signup.studentNo")}
-                    />
-                  </div>
-
-                  {isStudent === true && (
-                    <Field label={t("auth.signup.schoolLabel")}>
-                      <input
-                        type="text"
-                        value={school}
-                        onChange={(e) => setSchool(e.target.value)}
-                        autoFocus
-                        placeholder={t("auth.signup.schoolPlaceholder")}
-                        className={inputClass}
-                      />
-                    </Field>
-                  )}
-                </div>
-              </StepShell>
-            )}
-
             {currentStep === "purpose" && (
               <StepShell title={t("auth.signup.purposeTitle")} subtitle={t("auth.signup.purposeSubtitle")}>
                 <div className="flex flex-col gap-3">
@@ -573,7 +527,23 @@ export default function SignupPage() {
                     title={t("auth.signup.purposeUploadTitle")}
                     description={t("auth.signup.purposeUploadDesc")}
                   />
+                  <PurposeOption
+                    selected={platformPurpose === "both"}
+                    onClick={() => setPlatformPurpose("both")}
+                    title={t("auth.signup.purposeBothTitle")}
+                    description={t("auth.signup.purposeBothDesc")}
+                  />
                 </div>
+                {(platformPurpose === "upload" || platformPurpose === "both") && (
+                  <div className="mt-4 rounded-lg border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3">
+                    <p className="text-sm text-white font-medium">
+                      {t("auth.signup.directorNameNoticeTitle")}
+                    </p>
+                    <p className="text-xs text-xiio-muted mt-2 leading-relaxed">
+                      {t("auth.signup.directorNameNoticeBody")}
+                    </p>
+                  </div>
+                )}
               </StepShell>
             )}
 
@@ -676,30 +646,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <label className="block text-sm text-xiio-muted mb-1.5">{label}</label>
       {children}
     </div>
-  );
-}
-
-function ChoiceButton({
-  selected,
-  onClick,
-  label,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium border transition ${
-        selected
-          ? "border-xiio-accent bg-xiio-accent/20 text-white"
-          : "border-white/10 text-xiio-muted hover:border-white/30 hover:text-white"
-      }`}
-    >
-      {label}
-    </button>
   );
 }
 

@@ -1,4 +1,10 @@
-import type { UserRole, UserProfileDoc } from "@/types/user";
+import type {
+  DirectorNameChangeRequest,
+  DirectorNameChangeRequestStatus,
+  PlatformPurpose,
+  UserRole,
+  UserProfileDoc,
+} from "@/types/user";
 
 export const DEFAULT_ADMIN_ALLOWED_ROLES: UserRole[] = ["admin", "super_admin"];
 
@@ -7,13 +13,42 @@ export type MemberAccessResult =
   | { kind: "no_profile" }
   | { kind: "active"; profile: UserProfileDoc };
 
+function parsePlatformPurpose(value: unknown): PlatformPurpose {
+  if (value === "upload") return "upload";
+  if (value === "both") return "both";
+  return "watch";
+}
+
+function parseDirectorNameChangeRequest(value: unknown): DirectorNameChangeRequest | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const o = value as Record<string, unknown>;
+  const status = o.status;
+  if (status !== "pending" && status !== "approved" && status !== "rejected") {
+    return undefined;
+  }
+  const requestedName = String(o.requestedName ?? "").trim().slice(0, 120);
+  if (!requestedName) return undefined;
+  return {
+    requestedName,
+    reason: o.reason ? String(o.reason).trim().slice(0, 500) : undefined,
+    status: status as DirectorNameChangeRequestStatus,
+    requestedAt: o.requestedAt,
+    resolvedAt: o.resolvedAt,
+    adminNote: o.adminNote ? String(o.adminNote).trim().slice(0, 500) : undefined,
+  };
+}
+
 export function parseUserProfileDoc(data: Record<string, unknown>): UserProfileDoc {
+  const ageRaw = data.age;
+  const age =
+    typeof ageRaw === "number" && ageRaw >= 1 && ageRaw <= 120 ? ageRaw : undefined;
+
   return {
     displayName: String(data.displayName ?? ""),
-    age: typeof data.age === "number" ? data.age : 0,
+    age,
     isStudent: !!data.isStudent,
     schoolName: data.schoolName ? String(data.schoolName) : undefined,
-    platformPurpose: data.platformPurpose === "upload" ? "upload" : "watch",
+    platformPurpose: parsePlatformPurpose(data.platformPurpose),
     email: data.email != null ? String(data.email) : null,
     emailVerified: !!data.emailVerified,
     role: (["member", "admin", "super_admin"].includes(String(data.role))
@@ -22,6 +57,7 @@ export function parseUserProfileDoc(data: Record<string, unknown>): UserProfileD
     defaultDirectorName: data.defaultDirectorName
       ? String(data.defaultDirectorName).trim().slice(0, 120)
       : undefined,
+    directorNameChangeRequest: parseDirectorNameChangeRequest(data.directorNameChangeRequest),
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };

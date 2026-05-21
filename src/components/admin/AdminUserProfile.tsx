@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useTranslations } from "@/context/LocaleContext";
 import type { AdminUserDetail } from "@/types/admin";
 import AdminUserActivityTimeline from "@/components/admin/AdminUserActivityTimeline";
@@ -13,10 +14,14 @@ type Props = { uid: string };
 
 export default function AdminUserProfile({ uid }: Props) {
   const { user } = useAuth();
+  const { isSuperAdmin } = useAdminAccess();
   const { t, formatDateTime } = useTranslations();
   const [data, setData] = useState<AdminUserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [adminNote, setAdminNote] = useState("");
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionErr, setActionErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -46,6 +51,40 @@ export default function AdminUserProfile({ uid }: Props) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const handleDirectorChange = async (action: "approve" | "reject") => {
+    if (!user || !isSuperAdmin) return;
+    setActionBusy(true);
+    setActionErr(null);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/admin/users/${uid}/director-name`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action,
+          adminNote: adminNote.trim() || undefined,
+        }),
+      });
+      const { data: body, raw } = await readResponseJson<{
+        message?: string;
+        error?: string;
+      }>(res);
+      if (!res.ok) {
+        setActionErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
+        return;
+      }
+      setAdminNote("");
+      await load();
+    } catch (e) {
+      setActionErr(formatClientError(t, e, { titleKey: "admin.userProfile.directorNameChangeFailed" }));
+    } finally {
+      setActionBusy(false);
+    }
+  };
 
   if (loading) {
     return <p className="text-xiio-muted">{t("admin.loading")}</p>;
@@ -100,13 +139,20 @@ export default function AdminUserProfile({ uid }: Props) {
 
         <section className="rounded-2xl border border-white/10 bg-xiio-surface p-5 space-y-3 text-sm">
           <h2 className="text-white font-semibold mb-2">{t("admin.userProfile.profileSection")}</h2>
-          <Row label={t("admin.userProfile.age")} value={String(data.age)} />
           <Row
-            label={t("admin.userProfile.student")}
-            value={data.isStudent ? t("admin.userProfile.yes") : t("admin.userProfile.no")}
+            label={t("admin.userProfile.age")}
+            value={data.age != null && data.age >= 1 ? String(data.age) : "—"}
           />
-          {data.isStudent && data.schoolName && (
-            <Row label={t("admin.userProfile.school")} value={data.schoolName} />
+          {data.isStudent && (
+            <>
+              <Row
+                label={t("admin.userProfile.student")}
+                value={t("admin.userProfile.yes")}
+              />
+              {data.schoolName && (
+                <Row label={t("admin.userProfile.school")} value={data.schoolName} />
+              )}
+            </>
           )}
           <Row
             label={t("admin.userProfile.emailVerified")}
@@ -114,6 +160,69 @@ export default function AdminUserProfile({ uid }: Props) {
           />
         </section>
       </div>
+
+      {data.defaultDirectorName && (
+        <section className="rounded-2xl border border-white/10 bg-xiio-surface p-5 mb-6 text-sm">
+          <Row label={t("admin.userProfile.directorNameLabel")} value={data.defaultDirectorName} />
+        </section>
+      )}
+
+      {data.directorNameChangeRequest?.status === "pending" && (
+        <section className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-5 mb-6 space-y-4">
+          <h2 className="text-white font-semibold">{t("admin.userProfile.directorNameChangeTitle")}</h2>
+          <Row
+            label={t("admin.userProfile.directorNameChangeRequested")}
+            value={data.directorNameChangeRequest.requestedName}
+          />
+          {data.directorNameChangeRequest.reason && (
+            <Row
+              label={t("admin.userProfile.directorNameChangeReason")}
+              value={data.directorNameChangeRequest.reason}
+            />
+          )}
+          {isSuperAdmin ? (
+            <>
+              <div>
+                <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="director-admin-note">
+                  {t("admin.userProfile.directorNameChangeNoteLabel")}
+                </label>
+                <input
+                  id="director-admin-note"
+                  type="text"
+                  value={adminNote}
+                  onChange={(e) => setAdminNote(e.target.value)}
+                  disabled={actionBusy}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-xiio-accent"
+                  maxLength={500}
+                />
+              </div>
+              {actionErr && <p className="text-red-400 text-sm">{actionErr}</p>}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={actionBusy}
+                  onClick={() => void handleDirectorChange("approve")}
+                  className="px-4 py-2 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover disabled:opacity-40 text-white text-sm font-medium"
+                >
+                  {actionBusy
+                    ? t("admin.userProfile.directorNameChangeProcessing")
+                    : t("admin.userProfile.directorNameChangeApprove")}
+                </button>
+                <button
+                  type="button"
+                  disabled={actionBusy}
+                  onClick={() => void handleDirectorChange("reject")}
+                  className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 disabled:opacity-40 text-sm"
+                >
+                  {t("admin.userProfile.directorNameChangeReject")}
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-xiio-muted">{t("admin.userProfile.directorNameChangeSuperOnly")}</p>
+          )}
+        </section>
+      )}
 
       <section>
         <h2 className="text-lg font-semibold text-white mb-4">
