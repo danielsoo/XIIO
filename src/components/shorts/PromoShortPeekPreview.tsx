@@ -28,19 +28,18 @@ export default function PromoShortPeekPreview({ item }: Props) {
   }, [item.videoUrl, item.id]);
 
   return (
-    <div
-      className={`relative ${HOME_HERO_PEEK_SIDE_FRAME_CLASS} scale-90 overflow-hidden rounded-2xl border border-white/10 bg-black shadow-lg shadow-black/40`}
-      aria-hidden
-    >
-      <video
-        ref={videoRef}
-        src={item.videoUrl}
-        className="absolute inset-0 h-full w-full object-cover"
-        playsInline
-        muted
-        preload="auto"
-      />
-      <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+    <div className={`${HOME_HERO_PEEK_SIDE_FRAME_CLASS} shrink-0`} aria-hidden>
+      <div className="relative w-full aspect-[9/16] scale-90 origin-center overflow-hidden rounded-2xl border border-white/10 bg-black shadow-lg shadow-black/40">
+        <video
+          ref={videoRef}
+          src={item.videoUrl}
+          className="absolute inset-0 h-full w-full object-cover"
+          playsInline
+          muted
+          preload="auto"
+        />
+        <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+      </div>
     </div>
   );
 }

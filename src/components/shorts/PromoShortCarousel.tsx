@@ -29,7 +29,7 @@ type Props = {
 
 /** 홈 피크 — XIIO 로고 II 색, 원형 배경 없음 */
 const PEEK_CAROUSEL_ARROW =
-  "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-xiio-accent hover:text-xiio-accent-hover transition focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+  "shrink-0 self-center flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-xiio-accent hover:text-xiio-accent-hover transition focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
 const NAV_CLASSES: Record<NavPosition, { prev: string; next: string }> = {
   home: {
@@ -79,21 +79,21 @@ function HomeHeroPeekCarousel({
 
   return (
     <div className={viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS}>
-      <div className="relative shrink-0 -mr-1 sm:-mr-2 z-0">
+      <div className="flex items-center justify-center gap-0 sm:gap-0.5">
         <PromoShortPeekPreview item={prevItem} />
+
         {count > 1 && (
           <button
             type="button"
             onClick={() => go(-1)}
-            className={`absolute right-0 top-1/2 -translate-y-1/2 -translate-x-[calc(100%+0.375rem)] z-50 ${PEEK_CAROUSEL_ARROW}`}
+            className={PEEK_CAROUSEL_ARROW}
             aria-label={t("home.promoPrev")}
           >
             ‹
           </button>
         )}
-      </div>
 
-      <div className={`relative z-10 shrink-0 ${HOME_HERO_TEASER_FRAME_CLASS}`}>
+        <div className={`relative z-10 shrink-0 ${HOME_HERO_TEASER_FRAME_CLASS}`}>
         {items.map((item, i) => (
           <div
             key={item.id}
@@ -136,20 +136,20 @@ function HomeHeroPeekCarousel({
             ))}
           </div>
         )}
-      </div>
+        </div>
 
-      <div className="relative shrink-0 -ml-1 sm:-ml-2 z-0">
-        <PromoShortPeekPreview item={nextItem} />
         {count > 1 && (
           <button
             type="button"
             onClick={() => go(1)}
-            className={`absolute left-0 top-1/2 -translate-y-1/2 translate-x-[calc(100%+0.375rem)] z-50 ${PEEK_CAROUSEL_ARROW}`}
+            className={PEEK_CAROUSEL_ARROW}
             aria-label={t("home.promoNext")}
           >
             ›
           </button>
         )}
+
+        <PromoShortPeekPreview item={nextItem} />
       </div>
     </div>
   );

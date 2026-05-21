@@ -110,7 +110,7 @@ export const HOME_HERO_TEASER_VIEWPORT_CLASS = `relative mx-auto ${HOME_HERO_TEA
 export const HOME_HERO_PEEK_SIDE_FRAME_CLASS =
   "w-[160px] sm:w-[180px] aspect-[9/16] shrink-0";
 export const HOME_HERO_PEEK_VIEWPORT_CLASS =
-  "relative w-full max-w-[480px] mx-auto flex items-center justify-center gap-0 sm:gap-1 px-2 sm:px-4";
+  "relative w-full max-w-[480px] mx-auto";
 
 /** 쇼츠 페이지 — 영상 원본 비율과 무관한 고정 9:16 프레임 */
 export const SHORTS_PAGE_FRAME_CLASS =
