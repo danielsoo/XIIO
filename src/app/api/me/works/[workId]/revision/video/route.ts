@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import {
-  createDirectUpload,
+  createTusDirectUpload,
   deleteStreamVideo,
   isStreamConfigured,
+  MAX_STREAM_UPLOAD_BYTES,
 } from "@/lib/cloudflare/stream";
 import { hasDepositVerifiedClaim } from "@/lib/server/deposit-verification";
 import { isUploaderDepositEnabled } from "@/lib/payments/config";
@@ -20,6 +21,21 @@ export async function POST(request: Request, { params }: Params) {
   if ("error" in auth) return auth.error;
   const { session } = auth;
   const { workId } = await params;
+
+  let body: { uploadLength?: number };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    body = {};
+  }
+
+  const uploadLength = body.uploadLength;
+  if (typeof uploadLength !== "number" || !Number.isFinite(uploadLength) || uploadLength <= 0) {
+    return jsonError("invalid_body", "파일 크기(uploadLength)가 필요합니다.", 400);
+  }
+  if (uploadLength > MAX_STREAM_UPLOAD_BYTES) {
+    return jsonError("invalid_body", "파일이 너무 큽니다. (최대 30GB)", 400);
+  }
 
   if (isUploaderDepositEnabled()) {
     const verified = await hasDepositVerifiedClaim(session.uid);
@@ -52,13 +68,16 @@ export async function POST(request: Request, { params }: Params) {
     }
   }
 
-  let upload: { uploadURL: string; uid: string };
+  let upload: { tusEndpoint: string; uid: string };
   try {
-    upload = await createDirectUpload({
-      xiio_uid: session.uid,
-      xiio_work_id: workId,
-      xiio_kind: "full_revision",
-      title: work.title,
+    upload = await createTusDirectUpload({
+      uploadLength,
+      meta: {
+        xiio_uid: session.uid,
+        xiio_work_id: workId,
+        xiio_kind: "full_revision",
+        title: work.title,
+      },
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -88,6 +107,6 @@ export async function POST(request: Request, { params }: Params) {
   return NextResponse.json({
     workId,
     streamUid: upload.uid,
-    uploadURL: upload.uploadURL,
+    tusEndpoint: upload.tusEndpoint,
   });
 }

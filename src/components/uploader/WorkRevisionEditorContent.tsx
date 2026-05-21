@@ -10,9 +10,9 @@ import { useTranslations } from "@/context/LocaleContext";
 import {
   formatApiError,
   formatClientError,
-  formatStreamUploadError,
   readResponseJson,
 } from "@/lib/clientErrors";
+import { uploadFileViaTus } from "@/lib/streamTusUpload";
 import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
 import { normalizeTags } from "@/lib/works/label-utils";
 import type { WorkDoc, WorkPendingRevision } from "@/types/work";
@@ -168,10 +168,10 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
     try {
       const sessionRes = await authFetch(`/api/me/works/${workId}/revision/video`, {
         method: "POST",
-        body: JSON.stringify({}),
+        body: JSON.stringify({ uploadLength: file.size }),
       });
       const { data: sessionData, raw: sessionRaw } = await readResponseJson<{
-        uploadURL?: string;
+        tusEndpoint?: string;
         error?: string;
         message?: string;
         detail?: string;
@@ -180,18 +180,11 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
         setErr(formatApiError(t, sessionRes.status, { ...sessionData, message: sessionData.message ?? sessionRaw }));
         return;
       }
-      if (!sessionData.uploadURL) {
+      if (!sessionData.tusEndpoint) {
         setErr(t("uploader.errorNoUploadUrl"));
         return;
       }
-      const form = new FormData();
-      form.append("file", file);
-      const uploadRes = await fetch(sessionData.uploadURL, { method: "POST", body: form });
-      if (!uploadRes.ok) {
-        const streamBody = await uploadRes.text().catch(() => "");
-        setErr(formatStreamUploadError(t, uploadRes.status, streamBody));
-        return;
-      }
+      await uploadFileViaTus(file, sessionData.tusEndpoint);
       setMsg(t("workRevision.videoUploading"));
       await load({ silent: true });
     } catch (e) {

@@ -557,6 +557,8 @@ export const messages = {
       uploadFileLabel: "영상 파일",
       uploadSubmit: "업로드",
       uploadSubmitting: "업로드 중…",
+      uploadProgress: "{percent}% 업로드 중…",
+      errorUploadLengthRequired: "파일 크기를 확인할 수 없습니다. 파일을 다시 선택해 주세요.",
       uploadSuccess:
         "업로드가 접수되었습니다. 인코딩 후 「내 작품」에서 상태를 확인하고 홍보 쇼츠를 만들 수 있습니다.",
       errorNoFile: "영상 파일을 선택해 주세요.",
@@ -1316,6 +1318,8 @@ export const messages = {
       uploadFileLabel: "Video file",
       uploadSubmit: "Upload",
       uploadSubmitting: "Uploading…",
+      uploadProgress: "{percent}% uploading…",
+      errorUploadLengthRequired: "Could not read file size. Please re-select the file.",
       uploadSuccess:
         "Upload received. Check My works after encoding to create a promo short.",
       errorNoFile: "Please choose a video file.",

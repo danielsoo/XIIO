@@ -1,7 +1,16 @@
+/** @deprecated Use StreamTusUpload — basic POST blocked by browser CORS for direct uploads */
 export type StreamDirectUpload = {
   uploadURL: string;
   uid: string;
 };
+
+export type StreamTusUpload = {
+  tusEndpoint: string;
+  uid: string;
+};
+
+const MAX_DURATION_SECONDS = 3600;
+export const MAX_STREAM_UPLOAD_BYTES = 30 * 1024 * 1024 * 1024;
 
 export type StreamVideoInfo = {
   uid: string;
@@ -51,11 +60,77 @@ async function streamFetch(path: string, init?: RequestInit) {
   return res;
 }
 
+/** Cloudflare TUS Upload-Metadata: `key base64value` pairs comma-separated */
+export function encodeTusMetadata(entries: Record<string, string>): string {
+  return Object.entries(entries)
+    .map(([key, value]) => `${key} ${Buffer.from(value, "utf8").toString("base64")}`)
+    .join(",");
+}
+
+function uidFromTusLocation(location: string): string | null {
+  try {
+    const path = new URL(location).pathname;
+    const segments = path.split("/").filter(Boolean);
+    return segments[segments.length - 1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function createTusDirectUpload(params: {
+  uploadLength: number;
+  meta: Record<string, string>;
+}): Promise<StreamTusUpload> {
+  const accountId = getAccountId();
+  const token = getApiToken();
+  if (!accountId || !token) {
+    throw new Error("Cloudflare Stream not configured");
+  }
+
+  const uploadMetadata = encodeTusMetadata({
+    maxDurationSeconds: String(MAX_DURATION_SECONDS),
+    ...params.meta,
+  });
+
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream?direct_user=true`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Tus-Resumable": "1.0.0",
+        "Upload-Length": String(params.uploadLength),
+        "Upload-Metadata": uploadMetadata,
+      },
+    }
+  );
+
+  const location = res.headers.get("Location");
+  const json = (await res.json().catch(() => ({}))) as {
+    success?: boolean;
+    errors?: { message: string }[];
+    result?: { uid?: string };
+  };
+
+  if (!res.ok || !location) {
+    const msg = json.errors?.[0]?.message ?? `Stream TUS API ${res.status}`;
+    throw new Error(msg);
+  }
+
+  const uid = json.result?.uid ?? uidFromTusLocation(location);
+  if (!uid) {
+    throw new Error("Stream TUS API did not return a video uid");
+  }
+
+  return { tusEndpoint: location, uid };
+}
+
+/** @deprecated Use createTusDirectUpload */
 export async function createDirectUpload(meta: Record<string, string>): Promise<StreamDirectUpload> {
   const res = await streamFetch("/direct_upload", {
     method: "POST",
     body: JSON.stringify({
-      maxDurationSeconds: 3600,
+      maxDurationSeconds: MAX_DURATION_SECONDS,
       requireSignedURLs: false,
       meta,
     }),

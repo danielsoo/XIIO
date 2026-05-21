@@ -9,10 +9,10 @@ import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
 import {
   formatApiError,
   formatClientError,
-  formatStreamUploadError,
   readResponseJson,
   type ApiErrorBody,
 } from "@/lib/clientErrors";
+import { uploadFileViaTus } from "@/lib/streamTusUpload";
 import { normalizeTags } from "@/lib/works/label-utils";
 import { WORK_SECTIONS, type VideoAspectRatio, type WorkSection } from "@/types/work";
 import type { User } from "firebase/auth";
@@ -38,6 +38,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [director, setDirector] = useState(initialDirector?.trim() ?? "");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
 
   useEffect(() => {
     setAspectRatio(defaultAspectRatioForSection(section));
@@ -57,6 +58,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     }
 
     setBusy(true);
+    setUploadPercent(null);
 
     try {
       let token: string;
@@ -80,6 +82,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             title: title || file.name,
             section,
             aspectRatio,
+            uploadLength: file.size,
             contentCategory: contentCategory.trim() || undefined,
             tags: tagList.length > 0 ? tagList : undefined,
             director: director || undefined,
@@ -92,7 +95,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       }
 
       const { data: sessionData, raw: sessionRaw } = await readResponseJson<{
-        uploadURL?: string;
+        tusEndpoint?: string;
         error?: string;
         message?: string;
         detail?: string;
@@ -106,8 +109,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         return;
       }
 
-      const resolvedUploadUrl = sessionData.uploadURL;
-      if (!resolvedUploadUrl) {
+      const tusEndpoint = sessionData.tusEndpoint;
+      if (!tusEndpoint) {
         onError(
           [
             t("uploader.errorNoUploadUrl"),
@@ -123,20 +126,12 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         return;
       }
 
-      const form = new FormData();
-      form.append("file", file);
-
-      let uploadRes: Response;
       try {
-        uploadRes = await fetch(resolvedUploadUrl, { method: "POST", body: form });
+        await uploadFileViaTus(file, tusEndpoint, {
+          onProgress: (percent) => setUploadPercent(percent),
+        });
       } catch (streamErr) {
         onError(formatClientError(t, streamErr, { titleKey: "uploader.errorStreamFailed" }));
-        return;
-      }
-
-      if (!uploadRes.ok) {
-        const streamBody = await uploadRes.text().catch(() => "");
-        onError(formatStreamUploadError(t, uploadRes.status, streamBody));
         return;
       }
 
@@ -151,6 +146,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       onError(formatClientError(t, unexpected, { titleKey: "uploader.errorUploadFailed" }));
     } finally {
       setBusy(false);
+      setUploadPercent(null);
     }
   };
 
@@ -278,12 +274,30 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             </div>
           </details>
 
+          {uploadPercent != null && (
+            <div className="space-y-1.5">
+              <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full bg-xiio-accent transition-all duration-300"
+                  style={{ width: `${uploadPercent}%` }}
+                />
+              </div>
+              <p className="text-xs text-xiio-muted text-center">
+                {t("uploader.uploadProgress", { percent: uploadPercent })}
+              </p>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={busy || !file}
             className="w-full py-3.5 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover disabled:opacity-40 text-white font-semibold transition"
           >
-            {busy ? t("uploader.uploadSubmitting") : t("uploader.uploadSubmit")}
+            {busy
+              ? uploadPercent != null
+                ? t("uploader.uploadProgress", { percent: uploadPercent })
+                : t("uploader.uploadSubmitting")
+              : t("uploader.uploadSubmit")}
           </button>
         </div>
       </div>

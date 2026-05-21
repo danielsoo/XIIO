@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { createDirectUpload, isStreamConfigured } from "@/lib/cloudflare/stream";
+import {
+  createTusDirectUpload,
+  isStreamConfigured,
+  MAX_STREAM_UPLOAD_BYTES,
+} from "@/lib/cloudflare/stream";
 import { hasDepositVerifiedClaim } from "@/lib/server/deposit-verification";
 import { isUploaderDepositEnabled } from "@/lib/payments/config";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
@@ -43,11 +47,20 @@ export async function POST(request: Request) {
     description?: string;
     director?: string;
     aspectRatio?: string;
+    uploadLength?: number;
   };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     body = {};
+  }
+
+  const uploadLength = body.uploadLength;
+  if (typeof uploadLength !== "number" || !Number.isFinite(uploadLength) || uploadLength <= 0) {
+    return jsonError("invalid_body", "파일 크기(uploadLength)가 필요합니다.", 400);
+  }
+  if (uploadLength > MAX_STREAM_UPLOAD_BYTES) {
+    return jsonError("invalid_body", "파일이 너무 큽니다. (최대 30GB)", 400);
   }
 
   const sectionRaw = (body.section ?? body.category)?.trim() ?? "movies";
@@ -73,13 +86,16 @@ export async function POST(request: Request) {
   const title = (body.title ?? "Untitled").trim().slice(0, 200) || "Untitled";
   const workId = crypto.randomUUID();
 
-  let upload: { uploadURL: string; uid: string };
+  let upload: { tusEndpoint: string; uid: string };
   try {
-    upload = await createDirectUpload({
-      xiio_uid: session.uid,
-      xiio_work_id: workId,
-      xiio_kind: "full",
-      title,
+    upload = await createTusDirectUpload({
+      uploadLength,
+      meta: {
+        xiio_uid: session.uid,
+        xiio_work_id: workId,
+        xiio_kind: "full",
+        title,
+      },
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -132,6 +148,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     workId,
     streamUid: upload.uid,
-    uploadURL: upload.uploadURL,
+    tusEndpoint: upload.tusEndpoint,
   });
 }
