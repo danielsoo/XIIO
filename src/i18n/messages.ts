@@ -560,8 +560,13 @@ export const messages = {
       uploadSubmitting: "업로드 중…",
       uploadProgress: "{percent}% 업로드 중…",
       errorUploadLengthRequired: "파일 크기를 확인할 수 없습니다. 파일을 다시 선택해 주세요.",
+      uploadGroupPromoRequired: "홍보 쇼츠 (필수)",
+      promoRequiredHint:
+        "본편과 함께 홈·숏츠 피드용 클립을 만듭니다. 영상을 선택하면 구간을 조절할 수 있습니다.",
+      errorPromoTitleRequired: "쇼츠 제목을 입력해 주세요.",
+      errorPromoClipInvalid: "쇼츠 클립 구간(3~120초)을 확인해 주세요.",
       uploadSuccess:
-        "업로드가 접수되었습니다. 인코딩 후 「내 작품」에서 상태를 확인하고 홍보 쇼츠를 만들 수 있습니다.",
+        "업로드가 접수되었습니다. 본편·쇼츠 인코딩이 끝나면 홍보 편집 화면에서 심사를 제출할 수 있습니다.",
       errorNoFile: "영상 파일을 선택해 주세요.",
       errorDepositRequired:
         "업로드하려면 먼저 업로더 보증금(소액 결제)을 완료해 주세요.",
@@ -745,6 +750,13 @@ export const messages = {
       encodingButton: "인코딩 중…",
       refreshStatus: "상태 새로고침",
       submitHint: "홍보 쇼츠가 준비되었습니다. 심사를 제출하면 홈 피드 검토 대상이 됩니다.",
+      promoFieldsGroup: "쇼츠 정보",
+      uploadedHint:
+        "본편 업로드가 완료되었습니다. 인코딩이 끝나면 업로드하신 구간으로 쇼츠가 자동 생성됩니다.",
+      awaitingAutoPromo: "본편 인코딩이 끝나면 선택한 구간으로 쇼츠 클립을 만듭니다. 잠시만 기다려 주세요.",
+      creatingPromoTitle: "쇼츠 클립 생성 중",
+      creatingPromoBody: "저장해 두신 구간으로 홍보 쇼츠를 만들고 있습니다.",
+      encodingAutoRefresh: "인코딩이 끝나면 자동으로 갱신됩니다.",
     },
     workRevision: {
       title: "영상 수정",
@@ -1322,8 +1334,13 @@ export const messages = {
       uploadSubmitting: "Uploading…",
       uploadProgress: "{percent}% uploading…",
       errorUploadLengthRequired: "Could not read file size. Please re-select the file.",
+      uploadGroupPromoRequired: "Promo short (required)",
+      promoRequiredHint:
+        "Create the home/shorts feed clip with your full upload. Pick a video file to adjust the segment.",
+      errorPromoTitleRequired: "Enter a promo short title.",
+      errorPromoClipInvalid: "Check the promo clip segment (3–120 seconds).",
       uploadSuccess:
-        "Upload received. Check My works after encoding to create a promo short.",
+        "Upload received. When full video and promo encoding finish, submit for review on the promo editor.",
       errorNoFile: "Please choose a video file.",
       errorDepositRequired: "Complete the uploader deposit before uploading.",
       errorNoUploadUrl: "Could not get upload URL.",
@@ -1507,6 +1524,13 @@ export const messages = {
       encodingButton: "Encoding…",
       refreshStatus: "Refresh status",
       submitHint: "Your promo is ready. Submit for review to enter the home feed queue.",
+      promoFieldsGroup: "Promo details",
+      uploadedHint:
+        "Full upload is done. When encoding finishes, your promo clip will be created from the segment you chose.",
+      awaitingAutoPromo: "After the full video is ready, we will create your promo clip. Please wait.",
+      creatingPromoTitle: "Creating promo clip",
+      creatingPromoBody: "Building your promo short from the saved segment.",
+      encodingAutoRefresh: "This page refreshes automatically when encoding completes.",
     },
     workRevision: {
       title: "Edit video",

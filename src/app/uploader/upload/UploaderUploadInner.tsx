@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import DirectorNameSetupModal from "@/components/uploader/DirectorNameSetupModal";
 import UploaderUploadForm from "@/components/uploader/UploaderUploadForm";
@@ -9,11 +10,11 @@ import { useTranslations } from "@/context/LocaleContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
 
 export default function UploaderUploadInner() {
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { t } = useTranslations();
   const { depositVerified, depositEnabled, checked } = useDepositStatus();
   const [err, setErr] = useState<string | null>(null);
-  const [done, setDone] = useState<string | null>(null);
   const [defaultDirectorName, setDefaultDirectorName] = useState<string | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [showDirectorModal, setShowDirectorModal] = useState(false);
@@ -95,11 +96,6 @@ export default function UploaderUploadInner() {
           <p className="text-xiio-muted text-sm md:text-base max-w-2xl">{t("uploader.uploadBody")}</p>
         </header>
 
-        {done && (
-          <div className="mb-6 rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-4 py-3 text-emerald-400 text-sm">
-            {done}
-          </div>
-        )}
         {err && (
           <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-400 text-sm whitespace-pre-wrap break-words">
             {err}
@@ -117,13 +113,12 @@ export default function UploaderUploadInner() {
         <UploaderUploadForm
           user={user}
           initialDirector={defaultDirectorName}
-          onSuccess={(message) => {
-            setDone(message);
+          onSuccess={({ workId }) => {
             setErr(null);
+            router.push(`/uploader/works/${workId}/promo?uploaded=1`);
           }}
           onError={(message) => {
             setErr(message);
-            setDone(null);
           }}
         />
 

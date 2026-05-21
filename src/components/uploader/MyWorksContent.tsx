@@ -291,12 +291,16 @@ export default function MyWorksContent() {
                     >
                       ↓
                     </button>
-                    {work.streamStatus === "ready" && !promoPublished && (
+                    {(work.promo ||
+                      work.promoDraft ||
+                      (work.streamStatus === "ready" && !promoPublished)) && (
                       <Link
                         href={`/uploader/works/${work.id}/promo`}
                         className="px-3 py-1.5 text-xs rounded-lg bg-xiio-accent/20 text-xiio-accent hover:bg-xiio-accent/30 transition"
                       >
-                        {work.promo ? t("myWorks.editPromo") : t("myWorks.createPromo")}
+                        {work.promo || work.promoDraft
+                          ? t("myWorks.editPromo")
+                          : t("myWorks.createPromo")}
                       </Link>
                     )}
                     {promoPublished && (

@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import PromoShortFields from "@/components/uploader/PromoShortFields";
+import UploaderFormShell from "@/components/uploader/UploaderFormShell";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import PlaybackVideo from "@/components/PlaybackVideo";
@@ -28,6 +31,8 @@ function isPromoEncoding(status: StreamStatus | undefined): boolean {
 }
 
 export default function PromoEditorContent({ workId }: { workId: string }) {
+  const searchParams = useSearchParams();
+  const justUploaded = searchParams.get("uploaded") === "1";
   const { user, loading: authLoading } = useAuth();
   const { t } = useTranslations();
   const [data, setData] = useState<EditorData | null>(null);
@@ -71,10 +76,17 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       const promo = json.promo;
       const rev = json.pendingRevision;
       const source = json.revisionMode && rev ? rev : promo;
-      setClipStart(source?.clipStartSec ?? promo?.clipStartSec ?? 0);
-      setClipEnd(source?.clipEndSec ?? promo?.clipEndSec ?? Math.min(30, dur));
-      setTitle(source?.title ?? promo?.title ?? json.work.title);
-      setDescription(source?.description ?? promo?.description ?? json.work.description ?? "");
+      const draft = json.work.promoDraft;
+      setClipStart(
+        source?.clipStartSec ?? promo?.clipStartSec ?? draft?.clipStartSec ?? 0
+      );
+      setClipEnd(
+        source?.clipEndSec ?? promo?.clipEndSec ?? draft?.clipEndSec ?? Math.min(30, dur)
+      );
+      setTitle(source?.title ?? promo?.title ?? draft?.title ?? json.work.title);
+      setDescription(
+        source?.description ?? promo?.description ?? draft?.description ?? json.work.description ?? ""
+      );
       const encStatus = json.revisionMode ? rev?.streamStatus : promo?.streamStatus;
       if (encStatus && !isPromoEncoding(encStatus) && encStatus === "ready") {
         setJustSavedClip(false);
@@ -97,6 +109,19 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const pendingRevision = data?.pendingRevision;
   const activeStreamStatus = revisionMode ? pendingRevision?.streamStatus : promo?.streamStatus;
   const promoEncoding = activeStreamStatus ? isPromoEncoding(activeStreamStatus) : false;
+
+  useEffect(() => {
+    if (!user || !data) return;
+    const work = data.work;
+    const enc = revisionMode ? pendingRevision?.streamStatus : promo?.streamStatus;
+    const needsPoll =
+      work.streamStatus !== "ready" ||
+      (!promo && work.promoDraft) ||
+      (enc ? isPromoEncoding(enc) : false);
+    if (!needsPoll) return;
+    const id = window.setInterval(() => void load({ silent: true }), 5000);
+    return () => window.clearInterval(id);
+  }, [user, data, load, revisionMode, promo, pendingRevision]);
 
   const authFetch = async (url: string, init?: RequestInit) => {
     if (!user) throw new Error("no user");
@@ -227,7 +252,10 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           (promo.platformStatus === "draft" || promo.platformStatus === "rejected") &&
           promo.streamStatus === "ready"
       );
-  const showEditor = fullReady && !locked && !promoEncoding;
+  const awaitingAutoPromo = !promo && Boolean(work.promoDraft);
+  const showEditor =
+    fullReady && !locked && !promoEncoding && !awaitingAutoPromo &&
+    (revisionMode || !promo || promo.platformStatus === "draft" || promo.platformStatus === "rejected");
   const savedClip = revisionMode
     ? Boolean(
         pendingRevision &&
@@ -244,249 +272,106 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
             promo.platformStatus === "rejected")
       );
 
-  return (
-    <main className="min-h-screen bg-xiio-bg px-4 py-16 md:px-8">
-      <div className="max-w-2xl mx-auto">
-        <Link href="/uploader/works" className="text-sm text-xiio-muted hover:text-white mb-6 inline-block">
-          ← {t("promoEditor.backToWorks")}
-        </Link>
-        <h1 className="text-2xl font-bold text-white mb-1">{t("promoEditor.title")}</h1>
-        <p className="text-xiio-muted text-sm mb-6">{work.title}</p>
-
-        {revisionMode && (
-          <div className="mb-4 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sky-100 text-sm">
-            {t("promoEditor.revisionModeHint")}
-          </div>
-        )}
-
-        {revisionMode && revisionReviewStatus === "pending" && (
-          <PromoStatusBanner
-            variant="pending"
-            title={t("promoEditor.revisionPendingTitle")}
-            body={t("promoEditor.revisionPendingBody")}
+  const leftColumn = (
+    <>
+      {work.playbackUrl ? (
+        <div>
+          <p className="text-xs text-xiio-muted mb-2">{t("promoEditor.fullVideoLabel")}</p>
+          <PlaybackVideo src={work.playbackUrl} maxHeightClass="max-h-[min(52vh,520px)]" />
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] min-h-[280px] lg:min-h-[360px] flex items-center justify-center p-6 text-center">
+          <p className="text-sm text-xiio-muted">{t("promoEditor.waitEncoding")}</p>
+        </div>
+      )}
+      {((revisionMode && pendingRevisionPlayback) ||
+        (!revisionMode && promo?.playbackUrl && promo.streamStatus === "ready")) && (
+        <div className="mt-6">
+          <p className="text-sm text-xiio-muted mb-2">{t("promoEditor.preview")}</p>
+          <PlaybackVideo
+            src={revisionMode ? pendingRevisionPlayback! : promo!.playbackUrl!}
+            maxHeightClass="max-h-[min(52vh,520px)]"
           />
-        )}
+        </div>
+      )}
+    </>
+  );
 
-        {!fullReady && (
-          <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-300 text-sm">
-            {t("promoEditor.waitEncoding")}
-          </div>
-        )}
+  const rightColumn = (
+    <>
+      {awaitingAutoPromo && (
+        <div className="rounded-xl border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3 text-sm text-white/90">
+          {t("promoEditor.awaitingAutoPromo")}
+        </div>
+      )}
 
-        {promoEncoding && (
-          <PromoStatusBanner
-            variant="encoding"
-            title={t("promoEditor.statusEncodingTitle")}
-            body={t("promoEditor.statusEncodingBody")}
-          />
-        )}
-
-        {!promoEncoding && promo?.streamStatus === "ready" && promo.platformStatus === "draft" && (
-          <PromoStatusBanner
-            variant="ready"
-            title={t("promoEditor.statusReadyTitle")}
-            body={t("promoEditor.statusReadyBody")}
-          />
-        )}
-
-        {!revisionMode && !promoEncoding && promo?.platformStatus === "pending" && (
-          <PromoStatusBanner
-            variant="pending"
-            title={t("promoEditor.statusPendingTitle")}
-            body={t("promoEditor.statusPendingBody")}
-          />
-        )}
-
-        {msg && !promoEncoding && (
-          <div className="mb-4 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-2 text-emerald-400 text-sm">
-            {msg}
-          </div>
-        )}
-        {err && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
-            {err}
-          </div>
-        )}
-
-        {work.playbackUrl && (
-          <div className="mb-6">
-            <p className="text-xs text-xiio-muted mb-2">{t("promoEditor.fullVideoLabel")}</p>
-            <PlaybackVideo src={work.playbackUrl} />
-          </div>
-        )}
-
-        {savedClip && (revisionMode ? pendingRevision : promo) && (
-          <section className="mb-6 rounded-2xl border border-xiio-accent/30 bg-xiio-accent/10 p-5">
-            <div className="flex items-start gap-3">
-              {promoEncoding && (
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
-                  <span className="h-4 w-4 rounded-full border-2 border-xiio-accent border-t-transparent animate-spin" />
-                </span>
-              )}
-              {!promoEncoding && activeStreamStatus === "ready" && (
-                <span className="mt-0.5 text-emerald-400 text-lg" aria-hidden>
-                  ✓
-                </span>
-              )}
-              <div className="min-w-0 flex-1">
-                <h2 className="text-white font-semibold text-sm mb-1">
-                  {promoEncoding
-                    ? t("promoEditor.savedClipEncoding")
-                    : t("promoEditor.savedClipReady")}
-                </h2>
-                <ul className="text-sm text-white/80 space-y-1">
-                  <li>
-                    {t("promoEditor.clipRange", {
-                      start: (revisionMode && pendingRevision
-                        ? pendingRevision.clipStartSec
-                        : promo!.clipStartSec
-                      ).toFixed(1),
-                      end: (revisionMode && pendingRevision
-                        ? pendingRevision.clipEndSec
-                        : promo!.clipEndSec
-                      ).toFixed(1),
-                      sec: (
-                        (revisionMode && pendingRevision
-                          ? pendingRevision.clipEndSec - pendingRevision.clipStartSec
-                          : promo!.clipEndSec - promo!.clipStartSec)
-                      ).toFixed(1),
-                    })}
-                  </li>
-                  <li>{revisionMode && pendingRevision ? pendingRevision.title : promo!.title}</li>
-                  {(revisionMode && pendingRevision
-                    ? pendingRevision.description
-                    : promo!.description) && (
-                    <li className="text-xiio-muted">
-                      {revisionMode && pendingRevision
-                        ? pendingRevision.description
-                        : promo!.description}
-                    </li>
-                  )}
-                </ul>
-                <p className="text-xs text-xiio-muted mt-2">
-                  {revisionMode
-                    ? t(`myWorks.stream.${activeStreamStatus ?? "processing"}`)
-                    : `${t(`myWorks.promoStatus.${promo!.platformStatus}`)} · ${t(`myWorks.stream.${promo!.streamStatus ?? "processing"}`)}`}
-                </p>
-              </div>
-            </div>
+      {savedClip && (revisionMode ? pendingRevision : promo) && (
+        <section className="rounded-2xl border border-xiio-accent/30 bg-xiio-accent/10 p-5">
+          <div className="flex items-start gap-3">
             {promoEncoding && (
-              <p className="text-xs text-xiio-muted mt-3 border-t border-white/10 pt-3">
-                {t("promoEditor.encodingHint")}
-              </p>
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+                <span className="h-4 w-4 rounded-full border-2 border-xiio-accent border-t-transparent animate-spin" />
+              </span>
             )}
-          </section>
-        )}
-
-        {((revisionMode && pendingRevisionPlayback) ||
-          (!revisionMode && promo?.playbackUrl && promo.streamStatus === "ready")) && (
-          <section className="mb-6">
-            <p className="text-sm text-xiio-muted mb-2">{t("promoEditor.preview")}</p>
-            <PlaybackVideo
-              src={revisionMode ? pendingRevisionPlayback! : promo!.playbackUrl!}
-              maxHeightClass="max-h-[70vh]"
-            />
-          </section>
-        )}
-
-        {showEditor && (
-          <div className="space-y-4 rounded-2xl border border-white/10 bg-xiio-surface p-6">
-            <p className="text-sm text-xiio-muted">{t("promoEditor.clipHint")}</p>
-
-            <div>
-              <label className="block text-sm text-xiio-muted mb-1">
-                {t("promoEditor.clipStart")} ({clipStart.toFixed(1)}s)
-              </label>
-              <input
-                type="range"
-                min={0}
-                max={Math.max(0, duration - 3)}
-                step={0.5}
-                value={clipStart}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
-                  setClipStart(v);
-                  if (clipEnd <= v + 3) setClipEnd(Math.min(v + 30, duration));
-                }}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-xiio-muted mb-1">
-                {t("promoEditor.clipEnd")} ({clipEnd.toFixed(1)}s) —{" "}
-                {t("promoEditor.clipDuration", { sec: (clipEnd - clipStart).toFixed(1) })}
-              </label>
-              <input
-                type="range"
-                min={clipStart + 3}
-                max={Math.min(duration, clipStart + 120)}
-                step={0.5}
-                value={clipEnd}
-                onChange={(e) => setClipEnd(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-xiio-muted mb-1">{t("promoEditor.promoTitle")}</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-xiio-muted mb-1">{t("promoEditor.promoDescription")}</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white resize-none"
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-2 pt-2">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void saveClip()}
-                className="px-4 py-2.5 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-medium disabled:opacity-40"
-              >
-                {busy ? t("common.processing") : t("promoEditor.saveClip")}
-              </button>
-              {promo && (promo.platformStatus === "draft" || promo.platformStatus === "rejected") && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void deletePromo()}
-                  className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 text-sm hover:bg-red-500/10 disabled:opacity-40"
-                >
-                  {t("promoEditor.deletePromo")}
-                </button>
-              )}
+            {!promoEncoding && activeStreamStatus === "ready" && (
+              <span className="mt-0.5 text-emerald-400 text-lg" aria-hidden>
+                ✓
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              <h2 className="text-white font-semibold text-sm mb-1">
+                {promoEncoding
+                  ? t("promoEditor.savedClipEncoding")
+                  : t("promoEditor.savedClipReady")}
+              </h2>
+              <ul className="text-sm text-white/80 space-y-1">
+                <li>
+                  {t("promoEditor.clipRange", {
+                    start: (revisionMode && pendingRevision
+                      ? pendingRevision.clipStartSec
+                      : promo!.clipStartSec
+                    ).toFixed(1),
+                    end: (revisionMode && pendingRevision
+                      ? pendingRevision.clipEndSec
+                      : promo!.clipEndSec
+                    ).toFixed(1),
+                    sec: (
+                      revisionMode && pendingRevision
+                        ? pendingRevision.clipEndSec - pendingRevision.clipStartSec
+                        : promo!.clipEndSec - promo!.clipStartSec
+                    ).toFixed(1),
+                  })}
+                </li>
+                <li>{revisionMode && pendingRevision ? pendingRevision.title : promo!.title}</li>
+              </ul>
             </div>
           </div>
-        )}
+        </section>
+      )}
 
-        {promoEncoding && (
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled
-              className="px-4 py-2.5 rounded-lg bg-white/10 text-xiio-muted text-sm font-medium cursor-not-allowed"
-            >
-              {t("promoEditor.encodingButton")}
-            </button>
+      {showEditor && (
+        <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6">
+          <PromoShortFields
+            duration={duration}
+            clipStart={clipStart}
+            clipEnd={clipEnd}
+            onClipStartChange={setClipStart}
+            onClipEndChange={setClipEnd}
+            title={title}
+            onTitleChange={setTitle}
+            description={description}
+            onDescriptionChange={setDescription}
+            disabled={busy}
+            hideClipSliders={!fullReady}
+          />
+          <div className="flex flex-wrap gap-2 pt-4 mt-4 border-t border-white/10">
             <button
               type="button"
               disabled={busy}
-              onClick={() => void load({ silent: true })}
-              className="px-4 py-2 rounded-lg border border-white/15 text-white text-sm hover:bg-white/5 disabled:opacity-40"
+              onClick={() => void saveClip()}
+              className="px-4 py-2.5 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-medium disabled:opacity-40"
             >
-              {t("promoEditor.refreshStatus")}
+              {busy ? t("common.processing") : t("promoEditor.saveClip")}
             </button>
             {promo && (promo.platformStatus === "draft" || promo.platformStatus === "rejected") && (
               <button
@@ -499,21 +384,123 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
               </button>
             )}
           </div>
-        )}
+        </div>
+      )}
 
-        {canSubmit && (
-          <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
-            <p className="text-sm text-emerald-300/90 mb-3">{t("promoEditor.submitHint")}</p>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void submitReview()}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium disabled:opacity-40"
-            >
-              {busy ? t("common.processing") : t("promoEditor.submitReview")}
-            </button>
-          </div>
-        )}
+      {promoEncoding && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled
+            className="px-4 py-2.5 rounded-lg bg-white/10 text-xiio-muted text-sm font-medium cursor-not-allowed"
+          >
+            {t("promoEditor.encodingButton")}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void load({ silent: true })}
+            className="px-4 py-2 rounded-lg border border-white/15 text-white text-sm hover:bg-white/5 disabled:opacity-40"
+          >
+            {t("promoEditor.refreshStatus")}
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <main className="min-h-screen bg-xiio-bg px-4 py-16 md:px-8">
+      <div className="max-w-5xl mx-auto">
+        <Link href="/uploader/works" className="text-sm text-xiio-muted hover:text-white mb-6 inline-block">
+          ← {t("promoEditor.backToWorks")}
+        </Link>
+        <h1 className="text-2xl font-bold text-white mb-1">{t("promoEditor.title")}</h1>
+        <p className="text-xiio-muted text-sm mb-6">{work.title}</p>
+
+        <UploaderFormShell
+          banners={
+            <>
+              {justUploaded && (
+                <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sky-100 text-sm">
+                  {t("promoEditor.uploadedHint")}
+                </div>
+              )}
+              {revisionMode && (
+                <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sky-100 text-sm">
+                  {t("promoEditor.revisionModeHint")}
+                </div>
+              )}
+              {revisionMode && revisionReviewStatus === "pending" && (
+                <PromoStatusBanner
+                  variant="pending"
+                  title={t("promoEditor.revisionPendingTitle")}
+                  body={t("promoEditor.revisionPendingBody")}
+                />
+              )}
+              {!fullReady && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-300 text-sm">
+                  {t("promoEditor.waitEncoding")}
+                </div>
+              )}
+              {awaitingAutoPromo && fullReady && (
+                <PromoStatusBanner
+                  variant="encoding"
+                  title={t("promoEditor.creatingPromoTitle")}
+                  body={t("promoEditor.creatingPromoBody")}
+                />
+              )}
+              {promoEncoding && (
+                <PromoStatusBanner
+                  variant="encoding"
+                  title={t("promoEditor.statusEncodingTitle")}
+                  body={t("promoEditor.statusEncodingBody")}
+                />
+              )}
+              {!promoEncoding && promo?.streamStatus === "ready" && promo.platformStatus === "draft" && (
+                <PromoStatusBanner
+                  variant="ready"
+                  title={t("promoEditor.statusReadyTitle")}
+                  body={t("promoEditor.statusReadyBody")}
+                />
+              )}
+              {!revisionMode && !promoEncoding && promo?.platformStatus === "pending" && (
+                <PromoStatusBanner
+                  variant="pending"
+                  title={t("promoEditor.statusPendingTitle")}
+                  body={t("promoEditor.statusPendingBody")}
+                />
+              )}
+              {msg && !promoEncoding && (
+                <div className="rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-2 text-emerald-400 text-sm">
+                  {msg}
+                </div>
+              )}
+              {err && (
+                <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
+                  {err}
+                </div>
+              )}
+            </>
+          }
+          left={leftColumn}
+          right={rightColumn}
+          footer={
+            canSubmit ? (
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+                <p className="text-sm text-emerald-300/90 mb-3">{t("promoEditor.submitHint")}</p>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void submitReview()}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium disabled:opacity-40"
+                >
+                  {busy ? t("common.processing") : t("promoEditor.submitReview")}
+                </button>
+              </div>
+            ) : null
+          }
+        />
       </div>
     </main>
   );

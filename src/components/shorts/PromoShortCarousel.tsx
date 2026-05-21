@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, type RefObject } from "react";
 import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
   type PromoShortVariant,
+  HOME_HERO_PEEK_VIEWPORT_CLASS,
 } from "@/components/shorts/PromoShortPlayer";
 import { useTranslations } from "@/context/LocaleContext";
 import type { PromoShort } from "@/types/promoShort";
@@ -26,18 +27,151 @@ type Props = {
 
 const NAV_CLASSES: Record<NavPosition, { prev: string; next: string }> = {
   home: {
-    prev: "absolute left-0 md:left-2 top-[38%] -translate-y-1/2 z-20",
-    next: "absolute right-0 md:right-2 top-[38%] -translate-y-1/2 z-20",
+    prev: "absolute left-0 md:left-2 top-1/2 -translate-y-1/2 z-20",
+    next: "absolute right-0 md:right-2 top-1/2 -translate-y-1/2 z-20",
   },
   homeHero: {
-    prev: "absolute left-0 top-[32%] -translate-y-1/2 z-20",
-    next: "absolute right-0 top-[32%] -translate-y-1/2 z-20",
+    prev: "absolute left-0 top-1/2 -translate-y-1/2 z-30",
+    next: "absolute right-0 top-1/2 -translate-y-1/2 z-30",
   },
   shorts: {
-    prev: "absolute -left-2 md:left-0 top-[38%] -translate-y-1/2 z-20",
-    next: "absolute -right-2 md:right-0 top-[38%] -translate-y-1/2 z-20",
+    prev: "absolute -left-2 md:left-0 top-1/2 -translate-y-1/2 z-20",
+    next: "absolute -right-2 md:right-0 top-1/2 -translate-y-1/2 z-20",
   },
 };
+
+const PEEK_SIDE_WRAP =
+  "relative shrink-0 scale-90 opacity-40 pointer-events-none after:absolute after:inset-0 after:rounded-2xl after:bg-black/55 after:pointer-events-none";
+
+function renderPlayer(
+  item: PromoShort,
+  isActive: boolean,
+  opts: {
+    variant: PromoShortVariant;
+    playerSize: PromoShortPlayerSize;
+    compact: boolean;
+    layout: PromoShortLayout;
+    scrollExpand: boolean;
+    scrollRootRef?: RefObject<HTMLDivElement | null>;
+    peekSide: boolean;
+  }
+) {
+  return (
+    <PromoShortPlayer
+      item={item}
+      isActive={isActive}
+      variant={opts.variant}
+      playerSize={opts.playerSize}
+      peekSide={opts.peekSide}
+      layout={opts.layout}
+      compact={opts.compact}
+      scrollExpand={opts.scrollExpand}
+      scrollRootRef={opts.scrollRootRef}
+      className="mx-auto"
+    />
+  );
+}
+
+function HomeHeroPeekCarousel({
+  items,
+  index,
+  onIndexChange,
+  playerSize,
+  compact,
+  layout,
+  viewportClassName,
+}: {
+  items: PromoShort[];
+  index: number;
+  onIndexChange: (n: number) => void;
+  playerSize: PromoShortPlayerSize;
+  compact: boolean;
+  layout: PromoShortLayout;
+  viewportClassName?: string;
+}) {
+  const { t } = useTranslations();
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const count = items.length;
+  const current = items[index];
+  const prevItem = items[(index - 1 + count) % count];
+  const nextItem = items[(index + 1) % count];
+
+  const go = useCallback(
+    (delta: number) => {
+      if (count === 0) return;
+      onIndexChange((index + delta + count) % count);
+    },
+    [count, index, onIndexChange]
+  );
+
+  const playerOpts = {
+    variant: "teaser" as const,
+    playerSize,
+    compact,
+    layout,
+    scrollExpand: false,
+    scrollRootRef: undefined,
+  };
+
+  return (
+    <div
+      ref={viewportRef}
+      className={viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS}
+    >
+      <div className={`${PEEK_SIDE_WRAP} -mr-2 sm:-mr-3 z-0`}>
+        {renderPlayer(prevItem, false, { ...playerOpts, peekSide: true })}
+      </div>
+
+      <div className="relative z-10 shrink-0">
+        {renderPlayer(current, true, { ...playerOpts, peekSide: false })}
+        {count > 1 && (
+          <div
+            className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 pointer-events-auto"
+            aria-label={`${current.title} ${index + 1}/${count}`}
+          >
+            {items.map((item, i) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onIndexChange(i)}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === index ? "w-8 bg-xiio-accent" : "w-1.5 bg-white/25 hover:bg-white/40"
+                }`}
+                aria-label={`${item.title} ${i + 1}/${count}`}
+                aria-current={i === index ? "true" : undefined}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className={`${PEEK_SIDE_WRAP} -ml-2 sm:-ml-3 z-0`}>
+        {renderPlayer(nextItem, false, { ...playerOpts, peekSide: true })}
+      </div>
+
+      {count > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={() => go(-1)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-30 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
+            aria-label={t("home.promoPrev")}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={() => go(1)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-30 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
+            aria-label={t("home.promoNext")}
+          >
+            ›
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function PromoShortCarousel({
   items,
@@ -66,6 +200,20 @@ export default function PromoShortCarousel({
   );
 
   if (count === 0) return null;
+
+  if (variant === "teaser" && navPosition === "homeHero") {
+    return (
+      <HomeHeroPeekCarousel
+        items={items}
+        index={index}
+        onIndexChange={onIndexChange}
+        playerSize={playerSize}
+        compact={compact}
+        layout={layout}
+        viewportClassName={viewportClassName}
+      />
+    );
+  }
 
   return (
     <div ref={viewportRef} className={viewportClassName}>

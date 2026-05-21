@@ -10,6 +10,7 @@ import type {
   PromoShortDoc,
   RejectReasonCode,
   StreamStatus,
+  PromoDraft,
   WorkDoc,
   WorkSection,
 } from "@/types/work";
@@ -37,6 +38,25 @@ function parseSection(data: Record<string, unknown>): WorkSection {
   const raw = data.section ?? data.category;
   const s = String(raw ?? "movies");
   return isWorkSection(s) ? s : "movies";
+}
+
+export function parsePromoDraft(data: Record<string, unknown>): PromoDraft | undefined {
+  const raw = data.promoDraft;
+  if (!raw || typeof raw !== "object") return undefined;
+  const d = raw as Record<string, unknown>;
+  const start = Number(d.clipStartSec);
+  const end = Number(d.clipEndSec);
+  const title = typeof d.title === "string" ? d.title.trim() : "";
+  if (!title || !Number.isFinite(start) || !Number.isFinite(end)) return undefined;
+  return {
+    clipStartSec: start,
+    clipEndSec: end,
+    title: title.slice(0, 200),
+    description:
+      typeof d.description === "string" && d.description.trim()
+        ? d.description.trim()
+        : null,
+  };
 }
 
 function parseStringArray(data: Record<string, unknown>, key: string): string[] | undefined {
@@ -77,6 +97,7 @@ export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc
     viewCount: typeof data.viewCount === "number" ? data.viewCount : 0,
     pendingRevision: parseWorkPendingRevision(data),
     revisionReviewStatus: parseRevisionReviewStatus(data),
+    promoDraft: parsePromoDraft(data),
   };
 }
 

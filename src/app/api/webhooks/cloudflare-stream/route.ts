@@ -3,6 +3,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import { verifyStreamWebhookSignature } from "@/lib/cloudflare/verify-stream-webhook";
 import { getAdminDb } from "@/lib/server/firebase-admin";
 import { mapWebhookStreamStatus } from "@/lib/works/constants";
+import { materializePromoFromDraft } from "@/lib/server/materialize-promo-draft";
 import { FieldValue, promoRef, worksCol } from "@/lib/server/works";
 
 export const runtime = "nodejs";
@@ -63,6 +64,9 @@ async function applyStreamStatus(
     { streamUid, streamStatus, updatedAt: FieldValue.serverTimestamp() },
     { merge: true }
   );
+  if (streamStatus === "ready") {
+    await materializePromoFromDraft(db, xiioUid, workId);
+  }
 }
 
 async function applyByStreamUidLookup(
@@ -73,9 +77,12 @@ async function applyByStreamUidLookup(
   const workSnap = await db.collectionGroup("works").where("streamUid", "==", streamUid).limit(10).get();
   if (!workSnap.empty) {
     await Promise.all(
-      workSnap.docs.map((doc) =>
-        doc.ref.update({ streamStatus, updatedAt: FieldValue.serverTimestamp() })
-      )
+      workSnap.docs.map(async (doc) => {
+        await doc.ref.update({ streamStatus, updatedAt: FieldValue.serverTimestamp() });
+        if (streamStatus === "ready") {
+          await materializePromoFromDraft(db, doc.ref.parent.parent!.id, doc.id);
+        }
+      })
     );
     return true;
   }

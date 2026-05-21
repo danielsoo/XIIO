@@ -17,7 +17,8 @@ import { defaultAspectRatioForSection, isVideoAspectRatio } from "@/lib/works/as
 import { isWorkSection } from "@/lib/works/constants";
 import { parseUploadLength } from "@/lib/server/parse-upload-length";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
-import type { VideoAspectRatio } from "@/types/work";
+import { validatePromoClipRange } from "@/lib/works/promo-clip";
+import type { PromoDraft, VideoAspectRatio } from "@/types/work";
 
 export async function POST(request: Request) {
   if (!isStreamConfigured()) {
@@ -49,6 +50,12 @@ export async function POST(request: Request) {
     director?: string;
     aspectRatio?: string;
     uploadLength?: number | string;
+    promoDraft?: {
+      title?: string;
+      description?: string;
+      clipStartSec?: number;
+      clipEndSec?: number;
+    };
   };
   try {
     body = (await request.json()) as typeof body;
@@ -85,6 +92,34 @@ export async function POST(request: Request) {
   }
 
   const title = (body.title ?? "Untitled").trim().slice(0, 200) || "Untitled";
+
+  const promoRaw = body.promoDraft;
+  if (!promoRaw || typeof promoRaw !== "object") {
+    return jsonError("promo_required", "홍보 쇼츠 정보가 필요합니다.", 400);
+  }
+  const promoTitle = String(promoRaw.title ?? "").trim().slice(0, 200);
+  if (!promoTitle) {
+    return jsonError("promo_required", "쇼츠 제목을 입력해 주세요.", 400);
+  }
+  const clipStart = Number(promoRaw.clipStartSec);
+  const clipEnd = Number(promoRaw.clipEndSec);
+  const clipErr = validatePromoClipRange(clipStart, clipEnd);
+  if (clipErr === "clip_too_short") {
+    return jsonError("invalid_clip", "클립 구간은 3초 이상이어야 합니다.", 400);
+  }
+  if (clipErr === "clip_too_long") {
+    return jsonError("invalid_clip", "홍보 쇼츠는 최대 120초입니다.", 400);
+  }
+  if (clipErr) {
+    return jsonError("invalid_clip", "클립 구간이 올바르지 않습니다.", 400);
+  }
+  const promoDraft: PromoDraft = {
+    clipStartSec: clipStart,
+    clipEndSec: clipEnd,
+    title: promoTitle,
+    description: promoRaw.description?.trim() || null,
+  };
+
   const workId = crypto.randomUUID();
 
   let upload: { tusEndpoint: string; uid: string };
@@ -126,6 +161,7 @@ export async function POST(request: Request) {
         proposedCategory: proposedCategory || null,
         proposedTags: proposedTags.length > 0 ? proposedTags : null,
         proposedAspectRatio,
+        promoDraft,
         platformStatus: "pending",
         streamStatus: "uploading",
         streamUid: upload.uid,

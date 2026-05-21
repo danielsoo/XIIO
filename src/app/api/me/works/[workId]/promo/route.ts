@@ -8,9 +8,11 @@ import {
 } from "@/lib/cloudflare/stream";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
 import { parseRevisionReviewStatus } from "@/lib/server/revision-parse";
+import { materializePromoFromDraft } from "@/lib/server/materialize-promo-draft";
 import {
   syncPromoRevisionStreamStatusIfNeeded,
   syncPromoStreamStatusIfNeeded,
+  syncWorkStreamStatusIfNeeded,
 } from "@/lib/server/sync-stream-status";
 import {
   canOwnerDeletePromo,
@@ -37,7 +39,24 @@ export async function GET(request: Request, { params }: Params) {
   const workSnap = await worksCol(db, session.uid).doc(workId).get();
   if (!workSnap.exists) return jsonError("not_found", "작품을 찾을 수 없습니다.", 404);
 
-  const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
+  let work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
+  if (work.streamUid && work.streamStatus !== "ready" && work.streamStatus !== "error") {
+    const synced = await syncWorkStreamStatusIfNeeded(
+      db,
+      session.uid,
+      workId,
+      work.streamUid,
+      work.streamStatus
+    );
+    work = { ...work, streamStatus: synced };
+  }
+  if (work.streamStatus === "ready" && work.promoDraft) {
+    await materializePromoFromDraft(db, session.uid, workId);
+    const refreshed = await worksCol(db, session.uid).doc(workId).get();
+    if (refreshed.exists) {
+      work = parseWorkDoc(workId, refreshed.data() as Record<string, unknown>);
+    }
+  }
   const fullPlayback = work.streamUid ? await resolvePlaybackUrl(work.streamUid) : null;
   const fullInfo = work.streamUid ? await getStreamVideo(work.streamUid) : null;
 

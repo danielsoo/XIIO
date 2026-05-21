@@ -22,6 +22,8 @@ const API_ERROR_I18N_KEYS: Record<string, string> = {
   invalid_aspect_ratio: "errors.invalidAspectRatio",
   invalid_json: "errors.invalidJson",
   invalid_body: "errors.invalidBody",
+  promo_required: "uploader.errorPromoTitleRequired",
+  invalid_clip: "uploader.errorPromoClipInvalid",
   not_found: "errors.notFound",
   forbidden: "errors.forbidden",
 };

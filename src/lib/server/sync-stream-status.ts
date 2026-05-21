@@ -2,6 +2,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import { getStreamVideo } from "@/lib/cloudflare/stream";
 import { mapWebhookStreamStatus } from "@/lib/works/constants";
 import type { StreamStatus } from "@/types/work";
+import { materializePromoFromDraft } from "@/lib/server/materialize-promo-draft";
 import { FieldValue, promoRef, worksCol } from "@/lib/server/works";
 
 /** Firestore streamStatus가 uploading/processing일 때 Cloudflare API로 실제 상태 반영 */
@@ -24,6 +25,9 @@ export async function syncWorkStreamStatusIfNeeded(
     streamStatus: next,
     updatedAt: FieldValue.serverTimestamp(),
   });
+  if (next === "ready") {
+    await materializePromoFromDraft(db, ownerUid, workId);
+  }
   return next;
 }
 

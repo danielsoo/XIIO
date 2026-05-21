@@ -107,6 +107,10 @@ export type PromoShortPlayerSize = "default" | "homeHeroSmall";
 export const HOME_HERO_TEASER_FRAME_CLASS =
   "w-[220px] sm:w-[260px] aspect-[9/16] shrink-0";
 export const HOME_HERO_TEASER_VIEWPORT_CLASS = `relative mx-auto ${HOME_HERO_TEASER_FRAME_CLASS}`;
+export const HOME_HERO_PEEK_SIDE_FRAME_CLASS =
+  "w-[160px] sm:w-[180px] aspect-[9/16] shrink-0";
+export const HOME_HERO_PEEK_VIEWPORT_CLASS =
+  "relative w-full max-w-[420px] mx-auto flex items-center justify-center gap-0 sm:gap-1 px-10 sm:px-12";
 
 function PromoDescriptionBlock({
   description,
@@ -206,6 +210,7 @@ function PlayerChrome({
   compact,
   variant,
   playerSize,
+  peekSide,
   scrollExpand,
   scrollRootRef,
   onToggleFullscreen,
@@ -218,6 +223,7 @@ function PlayerChrome({
   compact?: boolean;
   variant?: PromoShortVariant;
   playerSize?: PromoShortPlayerSize;
+  peekSide?: boolean;
   /** 숏츠 화면 등에서만 스크롤로 소개 펼침 */
   scrollExpand?: boolean;
   scrollRootRef?: RefObject<HTMLElement | null>;
@@ -359,15 +365,19 @@ function PlayerChrome({
     ? bandMinPx + progress * Math.max(0, bandExpandedCap - bandMinPx)
     : undefined;
 
-  const fixedTeaserFrame = isTeaser && playerSize === "homeHeroSmall";
-  const smallShell = fixedTeaserFrame
+  const fixedTeaserFrame = isTeaser && playerSize === "homeHeroSmall" && !peekSide;
+  const peekSideFrame = isTeaser && peekSide;
+  const smallShell = peekSideFrame
+    ? HOME_HERO_PEEK_SIDE_FRAME_CLASS
+    : fixedTeaserFrame
     ? HOME_HERO_TEASER_FRAME_CLASS
     : playerSize === "homeHeroSmall"
       ? "max-w-[220px] sm:max-w-[260px] max-h-[min(42vh,400px)]"
       : compact
         ? "max-h-[min(72vh,680px)]"
         : "max-h-[min(85vh,780px)]";
-  const maxWidthClass = fixedTeaserFrame || playerSize === "homeHeroSmall" ? "" : "max-w-lg";
+  const maxWidthClass =
+    fixedTeaserFrame || peekSideFrame || playerSize === "homeHeroSmall" ? "" : "max-w-lg";
 
   const cardShellClass = isFullscreen
     ? "relative w-full h-full max-w-lg mx-auto rounded-2xl overflow-hidden bg-black"
@@ -528,7 +538,7 @@ function PlayerChrome({
   );
 
   const watchHref = `/shorts?promo=${item.id}`;
-  const teaserLink = isTeaser ? (
+  const teaserLink = isTeaser && !peekSide ? (
     <Link
       href={watchHref}
       className="absolute inset-0 z-[15] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
@@ -578,6 +588,7 @@ export default function PromoShortPlayer({
   layout,
   variant = "default",
   playerSize = "default",
+  peekSide = false,
   compact = false,
   scrollExpand = false,
   scrollRootRef,
@@ -589,6 +600,7 @@ export default function PromoShortPlayer({
   layout?: PromoShortLayout;
   variant?: PromoShortVariant;
   playerSize?: PromoShortPlayerSize;
+  peekSide?: boolean;
   /** 홈 스포트라이트 등 낮은 카드 높이 */
   compact?: boolean;
   /** true일 때 scrollRootRef(또는 카드) 안에서만 스크롤 펼침 */
@@ -610,6 +622,7 @@ export default function PromoShortPlayer({
       layout={resolvedLayout}
       variant={variant}
       playerSize={playerSize}
+      peekSide={peekSide}
       compact={compact}
       scrollExpand={scrollExpand}
       scrollRootRef={scrollRootRef}

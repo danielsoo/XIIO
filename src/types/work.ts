@@ -52,6 +52,14 @@ export type WorkPendingRevision = {
   updatedAt?: unknown;
 };
 
+/** 업로드 시 저장 — 본편 ready 후 자동 클립 생성 */
+export type PromoDraft = {
+  clipStartSec: number;
+  clipEndSec: number;
+  title: string;
+  description?: string | null;
+};
+
 export type PromoPendingRevision = {
   platformStatus: "draft" | "pending" | "rejected";
   streamUid?: string;
@@ -98,6 +106,7 @@ export type WorkDoc = {
   viewCount?: number;
   pendingRevision?: WorkPendingRevision;
   revisionReviewStatus?: RevisionReviewStatus;
+  promoDraft?: PromoDraft;
 };
 
 export type PromoShortDoc = {

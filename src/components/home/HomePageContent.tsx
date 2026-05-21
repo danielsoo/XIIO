@@ -5,7 +5,7 @@ import Link from "next/link";
 import HomeHeroActions from "@/components/HomeHeroActions";
 import HomeCatalogSection from "@/components/home/HomeCatalogSection";
 import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
-import { HOME_HERO_TEASER_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPlayer";
+import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPlayer";
 import { useTranslations } from "@/context/LocaleContext";
 import { usePromoFeed } from "@/hooks/usePromoFeed";
 import type { WorkSection } from "@/types/work";
@@ -54,17 +54,9 @@ export default function HomePageContent() {
 
             {hasPromo && (
               <div className="w-full min-w-0" aria-label={t("home.promoSectionTitle")}>
-                <div className="flex items-center justify-between gap-3 mb-3 px-0.5">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-xiio-accent">
-                    {t("home.promoBadge")}
-                  </p>
-                  <Link
-                    href="/shorts"
-                    className="text-sm text-xiio-muted hover:text-xiio-accent transition shrink-0"
-                  >
-                    {t("common.viewAll")}
-                  </Link>
-                </div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-xiio-accent mb-3 px-0.5">
+                  {t("home.promoBadge")}
+                </p>
                 <PromoShortCarousel
                   items={promoItems}
                   index={promoIndex}
@@ -73,7 +65,7 @@ export default function HomePageContent() {
                   playerSize="homeHeroSmall"
                   compact
                   navPosition="homeHero"
-                  viewportClassName={HOME_HERO_TEASER_VIEWPORT_CLASS}
+                  viewportClassName={HOME_HERO_PEEK_VIEWPORT_CLASS}
                 />
               </div>
             )}
