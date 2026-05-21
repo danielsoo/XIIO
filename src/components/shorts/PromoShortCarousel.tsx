@@ -27,6 +27,10 @@ type Props = {
   navPosition?: NavPosition;
 };
 
+/** 홈 피크 — XIIO 로고 II 색, 원형 배경 없음 */
+const PEEK_CAROUSEL_ARROW =
+  "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-xiio-accent hover:text-xiio-accent-hover transition focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+
 const NAV_CLASSES: Record<NavPosition, { prev: string; next: string }> = {
   home: {
     prev: "absolute left-0 md:left-2 top-1/2 -translate-y-1/2 z-20",
@@ -75,8 +79,18 @@ function HomeHeroPeekCarousel({
 
   return (
     <div className={viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS}>
-      <div className="shrink-0 -mr-1 sm:-mr-2 z-0">
+      <div className="relative shrink-0 -mr-1 sm:-mr-2 z-0">
         <PromoShortPeekPreview item={prevItem} />
+        {count > 1 && (
+          <button
+            type="button"
+            onClick={() => go(-1)}
+            className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-[38%] z-50 ${PEEK_CAROUSEL_ARROW}`}
+            aria-label={t("home.promoPrev")}
+          >
+            ‹
+          </button>
+        )}
       </div>
 
       <div className={`relative z-10 shrink-0 ${HOME_HERO_TEASER_FRAME_CLASS}`}>
@@ -124,30 +138,19 @@ function HomeHeroPeekCarousel({
         )}
       </div>
 
-      <div className="shrink-0 -ml-1 sm:-ml-2 z-0">
+      <div className="relative shrink-0 -ml-1 sm:-ml-2 z-0">
         <PromoShortPeekPreview item={nextItem} />
-      </div>
-
-      {count > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={() => go(-1)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-40 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
-            aria-label={t("home.promoPrev")}
-          >
-            ‹
-          </button>
+        {count > 1 && (
           <button
             type="button"
             onClick={() => go(1)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-40 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
+            className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-[38%] z-50 ${PEEK_CAROUSEL_ARROW}`}
             aria-label={t("home.promoNext")}
           >
             ›
           </button>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -213,7 +216,9 @@ export default function PromoShortCarousel({
             compact={compact}
             scrollExpand={scrollExpand}
             scrollRootRef={scrollExpand ? viewportRef : undefined}
-            className={playerSize === "homeHeroSmall" ? "mx-auto" : "w-full"}
+            className={
+              playerSize === "homeHeroSmall" || playerSize === "shortsPage" ? "mx-auto" : "w-full"
+            }
           />
         </div>
       ))}

@@ -54,9 +54,10 @@ export default function ShortsPageContent() {
         index={index}
         onIndexChange={onIndexChange}
         variant="default"
+        playerSize="shortsPage"
         layout="stacked"
         navPosition="shorts"
-        viewportClassName="max-w-lg mx-auto relative min-h-[min(85vh,780px)] w-full"
+        viewportClassName="relative mx-auto w-full"
       />
 
       <p className="max-w-5xl mx-auto mt-4 text-center text-xs text-xiio-muted">

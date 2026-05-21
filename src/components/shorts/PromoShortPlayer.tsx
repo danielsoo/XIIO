@@ -101,7 +101,7 @@ function CollapseIcon() {
 
 export type PromoShortLayout = "overlay" | "stacked";
 export type PromoShortVariant = "default" | "teaser";
-export type PromoShortPlayerSize = "default" | "homeHeroSmall";
+export type PromoShortPlayerSize = "default" | "homeHeroSmall" | "shortsPage";
 
 /** 홈 히어로 teaser — 영상 원본 비율과 무관한 고정 프레임 */
 export const HOME_HERO_TEASER_FRAME_CLASS =
@@ -110,7 +110,11 @@ export const HOME_HERO_TEASER_VIEWPORT_CLASS = `relative mx-auto ${HOME_HERO_TEA
 export const HOME_HERO_PEEK_SIDE_FRAME_CLASS =
   "w-[160px] sm:w-[180px] aspect-[9/16] shrink-0";
 export const HOME_HERO_PEEK_VIEWPORT_CLASS =
-  "relative w-full max-w-[480px] mx-auto flex items-center justify-center gap-0 sm:gap-1 px-11 sm:px-14";
+  "relative w-full max-w-[480px] mx-auto flex items-center justify-center gap-0 sm:gap-1 px-2 sm:px-4";
+
+/** 쇼츠 페이지 — 영상 원본 비율과 무관한 고정 9:16 프레임 */
+export const SHORTS_PAGE_FRAME_CLASS =
+  "h-[min(85vh,780px)] w-auto max-w-full aspect-[9/16] mx-auto shrink-0";
 
 function PromoDescriptionBlock({
   description,
@@ -366,27 +370,31 @@ function PlayerChrome({
     : undefined;
 
   const fixedTeaserFrame = isTeaser && playerSize === "homeHeroSmall" && !peekSide;
+  const fixedShortsFrame = !isTeaser && !isFullscreen && playerSize === "shortsPage";
   const peekSideFrame = isTeaser && peekSide;
+  const fixedPortraitFrame = fixedTeaserFrame || fixedShortsFrame || peekSideFrame;
   const smallShell = peekSideFrame
     ? HOME_HERO_PEEK_SIDE_FRAME_CLASS
     : fixedTeaserFrame
     ? HOME_HERO_TEASER_FRAME_CLASS
-    : playerSize === "homeHeroSmall"
-      ? "max-w-[220px] sm:max-w-[260px] max-h-[min(42vh,400px)]"
-      : compact
-        ? "max-h-[min(72vh,680px)]"
-        : "max-h-[min(85vh,780px)]";
+    : fixedShortsFrame
+      ? SHORTS_PAGE_FRAME_CLASS
+      : playerSize === "homeHeroSmall"
+        ? "max-w-[220px] sm:max-w-[260px] max-h-[min(42vh,400px)]"
+        : compact
+          ? "max-h-[min(72vh,680px)]"
+          : "max-h-[min(85vh,780px)]";
   const maxWidthClass =
-    fixedTeaserFrame || peekSideFrame || playerSize === "homeHeroSmall" ? "" : "max-w-lg";
+    fixedPortraitFrame || playerSize === "homeHeroSmall" ? "" : "max-w-lg";
 
   const cardShellClass = isFullscreen
     ? "relative w-full h-full max-w-lg mx-auto rounded-2xl overflow-hidden bg-black"
-    : `relative mx-auto ${fixedTeaserFrame ? "" : "w-full "} ${maxWidthClass} rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
+    : `relative mx-auto ${fixedPortraitFrame ? "" : "w-full "} ${maxWidthClass} rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
 
   const cardAspectStyle =
-    isFullscreen || fixedTeaserFrame || peekSideFrame
-      ? undefined
-      : { aspectRatio: item.aspectRatio };
+    isFullscreen || fixedPortraitFrame ? undefined : { aspectRatio: item.aspectRatio };
+
+  const videoObjectClass = fixedPortraitFrame ? "object-cover" : "object-contain";
 
   const overlayBandClass = compact
     ? "h-auto min-h-[5rem] max-h-[min(38%,12rem)]"
@@ -567,7 +575,7 @@ function PlayerChrome({
         <video
           ref={videoRef}
           src={item.videoUrl}
-          className="absolute inset-0 w-full h-full object-contain bg-black"
+          className={`absolute inset-0 w-full h-full bg-black ${videoObjectClass}`}
           playsInline
           muted
           loop
