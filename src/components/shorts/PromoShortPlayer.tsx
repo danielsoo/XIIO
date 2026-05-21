@@ -105,7 +105,7 @@ export type PromoShortPlayerSize = "default" | "homeHeroSmall";
 
 /** 홈 히어로 teaser — 영상 원본 비율과 무관한 고정 프레임 */
 export const HOME_HERO_TEASER_FRAME_CLASS =
-  "w-[220px] sm:w-[260px] aspect-[9/16] shrink-0";
+  "w-[200px] sm:w-[236px] aspect-[9/16] shrink-0";
 export const HOME_HERO_TEASER_VIEWPORT_CLASS = `relative mx-auto ${HOME_HERO_TEASER_FRAME_CLASS}`;
 export const HOME_HERO_PEEK_SIDE_FRAME_CLASS =
   "w-[160px] sm:w-[180px] aspect-[9/16] shrink-0";

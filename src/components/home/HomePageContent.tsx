@@ -54,9 +54,6 @@ export default function HomePageContent() {
 
             {hasPromo && (
               <div className="w-full min-w-0" aria-label={t("home.promoSectionTitle")}>
-                <p className="text-xs font-semibold uppercase tracking-widest text-xiio-accent mb-3 px-0.5">
-                  {t("home.promoBadge")}
-                </p>
                 <PromoShortCarousel
                   items={promoItems}
                   index={promoIndex}
