@@ -19,6 +19,9 @@ export function parseUserProfileDoc(data: Record<string, unknown>): UserProfileD
     role: (["member", "admin", "super_admin"].includes(String(data.role))
       ? data.role
       : "member") as UserRole,
+    defaultDirectorName: data.defaultDirectorName
+      ? String(data.defaultDirectorName).trim().slice(0, 120)
+      : undefined,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };

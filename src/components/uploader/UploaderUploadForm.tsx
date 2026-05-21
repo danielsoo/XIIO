@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
+import WorkTagInput from "@/components/uploader/WorkTagInput";
 import { useTranslations } from "@/context/LocaleContext";
 import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
 import {
@@ -12,7 +13,7 @@ import {
   readResponseJson,
   type ApiErrorBody,
 } from "@/lib/clientErrors";
-import { parseTagsFromInput } from "@/lib/works/label-utils";
+import { normalizeTags } from "@/lib/works/label-utils";
 import { WORK_SECTIONS, type VideoAspectRatio, type WorkSection } from "@/types/work";
 import type { User } from "firebase/auth";
 
@@ -21,25 +22,32 @@ const inputClass =
 
 type Props = {
   user: User;
+  initialDirector?: string | null;
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
 };
 
-export default function UploaderUploadForm({ user, onSuccess, onError }: Props) {
+export default function UploaderUploadForm({ user, initialDirector, onSuccess, onError }: Props) {
   const { t } = useTranslations();
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [section, setSection] = useState<WorkSection>("movies");
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("16:9");
   const [contentCategory, setContentCategory] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
-  const [director, setDirector] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [director, setDirector] = useState(initialDirector?.trim() ?? "");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setAspectRatio(defaultAspectRatioForSection(section));
   }, [section]);
+
+  useEffect(() => {
+    if (initialDirector?.trim()) {
+      setDirector(initialDirector.trim());
+    }
+  }, [initialDirector]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +67,7 @@ export default function UploaderUploadForm({ user, onSuccess, onError }: Props) 
         return;
       }
 
-      const tags = parseTagsFromInput(tagsInput);
+      const tagList = normalizeTags(tags);
       let sessionRes: Response;
       try {
         sessionRes = await fetch("/api/stream/upload-url", {
@@ -73,7 +81,7 @@ export default function UploaderUploadForm({ user, onSuccess, onError }: Props) 
             section,
             aspectRatio,
             contentCategory: contentCategory.trim() || undefined,
-            tags: tags.length > 0 ? tags : undefined,
+            tags: tagList.length > 0 ? tagList : undefined,
             director: director || undefined,
             description: description || undefined,
           }),
@@ -136,8 +144,8 @@ export default function UploaderUploadForm({ user, onSuccess, onError }: Props) 
       setFile(null);
       setTitle("");
       setContentCategory("");
-      setTagsInput("");
-      setDirector("");
+      setTags([]);
+      setDirector(initialDirector?.trim() ?? "");
       setDescription("");
     } catch (unexpected) {
       onError(formatClientError(t, unexpected, { titleKey: "uploader.errorUploadFailed" }));
@@ -199,35 +207,31 @@ export default function UploaderUploadForm({ user, onSuccess, onError }: Props) 
                 className={`${inputClass} text-lg font-semibold py-3`}
               />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-category">
-                  {t("uploader.uploadContentCategoryLabel")}
-                </label>
-                <input
-                  id="upload-category"
-                  type="text"
-                  value={contentCategory}
-                  onChange={(e) => setContentCategory(e.target.value)}
-                  placeholder={t("uploader.uploadContentCategoryPlaceholder")}
-                  disabled={busy}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-tags">
-                  {t("uploader.uploadTagsLabel")}
-                </label>
-                <input
-                  id="upload-tags"
-                  type="text"
-                  value={tagsInput}
-                  onChange={(e) => setTagsInput(e.target.value)}
-                  placeholder={t("uploader.uploadTagsPlaceholder")}
-                  disabled={busy}
-                  className={inputClass}
-                />
-              </div>
+            <div>
+              <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-category">
+                {t("uploader.uploadContentCategoryLabel")}
+              </label>
+              <input
+                id="upload-category"
+                type="text"
+                value={contentCategory}
+                onChange={(e) => setContentCategory(e.target.value)}
+                placeholder={t("uploader.uploadContentCategoryPlaceholder")}
+                disabled={busy}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-tags">
+                {t("uploader.uploadTagsLabel")}
+              </label>
+              <WorkTagInput
+                value={tags}
+                onChange={setTags}
+                disabled={busy}
+                user={user}
+                inputClassName={inputClass}
+              />
             </div>
           </section>
 
@@ -243,6 +247,9 @@ export default function UploaderUploadForm({ user, onSuccess, onError }: Props) 
                 <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-director">
                   {t("uploader.uploadDirectorLabel")}
                 </label>
+                {initialDirector?.trim() ? (
+                  <p className="text-xs text-xiio-muted mb-1.5">{t("uploader.directorSavedHint")}</p>
+                ) : null}
                 <input
                   id="upload-director"
                   type="text"
@@ -251,6 +258,7 @@ export default function UploaderUploadForm({ user, onSuccess, onError }: Props) 
                   placeholder={t("uploader.uploadDirectorPlaceholder")}
                   disabled={busy}
                   className={inputClass}
+                  maxLength={120}
                 />
               </div>
               <div>

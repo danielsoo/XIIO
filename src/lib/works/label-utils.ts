@@ -1,6 +1,21 @@
 const MAX_CATEGORY_LEN = 24;
 const MAX_TAG_LEN = 32;
-const MAX_TAGS = 8;
+export const MAX_TAGS = 8;
+
+export function stripTagHash(value: string): string {
+  return value.trim().replace(/^#+/, "").trim();
+}
+
+export function displayTag(tag: string): string {
+  const t = tag.trim();
+  if (!t) return "";
+  return t.startsWith("#") ? t : `#${t}`;
+}
+
+export function normalizeTagQueryInput(value: string): string {
+  const stripped = value.replace(/^#+/, "");
+  return stripped.length > 0 ? `#${stripped}` : "#";
+}
 
 export function normalizeContentCategory(value: string): string {
   const s = value.trim().replace(/\s+/g, " ").slice(0, MAX_CATEGORY_LEN);

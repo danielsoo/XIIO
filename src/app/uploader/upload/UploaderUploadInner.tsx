@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import DirectorNameSetupModal from "@/components/uploader/DirectorNameSetupModal";
 import UploaderUploadForm from "@/components/uploader/UploaderUploadForm";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
@@ -13,10 +14,41 @@ export default function UploaderUploadInner() {
   const { depositVerified, depositEnabled, checked } = useDepositStatus();
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [defaultDirectorName, setDefaultDirectorName] = useState<string | null>(null);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [showDirectorModal, setShowDirectorModal] = useState(false);
 
   const needsDeposit = depositEnabled && !depositVerified;
 
-  if (authLoading || !checked) {
+  useEffect(() => {
+    if (!user || needsDeposit || authLoading || !checked) {
+      setSettingsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/me/uploader-settings", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = (await res.json()) as { defaultDirectorName?: string | null };
+        if (cancelled) return;
+        const name = data.defaultDirectorName?.trim() || null;
+        setDefaultDirectorName(name);
+        setShowDirectorModal(!name);
+      } catch {
+        if (!cancelled) setShowDirectorModal(false);
+      } finally {
+        if (!cancelled) setSettingsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, needsDeposit, authLoading, checked]);
+
+  if (authLoading || !checked || settingsLoading) {
     return (
       <main className="min-h-screen bg-xiio-bg flex items-center justify-center text-white">
         <p className="text-xiio-muted">{t("common.loading")}</p>
@@ -74,8 +106,17 @@ export default function UploaderUploadInner() {
           </div>
         )}
 
+        <DirectorNameSetupModal
+          open={showDirectorModal}
+          onSaved={(name) => {
+            setDefaultDirectorName(name);
+            setShowDirectorModal(false);
+          }}
+        />
+
         <UploaderUploadForm
           user={user}
+          initialDirector={defaultDirectorName}
           onSuccess={(message) => {
             setDone(message);
             setErr(null);

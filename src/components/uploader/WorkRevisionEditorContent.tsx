@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
+import WorkTagInput from "@/components/uploader/WorkTagInput";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
@@ -13,7 +14,7 @@ import {
   readResponseJson,
 } from "@/lib/clientErrors";
 import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
-import { parseTagsFromInput } from "@/lib/works/label-utils";
+import { normalizeTags } from "@/lib/works/label-utils";
 import type { WorkDoc, WorkPendingRevision } from "@/types/work";
 import { WORK_SECTIONS, type VideoAspectRatio, type WorkSection } from "@/types/work";
 
@@ -32,9 +33,10 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
   const [section, setSection] = useState<WorkSection>("movies");
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("16:9");
   const [contentCategory, setContentCategory] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [director, setDirector] = useState("");
   const [description, setDescription] = useState("");
+  const [defaultDirectorName, setDefaultDirectorName] = useState<string | null>(null);
 
   const applyWork = (w: WorkDoc & { id: string }, rev?: WorkPendingRevision) => {
     setWork(w);
@@ -42,7 +44,7 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
     setSection(rev?.section ?? w.section);
     setAspectRatio(rev?.proposedAspectRatio ?? w.approvedAspectRatio ?? w.proposedAspectRatio ?? "16:9");
     setContentCategory(rev?.proposedCategory ?? w.approvedCategory ?? w.proposedCategory ?? "");
-    setTagsInput((rev?.proposedTags ?? w.approvedTags ?? w.proposedTags ?? []).join(", "));
+    setTags(normalizeTags(rev?.proposedTags ?? w.approvedTags ?? w.proposedTags ?? []));
     setDirector(rev?.director ?? w.director ?? "");
     setDescription(rev?.description ?? w.description ?? "");
   };
@@ -89,6 +91,29 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
   }, [load]);
 
   useEffect(() => {
+    if (!user) return;
+    void (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/me/uploader-settings", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = (await res.json()) as { defaultDirectorName?: string | null };
+        const name = data.defaultDirectorName?.trim() || null;
+        setDefaultDirectorName(name);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, [user]);
+
+  useEffect(() => {
+    if (work && !director && defaultDirectorName) {
+      setDirector(defaultDirectorName);
+    }
+  }, [work, defaultDirectorName, director]);
+
+  useEffect(() => {
     setAspectRatio(defaultAspectRatioForSection(section));
   }, [section]);
 
@@ -117,7 +142,7 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
           section,
           aspectRatio,
           contentCategory: contentCategory.trim() || undefined,
-          tags: parseTagsFromInput(tagsInput),
+          tags: normalizeTags(tags),
           director: director || undefined,
           description,
         }),
@@ -322,11 +347,12 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
 
             <div>
               <label className="block text-sm text-xiio-muted mb-1">{t("uploader.uploadTagsLabel")}</label>
-              <input
-                type="text"
-                value={tagsInput}
-                onChange={(e) => setTagsInput(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+              <WorkTagInput
+                value={tags}
+                onChange={setTags}
+                disabled={busy || revEncoding}
+                user={user}
+                inputClassName="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
               />
             </div>
 

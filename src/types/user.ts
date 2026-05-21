@@ -15,6 +15,8 @@ export interface UserProfileDoc extends SignupProfile {
   email: string | null;
   emailVerified: boolean;
   role: UserRole;
+  /** 업로더 기본 감독 표시명 (닉네임·본명 등) */
+  defaultDirectorName?: string;
   createdAt?: unknown;
   updatedAt?: unknown;
 }
