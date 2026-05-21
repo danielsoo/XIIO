@@ -202,6 +202,7 @@ export const messages = {
       promoPrev: "이전 작품",
       promoNext: "다음 작품",
       promoEmpty: "승인된 홍보 숏폼이 아직 없습니다.",
+      promoWatch: "{title} 보기",
     },
     category: {
       moviesTitle: "영화",
@@ -964,6 +965,7 @@ export const messages = {
       promoPrev: "Previous",
       promoNext: "Next",
       promoEmpty: "No approved promo shorts yet.",
+      promoWatch: "Watch {title}",
     },
     category: {
       moviesTitle: "Movies",

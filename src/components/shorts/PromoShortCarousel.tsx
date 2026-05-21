@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import PromoShortPlayer, { type PromoShortLayout } from "@/components/shorts/PromoShortPlayer";
+import PromoShortPlayer, {
+  type PromoShortLayout,
+  type PromoShortPlayerSize,
+  type PromoShortVariant,
+} from "@/components/shorts/PromoShortPlayer";
 import { useTranslations } from "@/context/LocaleContext";
 import type { PromoShort } from "@/types/promoShort";
 
@@ -11,6 +15,9 @@ type Props = {
   items: PromoShort[];
   index: number;
   onIndexChange: (index: number) => void;
+  /** 홈 미리보기: 메타 없음, 탭 시 숏츠로 이동 */
+  variant?: PromoShortVariant;
+  playerSize?: PromoShortPlayerSize;
   compact?: boolean;
   layout?: PromoShortLayout;
   viewportClassName?: string;
@@ -36,11 +43,14 @@ export default function PromoShortCarousel({
   items,
   index,
   onIndexChange,
+  variant = "default",
+  playerSize = "default",
   compact = false,
   layout = "stacked",
   viewportClassName = "relative min-h-[min(520px,68vh)] flex justify-center w-full max-w-lg mx-auto",
   navPosition = "home",
 }: Props) {
+  const scrollExpand = variant !== "teaser";
   const { t } = useTranslations();
   const viewportRef = useRef<HTMLDivElement>(null);
   const count = items.length;
@@ -70,10 +80,12 @@ export default function PromoShortCarousel({
           <PromoShortPlayer
             item={item}
             isActive={i === index}
+            variant={variant}
+            playerSize={playerSize}
             layout={layout}
             compact={compact}
-            scrollExpand
-            scrollRootRef={viewportRef}
+            scrollExpand={scrollExpand}
+            scrollRootRef={scrollExpand ? viewportRef : undefined}
             className="w-full"
           />
         </div>

@@ -100,6 +100,8 @@ function CollapseIcon() {
 }
 
 export type PromoShortLayout = "overlay" | "stacked";
+export type PromoShortVariant = "default" | "teaser";
+export type PromoShortPlayerSize = "default" | "homeHeroSmall";
 
 function PromoDescriptionBlock({
   description,
@@ -197,6 +199,8 @@ function PlayerChrome({
   isFullscreen,
   layout,
   compact,
+  variant,
+  playerSize,
   scrollExpand,
   scrollRootRef,
   onToggleFullscreen,
@@ -207,12 +211,15 @@ function PlayerChrome({
   isFullscreen: boolean;
   layout: PromoShortLayout;
   compact?: boolean;
+  variant?: PromoShortVariant;
+  playerSize?: PromoShortPlayerSize;
   /** 숏츠 화면 등에서만 스크롤로 소개 펼침 */
   scrollExpand?: boolean;
   scrollRootRef?: RefObject<HTMLElement | null>;
   onToggleFullscreen: () => void;
   onExitFullscreen: () => void;
 }) {
+  const isTeaser = variant === "teaser" && !isFullscreen;
   const { t } = useTranslations();
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -347,11 +354,17 @@ function PlayerChrome({
     ? bandMinPx + progress * Math.max(0, bandExpandedCap - bandMinPx)
     : undefined;
 
+  const smallShell =
+    playerSize === "homeHeroSmall"
+      ? "max-w-[220px] sm:max-w-[260px] max-h-[min(42vh,400px)]"
+      : compact
+        ? "max-h-[min(72vh,680px)]"
+        : "max-h-[min(85vh,780px)]";
+  const maxWidthClass = playerSize === "homeHeroSmall" ? "" : "max-w-lg";
+
   const cardShellClass = isFullscreen
     ? "relative w-full h-full max-w-lg mx-auto rounded-2xl overflow-hidden bg-black"
-    : `relative mx-auto w-full max-w-lg rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${
-        compact ? "max-h-[min(72vh,680px)]" : "max-h-[min(85vh,780px)]"
-      }`;
+    : `relative mx-auto w-full ${maxWidthClass} rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
 
   const overlayBandClass = compact
     ? "h-auto min-h-[5rem] max-h-[min(38%,12rem)]"
@@ -481,7 +494,7 @@ function PlayerChrome({
     </div>
   );
 
-  const bottomOverlay = (
+  const bottomOverlay = isTeaser ? null : (
     <div
       className={`absolute inset-x-0 bottom-0 pointer-events-none ${
         expandable ? "h-auto min-h-[5rem]" : overlayBandClass
@@ -503,6 +516,15 @@ function PlayerChrome({
       </div>
     </div>
   );
+
+  const watchHref = `/shorts?promo=${item.id}`;
+  const teaserLink = isTeaser ? (
+    <Link
+      href={watchHref}
+      className="absolute inset-0 z-[15] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+      aria-label={t("home.promoWatch", { title: item.title })}
+    />
+  ) : null;
 
   return (
     <>
@@ -528,10 +550,11 @@ function PlayerChrome({
           muted
           loop
           preload={isActive ? "auto" : "none"}
-          onDoubleClick={() => onToggleFullscreen()}
+          onDoubleClick={isTeaser ? undefined : () => onToggleFullscreen()}
         />
 
-        {fullscreenControls}
+        {teaserLink}
+        {!isTeaser && fullscreenControls}
         {bottomOverlay}
       </div>
     </>
@@ -543,6 +566,8 @@ export default function PromoShortPlayer({
   isActive,
   embedded = true,
   layout,
+  variant = "default",
+  playerSize = "default",
   compact = false,
   scrollExpand = false,
   scrollRootRef,
@@ -552,6 +577,8 @@ export default function PromoShortPlayer({
   isActive: boolean;
   embedded?: boolean;
   layout?: PromoShortLayout;
+  variant?: PromoShortVariant;
+  playerSize?: PromoShortPlayerSize;
   /** 홈 스포트라이트 등 낮은 카드 높이 */
   compact?: boolean;
   /** true일 때 scrollRootRef(또는 카드) 안에서만 스크롤 펼침 */
@@ -571,6 +598,8 @@ export default function PromoShortPlayer({
       isActive={isActive}
       isFullscreen={active}
       layout={resolvedLayout}
+      variant={variant}
+      playerSize={playerSize}
       compact={compact}
       scrollExpand={scrollExpand}
       scrollRootRef={scrollRootRef}
