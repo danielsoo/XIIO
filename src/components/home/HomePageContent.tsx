@@ -33,13 +33,13 @@ export default function HomePageContent() {
       <section className="relative min-h-[max(42vh,380px)] overflow-visible">
         <div className="absolute inset-0 bg-gradient-to-br from-[#1a0533] via-[#0a0a20] to-[#0a0a0a]" />
         <div className="absolute inset-0 bg-gradient-to-r from-xiio-accent/20 to-transparent" />
-        <div className="relative z-10 max-w-7xl mx-auto px-8 pt-24 pb-12 md:px-16 md:pt-28 md:pb-16">
+        <div className="relative z-10 w-full max-w-7xl mx-auto pl-4 pr-6 pt-24 pb-12 sm:pl-5 md:pl-6 md:pr-10 md:pt-28 md:pb-16 lg:pl-8 lg:pr-14">
           <div
-            className={`grid gap-10 lg:gap-12 items-center ${
-              hasPromo ? "md:grid-cols-2" : ""
+            className={`grid gap-10 lg:gap-10 items-center ${
+              hasPromo ? "md:grid-cols-[minmax(0,1fr)_auto] md:gap-8 lg:gap-10" : ""
             }`}
           >
-            <div className={hasPromo ? "min-w-0" : "max-w-2xl"}>
+            <div className={hasPromo ? "min-w-0 max-w-xl justify-self-start" : "max-w-2xl"}>
               <div className="inline-block px-3 py-1 rounded-full bg-xiio-accent/20 border border-xiio-accent/40 text-xiio-accent text-xs font-semibold mb-4">
                 {t("home.heroBadge")}
               </div>
