@@ -85,7 +85,7 @@ function HomeHeroPeekCarousel({
           <button
             type="button"
             onClick={() => go(-1)}
-            className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-[38%] z-50 ${PEEK_CAROUSEL_ARROW}`}
+            className={`absolute right-0 top-1/2 -translate-y-1/2 -translate-x-[calc(100%+0.375rem)] z-50 ${PEEK_CAROUSEL_ARROW}`}
             aria-label={t("home.promoPrev")}
           >
             ‹
@@ -144,7 +144,7 @@ function HomeHeroPeekCarousel({
           <button
             type="button"
             onClick={() => go(1)}
-            className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-[38%] z-50 ${PEEK_CAROUSEL_ARROW}`}
+            className={`absolute left-0 top-1/2 -translate-y-1/2 translate-x-[calc(100%+0.375rem)] z-50 ${PEEK_CAROUSEL_ARROW}`}
             aria-label={t("home.promoNext")}
           >
             ›
