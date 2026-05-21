@@ -6,6 +6,7 @@ import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
   type PromoShortVariant,
+  HOME_HERO_PEEK_SIDE_FRAME_CLASS,
   HOME_HERO_PEEK_VIEWPORT_CLASS,
   HOME_HERO_TEASER_FRAME_CLASS,
 } from "@/components/shorts/PromoShortPlayer";
@@ -27,9 +28,11 @@ type Props = {
   navPosition?: NavPosition;
 };
 
-/** 홈 피크 — XIIO 로고 II 색, 원형 배경 없음 */
-const PEEK_CAROUSEL_ARROW =
-  "shrink-0 self-center flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-xiio-accent hover:text-xiio-accent-hover transition focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+/** 홈 피크 — XIIO 로고 II 색, 피크 영상 위 오버레이 */
+const PEEK_CAROUSEL_ARROW_BASE =
+  "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-xiio-accent hover:text-xiio-accent-hover transition pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+const PEEK_ARROW_ON_LEFT_PEEK = `absolute right-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_CAROUSEL_ARROW_BASE}`;
+const PEEK_ARROW_ON_RIGHT_PEEK = `absolute left-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_CAROUSEL_ARROW_BASE}`;
 
 const NAV_CLASSES: Record<NavPosition, { prev: string; next: string }> = {
   home: {
@@ -79,21 +82,21 @@ function HomeHeroPeekCarousel({
 
   return (
     <div className={viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS}>
-      <div className="flex items-center justify-center gap-0 sm:gap-0.5">
+      <div className={`relative shrink-0 ${HOME_HERO_PEEK_SIDE_FRAME_CLASS}`}>
         <PromoShortPeekPreview item={prevItem} />
-
         {count > 1 && (
           <button
             type="button"
             onClick={() => go(-1)}
-            className={PEEK_CAROUSEL_ARROW}
+            className={PEEK_ARROW_ON_LEFT_PEEK}
             aria-label={t("home.promoPrev")}
           >
             ‹
           </button>
         )}
+      </div>
 
-        <div className={`relative z-10 shrink-0 ${HOME_HERO_TEASER_FRAME_CLASS}`}>
+      <div className={`relative z-10 shrink-0 ${HOME_HERO_TEASER_FRAME_CLASS}`}>
         {items.map((item, i) => (
           <div
             key={item.id}
@@ -136,20 +139,20 @@ function HomeHeroPeekCarousel({
             ))}
           </div>
         )}
-        </div>
+      </div>
 
+      <div className={`relative shrink-0 ${HOME_HERO_PEEK_SIDE_FRAME_CLASS}`}>
+        <PromoShortPeekPreview item={nextItem} />
         {count > 1 && (
           <button
             type="button"
             onClick={() => go(1)}
-            className={PEEK_CAROUSEL_ARROW}
+            className={PEEK_ARROW_ON_RIGHT_PEEK}
             aria-label={t("home.promoNext")}
           >
             ›
           </button>
         )}
-
-        <PromoShortPeekPreview item={nextItem} />
       </div>
     </div>
   );

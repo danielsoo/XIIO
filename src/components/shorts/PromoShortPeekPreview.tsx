@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { HOME_HERO_PEEK_SIDE_FRAME_CLASS } from "@/components/shorts/PromoShortPlayer";
 import type { PromoShort } from "@/types/promoShort";
 
 type Props = {
@@ -28,8 +27,8 @@ export default function PromoShortPeekPreview({ item }: Props) {
   }, [item.videoUrl, item.id]);
 
   return (
-    <div className={`${HOME_HERO_PEEK_SIDE_FRAME_CLASS} shrink-0`} aria-hidden>
-      <div className="relative w-full aspect-[9/16] scale-90 origin-center overflow-hidden rounded-2xl border border-white/10 bg-black shadow-lg shadow-black/40">
+    <div className="relative h-full w-full" aria-hidden>
+      <div className="relative h-full w-full scale-90 origin-center overflow-hidden rounded-2xl border border-white/10 bg-black shadow-lg shadow-black/40">
         <video
           ref={videoRef}
           src={item.videoUrl}
