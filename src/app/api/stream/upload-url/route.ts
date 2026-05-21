@@ -15,6 +15,7 @@ import {
 } from "@/lib/server/works";
 import { defaultAspectRatioForSection, isVideoAspectRatio } from "@/lib/works/aspect-ratio";
 import { isWorkSection } from "@/lib/works/constants";
+import { parseUploadLength } from "@/lib/server/parse-upload-length";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
 import type { VideoAspectRatio } from "@/types/work";
 
@@ -47,16 +48,16 @@ export async function POST(request: Request) {
     description?: string;
     director?: string;
     aspectRatio?: string;
-    uploadLength?: number;
+    uploadLength?: number | string;
   };
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    body = {};
+    return jsonError("invalid_json", "요청 형식(JSON)이 올바르지 않습니다.", 400);
   }
 
-  const uploadLength = body.uploadLength;
-  if (typeof uploadLength !== "number" || !Number.isFinite(uploadLength) || uploadLength <= 0) {
+  const uploadLength = parseUploadLength(body.uploadLength);
+  if (uploadLength == null || uploadLength <= 0) {
     return jsonError("invalid_body", "파일 크기(uploadLength)가 필요합니다.", 400);
   }
   if (uploadLength > MAX_STREAM_UPLOAD_BYTES) {

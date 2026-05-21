@@ -56,6 +56,10 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       onError(t("uploader.errorNoFile"));
       return;
     }
+    if (!file.size || !Number.isFinite(file.size)) {
+      onError(t("uploader.errorUploadLengthRequired"));
+      return;
+    }
 
     setBusy(true);
     setUploadPercent(null);

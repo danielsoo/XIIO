@@ -8,6 +8,7 @@ import {
 import { hasDepositVerifiedClaim } from "@/lib/server/deposit-verification";
 import { isUploaderDepositEnabled } from "@/lib/payments/config";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
+import { parseUploadLength } from "@/lib/server/parse-upload-length";
 import { FieldValue, getDbOrNull, parseWorkDoc, worksCol } from "@/lib/server/works";
 
 type Params = { params: Promise<{ workId: string }> };
@@ -22,15 +23,15 @@ export async function POST(request: Request, { params }: Params) {
   const { session } = auth;
   const { workId } = await params;
 
-  let body: { uploadLength?: number };
+  let body: { uploadLength?: number | string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
-    body = {};
+    return jsonError("invalid_json", "요청 형식(JSON)이 올바르지 않습니다.", 400);
   }
 
-  const uploadLength = body.uploadLength;
-  if (typeof uploadLength !== "number" || !Number.isFinite(uploadLength) || uploadLength <= 0) {
+  const uploadLength = parseUploadLength(body.uploadLength);
+  if (uploadLength == null || uploadLength <= 0) {
     return jsonError("invalid_body", "파일 크기(uploadLength)가 필요합니다.", 400);
   }
   if (uploadLength > MAX_STREAM_UPLOAD_BYTES) {

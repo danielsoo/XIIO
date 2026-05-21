@@ -36,9 +36,19 @@ export default function WorkTagInput({
   const { t } = useTranslations();
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const composingRef = useRef(false);
+  const compositionEndAtRef = useRef(0);
   const [query, setQuery] = useState("#");
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
+
+  const ENTER_DEBOUNCE_MS = 50;
+
+  const isImeComposing = (e: React.KeyboardEvent<HTMLInputElement>) =>
+    e.nativeEvent.isComposing || composingRef.current || e.keyCode === 229;
+
+  const shouldIgnoreEnterAfterComposition = () =>
+    Date.now() - compositionEndAtRef.current < ENTER_DEBOUNCE_MS;
 
   const needle = stripTagHash(query);
   const { items: suggestions } = useTagSuggestions(user, query, open && !disabled && needle.length >= 1);
@@ -109,6 +119,9 @@ export default function WorkTagInput({
     }
 
     if (e.key === "Enter") {
+      if (isImeComposing(e) || shouldIgnoreEnterAfterComposition()) {
+        return;
+      }
       e.preventDefault();
       if (value.length >= MAX_TAGS) return;
       if (open && filteredSuggestions.length > 0) {
@@ -132,6 +145,13 @@ export default function WorkTagInput({
           onFocus={handleFocus}
           onBlur={() => {
             window.setTimeout(() => setOpen(false), 150);
+          }}
+          onCompositionStart={() => {
+            composingRef.current = true;
+          }}
+          onCompositionEnd={() => {
+            composingRef.current = false;
+            compositionEndAtRef.current = Date.now();
           }}
           onKeyDown={handleKeyDown}
           disabled={disabled || atMax}
