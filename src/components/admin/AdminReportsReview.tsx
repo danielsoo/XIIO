@@ -7,6 +7,7 @@ import PlaybackVideo from "@/components/PlaybackVideo";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import type { AdminReportListItem, AdminReportsListResponse } from "@/types/admin";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 type Tab = "pending" | "resolved";
 
@@ -40,18 +41,18 @@ export default function AdminReportsReview() {
         const res = await fetch(`/api/admin/reports?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const body = (await res.json().catch(() => ({}))) as AdminReportsListResponse & {
-          message?: string;
-        };
+        const { data: body, raw } = await readResponseJson<
+          AdminReportsListResponse & { message?: string; error?: string }
+        >(res);
         if (!res.ok) {
-          setErr(body.message ?? t("admin.reportsReview.loadError"));
+          setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
           if (!append) setItems([]);
           return;
         }
         setItems((prev) => (append ? [...prev, ...body.items] : body.items));
         setNextCursor(body.nextCursor ?? null);
-      } catch {
-        setErr(t("admin.reportsReview.loadError"));
+      } catch (e) {
+        setErr(formatClientError(t, e, { titleKey: "admin.reportsReview.loadError" }));
         if (!append) setItems([]);
       } finally {
         setLoading(false);
@@ -81,15 +82,15 @@ export default function AdminReportsReview() {
         body: JSON.stringify({ action, adminNote: note?.trim() || undefined }),
       });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { message?: string };
-        setErr(body.message ?? t("admin.reportsReview.actionFailed"));
+        const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
+        setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         return;
       }
       setUpholdId(null);
       setAdminNote("");
       await load({ append: false });
-    } catch {
-      setErr(t("admin.reportsReview.actionFailed"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "admin.reportsReview.actionFailed" }));
     } finally {
       setBusyId(null);
     }
@@ -118,7 +119,7 @@ export default function AdminReportsReview() {
       </div>
 
       {loading && <p className="text-xiio-muted text-sm">{t("admin.loading")}</p>}
-      {err && <p className="text-red-400 text-sm mb-4">{err}</p>}
+      {err && <p className="text-red-400 text-sm mb-4 whitespace-pre-wrap break-words">{err}</p>}
 
       {!loading && items.length === 0 && (
         <p className="text-xiio-muted text-sm">{t("admin.reportsReview.empty")}</p>

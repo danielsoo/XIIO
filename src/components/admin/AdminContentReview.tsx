@@ -9,6 +9,7 @@ import PlaybackVideo from "@/components/PlaybackVideo";
 import FullWorkReviewCard, { type FullQueueItem } from "@/components/admin/FullWorkReviewCard";
 import PromoReviewCard, { type PromoReviewItem } from "@/components/admin/PromoReviewCard";
 import { useAdminWorkStats, type AdminWorkStats } from "@/hooks/useAdminWorkStats";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import type { StreamStatus, WorkSection } from "@/types/work";
 
 type Tab = "full_pending" | "promo_pending" | "removal";
@@ -55,15 +56,15 @@ export default function AdminContentReview() {
       const res = await fetch(`/api/admin/works?queue=${tab}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = (await res.json().catch(() => ({}))) as { items?: unknown[]; message?: string };
+      const { data, raw } = await readResponseJson<{ items?: unknown[]; message?: string; error?: string }>(res);
       if (!res.ok) {
-        setErr(data.message ?? `HTTP ${res.status}`);
+        setErr(formatApiError(t, res.status, { ...data, message: data.message ?? raw.slice(0, 500) }));
         setItems([]);
         return;
       }
       setItems(data.items ?? []);
-    } catch {
-      setErr(t("admin.contentReview.loadError"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "admin.contentReview.loadError" }));
     } finally {
       setLoading(false);
       void refreshStats();
@@ -88,8 +89,8 @@ export default function AdminContentReview() {
         body: JSON.stringify({ action, ...extra }),
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { message?: string };
-        setErr(data.message ?? t("admin.contentReview.actionFailed"));
+        const { data, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
+        setErr(formatApiError(t, res.status, { ...data, message: data.message ?? raw.slice(0, 500) }));
         return;
       }
       await load();
@@ -117,8 +118,8 @@ export default function AdminContentReview() {
         body: JSON.stringify({ action, ...extra }),
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { message?: string };
-        setErr(data.message ?? t("admin.contentReview.actionFailed"));
+        const { data, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
+        setErr(formatApiError(t, res.status, { ...data, message: data.message ?? raw.slice(0, 500) }));
         return;
       }
       await load();
@@ -170,7 +171,7 @@ export default function AdminContentReview() {
       </div>
 
       {err && (
-        <p className="mb-4 text-red-400 text-sm">{err}</p>
+        <p className="mb-4 text-red-400 text-sm whitespace-pre-wrap break-words">{err}</p>
       )}
 
       {loading ? (

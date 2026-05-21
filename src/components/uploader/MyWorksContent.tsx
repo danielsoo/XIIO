@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useMyWorks } from "@/hooks/useMyWorks";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import type { PlatformStatus, PromoPlatformStatus, StreamStatus } from "@/types/work";
 
@@ -61,13 +62,13 @@ export default function MyWorksContent() {
         body: JSON.stringify({ workIds: ids }),
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { message?: string };
-        setMsg(data.message ?? t("myWorks.errorGeneric"));
+        const { data, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
+        setMsg(formatApiError(t, res.status, { ...data, message: data.message ?? raw.slice(0, 500) }));
         return;
       }
       await refresh();
-    } catch {
-      setMsg(t("myWorks.errorGeneric"));
+    } catch (e) {
+      setMsg(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       setBusyId(null);
     }
@@ -80,13 +81,13 @@ export default function MyWorksContent() {
     try {
       const res = await authFetch(`/api/me/works/${workId}`, { method: "DELETE" });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { message?: string };
-        setMsg(data.message ?? t("myWorks.errorGeneric"));
+        const { data, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
+        setMsg(formatApiError(t, res.status, { ...data, message: data.message ?? raw.slice(0, 500) }));
         return;
       }
       await refresh();
-    } catch {
-      setMsg(t("myWorks.errorGeneric"));
+    } catch (e) {
+      setMsg(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       setBusyId(null);
     }
@@ -103,14 +104,14 @@ export default function MyWorksContent() {
         body: JSON.stringify({ reason: reason.trim() }),
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { message?: string };
-        setMsg(data.message ?? t("myWorks.errorGeneric"));
+        const { data, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
+        setMsg(formatApiError(t, res.status, { ...data, message: data.message ?? raw.slice(0, 500) }));
         return;
       }
       await refresh();
       setMsg(t("myWorks.deletionRequested"));
-    } catch {
-      setMsg(t("myWorks.errorGeneric"));
+    } catch (e) {
+      setMsg(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       setBusyId(null);
     }
@@ -163,7 +164,7 @@ export default function MyWorksContent() {
           </div>
         )}
         {error && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm">
+          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
             {error}
           </div>
         )}

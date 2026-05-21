@@ -7,6 +7,7 @@ import { useTranslations } from "@/context/LocaleContext";
 import type { AdminUserDetail } from "@/types/admin";
 import AdminUserActivityTimeline from "@/components/admin/AdminUserActivityTimeline";
 import { AdminWorkLink } from "@/components/admin/AdminEntityLinks";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 type Props = { uid: string };
 
@@ -26,15 +27,17 @@ export default function AdminUserProfile({ uid }: Props) {
       const res = await fetch(`/api/admin/users/${uid}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const body = (await res.json().catch(() => ({}))) as AdminUserDetail & { message?: string };
+      const { data: body, raw } = await readResponseJson<AdminUserDetail & { message?: string; error?: string }>(
+        res
+      );
       if (!res.ok) {
-        setErr(body.message ?? `HTTP ${res.status}`);
+        setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         setData(null);
         return;
       }
       setData(body);
-    } catch {
-      setErr(t("admin.userProfile.loadError"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "admin.userProfile.loadError" }));
     } finally {
       setLoading(false);
     }

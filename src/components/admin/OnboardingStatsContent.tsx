@@ -18,6 +18,7 @@ import {
   Legend,
 } from "recharts";
 import type { OnboardingStatsPayload } from "@/types/admin";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 const PIE_COLORS = ["#6366f1", "#a855f7", "#64748b"];
 
@@ -37,14 +38,18 @@ export default function OnboardingStatsContent() {
         const res = await fetch("/api/admin/stats/onboarding", {
           headers: { Authorization: `Bearer ${token}` },
         });
+        const { data: json, raw } = await readResponseJson<OnboardingStatsPayload & { message?: string; error?: string }>(
+          res
+        );
         if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`);
+          if (!cancelled) {
+            setError(formatApiError(t, res.status, { ...json, message: json.message ?? raw.slice(0, 500) }));
+          }
+          return;
         }
-        const json = (await res.json()) as OnboardingStatsPayload;
         if (!cancelled) setData(json);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "load_failed");
+        if (!cancelled) setError(formatClientError(t, e, { titleKey: "admin.onboardingError" }));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -69,8 +74,8 @@ export default function OnboardingStatsContent() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-400 text-sm">
-        {t("admin.onboardingError")} {error}
+      <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-400 text-sm whitespace-pre-wrap break-words">
+        {error}
       </div>
     );
   }

@@ -8,6 +8,7 @@ import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import { AdminOwnerLink } from "@/components/admin/AdminEntityLinks";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import type { AdminWorkDetail } from "@/types/admin";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 type Props = { ownerUid: string; workId: string };
 
@@ -27,15 +28,17 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
       const res = await fetch(`/api/admin/works/${ownerUid}/${workId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const body = (await res.json().catch(() => ({}))) as AdminWorkDetail & { message?: string };
+      const { data: body, raw } = await readResponseJson<AdminWorkDetail & { message?: string; error?: string }>(
+        res
+      );
       if (!res.ok) {
-        setErr(body.message ?? `HTTP ${res.status}`);
+        setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         setData(null);
         return;
       }
       setData(body);
-    } catch {
-      setErr(t("admin.workDetail.loadError"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "admin.workDetail.loadError" }));
     } finally {
       setLoading(false);
     }

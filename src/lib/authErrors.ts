@@ -47,3 +47,27 @@ export function formatSignupErrorMessage(err: unknown, t: TranslateFn): string {
     ? t("auth.signup.errorSignupFailedDetail", { detail })
     : t("auth.signup.errorSignupFailed");
 }
+
+export function formatLoginErrorMessage(err: unknown, t: TranslateFn): string {
+  const { code, message } = formatAuthError(err);
+
+  if (code === "auth/user-disabled") {
+    return t("auth.login.errorUserDisabled");
+  }
+  if (code === "auth/too-many-requests") {
+    return t("auth.login.errorTooManyRequests");
+  }
+  if (
+    code === "auth/wrong-password" ||
+    code === "auth/user-not-found" ||
+    code === "auth/invalid-credential" ||
+    code === "auth/invalid-email"
+  ) {
+    return t("auth.login.errorInvalidCredentials");
+  }
+
+  const detail = [code, message].filter(Boolean).join(" — ");
+  return detail
+    ? t("auth.login.errorLoginFailedDetail", { detail })
+    : t("auth.login.errorInvalidCredentials");
+}

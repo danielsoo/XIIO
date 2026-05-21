@@ -9,6 +9,7 @@ import type {
   AdminPaymentEventListItem,
   AdminPaymentEventsListResponse,
 } from "@/types/admin";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 export default function AdminPaymentEventsList() {
   const { user } = useAuth();
@@ -45,19 +46,19 @@ export default function AdminPaymentEventsList() {
         const res = await fetch(`/api/admin/payments/events?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const body = (await res.json().catch(() => ({}))) as AdminPaymentEventsListResponse & {
-          message?: string;
-        };
+        const { data: body, raw } = await readResponseJson<
+          AdminPaymentEventsListResponse & { message?: string; error?: string }
+        >(res);
         if (!res.ok) {
-          setErr(body.message ?? t("admin.paymentsEvents.loadError"));
+          setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
           if (!append) setItems([]);
           return;
         }
         setItems((prev) => (append ? [...prev, ...body.items] : body.items));
         setNextCursor(body.nextCursor ?? null);
         if (!append && body.meta) setMeta(body.meta);
-      } catch {
-        setErr(t("admin.paymentsEvents.loadError"));
+      } catch (e) {
+        setErr(formatClientError(t, e, { titleKey: "admin.paymentsEvents.loadError" }));
         if (!append) setItems([]);
       } finally {
         setLoading(false);
@@ -148,7 +149,7 @@ export default function AdminPaymentEventsList() {
       </form>
 
       {loading && <p className="text-xiio-muted text-sm">{t("admin.loading")}</p>}
-      {err && !loading && <p className="text-red-400 text-sm mb-4">{err}</p>}
+      {err && !loading && <p className="text-red-400 text-sm mb-4 whitespace-pre-wrap break-words">{err}</p>}
 
       {!loading && !err && items.length === 0 && (
         <p className="text-xiio-muted text-sm">{t("admin.paymentsEvents.empty")}</p>

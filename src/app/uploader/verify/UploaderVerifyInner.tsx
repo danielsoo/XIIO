@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 export default function UploaderVerifyInner() {
   const { user, loading } = useAuth();
@@ -36,18 +37,18 @@ export default function UploaderVerifyInner() {
         },
         body: JSON.stringify({ region: "AUTO" }),
       });
-      const data = await res.json().catch(() => ({}));
+      const { data, raw } = await readResponseJson<{ url?: string; error?: string; message?: string }>(res);
       if (!res.ok) {
-        setErr((data as { error?: string }).error ?? t("uploader.errorWithCode", { code: res.status }));
+        setErr(formatApiError(t, res.status, { ...data, message: data.message ?? raw.slice(0, 500) }));
         return;
       }
-      if ((data as { url?: string }).url) {
-        window.location.href = (data as { url: string }).url;
+      if (data.url) {
+        window.location.href = data.url;
         return;
       }
       setErr(t("uploader.errorSessionUrl"));
-    } catch {
-      setErr(t("uploader.errorRequestFailed"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "uploader.errorRequestFailed" }));
     } finally {
       setBusy(false);
     }
@@ -116,7 +117,7 @@ export default function UploaderVerifyInner() {
         )}
 
         {err && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm">
+          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
             {err}
           </div>
         )}

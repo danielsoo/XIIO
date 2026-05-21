@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import type { AdminUserListItem, AdminUsersListResponse } from "@/types/admin";
 import type { PlatformPurpose, UserRole } from "@/types/user";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 type PurposeFilter = "" | PlatformPurpose;
 type RoleFilter = "" | UserRole;
@@ -52,18 +53,18 @@ export default function AdminUsersList() {
         const res = await fetch(`/api/admin/users?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const body = (await res.json().catch(() => ({}))) as AdminUsersListResponse & {
-          message?: string;
-        };
+        const { data: body, raw } = await readResponseJson<
+          AdminUsersListResponse & { message?: string; error?: string }
+        >(res);
         if (!res.ok) {
-          setErr(body.message ?? `HTTP ${res.status}`);
+          setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
           if (!append) setItems([]);
           return;
         }
         setItems((prev) => (append ? [...prev, ...body.items] : body.items));
         setNextCursor(body.nextCursor ?? null);
-      } catch {
-        setErr(t("admin.usersLoadError"));
+      } catch (e) {
+        setErr(formatClientError(t, e, { titleKey: "admin.usersLoadError" }));
         if (!append) setItems([]);
       } finally {
         setLoading(false);
@@ -149,7 +150,7 @@ export default function AdminUsersList() {
       </form>
 
       {loading && <p className="text-xiio-muted text-sm">{t("admin.loading")}</p>}
-      {err && !loading && <p className="text-red-400 text-sm mb-4">{err}</p>}
+      {err && !loading && <p className="text-red-400 text-sm mb-4 whitespace-pre-wrap break-words">{err}</p>}
 
       {!loading && !err && items.length === 0 && (
         <p className="text-xiio-muted text-sm mb-6">{t("admin.usersEmpty")}</p>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import { REPORT_REASON_CODES, type ReportReasonCode, type ReportTargetType } from "@/types/report";
 
 type Props = {
@@ -66,18 +67,18 @@ export default function ReportContentModal({
           reasonDetail: reasonDetail.trim() || undefined,
         }),
       });
-      const body = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+      const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
       if (!res.ok) {
         if (res.status === 409) {
           setError(t("report.duplicate"));
         } else {
-          setError(body.message ?? t("report.error"));
+          setError(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         }
         return;
       }
       setDone(true);
-    } catch {
-      setError(t("report.error"));
+    } catch (e) {
+      setError(formatClientError(t, e, { titleKey: "report.error" }));
     } finally {
       setBusy(false);
     }
@@ -131,7 +132,9 @@ export default function ReportContentModal({
               rows={3}
               className="w-full mb-4 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white resize-y min-h-[4rem]"
             />
-            {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+            {error && (
+              <p className="text-sm text-red-400 mb-3 whitespace-pre-wrap break-words">{error}</p>
+            )}
             <div className="flex gap-2">
               <button
                 type="button"

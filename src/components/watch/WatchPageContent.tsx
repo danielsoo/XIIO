@@ -7,6 +7,7 @@ import PlaybackVideo from "@/components/PlaybackVideo";
 import { useAuth } from "@/context/AuthContext";
 import { useRecordEngagementView } from "@/hooks/useRecordEngagementView";
 import { useTranslations } from "@/context/LocaleContext";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import { aspectRatioMessageKey, aspectRatioNumeric } from "@/lib/works/aspect-ratio";
 import { sectionCatalogHref } from "@/lib/works/catalog-ui";
 import type { PublicWorkWatch } from "@/types/watch";
@@ -35,15 +36,22 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
     setErr(null);
     try {
       const res = await fetch(`/api/watch/${ownerUid}/${workId}`);
-      const body = (await res.json().catch(() => ({}))) as PublicWorkWatch & { message?: string };
+      const { data: body, raw } = await readResponseJson<PublicWorkWatch & { message?: string; error?: string }>(
+        res
+      );
       if (!res.ok) {
-        setErr(body.message ?? t("watch.notFound"));
+        setErr(
+          formatApiError(t, res.status, {
+            ...body,
+            message: body.message ?? (raw.slice(0, 500) || t("watch.notFound")),
+          })
+        );
         setData(null);
         return;
       }
       setData(body);
-    } catch {
-      setErr(t("watch.loadError"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "watch.loadError" }));
     } finally {
       setLoading(false);
     }
@@ -66,7 +74,7 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
   if (err || !data) {
     return (
       <main className="min-h-screen bg-xiio-bg pt-24 px-6 md:px-12 pb-16">
-        <p className="text-red-400 mb-4">{err ?? t("watch.notFound")}</p>
+        <p className="text-red-400 mb-4 whitespace-pre-wrap break-words">{err ?? t("watch.notFound")}</p>
         <Link href="/" className="text-sm text-xiio-accent hover:underline">
           {t("common.home")}
         </Link>

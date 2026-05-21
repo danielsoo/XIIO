@@ -5,7 +5,7 @@ import PromoShortPlayer, { type PromoShortLayout } from "@/components/shorts/Pro
 import { useTranslations } from "@/context/LocaleContext";
 import type { PromoShort } from "@/types/promoShort";
 
-type NavPosition = "home" | "shorts";
+type NavPosition = "home" | "homeHero" | "shorts";
 
 type Props = {
   items: PromoShort[];
@@ -21,6 +21,10 @@ const NAV_CLASSES: Record<NavPosition, { prev: string; next: string }> = {
   home: {
     prev: "absolute left-0 md:left-2 top-[38%] -translate-y-1/2 z-20",
     next: "absolute right-0 md:right-2 top-[38%] -translate-y-1/2 z-20",
+  },
+  homeHero: {
+    prev: "absolute left-0 top-[32%] -translate-y-1/2 z-20",
+    next: "absolute right-0 top-[32%] -translate-y-1/2 z-20",
   },
   shorts: {
     prev: "absolute -left-2 md:left-0 top-[38%] -translate-y-1/2 z-20",

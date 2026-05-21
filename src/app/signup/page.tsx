@@ -339,8 +339,8 @@ export default function SignupPage() {
       }
 
       setStepIndex(0);
-    } catch {
-      setError(t("auth.signup.errorGoogleFailed"));
+    } catch (err) {
+      setError(formatSignupErrorMessage(err, t));
     } finally {
       setLoading(false);
     }
@@ -379,8 +379,8 @@ export default function SignupPage() {
     try {
       await resendVerificationEmail();
       setResendMessage(t("auth.signup.verifyResent"));
-    } catch {
-      setError(t("auth.signup.errorVerifySendFailed"));
+    } catch (err) {
+      setError(formatSignupErrorMessage(err, t));
     }
   };
 
@@ -400,7 +400,7 @@ export default function SignupPage() {
               {t("auth.signup.verifyPendingBody", { email: sentEmail })}
             </p>
             {error && (
-              <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+              <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm whitespace-pre-wrap break-words">
                 {error}
               </div>
             )}
@@ -485,7 +485,7 @@ export default function SignupPage() {
           </div>
 
           {error && (
-            <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+            <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm whitespace-pre-wrap break-words">
               {error}
             </div>
           )}

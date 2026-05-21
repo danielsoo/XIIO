@@ -15,6 +15,8 @@ import {
   markEmailVerified,
 } from "@/lib/userProfile";
 import { loadRememberLogin, saveRememberLogin } from "@/lib/authPersistence";
+import { formatClientError } from "@/lib/clientErrors";
+import { formatLoginErrorMessage } from "@/lib/authErrors";
 
 function LoginForm() {
   const { loginWithEmail, loginWithGoogle, logout } = useAuth();
@@ -73,7 +75,7 @@ function LoginForm() {
       if (err instanceof Error && err.message === EMAIL_NOT_VERIFIED) {
         setError(t("auth.login.errorEmailNotVerified"));
       } else {
-        setError(t("auth.login.errorInvalidCredentials"));
+        setError(formatLoginErrorMessage(err, t));
       }
     } finally {
       setLoading(false);
@@ -92,8 +94,8 @@ function LoginForm() {
         googleUser.displayName,
         true
       );
-    } catch {
-      setError(t("auth.login.errorGoogleFailed"));
+    } catch (e) {
+      setError(formatClientError(t, e, { titleKey: "auth.login.errorGoogleFailed" }));
     } finally {
       setLoading(false);
     }
@@ -112,7 +114,7 @@ function LoginForm() {
           <h1 className="text-2xl font-bold text-white mb-6">{t("auth.login.title")}</h1>
 
           {error && (
-            <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+            <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm whitespace-pre-wrap break-words">
               {error}
             </div>
           )}

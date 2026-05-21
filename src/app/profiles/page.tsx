@@ -9,6 +9,7 @@ import ProfileAvatar from "@/components/ProfileAvatar";
 import { useTranslations } from "@/context/LocaleContext";
 import type { WatchProfile } from "@/types/profile";
 import { MAX_WATCH_PROFILES } from "@/types/profile";
+import { formatClientError } from "@/lib/clientErrors";
 
 export default function ProfilesPage() {
   const { t } = useTranslations();
@@ -92,8 +93,8 @@ export default function ProfilesPage() {
         });
       }
       closeModal();
-    } catch {
-      setError(t("profiles.errorSaveFailed"));
+    } catch (e) {
+      setError(formatClientError(t, e, { titleKey: "profiles.errorSaveFailed" }));
     } finally {
       setSaving(false);
     }
@@ -106,8 +107,8 @@ export default function ProfilesPage() {
     try {
       await removeProfile(editing.id);
       closeModal();
-    } catch {
-      setError(t("profiles.errorDeleteFailed"));
+    } catch (e) {
+      setError(formatClientError(t, e, { titleKey: "profiles.errorDeleteFailed" }));
     } finally {
       setSaving(false);
     }
@@ -203,7 +204,7 @@ export default function ProfilesPage() {
             </h2>
 
             {error && (
-              <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+              <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm whitespace-pre-wrap break-words">
                 {error}
               </div>
             )}

@@ -1,8 +1,10 @@
 "use client";
 
+import { useCallback, useState } from "react";
+import Link from "next/link";
 import HomeHeroActions from "@/components/HomeHeroActions";
 import HomeCatalogSection from "@/components/home/HomeCatalogSection";
-import PromoShortSpotlight from "@/components/home/PromoShortSpotlight";
+import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
 import { useTranslations } from "@/context/LocaleContext";
 import { usePromoFeed } from "@/hooks/usePromoFeed";
 import type { WorkSection } from "@/types/work";
@@ -18,29 +20,63 @@ const HOME_SECTIONS: { href: string; section: WorkSection; titleKey: string }[] 
 export default function HomePageContent() {
   const { t } = useTranslations();
   const { items: promoItems } = usePromoFeed(true);
+  const [promoIndex, setPromoIndex] = useState(0);
+  const hasPromo = promoItems.length > 0;
+
+  const onPromoIndexChange = useCallback((next: number) => {
+    setPromoIndex(next);
+  }, []);
 
   return (
     <main className="min-h-screen bg-xiio-bg">
-      <section className="relative min-h-[max(42vh,380px)] overflow-visible">
+      <section className="relative min-h-[max(42vh,380px)] md:min-h-[min(520px,72vh)] overflow-visible">
         <div className="absolute inset-0 bg-gradient-to-br from-[#1a0533] via-[#0a0a20] to-[#0a0a0a]" />
         <div className="absolute inset-0 bg-gradient-to-r from-xiio-accent/20 to-transparent" />
-        <div className="relative z-10 px-8 pt-24 pb-12 md:px-16 md:pt-28 md:pb-16">
-          <div className="inline-block px-3 py-1 rounded-full bg-xiio-accent/20 border border-xiio-accent/40 text-xiio-accent text-xs font-semibold mb-4">
-            {t("home.heroBadge")}
+        <div className="relative z-10 max-w-7xl mx-auto px-8 pt-24 pb-12 md:px-16 md:pt-28 md:pb-16">
+          <div
+            className={`grid gap-10 lg:gap-12 items-center ${
+              hasPromo ? "md:grid-cols-2" : ""
+            }`}
+          >
+            <div className={hasPromo ? "min-w-0" : "max-w-2xl"}>
+              <div className="inline-block px-3 py-1 rounded-full bg-xiio-accent/20 border border-xiio-accent/40 text-xiio-accent text-xs font-semibold mb-4">
+                {t("home.heroBadge")}
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 leading-tight">
+                {t("home.heroTitleLine1")}
+                <br />
+                {t("home.heroTitleLine2")}
+              </h1>
+              <p className="text-xiio-muted text-base md:text-lg mb-6 max-w-lg">{t("home.heroSubtitle")}</p>
+              <HomeHeroActions />
+            </div>
+
+            {hasPromo && (
+              <div className="w-full min-w-0" aria-label={t("home.promoSectionTitle")}>
+                <div className="flex items-center justify-between gap-3 mb-3 px-0.5">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-xiio-accent">
+                    {t("home.promoBadge")}
+                  </p>
+                  <Link
+                    href="/shorts"
+                    className="text-sm text-xiio-muted hover:text-xiio-accent transition shrink-0"
+                  >
+                    {t("common.viewAll")}
+                  </Link>
+                </div>
+                <PromoShortCarousel
+                  items={promoItems}
+                  index={promoIndex}
+                  onIndexChange={onPromoIndexChange}
+                  compact
+                  navPosition="homeHero"
+                  viewportClassName="relative min-h-[min(380px,52vh)] w-full max-w-sm mx-auto md:max-w-md"
+                />
+              </div>
+            )}
           </div>
-          <h1 className="text-4xl md:text-6xl font-black text-white mb-4 leading-tight">
-            {t("home.heroTitleLine1")}
-            <br />
-            {t("home.heroTitleLine2")}
-          </h1>
-          <p className="text-xiio-muted text-base md:text-lg mb-6 max-w-lg">{t("home.heroSubtitle")}</p>
-          <HomeHeroActions />
         </div>
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-xiio-bg to-transparent" />
-      </section>
-
-      <section className="relative z-10 mt-8 px-4 pt-2 pb-10 md:mt-12 md:px-8 md:pb-14">
-        <PromoShortSpotlight items={promoItems} />
       </section>
 
       <div className="px-6 md:px-12 pb-16 space-y-12">

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import PlaybackVideo from "@/components/PlaybackVideo";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import type {
   PromoPendingRevision,
   PromoShortDoc,
@@ -55,9 +56,11 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       const res = await fetch(`/api/me/works/${workId}/promo`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const json = (await res.json().catch(() => ({}))) as EditorData & { message?: string };
+      const { data: json, raw } = await readResponseJson<EditorData & { message?: string; error?: string }>(res);
       if (!res.ok) {
-        setErr(json.message ?? `HTTP ${res.status}`);
+        if (!opts?.silent) {
+          setErr(formatApiError(t, res.status, { ...json, message: json.message ?? raw.slice(0, 500) }));
+        }
         return;
       }
       setData(json);
@@ -79,8 +82,8 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           setMsg(t("promoEditor.statusReadyBody"));
         }
       }
-    } catch {
-      if (!opts?.silent) setErr(t("myWorks.errorGeneric"));
+    } catch (e) {
+      if (!opts?.silent) setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       if (!opts?.silent) setLoading(false);
     }
@@ -122,16 +125,16 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           description,
         }),
       });
-      const body = (await res.json().catch(() => ({}))) as { message?: string };
+      const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
       if (!res.ok) {
-        setErr(body.message ?? t("myWorks.errorGeneric"));
+        setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         return;
       }
       setJustSavedClip(true);
       setMsg(t("promoEditor.savedEncoding"));
       await load({ silent: true });
-    } catch {
-      setErr(t("myWorks.errorGeneric"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       setBusy(false);
     }
@@ -142,16 +145,16 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     setErr(null);
     try {
       const res = await authFetch(`/api/me/works/${workId}/promo/submit`, { method: "POST" });
-      const body = (await res.json().catch(() => ({}))) as { message?: string };
+      const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
       if (!res.ok) {
-        setErr(body.message ?? t("myWorks.errorGeneric"));
+        setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         return;
       }
       setMsg(t("promoEditor.submitted"));
       setJustSavedClip(false);
       await load();
-    } catch {
-      setErr(t("myWorks.errorGeneric"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       setBusy(false);
     }
@@ -163,15 +166,15 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     try {
       const res = await authFetch(`/api/me/works/${workId}/promo`, { method: "DELETE" });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { message?: string };
-        setErr(body.message ?? t("myWorks.errorGeneric"));
+        const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
+        setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         return;
       }
       setJustSavedClip(false);
       setMsg(null);
       await load();
-    } catch {
-      setErr(t("myWorks.errorGeneric"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       setBusy(false);
     }
@@ -300,7 +303,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           </div>
         )}
         {err && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm">
+          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
             {err}
           </div>
         )}

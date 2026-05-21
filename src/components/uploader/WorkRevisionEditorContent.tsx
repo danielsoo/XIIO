@@ -6,7 +6,12 @@ import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { formatUploadApiError, type UploadApiErrorBody } from "@/lib/uploadErrors";
+import {
+  formatApiError,
+  formatClientError,
+  formatStreamUploadError,
+  readResponseJson,
+} from "@/lib/clientErrors";
 import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
 import { parseTagsFromInput } from "@/lib/works/label-utils";
 import type { WorkDoc, WorkPendingRevision } from "@/types/work";
@@ -53,14 +58,17 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
       const res = await fetch(`/api/me/works/${workId}/revision`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const json = (await res.json().catch(() => ({}))) as {
+      const { data: json, raw } = await readResponseJson<{
         work?: WorkDoc & { id: string };
         livePlayback?: string;
         revisionPlayback?: string;
         message?: string;
-      };
+        error?: string;
+      }>(res);
       if (!res.ok) {
-        if (!opts?.silent) setErr(json.message ?? `HTTP ${res.status}`);
+        if (!opts?.silent) {
+          setErr(formatApiError(t, res.status, { ...json, message: json.message ?? raw.slice(0, 500) }));
+        }
         return;
       }
       if (json.work) applyWork(json.work, json.work.pendingRevision);
@@ -69,8 +77,8 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
       if (opts?.silent && json.work?.pendingRevision?.streamStatus === "ready") {
         setMsg(t("workRevision.videoReady"));
       }
-    } catch {
-      if (!opts?.silent) setErr(t("myWorks.errorGeneric"));
+    } catch (e) {
+      if (!opts?.silent) setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       if (!opts?.silent) setLoading(false);
     }
@@ -114,15 +122,15 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
           description,
         }),
       });
-      const body = (await res.json().catch(() => ({}))) as { message?: string };
+      const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
       if (!res.ok) {
-        setErr(body.message ?? t("myWorks.errorGeneric"));
+        setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         return;
       }
       setMsg(t("workRevision.metadataSaved"));
       await load();
-    } catch {
-      setErr(t("myWorks.errorGeneric"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       setBusy(false);
     }
@@ -137,11 +145,14 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
         method: "POST",
         body: JSON.stringify({}),
       });
-      const sessionData = (await sessionRes.json().catch(() => ({}))) as UploadApiErrorBody & {
+      const { data: sessionData, raw: sessionRaw } = await readResponseJson<{
         uploadURL?: string;
-      };
+        error?: string;
+        message?: string;
+        detail?: string;
+      }>(sessionRes);
       if (!sessionRes.ok) {
-        setErr(formatUploadApiError(t, sessionRes.status, sessionData));
+        setErr(formatApiError(t, sessionRes.status, { ...sessionData, message: sessionData.message ?? sessionRaw }));
         return;
       }
       if (!sessionData.uploadURL) {
@@ -152,13 +163,14 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
       form.append("file", file);
       const uploadRes = await fetch(sessionData.uploadURL, { method: "POST", body: form });
       if (!uploadRes.ok) {
-        setErr(t("uploader.errorStreamFailed"));
+        const streamBody = await uploadRes.text().catch(() => "");
+        setErr(formatStreamUploadError(t, uploadRes.status, streamBody));
         return;
       }
       setMsg(t("workRevision.videoUploading"));
       await load({ silent: true });
-    } catch {
-      setErr(t("myWorks.errorGeneric"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       setBusy(false);
     }
@@ -169,15 +181,15 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
     setErr(null);
     try {
       const res = await authFetch(`/api/me/works/${workId}/revision/submit`, { method: "POST" });
-      const body = (await res.json().catch(() => ({}))) as { message?: string };
+      const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
       if (!res.ok) {
-        setErr(body.message ?? t("myWorks.errorGeneric"));
+        setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         return;
       }
       setMsg(t("workRevision.submitted"));
       await load();
-    } catch {
-      setErr(t("myWorks.errorGeneric"));
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       setBusy(false);
     }
@@ -244,7 +256,7 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
           </div>
         )}
         {err && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm">
+          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
             {err}
           </div>
         )}

@@ -11,6 +11,7 @@ import type {
   AdminUserActivityKind,
   AdminUserActivityResponse,
 } from "@/types/admin";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 type Props = { uid: string };
 
@@ -137,11 +138,11 @@ export default function AdminUserActivityTimeline({ uid }: Props) {
         const res = await fetch(`/api/admin/users/${uid}/activity?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const body = (await res.json().catch(() => ({}))) as AdminUserActivityResponse & {
-          message?: string;
-        };
+        const { data: body, raw } = await readResponseJson<
+          AdminUserActivityResponse & { message?: string; error?: string }
+        >(res);
         if (!res.ok) {
-          setErr(body.message ?? t("admin.userActivity.loadError"));
+          setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
           if (!append) setItems([]);
           return;
         }
@@ -151,8 +152,8 @@ export default function AdminUserActivityTimeline({ uid }: Props) {
           setLimitations(body.limitations ?? []);
           setViewerIsSuperAdmin(!!body.viewerIsSuperAdmin);
         }
-      } catch {
-        setErr(t("admin.userActivity.loadError"));
+      } catch (e) {
+        setErr(formatClientError(t, e, { titleKey: "admin.userActivity.loadError" }));
         if (!append) setItems([]);
       } finally {
         setLoading(false);
@@ -208,7 +209,7 @@ export default function AdminUserActivityTimeline({ uid }: Props) {
       </div>
 
       {loading && <p className="text-xiio-muted text-sm">{t("admin.loading")}</p>}
-      {err && !loading && <p className="text-red-400 text-sm mb-4">{err}</p>}
+      {err && !loading && <p className="text-red-400 text-sm mb-4 whitespace-pre-wrap break-words">{err}</p>}
 
       {!loading && !err && items.length === 0 && (
         <p className="text-xiio-muted text-sm">{t("admin.userActivity.empty")}</p>
