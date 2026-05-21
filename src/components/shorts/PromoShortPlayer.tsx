@@ -103,6 +103,11 @@ export type PromoShortLayout = "overlay" | "stacked";
 export type PromoShortVariant = "default" | "teaser";
 export type PromoShortPlayerSize = "default" | "homeHeroSmall";
 
+/** 홈 히어로 teaser — 영상 원본 비율과 무관한 고정 프레임 */
+export const HOME_HERO_TEASER_FRAME_CLASS =
+  "w-[220px] sm:w-[260px] aspect-[9/16] shrink-0";
+export const HOME_HERO_TEASER_VIEWPORT_CLASS = `relative mx-auto ${HOME_HERO_TEASER_FRAME_CLASS}`;
+
 function PromoDescriptionBlock({
   description,
   tall,
@@ -354,17 +359,22 @@ function PlayerChrome({
     ? bandMinPx + progress * Math.max(0, bandExpandedCap - bandMinPx)
     : undefined;
 
-  const smallShell =
-    playerSize === "homeHeroSmall"
+  const fixedTeaserFrame = isTeaser && playerSize === "homeHeroSmall";
+  const smallShell = fixedTeaserFrame
+    ? HOME_HERO_TEASER_FRAME_CLASS
+    : playerSize === "homeHeroSmall"
       ? "max-w-[220px] sm:max-w-[260px] max-h-[min(42vh,400px)]"
       : compact
         ? "max-h-[min(72vh,680px)]"
         : "max-h-[min(85vh,780px)]";
-  const maxWidthClass = playerSize === "homeHeroSmall" ? "" : "max-w-lg";
+  const maxWidthClass = fixedTeaserFrame || playerSize === "homeHeroSmall" ? "" : "max-w-lg";
 
   const cardShellClass = isFullscreen
     ? "relative w-full h-full max-w-lg mx-auto rounded-2xl overflow-hidden bg-black"
-    : `relative mx-auto w-full ${maxWidthClass} rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
+    : `relative mx-auto ${fixedTeaserFrame ? "" : "w-full "} ${maxWidthClass} rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
+
+  const cardAspectStyle =
+    isFullscreen || fixedTeaserFrame ? undefined : { aspectRatio: item.aspectRatio };
 
   const overlayBandClass = compact
     ? "h-auto min-h-[5rem] max-h-[min(38%,12rem)]"
@@ -540,7 +550,7 @@ function PlayerChrome({
       <div
         ref={cardRef}
         className={cardShellClass}
-        style={isFullscreen ? undefined : { aspectRatio: item.aspectRatio }}
+        style={cardAspectStyle}
       >
         <video
           ref={videoRef}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import HomeHeroActions from "@/components/HomeHeroActions";
 import HomeCatalogSection from "@/components/home/HomeCatalogSection";
 import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
+import { HOME_HERO_TEASER_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPlayer";
 import { useTranslations } from "@/context/LocaleContext";
 import { usePromoFeed } from "@/hooks/usePromoFeed";
 import type { WorkSection } from "@/types/work";
@@ -72,7 +73,7 @@ export default function HomePageContent() {
                   playerSize="homeHeroSmall"
                   compact
                   navPosition="homeHero"
-                  viewportClassName="relative w-full max-w-[220px] sm:max-w-[260px] mx-auto"
+                  viewportClassName={HOME_HERO_TEASER_VIEWPORT_CLASS}
                 />
               </div>
             )}

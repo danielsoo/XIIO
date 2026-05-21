@@ -53,6 +53,8 @@ export default function ShortsPageContent() {
         items={items}
         index={index}
         onIndexChange={onIndexChange}
+        variant="default"
+        layout="stacked"
         navPosition="shorts"
         viewportClassName="max-w-lg mx-auto relative min-h-[min(85vh,780px)] w-full"
       />

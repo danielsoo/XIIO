@@ -86,7 +86,7 @@ export default function PromoShortCarousel({
             compact={compact}
             scrollExpand={scrollExpand}
             scrollRootRef={scrollExpand ? viewportRef : undefined}
-            className="w-full"
+            className={playerSize === "homeHeroSmall" ? "mx-auto" : "w-full"}
           />
         </div>
       ))}
