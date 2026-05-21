@@ -17,10 +17,12 @@ const TIMEZONE_OPTIONS: { id: XiioTimezoneId; labelKey: string }[] = [
 ];
 import ProfileAvatar from "@/components/ProfileAvatar";
 import DirectorNameSettingsSection from "@/components/settings/DirectorNameSettingsSection";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const { activeProfile } = useProfile();
+  const { isAdmin, checked: adminChecked } = useAdminAccess();
   const { t, locale, setLocale, timezone, setTimezone } = useTranslations();
   const router = useRouter();
 
@@ -65,26 +67,28 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">
-          <h2 className="text-sm font-semibold text-xiio-muted mb-2">{t("settings.timezone")}</h2>
-          <p className="text-xs text-xiio-muted mb-4">{t("settings.timezoneHint")}</p>
-          <div className="flex flex-col gap-2">
-            {TIMEZONE_OPTIONS.map(({ id, labelKey }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setTimezone(id)}
-                className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium text-left transition border ${
-                  timezone === id
-                    ? "bg-xiio-accent border-xiio-accent text-white"
-                    : "border-white/20 text-xiio-muted hover:text-white hover:border-white/40"
-                }`}
-              >
-                {t(labelKey)}
-              </button>
-            ))}
-          </div>
-        </section>
+        {adminChecked && isAdmin && (
+          <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">
+            <h2 className="text-sm font-semibold text-xiio-muted mb-2">{t("settings.timezone")}</h2>
+            <p className="text-xs text-xiio-muted mb-4">{t("settings.timezoneHint")}</p>
+            <div className="flex flex-col gap-2">
+              {TIMEZONE_OPTIONS.map(({ id, labelKey }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setTimezone(id)}
+                  className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium text-left transition border ${
+                    timezone === id
+                      ? "bg-xiio-accent border-xiio-accent text-white"
+                      : "border-white/20 text-xiio-muted hover:text-white hover:border-white/40"
+                  }`}
+                >
+                  {t(labelKey)}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         <DirectorNameSettingsSection />
 
@@ -105,10 +109,12 @@ export default function SettingsPage() {
 
         <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">
           <h2 className="text-sm font-semibold text-xiio-muted mb-4">{t("settings.accountSection")}</h2>
-          <p className="text-sm text-white mb-1">{user.email}</p>
-          <p className="text-xs text-xiio-muted">
-            {user.emailVerified ? t("settings.emailVerified") : t("settings.emailNotVerified")}
-          </p>
+          <Link
+            href="/account"
+            className="text-sm text-xiio-accent hover:underline"
+          >
+            {t("settings.viewAccountProfile")}
+          </Link>
         </section>
 
         <button

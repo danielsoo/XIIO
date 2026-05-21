@@ -1,5 +1,6 @@
 import { FieldValue, type DocumentSnapshot, type Firestore, type Transaction } from "firebase-admin/firestore";
 import type { AnalyticsSummary, EngagementTarget, UploaderAnalyticsPayload, WorkAnalyticsBreakdown } from "@/types/engagement";
+import { isLoggedInViewerKey, upsertWatchHistory } from "@/lib/server/account-activity";
 import { parsePromoDoc, parseWorkDoc, promoRef, worksCol } from "@/lib/server/works";
 
 export function dayKeyUTC(d = new Date()): string {
@@ -175,6 +176,12 @@ export async function recordView(
   const dRef = dedupRef(db, ownerUid, target, workId, viewerKey, day);
   const summaryDocRef = analyticsRef(db, ownerUid);
 
+  const maybeHistory = async () => {
+    if (isLoggedInViewerKey(viewerKey)) {
+      await upsertWatchHistory(db, viewerKey, ownerUid, workId, target);
+    }
+  };
+
   if (target === "promo") {
     const published = await assertPublishedPromo(db, ownerUid, workId);
     if (!published.ok) return { ok: false, error: published.error };
@@ -191,6 +198,7 @@ export async function recordView(
       return true;
     });
 
+    await maybeHistory();
     return { ok: true, recorded };
   }
 
@@ -209,6 +217,7 @@ export async function recordView(
     return true;
   });
 
+  await maybeHistory();
   return { ok: true, recorded };
 }
 

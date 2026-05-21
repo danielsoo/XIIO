@@ -19,6 +19,7 @@ import {
 } from "@/lib/userProfile";
 import type { PlatformPurpose, SignupProfile } from "@/types/user";
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { useTranslations } from "@/context/LocaleContext";
 
 const inputClass =
@@ -600,21 +601,19 @@ export default function SignupPage() {
                     />
                   </Field>
                   <Field label={t("auth.signup.passwordLabel")}>
-                    <input
-                      type="password"
+                    <PasswordInput
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder={t("auth.signup.passwordPlaceholder")}
-                      className={inputClass}
+                      className={`${inputClass} pr-11`}
                     />
                   </Field>
                   <Field label={t("auth.signup.confirmPasswordLabel")}>
-                    <input
-                      type="password"
+                    <PasswordInput
                       value={confirm}
                       onChange={(e) => setConfirm(e.target.value)}
                       placeholder="••••••••"
-                      className={inputClass}
+                      className={`${inputClass} pr-11`}
                     />
                   </Field>
                 </div>

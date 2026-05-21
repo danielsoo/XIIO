@@ -6,6 +6,7 @@ import Link from "next/link";
 import { EMAIL_NOT_VERIFIED, useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { auth } from "@/lib/firebase";
 import { resolvePostLoginPath } from "@/lib/activeWatchProfile";
 import {
@@ -135,14 +136,12 @@ function LoginForm() {
 
             <div>
               <label className="block text-sm text-xiio-muted mb-1.5">{t("auth.login.passwordLabel")}</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent transition"
               />
             </div>
 

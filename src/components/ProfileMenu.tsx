@@ -58,6 +58,13 @@ export default function ProfileMenu() {
             <p className="text-sm font-medium text-white truncate">{activeProfile.name}</p>
             <p className="text-xs text-xiio-muted mt-0.5">{t("profileMenu.watchProfile")}</p>
           </div>
+          <Link
+            href="/account"
+            onClick={() => setOpen(false)}
+            className="block w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"
+          >
+            {t("profileMenu.accountProfile")}
+          </Link>
           <button
             type="button"
             onClick={handleSwitchProfile}
