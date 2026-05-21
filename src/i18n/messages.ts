@@ -141,7 +141,7 @@ export const messages = {
         purposeBothDesc: "시청도 하고 업로드도 할 예정이에요",
         directorStepTitle: "감독 이름",
         directorStepSubtitle:
-          "작품 카탈로그에 표시됩니다. 비워 두면 나중에 정할 수 있고, 저장 후에는 직접 수정할 수 없습니다.",
+          "작품 카탈로그에 표시됩니다. 영상을 올리려면 반드시 필요합니다. 지금 비워 두면 첫 업로드 전에 설정해야 하며, 저장 후에는 직접 수정할 수 없습니다.",
         directorNameLabel: "이름",
         directorNamePlaceholder: "예: 홍길동, 닉네임",
         errorDirectorNameInvalid: "감독 이름은 120자 이하여야 합니다.",
@@ -951,7 +951,7 @@ export const messages = {
         purposeBothDesc: "I plan to watch and upload",
         directorStepTitle: "Director name",
         directorStepSubtitle:
-          "Shown in the catalog. Leave blank to set later; after saving, you cannot edit it yourself.",
+          "Shown in the catalog and required to upload videos. Set it before your first upload if you skip now. After saving, you cannot edit it yourself.",
         directorNameLabel: "Name",
         directorNamePlaceholder: "e.g. Jane Doe, nickname",
         errorDirectorNameInvalid: "Director name must be 120 characters or fewer.",
