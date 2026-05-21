@@ -205,12 +205,12 @@ function PlayerChrome({
         compact ? "max-h-[min(72vh,680px)]" : "max-h-[min(85vh,780px)]"
       }`;
 
-  const overlayBandClass = tallMeta
-    ? "h-[35%] min-h-[7.5rem] md:min-h-[9rem]"
-    : "h-[36%] min-h-[100px] md:min-h-[112px]";
+  const overlayBandClass = compact
+    ? "h-auto min-h-[5rem] max-h-[min(38%,12rem)]"
+    : "h-auto min-h-[5.5rem] max-h-[min(42%,14rem)]";
 
   const actionButtons = (
-    <div className="flex flex-col items-center justify-start gap-5 shrink-0 pt-0.5">
+    <div className="flex flex-col items-center justify-center gap-4 shrink-0">
       <button
         type="button"
         onClick={() => void toggleLike()}
@@ -264,7 +264,7 @@ function PlayerChrome({
   );
 
   const metaBlock = (tall: boolean) => (
-    <div className={`flex-1 min-w-0 text-left pr-2 ${tall ? "flex flex-col justify-start min-h-0" : ""}`}>
+    <div className="min-w-0 text-left">
       <h3
         className={`font-bold leading-tight truncate ${
           tall ? "text-xl md:text-2xl text-white" : "text-lg md:text-2xl text-white"
@@ -312,11 +312,13 @@ function PlayerChrome({
   );
 
   const bottomOverlay = (
-    <div className={`absolute inset-x-0 bottom-0 flex flex-col pointer-events-none ${overlayBandClass}`}>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+    <div className={`absolute inset-x-0 bottom-0 pointer-events-none ${overlayBandClass}`}>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
       <div className="absolute inset-0 bg-black/10 backdrop-blur-[6px] supports-[backdrop-filter]:bg-black/5" />
-      <div className="relative z-10 flex flex-1 min-w-0 items-start justify-between gap-3 px-4 pt-3 pb-4 md:px-6 md:pt-3.5 md:pb-5 pointer-events-auto">
+      <div className="relative z-10 min-w-0 overflow-y-auto px-4 pt-3 pb-4 pr-[4.75rem] pointer-events-auto md:px-6 md:pt-3.5 md:pb-5 md:pr-20">
         {metaBlock(tallMeta)}
+      </div>
+      <div className="absolute right-3 bottom-3 z-20 flex flex-col items-center pointer-events-auto md:right-4 md:bottom-4">
         {actionButtons}
       </div>
     </div>
