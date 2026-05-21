@@ -111,7 +111,7 @@ function HomeHeroPeekCarousel({
       aria-label={t("home.promoSectionTitle")}
       tabIndex={swipeEnabled ? 0 : undefined}
       onKeyDown={onViewportKeyDown}
-      className={`${viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS} touch-pan-y outline-none`}
+      className={`${viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS} touch-pan-y select-none outline-none`}
     >
       <div className={`relative shrink-0 ${HOME_HERO_PEEK_SIDE_FRAME_CLASS}`}>
         {swipeEnabled && (

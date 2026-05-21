@@ -12,7 +12,8 @@ type Options = {
 type AxisLock = "none" | "horizontal" | "vertical";
 
 /**
- * 가로 스와이프(터치·포인터). 스와이프 직후 click은 막아 Link 등 오탭을 방지합니다.
+ * 가로 스와이프(터치·마우스 드래그). 중앙 영상 등 자식 위에서도 동작하도록
+ * pointer capture + document 레벨 move/up 사용.
  */
 export function useHorizontalSwipe(
   ref: RefObject<HTMLElement | null>,
@@ -35,16 +36,19 @@ export function useHorizontalSwipe(
     let startY = 0;
     let active = false;
     let axis: AxisLock = "none";
+    let activePointerId: number | null = null;
 
     const reset = () => {
       active = false;
       axis = "none";
+      activePointerId = null;
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+      document.removeEventListener("pointercancel", onPointerCancel);
     };
 
     const finish = (dx: number, dy: number) => {
       if (!active) return;
-      active = false;
-      axis = "none";
 
       if (Math.abs(dy) > Math.abs(dx)) return;
 
@@ -57,60 +61,66 @@ export function useHorizontalSwipe(
       }
     };
 
-    const onPointerDown = (e: PointerEvent) => {
-      if (e.button !== 0) return;
-      active = true;
-      axis = "none";
-      startX = e.clientX;
-      startY = e.clientY;
-    };
-
     const onPointerMove = (e: PointerEvent) => {
-      if (!active) return;
+      if (!active || (activePointerId != null && e.pointerId !== activePointerId)) return;
+
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
       if (axis === "none" && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
         axis = Math.abs(dx) >= Math.abs(dy) ? "horizontal" : "vertical";
       }
-      if (axis === "horizontal") e.preventDefault();
+      if (axis === "horizontal") {
+        e.preventDefault();
+      }
     };
 
     const onPointerUp = (e: PointerEvent) => {
-      if (!active) return;
+      if (!active || (activePointerId != null && e.pointerId !== activePointerId)) return;
+
       finish(e.clientX - startX, e.clientY - startY);
+
+      if (el.hasPointerCapture?.(e.pointerId)) {
+        try {
+          el.releasePointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+      }
+      reset();
     };
 
-    const onPointerCancel = () => reset();
+    const onPointerCancel = (e: PointerEvent) => {
+      if (activePointerId != null && e.pointerId !== activePointerId) return;
+      if (el.hasPointerCapture?.(e.pointerId)) {
+        try {
+          el.releasePointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+      }
+      reset();
+    };
 
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      if (!el.contains(e.target as Node)) return;
+
       active = true;
+      activePointerId = e.pointerId;
       axis = "none";
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    };
+      startX = e.clientX;
+      startY = e.clientY;
 
-    const onTouchMove = (e: TouchEvent) => {
-      if (!active || e.touches.length !== 1) return;
-      const dx = e.touches[0].clientX - startX;
-      const dy = e.touches[0].clientY - startY;
-      if (axis === "none" && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
-        axis = Math.abs(dx) >= Math.abs(dy) ? "horizontal" : "vertical";
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
       }
-      if (axis === "horizontal") e.preventDefault();
-    };
 
-    const onTouchEnd = (e: TouchEvent) => {
-      if (!active) return;
-      const touch = e.changedTouches[0];
-      if (!touch) {
-        reset();
-        return;
-      }
-      finish(touch.clientX - startX, touch.clientY - startY);
+      document.addEventListener("pointermove", onPointerMove, { passive: false });
+      document.addEventListener("pointerup", onPointerUp);
+      document.addEventListener("pointercancel", onPointerCancel);
     };
-
-    const onTouchCancel = () => reset();
 
     const onClickCapture = (e: MouseEvent) => {
       if (Date.now() < blockClickUntilRef.current) {
@@ -120,24 +130,11 @@ export function useHorizontalSwipe(
     };
 
     el.addEventListener("pointerdown", onPointerDown);
-    el.addEventListener("pointermove", onPointerMove);
-    el.addEventListener("pointerup", onPointerUp);
-    el.addEventListener("pointercancel", onPointerCancel);
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    el.addEventListener("touchend", onTouchEnd);
-    el.addEventListener("touchcancel", onTouchCancel);
     el.addEventListener("click", onClickCapture, true);
 
     return () => {
+      reset();
       el.removeEventListener("pointerdown", onPointerDown);
-      el.removeEventListener("pointermove", onPointerMove);
-      el.removeEventListener("pointerup", onPointerUp);
-      el.removeEventListener("pointercancel", onPointerCancel);
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("touchcancel", onTouchCancel);
       el.removeEventListener("click", onClickCapture, true);
     };
   }, [enabled, ref, thresholdPx]);

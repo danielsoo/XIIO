@@ -551,6 +551,8 @@ function PlayerChrome({
   const teaserLink = isTeaser && !peekSide ? (
     <Link
       href={watchHref}
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
       className="absolute inset-0 z-[15] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       aria-label={t("home.promoWatch", { title: item.title })}
     />
