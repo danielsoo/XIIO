@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, type KeyboardEvent } from "react";
+import { useHorizontalSwipe } from "@/hooks/useHorizontalSwipe";
 import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
 import PromoShortPlayer, {
   type PromoShortLayout,
@@ -33,6 +34,8 @@ const PEEK_CAROUSEL_ARROW_BASE =
   "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-xiio-accent hover:text-xiio-accent-hover transition pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 const PEEK_ARROW_ON_LEFT_PEEK = `absolute right-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_CAROUSEL_ARROW_BASE}`;
 const PEEK_ARROW_ON_RIGHT_PEEK = `absolute left-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_CAROUSEL_ARROW_BASE}`;
+const PEEK_TAP_LAYER =
+  "absolute inset-0 z-40 cursor-pointer rounded-2xl bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
 const NAV_CLASSES: Record<NavPosition, { prev: string; next: string }> = {
   home: {
@@ -80,16 +83,53 @@ function HomeHeroPeekCarousel({
     [count, index, onIndexChange]
   );
 
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const swipeEnabled = count > 1;
+
+  useHorizontalSwipe(viewportRef, {
+    enabled: swipeEnabled,
+    onSwipeLeft: () => go(1),
+    onSwipeRight: () => go(-1),
+  });
+
+  const onViewportKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!swipeEnabled) return;
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      go(-1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      go(1);
+    }
+  };
+
   return (
-    <div className={viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS}>
+    <div
+      ref={viewportRef}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label={t("home.promoSectionTitle")}
+      tabIndex={swipeEnabled ? 0 : undefined}
+      onKeyDown={onViewportKeyDown}
+      className={`${viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS} touch-pan-y outline-none`}
+    >
       <div className={`relative shrink-0 ${HOME_HERO_PEEK_SIDE_FRAME_CLASS}`}>
+        {swipeEnabled && (
+          <button
+            type="button"
+            className={PEEK_TAP_LAYER}
+            onClick={() => go(-1)}
+            aria-label={t("home.promoPrev")}
+          />
+        )}
         <PromoShortPeekPreview item={prevItem} />
-        {count > 1 && (
+        {swipeEnabled && (
           <button
             type="button"
             onClick={() => go(-1)}
             className={PEEK_ARROW_ON_LEFT_PEEK}
-            aria-label={t("home.promoPrev")}
+            aria-hidden
+            tabIndex={-1}
           >
             ‹
           </button>
@@ -142,13 +182,22 @@ function HomeHeroPeekCarousel({
       </div>
 
       <div className={`relative shrink-0 ${HOME_HERO_PEEK_SIDE_FRAME_CLASS}`}>
+        {swipeEnabled && (
+          <button
+            type="button"
+            className={PEEK_TAP_LAYER}
+            onClick={() => go(1)}
+            aria-label={t("home.promoNext")}
+          />
+        )}
         <PromoShortPeekPreview item={nextItem} />
-        {count > 1 && (
+        {swipeEnabled && (
           <button
             type="button"
             onClick={() => go(1)}
             className={PEEK_ARROW_ON_RIGHT_PEEK}
-            aria-label={t("home.promoNext")}
+            aria-hidden
+            tabIndex={-1}
           >
             ›
           </button>

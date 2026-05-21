@@ -27,8 +27,11 @@ export default function PromoShortPeekPreview({ item }: Props) {
   }, [item.videoUrl, item.id]);
 
   return (
-    <div className="relative h-full w-full" aria-hidden>
-      <div className="relative h-full w-full scale-90 origin-center overflow-hidden rounded-2xl border border-white/10 bg-black shadow-lg shadow-black/40">
+    <div className="relative h-full w-full pointer-events-none">
+      <div
+        className="relative h-full w-full scale-90 origin-center overflow-hidden rounded-2xl border border-white/10 bg-black shadow-lg shadow-black/40"
+        aria-hidden
+      >
         <video
           ref={videoRef}
           src={item.videoUrl}
