@@ -572,14 +572,6 @@ export default function SignupPage() {
                 title={t("auth.signup.directorStepTitle")}
                 subtitle={t("auth.signup.directorStepSubtitle")}
               >
-                <div className="rounded-lg border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3 mb-4">
-                  <p className="text-sm text-white font-medium">
-                    {t("auth.signup.directorNameNoticeTitle")}
-                  </p>
-                  <p className="text-xs text-xiio-muted mt-2 leading-relaxed">
-                    {t("auth.signup.directorNameNoticeBody")}
-                  </p>
-                </div>
                 <Field label={t("auth.signup.directorNameLabel")}>
                   <input
                     type="text"
@@ -591,9 +583,6 @@ export default function SignupPage() {
                     autoFocus
                   />
                 </Field>
-                <p className="text-xs text-xiio-muted mt-2 leading-relaxed">
-                  {t("auth.signup.directorNameSkipHint")}
-                </p>
               </StepShell>
             )}
 
