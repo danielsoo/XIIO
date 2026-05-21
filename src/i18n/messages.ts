@@ -219,6 +219,10 @@ export const messages = {
       targetFull: "풀영상",
       noProfile: "프로필을 불러오지 못했습니다. 가입을 완료해 주세요.",
       loadActivityFailed: "활동 목록을 불러오지 못했습니다.",
+      quickUpload: "영상 업로드",
+      emptyUploadCta: "첫 작품 업로드하기",
+      emptyLikesCta: "숏폼 둘러보기",
+      emptyWatchedCta: "콘텐츠 둘러보기",
     },
     profiles: {
       title: "시청할 프로필을 선택하세요",
@@ -1061,6 +1065,10 @@ export const messages = {
       targetFull: "Full video",
       noProfile: "Could not load profile. Please complete sign-up.",
       loadActivityFailed: "Could not load activity.",
+      quickUpload: "Upload video",
+      emptyUploadCta: "Upload your first work",
+      emptyLikesCta: "Browse shorts",
+      emptyWatchedCta: "Browse content",
     },
     profiles: {
       title: "Who's watching?",

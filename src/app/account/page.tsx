@@ -20,10 +20,9 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="min-h-screen pt-24 pb-16 px-4 bg-xiio-bg">
-      <div className="max-w-lg mx-auto">
-        <h1 className="text-2xl font-bold text-white mb-2">{t("accountProfile.title")}</h1>
-        <p className="text-sm text-xiio-muted mb-8">{t("accountProfile.subtitle")}</p>
+    <main className="min-h-screen pt-24 pb-16 px-4 sm:px-6 bg-xiio-bg">
+      <div className="max-w-2xl mx-auto">
+        <p className="text-sm text-xiio-muted mb-6">{t("accountProfile.subtitle")}</p>
         <AccountProfileContent />
       </div>
     </main>

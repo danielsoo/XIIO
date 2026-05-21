@@ -5,6 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useMyWorks } from "@/hooks/useMyWorks";
 import { watchHref } from "@/lib/works/catalog-ui";
+import AccountActivityCard from "@/components/account/AccountActivityCard";
+import AccountEmptyState from "@/components/account/AccountEmptyState";
 
 export default function AccountUploadsList() {
   const { user } = useAuth();
@@ -12,7 +14,7 @@ export default function AccountUploadsList() {
   const { works, loading, error } = useMyWorks();
 
   if (loading) {
-    return <p className="text-sm text-xiio-muted">{t("common.loading")}</p>;
+    return <p className="text-sm text-xiio-muted text-center py-8">{t("common.loading")}</p>;
   }
 
   if (error) {
@@ -20,35 +22,34 @@ export default function AccountUploadsList() {
   }
 
   if (works.length === 0) {
-    return <p className="text-sm text-xiio-muted">{t("accountProfile.uploadsEmpty")}</p>;
+    return (
+      <AccountEmptyState
+        message={t("accountProfile.uploadsEmpty")}
+        ctaLabel={t("accountProfile.emptyUploadCta")}
+        ctaHref="/uploader/upload"
+      />
+    );
   }
 
   return (
     <div>
       <ul className="space-y-2 mb-4">
         {works.map((work) => (
-          <li
+          <AccountActivityCard
             key={work.id}
-            className="rounded-xl border border-white/10 bg-xiio-bg/40 px-4 py-3 flex flex-wrap items-center justify-between gap-2"
-          >
-            <div className="min-w-0">
-              <p className="text-white font-medium truncate">{work.title}</p>
-              <p className="text-xs text-xiio-muted mt-0.5">
-                {t(`myWorks.section.${work.section}`)} · {t(`myWorks.status.${work.platformStatus}`)}
-              </p>
-            </div>
-            {work.platformStatus === "published" && user && (
-              <Link
-                href={watchHref(user.uid, work.id)}
-                className="text-sm text-xiio-accent hover:underline shrink-0"
-              >
-                {t("accountProfile.watchLink")}
-              </Link>
-            )}
-          </li>
+            title={work.title}
+            section={work.section}
+            meta={`${t(`myWorks.section.${work.section}`)} · ${t(`myWorks.status.${work.platformStatus}`)}`}
+            href={user ? watchHref(user.uid, work.id) : "#"}
+            watchLabel={t("accountProfile.watchLink")}
+            watchDisabled={work.platformStatus !== "published"}
+          />
         ))}
       </ul>
-      <Link href="/uploader/works" className="text-sm text-xiio-accent hover:underline">
+      <Link
+        href="/uploader/works"
+        className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2.5 rounded-lg text-sm font-medium border border-white/20 text-white hover:bg-white/5 transition"
+      >
         {t("accountProfile.manageUploads")}
       </Link>
     </div>

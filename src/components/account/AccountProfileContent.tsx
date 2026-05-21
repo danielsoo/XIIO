@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
@@ -8,17 +7,18 @@ import { getUserProfile } from "@/lib/userProfile";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import type { AccountActivityItem } from "@/types/account-activity";
 import type { UserProfileDoc } from "@/types/user";
+import AccountProfileHero from "@/components/account/AccountProfileHero";
 import AccountUploadsList from "@/components/account/AccountUploadsList";
 import AccountWorkActivityList from "@/components/account/AccountWorkActivityList";
 
 type TabId = "uploads" | "likes" | "watched";
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function MetaField({ label, value }: { label: string; value: string }) {
   return (
-    <p className="flex flex-wrap gap-x-2 text-sm">
-      <span className="text-xiio-muted shrink-0">{label}:</span>
-      <span className="text-white">{value}</span>
-    </p>
+    <div>
+      <dt className="text-xs text-xiio-muted">{label}</dt>
+      <dd className="text-sm text-white mt-0.5">{value}</dd>
+    </div>
   );
 }
 
@@ -31,6 +31,7 @@ export default function AccountProfileContent() {
   const [tab, setTab] = useState<TabId>("uploads");
   const [likes, setLikes] = useState<AccountActivityItem[]>([]);
   const [watched, setWatched] = useState<AccountActivityItem[]>([]);
+  const [uploadCount, setUploadCount] = useState(0);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityErr, setActivityErr] = useState<string | null>(null);
 
@@ -61,23 +62,34 @@ export default function AccountProfileContent() {
     try {
       const token = await user.getIdToken();
       const headers = { Authorization: `Bearer ${token}` };
-      const [likesRes, histRes] = await Promise.all([
+      const [worksRes, likesRes, histRes] = await Promise.all([
+        fetch("/api/me/works", { headers }),
         fetch("/api/me/liked-promos", { headers }),
         fetch("/api/me/watch-history", { headers }),
       ]);
-      const likesJson = await readResponseJson<{ items?: AccountActivityItem[]; message?: string }>(
-        likesRes
-      );
-      const histJson = await readResponseJson<{ items?: AccountActivityItem[]; message?: string }>(
-        histRes
-      );
+      const worksJson = await readResponseJson<{ works?: unknown[] }>(worksRes);
+      const likesJson = await readResponseJson<{ items?: AccountActivityItem[] }>(likesRes);
+      const histJson = await readResponseJson<{ items?: AccountActivityItem[] }>(histRes);
       if (!likesRes.ok) {
-        setActivityErr(formatApiError(t, likesRes.status, likesJson.data));
+        setActivityErr(
+          formatApiError(t, likesRes.status, {
+            ...likesJson.data,
+            message: (likesJson.data as { message?: string }).message,
+          })
+        );
         return;
       }
       if (!histRes.ok) {
-        setActivityErr(formatApiError(t, histRes.status, histJson.data));
+        setActivityErr(
+          formatApiError(t, histRes.status, {
+            ...histJson.data,
+            message: (histJson.data as { message?: string }).message,
+          })
+        );
         return;
+      }
+      if (worksRes.ok) {
+        setUploadCount(worksJson.data.works?.length ?? 0);
       }
       setLikes(likesJson.data.items ?? []);
       setWatched(histJson.data.items ?? []);
@@ -92,99 +104,82 @@ export default function AccountProfileContent() {
     void loadActivity();
   }, [loadActivity]);
 
-  const tabs: { id: TabId; labelKey: string }[] = [
-    { id: "uploads", labelKey: "accountProfile.tabUploads" },
-    { id: "likes", labelKey: "accountProfile.tabLikes" },
-    { id: "watched", labelKey: "accountProfile.tabWatched" },
+  const tabs: { id: TabId; labelKey: string; count?: number }[] = [
+    { id: "uploads", labelKey: "accountProfile.tabUploads", count: uploadCount },
+    { id: "likes", labelKey: "accountProfile.tabLikes", count: likes.length },
+    { id: "watched", labelKey: "accountProfile.tabWatched", count: watched.length },
   ];
 
   if (loading) {
-    return <p className="text-xiio-muted">{t("common.loading")}</p>;
+    return <p className="text-xiio-muted py-8 text-center">{t("common.loading")}</p>;
   }
 
   if (err || !profile) {
     return <p className="text-red-400 text-sm">{err ?? t("accountProfile.noProfile")}</p>;
   }
 
-  const pendingReq = profile.directorNameChangeRequest?.status === "pending";
+  const showAge = profile.age != null && profile.age >= 1;
+  const showJoined = profile.createdAt != null;
 
   return (
     <div className="space-y-6">
-      <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 space-y-3">
-        <h2 className="text-sm font-semibold text-xiio-muted">{t("accountProfile.infoSection")}</h2>
-        <InfoRow label={t("accountProfile.displayName")} value={profile.displayName || "—"} />
-        <InfoRow label={t("accountProfile.email")} value={user?.email ?? "—"} />
-        <InfoRow
-          label={t("accountProfile.emailVerified")}
-          value={
-            profile.emailVerified || user?.emailVerified
-              ? t("settings.emailVerified")
-              : t("settings.emailNotVerified")
-          }
-        />
-        <InfoRow
-          label={t("accountProfile.purpose")}
-          value={t(`admin.userProfile.purpose.${profile.platformPurpose}`)}
-        />
-        {profile.age != null && profile.age >= 1 && (
-          <InfoRow label={t("accountProfile.age")} value={String(profile.age)} />
-        )}
-        {profile.createdAt != null && (
-          <InfoRow label={t("accountProfile.joinedAt")} value={formatDateTime(profile.createdAt)} />
-        )}
-        {profile.defaultDirectorName && (
-          <InfoRow label={t("accountProfile.directorName")} value={profile.defaultDirectorName} />
-        )}
-        {pendingReq && profile.directorNameChangeRequest && (
-          <p className="text-xs text-amber-400/90">
-            {t("accountProfile.directorChangePending", {
-              name: profile.directorNameChangeRequest.requestedName,
-            })}
-          </p>
-        )}
-        <div className="flex flex-wrap gap-4 pt-2 text-sm">
-          <Link href="/profiles" className="text-xiio-accent hover:underline">
-            {t("accountProfile.linkWatchProfiles")}
-          </Link>
-          <Link href="/settings" className="text-xiio-accent hover:underline">
-            {t("accountProfile.linkSettings")}
-          </Link>
-        </div>
-      </section>
+      <AccountProfileHero profile={profile} email={user?.email ?? null} />
 
-      <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10">
-        <div className="flex flex-wrap gap-2 mb-4 border-b border-white/10 pb-3">
-          {tabs.map(({ id, labelKey }) => (
+      {(showAge || showJoined) && (
+        <section className="bg-xiio-surface rounded-2xl p-5 border border-white/10">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+            {showAge && <MetaField label={t("accountProfile.age")} value={String(profile.age)} />}
+            {showJoined && (
+              <MetaField label={t("accountProfile.joinedAt")} value={formatDateTime(profile.createdAt)} />
+            )}
+          </dl>
+        </section>
+      )}
+
+      <section className="bg-xiio-surface rounded-2xl p-5 border border-white/10">
+        <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/10 mb-5">
+          {tabs.map(({ id, labelKey, count }) => (
             <button
               key={id}
               type="button"
               onClick={() => setTab(id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition ${
                 tab === id
-                  ? "bg-xiio-accent text-white"
-                  : "text-xiio-muted hover:text-white hover:bg-white/5"
+                  ? "bg-xiio-accent text-white shadow-sm"
+                  : "text-xiio-muted hover:text-white"
               }`}
             >
-              {t(labelKey)}
+              <span>{t(labelKey)}</span>
+              {!activityLoading && count !== undefined && count > 0 && (
+                <span
+                  className={`text-xs tabular-nums px-1.5 py-0.5 rounded-md ${
+                    tab === id ? "bg-white/20" : "bg-white/10"
+                  }`}
+                >
+                  {count}
+                </span>
+              )}
             </button>
           ))}
         </div>
 
         {activityErr && tab !== "uploads" && (
-          <p className="text-sm text-red-400 mb-3">{activityErr}</p>
+          <p className="text-sm text-red-400 mb-4">{activityErr}</p>
         )}
 
         {tab === "uploads" && <AccountUploadsList />}
 
         {tab === "likes" && (
           activityLoading ? (
-            <p className="text-sm text-xiio-muted">{t("common.loading")}</p>
+            <p className="text-sm text-xiio-muted text-center py-8">{t("common.loading")}</p>
           ) : (
             <>
               <p className="text-xs text-xiio-muted mb-3">{t("accountProfile.likesNote")}</p>
               <AccountWorkActivityList
                 items={likes}
                 emptyMessage={t("accountProfile.likesEmpty")}
+                emptyCtaLabel={t("accountProfile.emptyLikesCta")}
+                emptyCtaHref="/shorts"
               />
             </>
           )
@@ -192,11 +187,13 @@ export default function AccountProfileContent() {
 
         {tab === "watched" && (
           activityLoading ? (
-            <p className="text-sm text-xiio-muted">{t("common.loading")}</p>
+            <p className="text-sm text-xiio-muted text-center py-8">{t("common.loading")}</p>
           ) : (
             <AccountWorkActivityList
               items={watched}
               emptyMessage={t("accountProfile.watchedEmpty")}
+              emptyCtaLabel={t("accountProfile.emptyWatchedCta")}
+              emptyCtaHref="/movies"
               showTarget
             />
           )
