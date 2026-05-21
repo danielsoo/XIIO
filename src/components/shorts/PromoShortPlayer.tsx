@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import ReportContentModal from "@/components/report/ReportContentModal";
 import { useAuth } from "@/context/AuthContext";
@@ -178,6 +178,8 @@ function PlayerChrome({
   isFullscreen,
   layout,
   compact,
+  scrollExpand,
+  scrollRootRef,
   onToggleFullscreen,
   onExitFullscreen,
 }: {
@@ -186,6 +188,9 @@ function PlayerChrome({
   isFullscreen: boolean;
   layout: PromoShortLayout;
   compact?: boolean;
+  /** 숏츠 화면 등에서만 스크롤로 소개 펼침 */
+  scrollExpand?: boolean;
+  scrollRootRef?: RefObject<HTMLElement | null>;
   onToggleFullscreen: () => void;
   onExitFullscreen: () => void;
 }) {
@@ -196,10 +201,12 @@ function PlayerChrome({
   const persisted = Boolean(item.ownerUid && item.workId);
   const description = item.description?.trim() ?? "";
   const expandable = isLongDescription(description);
+  const scrollListenerRef = isFullscreen || !scrollRootRef ? cardRef : scrollRootRef;
   const { progress, toggle } = usePromoDescriptionExpand({
-    enabled: isActive && expandable,
+    enabled: isActive && expandable && Boolean(scrollExpand),
     itemId: item.id,
     compact,
+    scrollRootRef: scrollListenerRef,
   });
   const [liked, setLiked] = useState(item.likedByMe ?? false);
   const [likeCount, setLikeCount] = useState(item.likeCount ?? 0);
@@ -485,6 +492,8 @@ export default function PromoShortPlayer({
   embedded = true,
   layout,
   compact = false,
+  scrollExpand = false,
+  scrollRootRef,
   className = "",
 }: {
   item: PromoShort;
@@ -493,6 +502,9 @@ export default function PromoShortPlayer({
   layout?: PromoShortLayout;
   /** 홈 스포트라이트 등 낮은 카드 높이 */
   compact?: boolean;
+  /** true일 때 scrollRootRef(또는 카드) 안에서만 스크롤 펼침 */
+  scrollExpand?: boolean;
+  scrollRootRef?: RefObject<HTMLElement | null>;
   className?: string;
 }) {
   const resolvedLayout: PromoShortLayout = layout ?? "stacked";
@@ -508,6 +520,8 @@ export default function PromoShortPlayer({
       isFullscreen={active}
       layout={resolvedLayout}
       compact={compact}
+      scrollExpand={scrollExpand}
+      scrollRootRef={scrollRootRef}
       onToggleFullscreen={() => void toggle()}
       onExitFullscreen={() => void exit()}
     />

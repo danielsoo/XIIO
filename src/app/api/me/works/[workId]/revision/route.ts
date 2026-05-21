@@ -115,7 +115,7 @@ export async function PATCH(request: Request, { params }: Params) {
     streamStatus: existingRev?.streamStatus,
     section,
     title: (body.title ?? work.title).trim().slice(0, 200) || work.title,
-    description: body.description?.trim().slice(0, 2000) ?? work.description ?? undefined,
+    description: body.description?.trim() ?? work.description ?? undefined,
     director: body.director?.trim().slice(0, 120) ?? work.director ?? undefined,
     proposedCategory: proposedCategory || undefined,
     proposedTags: proposedTags.length > 0 ? proposedTags : undefined,

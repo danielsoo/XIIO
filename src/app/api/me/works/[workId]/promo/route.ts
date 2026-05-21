@@ -195,7 +195,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   const clipTitle = body.title?.trim().slice(0, 200) || existingData?.title || work.title;
   const clipDescription =
-    body.description?.trim().slice(0, 2000) ||
+    body.description?.trim() ||
     existingData?.description ||
     work.description ||
     null;

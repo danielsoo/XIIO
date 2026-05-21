@@ -273,7 +273,7 @@ export default function MyWorksContent() {
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
                     <button
                       type="button"
                       disabled={idx === 0 || busyId === work.id}
@@ -315,7 +315,7 @@ export default function MyWorksContent() {
                       </Link>
                     )}
                     {(workRevisionPending || promoRevisionPending) && (
-                      <span className="px-2 py-1 text-[10px] rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      <span className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">
                         {t("myWorks.revisionReviewPending")}
                       </span>
                     )}

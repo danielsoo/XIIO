@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import PromoShortPlayer from "@/components/shorts/PromoShortPlayer";
 import { useTranslations } from "@/context/LocaleContext";
@@ -15,6 +15,7 @@ export default function ShortsPageContent() {
   const initialIndex = Math.max(0, items.findIndex((s) => s.id === promoId));
   const [index, setIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
   const count = items.length;
+  const shortsViewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!promoId || count === 0) return;
@@ -53,7 +54,10 @@ export default function ShortsPageContent() {
         <p className="text-xiio-muted text-sm">{t("category.shortsSubtitle")}</p>
       </header>
 
-      <div className="max-w-lg mx-auto relative min-h-[min(85vh,780px)] w-full">
+      <div
+        ref={shortsViewportRef}
+        className="max-w-lg mx-auto relative min-h-[min(85vh,780px)] w-full"
+      >
         {items.map((item, i) => (
           <div
             key={item.id}
@@ -67,6 +71,8 @@ export default function ShortsPageContent() {
               isActive={i === index}
               embedded={false}
               layout="stacked"
+              scrollExpand
+              scrollRootRef={shortsViewportRef}
               className="w-full"
             />
           </div>

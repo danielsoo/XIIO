@@ -104,7 +104,7 @@ export async function POST(request: Request) {
         kind: "full",
         section: sectionRaw,
         title,
-        description: body.description?.trim().slice(0, 2000) || null,
+        description: body.description?.trim() || null,
         director: body.director?.trim().slice(0, 120) || null,
         proposedCategory: proposedCategory || null,
         proposedTags: proposedTags.length > 0 ? proposedTags : null,

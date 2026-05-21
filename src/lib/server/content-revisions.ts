@@ -149,7 +149,7 @@ export async function approveWorkRevision(
     platformStatus: "published",
     section: rev.section ?? work.section,
     title: rev.title?.trim().slice(0, 200) || work.title,
-    description: rev.description?.trim().slice(0, 2000) ?? work.description ?? null,
+    description: rev.description?.trim() ?? work.description ?? null,
     director: rev.director?.trim().slice(0, 120) ?? work.director ?? null,
     proposedCategory: rev.proposedCategory ?? work.proposedCategory ?? null,
     proposedTags: rev.proposedTags ?? work.proposedTags ?? null,
