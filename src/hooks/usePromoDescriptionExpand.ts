@@ -13,16 +13,24 @@ function isInsideRoot(root: HTMLElement | null, target: EventTarget | null): boo
   return root.contains(target);
 }
 
+function canScrollMeta(el: HTMLElement, deltaY: number): boolean {
+  if (deltaY > 0) return el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+  if (deltaY < 0) return el.scrollTop > 1;
+  return false;
+}
+
 export function usePromoDescriptionExpand({
   enabled,
   itemId,
   compact = false,
   scrollRootRef,
+  metaScrollRef,
 }: {
   enabled: boolean;
   itemId: string;
   compact?: boolean;
   scrollRootRef: RefObject<HTMLElement | null>;
+  metaScrollRef?: RefObject<HTMLElement | null>;
 }) {
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(0);
@@ -70,7 +78,24 @@ export function usePromoDescriptionExpand({
 
     const onWheel = (e: WheelEvent) => {
       if (!isInsideRoot(root, e.target)) return;
+
       const p = progressRef.current;
+      const meta = metaScrollRef?.current;
+
+      if (p >= 1 && meta && isInsideRoot(meta, e.target)) {
+        if (canScrollMeta(meta, e.deltaY)) {
+          meta.scrollTop += e.deltaY;
+          e.preventDefault();
+          return;
+        }
+        if (e.deltaY < 0 && meta.scrollTop <= 0 && p > 0) {
+          applyDelta(e.deltaY);
+          e.preventDefault();
+          return;
+        }
+        return;
+      }
+
       if (e.deltaY > 0 && p < 1) {
         applyDelta(e.deltaY);
         e.preventDefault();
@@ -97,10 +122,28 @@ export function usePromoDescriptionExpand({
     const onTouchMove = (e: TouchEvent) => {
       if (!touchActive || touchLastY == null || e.touches.length !== 1) return;
       if (!isInsideRoot(root, e.target)) return;
+
       const y = e.touches[0].clientY;
       const delta = touchLastY - y;
       touchLastY = y;
+
       const p = progressRef.current;
+      const meta = metaScrollRef?.current;
+
+      if (p >= 1 && meta && isInsideRoot(meta, e.target)) {
+        if (canScrollMeta(meta, delta)) {
+          meta.scrollTop += delta;
+          e.preventDefault();
+          return;
+        }
+        if (delta < 0 && meta.scrollTop <= 0 && p > 0) {
+          applyDelta(delta);
+          e.preventDefault();
+          return;
+        }
+        return;
+      }
+
       if ((delta > 0 && p < 1) || (delta < 0 && p > 0)) {
         applyDelta(delta);
         e.preventDefault();
@@ -125,7 +168,7 @@ export function usePromoDescriptionExpand({
       root.removeEventListener("touchend", onTouchEnd);
       root.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [enabled, applyDelta, scrollRootRef]);
+  }, [enabled, applyDelta, scrollRootRef, metaScrollRef]);
 
   return { progress, toggle };
 }

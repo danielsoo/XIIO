@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import PromoShortPlayer from "@/components/shorts/PromoShortPlayer";
+import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
 import { useTranslations } from "@/context/LocaleContext";
 import { usePromoFeed } from "@/hooks/usePromoFeed";
 
@@ -15,7 +15,6 @@ export default function ShortsPageContent() {
   const initialIndex = Math.max(0, items.findIndex((s) => s.id === promoId));
   const [index, setIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
   const count = items.length;
-  const shortsViewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!promoId || count === 0) return;
@@ -23,13 +22,9 @@ export default function ShortsPageContent() {
     if (i >= 0) setIndex(i);
   }, [promoId, items, count]);
 
-  const go = useCallback(
-    (delta: number) => {
-      if (count === 0) return;
-      setIndex((i) => (i + delta + count) % count);
-    },
-    [count]
-  );
+  const onIndexChange = useCallback((next: number) => {
+    setIndex(next);
+  }, []);
 
   if (loading) {
     return (
@@ -54,70 +49,13 @@ export default function ShortsPageContent() {
         <p className="text-xiio-muted text-sm">{t("category.shortsSubtitle")}</p>
       </header>
 
-      <div
-        ref={shortsViewportRef}
-        className="max-w-lg mx-auto relative min-h-[min(85vh,780px)] w-full"
-      >
-        {items.map((item, i) => (
-          <div
-            key={item.id}
-            className={`w-full transition-opacity duration-500 ${
-              i === index ? "opacity-100 relative z-10" : "opacity-0 absolute inset-0 pointer-events-none z-0"
-            }`}
-            aria-hidden={i !== index}
-          >
-            <PromoShortPlayer
-              item={item}
-              isActive={i === index}
-              embedded={false}
-              layout="stacked"
-              scrollExpand
-              scrollRootRef={shortsViewportRef}
-              className="w-full"
-            />
-          </div>
-        ))}
-
-        {count > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={() => go(-1)}
-              className="absolute -left-2 md:left-0 top-[38%] -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
-              aria-label={t("home.promoPrev")}
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              onClick={() => go(1)}
-              className="absolute -right-2 md:right-0 top-[38%] -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
-              aria-label={t("home.promoNext")}
-            >
-              ›
-            </button>
-          </>
-        )}
-      </div>
-
-      {count > 1 && (
-        <div className="max-w-5xl mx-auto mt-6 flex flex-wrap gap-2 justify-center">
-          {items.map((item, i) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setIndex(i)}
-              className={`px-3 py-1.5 rounded-full text-sm transition border ${
-                i === index
-                  ? "bg-xiio-accent/20 border-xiio-accent/50 text-white"
-                  : "border-white/15 text-xiio-muted hover:text-white hover:border-white/30"
-              }`}
-            >
-              {item.title}
-            </button>
-          ))}
-        </div>
-      )}
+      <PromoShortCarousel
+        items={items}
+        index={index}
+        onIndexChange={onIndexChange}
+        navPosition="shorts"
+        viewportClassName="max-w-lg mx-auto relative min-h-[min(85vh,780px)] w-full"
+      />
 
       <p className="max-w-5xl mx-auto mt-4 text-center text-xs text-xiio-muted">
         {t("shorts.fullscreenHint")}

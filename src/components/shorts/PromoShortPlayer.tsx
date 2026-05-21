@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type RefObject,
+} from "react";
 import { createPortal } from "react-dom";
 import ReportContentModal from "@/components/report/ReportContentModal";
 import { useAuth } from "@/context/AuthContext";
@@ -134,6 +142,33 @@ function PromoDescriptionBlock({
   }
 
   const maxH = collapsedPx + progress * Math.max(0, fullPx - collapsedPx);
+  const fullyOpen = progress >= 1;
+
+  const toggleProps = {
+    role: "button" as const,
+    tabIndex: 0,
+    "aria-expanded": fullyOpen,
+    onClick: (e: MouseEvent) => {
+      e.stopPropagation();
+      onToggle();
+    },
+    onKeyDown: (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggle();
+      }
+    },
+    className: "cursor-pointer min-w-0",
+  };
+
+  if (fullyOpen) {
+    return (
+      <div {...toggleProps}>
+        <p className={`${textClass} whitespace-pre-wrap break-words`}>{description}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -144,23 +179,7 @@ function PromoDescriptionBlock({
       >
         {description}
       </p>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-expanded={progress >= 1}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggle();
-          }
-        }}
-        className="cursor-pointer min-w-0"
-      >
+      <div {...toggleProps}>
         <p
           className={`${textClass} overflow-hidden whitespace-pre-wrap break-words`}
           style={{ maxHeight: Math.max(collapsedPx, maxH) }}
@@ -198,6 +217,8 @@ function PlayerChrome({
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const metaMeasureRef = useRef<HTMLDivElement>(null);
+  const metaScrollRef = useRef<HTMLDivElement>(null);
   const persisted = Boolean(item.ownerUid && item.workId);
   const description = item.description?.trim() ?? "";
   const expandable = isLongDescription(description);
@@ -207,6 +228,7 @@ function PlayerChrome({
     itemId: item.id,
     compact,
     scrollRootRef: scrollListenerRef,
+    metaScrollRef,
   });
   const [liked, setLiked] = useState(item.likedByMe ?? false);
   const [likeCount, setLikeCount] = useState(item.likeCount ?? 0);
@@ -296,6 +318,7 @@ function PlayerChrome({
   const tallMeta = layout === "stacked" || isFullscreen;
 
   const [cardH, setCardH] = useState(480);
+  const [metaContentPx, setMetaContentPx] = useState(120);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -307,14 +330,22 @@ function PlayerChrome({
     return () => ro.disconnect();
   }, [isFullscreen, compact, progress]);
 
-  const viewportH = typeof window !== "undefined" ? window.innerHeight : 800;
+  useEffect(() => {
+    const el = metaMeasureRef.current;
+    if (!el) return;
+    const update = () => setMetaContentPx(el.scrollHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [item.title, item.director, description, tallMeta, compact]);
+
   const bandMinPx = compact ? 80 : 96;
-  const bandMaxPx = isFullscreen
-    ? Math.min(cardH * 0.72, viewportH * 0.55)
-    : compact
-      ? Math.min(cardH * 0.58, viewportH * 0.42)
-      : Math.min(cardH * 0.65, viewportH * 0.5);
-  const bandMaxHeightPx = bandMinPx + progress * Math.max(0, bandMaxPx - bandMinPx);
+  const bandPaddingPx = compact ? 28 : 32;
+  const bandExpandedCap = Math.min(cardH * 0.88, metaContentPx + bandPaddingPx);
+  const bandMaxHeightPx = expandable
+    ? bandMinPx + progress * Math.max(0, bandExpandedCap - bandMinPx)
+    : undefined;
 
   const cardShellClass = isFullscreen
     ? "relative w-full h-full max-w-lg mx-auto rounded-2xl overflow-hidden bg-black"
@@ -384,26 +415,46 @@ function PlayerChrome({
     </div>
   );
 
-  const metaBlock = (tall: boolean) => (
-    <div className="relative min-w-0 text-left">
-      <h3
-        className={`font-bold leading-tight truncate ${
-          tall ? "text-xl md:text-2xl text-white" : "text-lg md:text-2xl text-white"
+  const titleClass = tallMeta
+    ? "text-xl md:text-2xl text-white font-bold leading-tight truncate"
+    : "text-lg md:text-2xl text-white font-bold leading-tight truncate";
+  const directorClass = `text-sm ${tallMeta ? "text-white/75 mt-1" : "text-white/80 mt-0.5 md:mt-1"}`;
+  const descMeasureClass = tallMeta
+    ? "mt-2 text-sm md:text-base text-white/85 leading-relaxed whitespace-pre-wrap break-words"
+    : "text-xs md:text-sm text-white/65 mt-1.5 leading-snug whitespace-pre-wrap break-words";
+
+  const metaBlock = (
+    <>
+      {expandable && (
+        <div
+          ref={metaMeasureRef}
+          className="invisible absolute left-0 right-0 top-0 px-4 md:px-6 pointer-events-none"
+          aria-hidden
+        >
+          <h3 className={titleClass}>{item.title}</h3>
+          <p className={directorClass}>{t("home.promoDirector", { name: item.director })}</p>
+          {description ? <p className={descMeasureClass}>{description}</p> : null}
+        </div>
+      )}
+      <div className="relative min-w-0 text-left shrink-0">
+        <h3 className={titleClass}>{item.title}</h3>
+        <p className={directorClass}>{t("home.promoDirector", { name: item.director })}</p>
+      </div>
+      <div
+        ref={metaScrollRef}
+        className={`relative min-w-0 min-h-0 ${
+          expandable && progress >= 1 ? "flex-1 overflow-y-auto overscroll-contain" : "overflow-hidden"
         }`}
       >
-        {item.title}
-      </h3>
-      <p className={`text-sm ${tall ? "text-white/75 mt-1" : "text-white/80 mt-0.5 md:mt-1"}`}>
-        {t("home.promoDirector", { name: item.director })}
-      </p>
-      <PromoDescriptionBlock
-        description={description}
-        tall={tall}
-        expandable={expandable}
-        progress={progress}
-        onToggle={toggle}
-      />
-    </div>
+        <PromoDescriptionBlock
+          description={description}
+          tall={tallMeta}
+          expandable={expandable}
+          progress={progress}
+          onToggle={toggle}
+        />
+      </div>
+    </>
   );
 
   const fullscreenControls = (
@@ -440,11 +491,12 @@ function PlayerChrome({
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
       <div className="absolute inset-0 bg-black/10 backdrop-blur-[6px] supports-[backdrop-filter]:bg-black/5" />
       <div
-        className={`relative z-10 min-w-0 px-4 pt-3 pb-4 pr-[4.75rem] pointer-events-auto md:px-6 md:pt-3.5 md:pb-5 md:pr-20 ${
-          expandable && progress >= 1 ? "overflow-y-auto max-h-full overscroll-contain" : "overflow-hidden"
+        className={`relative z-10 flex flex-col min-h-0 min-w-0 px-4 pt-3 pb-4 pr-[4.75rem] pointer-events-auto md:px-6 md:pt-3.5 md:pb-5 md:pr-20 ${
+          expandable ? "overflow-hidden" : ""
         }`}
+        style={expandable ? { maxHeight: bandMaxHeightPx } : undefined}
       >
-        {metaBlock(tallMeta)}
+        {metaBlock}
       </div>
       <div className="absolute right-3 bottom-3 z-20 flex flex-col items-center pointer-events-auto md:right-4 md:bottom-4">
         {actionButtons}

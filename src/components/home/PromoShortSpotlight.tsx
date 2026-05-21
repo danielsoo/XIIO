@@ -2,25 +2,19 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import PromoShortPlayer from "@/components/shorts/PromoShortPlayer";
+import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
 import { useTranslations } from "@/context/LocaleContext";
 import type { PromoShort } from "@/types/promoShort";
 
 export default function PromoShortSpotlight({ items }: { items: PromoShort[] }) {
   const { t } = useTranslations();
   const [index, setIndex] = useState(0);
-  const count = items.length;
 
-  const go = useCallback(
-    (delta: number) => {
-      setIndex((i) => (i + delta + count) % count);
-    },
-    [count]
-  );
+  const onIndexChange = useCallback((next: number) => {
+    setIndex(next);
+  }, []);
 
-  if (count === 0) return null;
-
-  const current = items[index];
+  if (items.length === 0) return null;
 
   return (
     <section className="w-full max-w-5xl mx-auto" aria-label={t("home.promoSectionTitle")}>
@@ -39,59 +33,13 @@ export default function PromoShortSpotlight({ items }: { items: PromoShort[] }) 
         </Link>
       </div>
 
-      <div className="relative min-h-[min(520px,68vh)] flex justify-center">
-        {items.map((item, i) => (
-          <div
-            key={item.id}
-            className={`w-full max-w-lg transition-opacity duration-500 ${
-              i === index ? "opacity-100 relative z-10" : "opacity-0 absolute inset-0 pointer-events-none z-0"
-            }`}
-            aria-hidden={i !== index}
-          >
-            <PromoShortPlayer
-              item={item}
-              isActive={i === index}
-              layout="stacked"
-              compact
-              className="w-full"
-            />
-          </div>
-        ))}
-
-        {count > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={() => go(-1)}
-              className="absolute left-0 md:left-2 top-[38%] -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
-              aria-label={t("home.promoPrev")}
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              onClick={() => go(1)}
-              className="absolute right-0 md:right-2 top-[38%] -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-black/50 border border-white/20 text-white hover:bg-black/70 transition backdrop-blur-sm"
-              aria-label={t("home.promoNext")}
-            >
-              ›
-            </button>
-            <div className="flex justify-center gap-2 mt-4">
-              {items.map((item, i) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setIndex(i)}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === index ? "w-8 bg-xiio-accent" : "w-1.5 bg-white/25 hover:bg-white/40"
-                  }`}
-                  aria-label={`${current.title} ${i + 1}/${count}`}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+      <PromoShortCarousel
+        items={items}
+        index={index}
+        onIndexChange={onIndexChange}
+        compact
+        navPosition="home"
+      />
     </section>
   );
 }
