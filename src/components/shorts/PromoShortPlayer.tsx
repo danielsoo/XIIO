@@ -7,7 +7,9 @@ import ReportContentModal from "@/components/report/ReportContentModal";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useElementFullscreen } from "@/hooks/useElementFullscreen";
+import { usePromoDescriptionExpand } from "@/hooks/usePromoDescriptionExpand";
 import { useRecordEngagementView } from "@/hooks/useRecordEngagementView";
+import { isLongDescription } from "@/lib/works/description";
 import type { PromoShort } from "@/types/promoShort";
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -91,6 +93,85 @@ function CollapseIcon() {
 
 export type PromoShortLayout = "overlay" | "stacked";
 
+function PromoDescriptionBlock({
+  description,
+  tall,
+  expandable,
+  progress,
+  onToggle,
+}: {
+  description: string;
+  tall: boolean;
+  expandable: boolean;
+  progress: number;
+  onToggle: () => void;
+}) {
+  const measureRef = useRef<HTMLParagraphElement>(null);
+  const [fullPx, setFullPx] = useState(0);
+
+  const textClass = tall
+    ? "mt-2 text-sm md:text-base text-white/85 leading-relaxed"
+    : "text-xs md:text-sm text-white/65 mt-1.5 leading-snug";
+
+  const collapsedPx = tall ? 52 : 36;
+
+  useEffect(() => {
+    const el = measureRef.current;
+    if (!el) return;
+    const update = () => setFullPx(el.scrollHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [description, tall]);
+
+  if (!description) return null;
+
+  if (!expandable) {
+    return (
+      <p className={`${textClass} whitespace-pre-wrap break-words`}>{description}</p>
+    );
+  }
+
+  const maxH = collapsedPx + progress * Math.max(0, fullPx - collapsedPx);
+
+  return (
+    <>
+      <p
+        ref={measureRef}
+        className={`${textClass} invisible absolute left-0 right-0 pointer-events-none whitespace-pre-wrap break-words`}
+        aria-hidden
+      >
+        {description}
+      </p>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={progress >= 1}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggle();
+          }
+        }}
+        className="cursor-pointer min-w-0"
+      >
+        <p
+          className={`${textClass} overflow-hidden whitespace-pre-wrap break-words`}
+          style={{ maxHeight: Math.max(collapsedPx, maxH) }}
+        >
+          {description}
+        </p>
+      </div>
+    </>
+  );
+}
+
 function PlayerChrome({
   item,
   isActive,
@@ -111,7 +192,15 @@ function PlayerChrome({
   const { t } = useTranslations();
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const persisted = Boolean(item.ownerUid && item.workId);
+  const description = item.description?.trim() ?? "";
+  const expandable = isLongDescription(description);
+  const { progress, toggle } = usePromoDescriptionExpand({
+    enabled: isActive && expandable,
+    itemId: item.id,
+    compact,
+  });
   const [liked, setLiked] = useState(item.likedByMe ?? false);
   const [likeCount, setLikeCount] = useState(item.likeCount ?? 0);
   const [likeBusy, setLikeBusy] = useState(false);
@@ -199,6 +288,27 @@ function PlayerChrome({
 
   const tallMeta = layout === "stacked" || isFullscreen;
 
+  const [cardH, setCardH] = useState(480);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const update = () => setCardH(el.getBoundingClientRect().height);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isFullscreen, compact, progress]);
+
+  const viewportH = typeof window !== "undefined" ? window.innerHeight : 800;
+  const bandMinPx = compact ? 80 : 96;
+  const bandMaxPx = isFullscreen
+    ? Math.min(cardH * 0.72, viewportH * 0.55)
+    : compact
+      ? Math.min(cardH * 0.58, viewportH * 0.42)
+      : Math.min(cardH * 0.65, viewportH * 0.5);
+  const bandMaxHeightPx = bandMinPx + progress * Math.max(0, bandMaxPx - bandMinPx);
+
   const cardShellClass = isFullscreen
     ? "relative w-full h-full max-w-lg mx-auto rounded-2xl overflow-hidden bg-black"
     : `relative mx-auto w-full max-w-lg rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${
@@ -208,6 +318,10 @@ function PlayerChrome({
   const overlayBandClass = compact
     ? "h-auto min-h-[5rem] max-h-[min(38%,12rem)]"
     : "h-auto min-h-[5.5rem] max-h-[min(42%,14rem)]";
+
+  const overlayBandStyle = expandable
+    ? { maxHeight: bandMaxHeightPx }
+    : undefined;
 
   const actionButtons = (
     <div className="flex flex-col items-center justify-center gap-4 shrink-0">
@@ -264,7 +378,7 @@ function PlayerChrome({
   );
 
   const metaBlock = (tall: boolean) => (
-    <div className="min-w-0 text-left">
+    <div className="relative min-w-0 text-left">
       <h3
         className={`font-bold leading-tight truncate ${
           tall ? "text-xl md:text-2xl text-white" : "text-lg md:text-2xl text-white"
@@ -275,15 +389,13 @@ function PlayerChrome({
       <p className={`text-sm ${tall ? "text-white/75 mt-1" : "text-white/80 mt-0.5 md:mt-1"}`}>
         {t("home.promoDirector", { name: item.director })}
       </p>
-      <p
-        className={
-          tall
-            ? "mt-2 text-sm md:text-base text-white/85 leading-relaxed line-clamp-4 md:line-clamp-6"
-            : "text-xs md:text-sm text-white/65 mt-1.5 line-clamp-3 md:line-clamp-4 leading-snug"
-        }
-      >
-        {item.description}
-      </p>
+      <PromoDescriptionBlock
+        description={description}
+        tall={tall}
+        expandable={expandable}
+        progress={progress}
+        onToggle={toggle}
+      />
     </div>
   );
 
@@ -312,10 +424,19 @@ function PlayerChrome({
   );
 
   const bottomOverlay = (
-    <div className={`absolute inset-x-0 bottom-0 pointer-events-none ${overlayBandClass}`}>
+    <div
+      className={`absolute inset-x-0 bottom-0 pointer-events-none ${
+        expandable ? "h-auto min-h-[5rem]" : overlayBandClass
+      }`}
+      style={overlayBandStyle}
+    >
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
       <div className="absolute inset-0 bg-black/10 backdrop-blur-[6px] supports-[backdrop-filter]:bg-black/5" />
-      <div className="relative z-10 min-w-0 overflow-y-auto px-4 pt-3 pb-4 pr-[4.75rem] pointer-events-auto md:px-6 md:pt-3.5 md:pb-5 md:pr-20">
+      <div
+        className={`relative z-10 min-w-0 px-4 pt-3 pb-4 pr-[4.75rem] pointer-events-auto md:px-6 md:pt-3.5 md:pb-5 md:pr-20 ${
+          expandable && progress >= 1 ? "overflow-y-auto max-h-full overscroll-contain" : "overflow-hidden"
+        }`}
+      >
         {metaBlock(tallMeta)}
       </div>
       <div className="absolute right-3 bottom-3 z-20 flex flex-col items-center pointer-events-auto md:right-4 md:bottom-4">
@@ -336,6 +457,7 @@ function PlayerChrome({
         />
       )}
       <div
+        ref={cardRef}
         className={cardShellClass}
         style={isFullscreen ? undefined : { aspectRatio: item.aspectRatio }}
       >

@@ -6,6 +6,7 @@ import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
 import { useTranslations } from "@/context/LocaleContext";
+import { isLongDescription } from "@/lib/works/description";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import type { PromoPlatformStatus, StreamStatus, WorkDoc } from "@/types/work";
 
@@ -58,12 +59,6 @@ function MetaRow({ label, value }: { label: string; value: string }) {
       <span className="text-white/90 whitespace-pre-wrap break-words">{value || "—"}</span>
     </p>
   );
-}
-
-function isLongDescription(value: string): boolean {
-  const text = value.trim();
-  if (!text || text === "—") return false;
-  return text.length > 160 || (text.match(/\n/g)?.length ?? 0) >= 3;
 }
 
 function DescriptionMetaRow({
