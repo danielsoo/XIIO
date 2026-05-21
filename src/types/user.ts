@@ -17,6 +17,7 @@ export interface SignupProfile {
   displayName: string;
   age?: number;
   platformPurpose: PlatformPurpose;
+  defaultDirectorName?: string;
 }
 
 /** Firestore `users/{uid}` — 회원 프로필·어드민 역할 */

@@ -24,13 +24,18 @@ import { useTranslations } from "@/context/LocaleContext";
 const inputClass =
   "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent transition";
 
-type StepId = "basic" | "purpose" | "account";
+type StepId = "basic" | "purpose" | "director" | "account";
 
 /** Google(또는 이미 로그인된) 가입은 프로필·설문만 — 이메일/비밀번호 단계 없음 */
-function buildStepList(skipAccountStep: boolean): StepId[] {
+function buildStepList(skipAccountStep: boolean, needsDirector: boolean): StepId[] {
   const steps: StepId[] = ["basic", "purpose"];
+  if (needsDirector) steps.push("director");
   if (!skipAccountStep) steps.push("account");
   return steps;
+}
+
+function needsDirectorStep(purpose: PlatformPurpose | ""): boolean {
+  return purpose === "upload" || purpose === "both";
 }
 
 function isGoogleAuthUser(user: { providerData: { providerId: string }[] } | null): boolean {
@@ -55,6 +60,7 @@ export default function SignupPage() {
     () => ({
       basic: t("auth.signup.stepBasic"),
       purpose: t("auth.signup.stepPurpose"),
+      director: t("auth.signup.stepDirector"),
       account: t("auth.signup.stepAccount"),
     }),
     [t]
@@ -72,6 +78,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [platformPurpose, setPlatformPurpose] = useState<PlatformPurpose | "">("");
+  const [directorName, setDirectorName] = useState("");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,11 +93,21 @@ export default function SignupPage() {
     return isGoogleAuthUser(auth?.currentUser ?? null);
   }, [googlePending, profileOnlyMode, auth?.currentUser]);
 
-  const steps = useMemo(() => buildStepList(googleSignup), [googleSignup]);
+  const needsDirector = needsDirectorStep(platformPurpose);
+  const steps = useMemo(
+    () => buildStepList(googleSignup, needsDirector),
+    [googleSignup, needsDirector]
+  );
   const currentStep = steps[stepIndex] ?? "basic";
   const googleEmail = auth?.currentUser?.email ?? email;
   const isLastStep = stepIndex === steps.length - 1;
   const progress = ((stepIndex + 1) / steps.length) * 100;
+
+  useEffect(() => {
+    if (stepIndex >= steps.length) {
+      setStepIndex(Math.max(0, steps.length - 1));
+    }
+  }, [stepIndex, steps.length]);
 
   useEffect(() => {
     if (verifyPhase !== "pending" || !auth?.currentUser) return;
@@ -166,10 +183,15 @@ export default function SignupPage() {
       ageNum = parseInt(ageTrimmed, 10);
       if (Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120) return null;
     }
+    const trimmedDirector = directorName.trim();
+    const includeDirector =
+      needsDirectorStep(platformPurpose) && trimmedDirector.length > 0;
+
     return {
       displayName: name.trim(),
       ...(ageNum != null ? { age: ageNum } : {}),
       platformPurpose,
+      ...(includeDirector ? { defaultDirectorName: trimmedDirector.slice(0, 120) } : {}),
     };
   };
 
@@ -196,6 +218,14 @@ export default function SignupPage() {
           return false;
         }
         return true;
+      case "director": {
+        const trimmed = directorName.trim();
+        if (trimmed.length > 120) {
+          setError(t("auth.signup.errorDirectorNameInvalid"));
+          return false;
+        }
+        return true;
+      }
       case "account":
         if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           setError(t("auth.signup.errorEmailInvalid"));
@@ -534,16 +564,36 @@ export default function SignupPage() {
                     description={t("auth.signup.purposeBothDesc")}
                   />
                 </div>
-                {(platformPurpose === "upload" || platformPurpose === "both") && (
-                  <div className="mt-4 rounded-lg border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3">
-                    <p className="text-sm text-white font-medium">
-                      {t("auth.signup.directorNameNoticeTitle")}
-                    </p>
-                    <p className="text-xs text-xiio-muted mt-2 leading-relaxed">
-                      {t("auth.signup.directorNameNoticeBody")}
-                    </p>
-                  </div>
-                )}
+              </StepShell>
+            )}
+
+            {currentStep === "director" && (
+              <StepShell
+                title={t("auth.signup.directorStepTitle")}
+                subtitle={t("auth.signup.directorStepSubtitle")}
+              >
+                <div className="rounded-lg border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3 mb-4">
+                  <p className="text-sm text-white font-medium">
+                    {t("auth.signup.directorNameNoticeTitle")}
+                  </p>
+                  <p className="text-xs text-xiio-muted mt-2 leading-relaxed">
+                    {t("auth.signup.directorNameNoticeBody")}
+                  </p>
+                </div>
+                <Field label={t("auth.signup.directorNameLabel")}>
+                  <input
+                    type="text"
+                    value={directorName}
+                    onChange={(e) => setDirectorName(e.target.value)}
+                    placeholder={t("auth.signup.directorNamePlaceholder")}
+                    className={inputClass}
+                    maxLength={120}
+                    autoFocus
+                  />
+                </Field>
+                <p className="text-xs text-xiio-muted mt-2 leading-relaxed">
+                  {t("auth.signup.directorNameSkipHint")}
+                </p>
               </StepShell>
             )}
 

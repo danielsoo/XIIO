@@ -59,6 +59,11 @@ export async function saveUserProfile(
         isStudent: false,
         schoolName: null,
         platformPurpose: profile.platformPurpose,
+        ...(profile.defaultDirectorName?.trim()
+          ? {
+              defaultDirectorName: profile.defaultDirectorName.trim().slice(0, 120),
+            }
+          : {}),
         email: email?.toLowerCase() ?? null,
         emailVerified,
         role,
