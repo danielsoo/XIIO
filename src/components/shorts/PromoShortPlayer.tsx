@@ -269,6 +269,7 @@ function PlayerChrome({
   const [shareHint, setShareHint] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
 
   useRecordEngagementView(item.ownerUid, item.workId, "promo", isActive && persisted);
 
@@ -279,6 +280,7 @@ function PlayerChrome({
 
   useEffect(() => {
     setVideoFailed(false);
+    setVideoReady(false);
   }, [item.videoUrl, item.id]);
 
   const shouldPlay = playbackEnabled ?? isActive;
@@ -597,7 +599,16 @@ function PlayerChrome({
         className={cardShellClass}
         style={cardAspectStyle}
       >
-        {videoFailed && item.thumbnailUrl ? (
+        {isTeaser && item.thumbnailUrl && (
+          <img
+            src={item.thumbnailUrl}
+            alt=""
+            className={`absolute inset-0 w-full h-full object-cover ${videoObjectClass}`}
+            loading="eager"
+            decoding="async"
+          />
+        )}
+        {videoFailed && item.thumbnailUrl && !isTeaser ? (
           <img
             src={item.thumbnailUrl}
             alt=""
@@ -607,12 +618,17 @@ function PlayerChrome({
           <StreamHlsVideo
             ref={videoRef}
             src={item.videoUrl}
-            className={`absolute inset-0 w-full h-full bg-black ${videoObjectClass}`}
+            className={`absolute inset-0 w-full h-full bg-black ${videoObjectClass} ${
+              isTeaser
+                ? `transition-opacity duration-200 ${videoReady ? "opacity-100" : "opacity-0"}`
+                : ""
+            }`}
             playsInline
             muted
             loop={loop}
             preload={videoPreload ?? (isActive ? "auto" : "none")}
             autoPlay={shouldPlay}
+            onReady={() => setVideoReady(true)}
             onEnded={
               onPlaybackEnded && isActive ? () => onPlaybackEnded() : undefined
             }

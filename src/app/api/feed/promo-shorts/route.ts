@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import {
   aspectRatioFromVideo,
+  getPlaybackUrl,
   getStreamThumbnailUrl,
   getStreamVideo,
-  resolvePlaybackUrl,
 } from "@/lib/cloudflare/stream";
 import { isPromoLiked } from "@/lib/server/engagement";
 import { verifyBearerIdToken } from "@/lib/server/firebase-admin";
@@ -19,55 +19,66 @@ export async function GET(request: Request) {
   const session = await verifyBearerIdToken(request.headers.get("authorization"));
   const viewerUid = session?.uid ?? null;
 
-  const promoSnap = await db.collectionGroup("promoShort").where("platformStatus", "==", "published").get();
+  const promoSnap = await db
+    .collectionGroup("promoShort")
+    .where("platformStatus", "==", "published")
+    .get();
 
-  const items: PromoFeedItem[] = [];
+  const rows = await Promise.all(
+    promoSnap.docs.map(async (promoDoc) => {
+      const promo = parsePromoDoc(promoDoc.data() as Record<string, unknown>);
+      if (promo.streamStatus !== "ready" || !promo.streamUid) return null;
 
-  for (const promoDoc of promoSnap.docs) {
-    const promo = parsePromoDoc(promoDoc.data() as Record<string, unknown>);
-    if (promo.streamStatus !== "ready" || !promo.streamUid) continue;
+      const workRef = promoDoc.ref.parent.parent;
+      if (!workRef) return null;
+      const workId = workRef.id;
+      const ownerUid = workRef.parent.parent?.id;
+      if (!ownerUid) return null;
 
-    const workRef = promoDoc.ref.parent.parent;
-    if (!workRef) continue;
-    const workId = workRef.id;
-    const ownerUid = workRef.parent.parent?.id;
-    if (!ownerUid) continue;
+      const workSnap = await worksCol(db, ownerUid).doc(workId).get();
+      if (!workSnap.exists) return null;
+      const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
 
-    const workSnap = await worksCol(db, ownerUid).doc(workId).get();
-    if (!workSnap.exists) continue;
-    const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
+      const info = await getStreamVideo(promo.streamUid);
+      const videoUrl = getPlaybackUrl(promo.streamUid) ?? info?.playbackHls ?? null;
+      if (!videoUrl) return null;
 
-    const videoUrl = await resolvePlaybackUrl(promo.streamUid);
-    if (!videoUrl) continue;
+      let likedByMe = false;
+      if (viewerUid) {
+        likedByMe = await isPromoLiked(db, viewerUid, ownerUid, workId);
+      }
 
-    const info = await getStreamVideo(promo.streamUid);
+      const thumbnailUrl =
+        info?.thumbnail ?? getStreamThumbnailUrl(promo.streamUid) ?? undefined;
 
-    let likedByMe = false;
-    if (viewerUid) {
-      likedByMe = await isPromoLiked(db, viewerUid, ownerUid, workId);
-    }
+      const feedItem: PromoFeedItem = {
+        id: `${ownerUid}_${workId}`,
+        workId,
+        ownerUid,
+        title: promo.title ?? work.title,
+        director: work.director ?? "—",
+        description: promo.description ?? work.description ?? "",
+        videoUrl,
+        streamUid: promo.streamUid,
+        thumbnailUrl,
+        aspectRatio: aspectRatioFromVideo(info),
+        likeCount: promo.likeCount ?? 0,
+        viewCount: promo.viewCount ?? 0,
+        likedByMe,
+      };
+      return feedItem;
+    })
+  );
 
-    const thumbnailUrl =
-      info?.thumbnail ?? getStreamThumbnailUrl(promo.streamUid) ?? undefined;
-
-    items.push({
-      id: `${ownerUid}_${workId}`,
-      workId,
-      ownerUid,
-      title: promo.title ?? work.title,
-      director: work.director ?? "—",
-      description: promo.description ?? work.description ?? "",
-      videoUrl,
-      streamUid: promo.streamUid,
-      thumbnailUrl,
-      aspectRatio: aspectRatioFromVideo(info),
-      likeCount: promo.likeCount ?? 0,
-      viewCount: promo.viewCount ?? 0,
-      likedByMe,
-    });
-  }
-
+  const items = rows.filter((row): row is PromoFeedItem => row !== null);
   items.sort((a, b) => a.title.localeCompare(b.title));
 
-  return NextResponse.json({ items });
+  return NextResponse.json(
+    { items },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+      },
+    }
+  );
 }

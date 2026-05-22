@@ -1,5 +1,6 @@
 "use client";
 
+import Hls from "hls.js";
 import {
   forwardRef,
   useEffect,
@@ -29,6 +30,13 @@ type Props = {
   onError?: () => void;
 };
 
+const HLS_OPTIONS: Partial<Hls["config"]> = {
+  enableWorker: true,
+  startLevel: 0,
+  maxBufferLength: 15,
+  maxMaxBufferLength: 30,
+};
+
 function canPlayNativeHls(): boolean {
   if (typeof document === "undefined") return false;
   const v = document.createElement("video");
@@ -51,8 +59,16 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
   ref: Ref<StreamHlsVideoHandle>
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsRef = useRef<import("hls.js").default | null>(null);
+  const hlsRef = useRef<Hls | null>(null);
+  const attachedSrcRef = useRef<string | null>(null);
   const readyFiredRef = useRef(false);
+  const onReadyRef = useRef(onReady);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onReadyRef.current = onReady;
+    onErrorRef.current = onError;
+  }, [onReady, onError]);
 
   useImperativeHandle(ref, () => ({
     play: async () => {
@@ -70,87 +86,79 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
   }));
 
   useEffect(() => {
-    readyFiredRef.current = false;
     const video = videoRef.current;
     if (!video || !src) return;
+
+    if (attachedSrcRef.current === src) {
+      return;
+    }
+
+    readyFiredRef.current = false;
 
     const fireReady = () => {
       if (readyFiredRef.current) return;
       readyFiredRef.current = true;
-      onReady?.();
+      onReadyRef.current?.();
     };
 
-    const handleError = () => {
-      onError?.();
-    };
-
+    const handleError = () => onErrorRef.current?.();
     const handleLoadedData = () => fireReady();
 
     video.addEventListener("loadeddata", handleLoadedData);
     video.addEventListener("error", handleError);
 
-    let cancelled = false;
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    attachedSrcRef.current = null;
 
-    const setup = async () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-
-      video.removeAttribute("src");
-      video.load();
-
-      if (!isHlsSource(src)) {
-        video.src = src;
-        if (autoPlay) void video.play().catch(() => {});
-        return;
-      }
-
-      if (canPlayNativeHls()) {
-        video.src = src;
-        if (autoPlay) void video.play().catch(() => {});
-        return;
-      }
-
-      try {
-        const Hls = (await import("hls.js")).default;
-        if (cancelled) return;
-        if (!Hls.isSupported()) {
-          video.src = src;
-          if (autoPlay) void video.play().catch(() => {});
-          return;
-        }
-        const hls = new Hls({ enableWorker: true });
-        hlsRef.current = hls;
-        hls.loadSource(src);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          fireReady();
-          if (autoPlay) void video.play().catch(() => {});
-        });
-        hls.on(Hls.Events.ERROR, (_event, data) => {
-          if (data.fatal) {
-            handleError();
-          }
-        });
-      } catch {
-        video.src = src;
-        handleError();
-      }
-    };
-
-    void setup();
+    if (!isHlsSource(src)) {
+      video.src = src;
+      attachedSrcRef.current = src;
+    } else if (canPlayNativeHls()) {
+      video.src = src;
+      attachedSrcRef.current = src;
+    } else if (Hls.isSupported()) {
+      const hls = new Hls(HLS_OPTIONS);
+      hlsRef.current = hls;
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      attachedSrcRef.current = src;
+      hls.on(Hls.Events.MANIFEST_PARSED, () => fireReady());
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal) handleError();
+      });
+    } else {
+      video.src = src;
+      attachedSrcRef.current = src;
+    }
 
     return () => {
-      cancelled = true;
       video.removeEventListener("loadeddata", handleLoadedData);
       video.removeEventListener("error", handleError);
+    };
+  }, [src]);
+
+  useEffect(() => {
+    return () => {
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
+      attachedSrcRef.current = null;
     };
-  }, [src, autoPlay, onReady, onError]);
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (autoPlay) {
+      void video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, [autoPlay]);
 
   useEffect(() => {
     const video = videoRef.current;
