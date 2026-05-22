@@ -278,7 +278,6 @@ export const messages = {
     shorts: {
       fullscreen: "전체 화면",
       exitFullscreen: "전체 화면 닫기",
-      fullscreenHint: "우측 상단 버튼 또는 영상 더블 탭으로 전체 화면을 켤 수 있어요.",
     },
     admin: {
       loading: "불러오는 중…",
@@ -1126,7 +1125,6 @@ export const messages = {
     shorts: {
       fullscreen: "Fullscreen",
       exitFullscreen: "Exit fullscreen",
-      fullscreenHint: "Use the top-right button or double-tap the video for fullscreen.",
     },
     admin: {
       loading: "Loading…",

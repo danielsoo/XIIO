@@ -1,16 +1,21 @@
-import { Suspense } from "react";
-import ShortsPageContent from "@/components/shorts/ShortsPageContent";
+import { redirect } from "next/navigation";
+import CategoryPageClient from "@/components/category/CategoryPageClient";
 
-export default function ShortsPage() {
+type Props = {
+  searchParams: Promise<{ promo?: string }>;
+};
+
+export default async function ShortsPage({ searchParams }: Props) {
+  const params = await searchParams;
+  if (params.promo) {
+    redirect(`/?promo=${encodeURIComponent(params.promo)}`);
+  }
+
   return (
-    <Suspense
-      fallback={
-        <main className="min-h-screen bg-xiio-bg pt-24 flex items-center justify-center">
-          <p className="text-xiio-muted">…</p>
-        </main>
-      }
-    >
-      <ShortsPageContent />
-    </Suspense>
+    <CategoryPageClient
+      section="shorts"
+      titleKey="category.shortsTitle"
+      subtitleKey="category.shortsSubtitle"
+    />
   );
 }

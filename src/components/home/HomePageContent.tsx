@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import HomeHeroActions from "@/components/HomeHeroActions";
 import HomeCatalogSection from "@/components/home/HomeCatalogSection";
 import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
@@ -21,8 +21,17 @@ const HOME_SECTIONS: { href: string; section: WorkSection; titleKey: string }[] 
 export default function HomePageContent() {
   const { t } = useTranslations();
   const { items: promoItems } = usePromoFeed(true);
+  const searchParams = useSearchParams();
+  const promoId = searchParams.get("promo");
   const [promoIndex, setPromoIndex] = useState(0);
   const hasPromo = promoItems.length > 0;
+  const count = promoItems.length;
+
+  useEffect(() => {
+    if (!promoId || count === 0) return;
+    const i = promoItems.findIndex((s) => s.id === promoId);
+    if (i >= 0) setPromoIndex(i);
+  }, [promoId, promoItems, count]);
 
   const onPromoIndexChange = useCallback((next: number) => {
     setPromoIndex(next);
@@ -58,10 +67,8 @@ export default function HomePageContent() {
                   items={promoItems}
                   index={promoIndex}
                   onIndexChange={onPromoIndexChange}
-                  variant="teaser"
                   playerSize="homeHeroSmall"
                   compact
-                  navPosition="homeHero"
                   viewportClassName={HOME_HERO_PEEK_VIEWPORT_CLASS}
                 />
               </div>

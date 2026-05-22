@@ -18,6 +18,7 @@ import { useElementFullscreen } from "@/hooks/useElementFullscreen";
 import { usePromoDescriptionExpand } from "@/hooks/usePromoDescriptionExpand";
 import { useRecordEngagementView } from "@/hooks/useRecordEngagementView";
 import { isLongDescription } from "@/lib/works/description";
+import { watchHref as workWatchHref } from "@/lib/works/catalog-ui";
 import type { PromoShort } from "@/types/promoShort";
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -101,7 +102,7 @@ function CollapseIcon() {
 
 export type PromoShortLayout = "overlay" | "stacked";
 export type PromoShortVariant = "default" | "teaser";
-export type PromoShortPlayerSize = "default" | "homeHeroSmall" | "shortsPage";
+export type PromoShortPlayerSize = "default" | "homeHeroSmall";
 
 /** 홈 히어로 teaser — 영상 원본 비율과 무관한 고정 프레임 */
 export const HOME_HERO_TEASER_FRAME_CLASS =
@@ -111,10 +112,6 @@ export const HOME_HERO_PEEK_SIDE_FRAME_CLASS =
   "w-[160px] sm:w-[180px] aspect-[9/16] shrink-0";
 export const HOME_HERO_PEEK_VIEWPORT_CLASS =
   "relative w-full max-w-[480px] mx-auto flex items-center justify-center gap-0 sm:gap-0.5";
-
-/** 쇼츠 페이지 — 영상 원본 비율과 무관한 고정 9:16 프레임 */
-export const SHORTS_PAGE_FRAME_CLASS =
-  "h-[min(85vh,780px)] w-auto max-w-full aspect-[9/16] mx-auto shrink-0";
 
 function PromoDescriptionBlock({
   description,
@@ -217,6 +214,8 @@ function PlayerChrome({
   peekSide,
   scrollExpand,
   scrollRootRef,
+  loop = true,
+  onPlaybackEnded,
   onToggleFullscreen,
   onExitFullscreen,
 }: {
@@ -231,6 +230,8 @@ function PlayerChrome({
   /** 숏츠 화면 등에서만 스크롤로 소개 펼침 */
   scrollExpand?: boolean;
   scrollRootRef?: RefObject<HTMLElement | null>;
+  loop?: boolean;
+  onPlaybackEnded?: () => void;
   onToggleFullscreen: () => void;
   onExitFullscreen: () => void;
 }) {
@@ -277,6 +278,25 @@ function PlayerChrome({
     }
   }, [isActive]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !onPlaybackEnded) return;
+    const onEnded = () => {
+      if (isActive) onPlaybackEnded();
+    };
+    video.addEventListener("ended", onEnded);
+    return () => video.removeEventListener("ended", onEnded);
+  }, [isActive, onPlaybackEnded]);
+
+  const shareUrl = useCallback(() => {
+    if (item.ownerUid && item.workId) {
+      const path = workWatchHref(item.ownerUid, item.workId);
+      return typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+    }
+    const path = `/?promo=${encodeURIComponent(item.id)}`;
+    return typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+  }, [item.id, item.ownerUid, item.workId]);
+
   const toggleLike = useCallback(async () => {
     if (persisted) {
       if (!user) {
@@ -320,10 +340,7 @@ function PlayerChrome({
   }, [persisted, user, likeBusy, liked, item.ownerUid, item.workId]);
 
   const handleShare = useCallback(async () => {
-    const url =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/shorts?promo=${item.id}`
-        : `/shorts?promo=${item.id}`;
+    const url = shareUrl();
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({ title: item.title, text: item.description, url });
@@ -335,7 +352,7 @@ function PlayerChrome({
     } catch {
       /* cancelled */
     }
-  }, [item]);
+  }, [item.description, item.title, shareUrl]);
 
   const tallMeta = layout === "stacked" || isFullscreen;
 
@@ -370,16 +387,13 @@ function PlayerChrome({
     : undefined;
 
   const fixedTeaserFrame = isTeaser && playerSize === "homeHeroSmall" && !peekSide;
-  const fixedShortsFrame = !isTeaser && !isFullscreen && playerSize === "shortsPage";
   const peekSideFrame = isTeaser && peekSide;
-  const fixedPortraitFrame = fixedTeaserFrame || fixedShortsFrame || peekSideFrame;
+  const fixedPortraitFrame = fixedTeaserFrame || peekSideFrame;
   const smallShell = peekSideFrame
     ? HOME_HERO_PEEK_SIDE_FRAME_CLASS
     : fixedTeaserFrame
     ? HOME_HERO_TEASER_FRAME_CLASS
-    : fixedShortsFrame
-      ? SHORTS_PAGE_FRAME_CLASS
-      : playerSize === "homeHeroSmall"
+    : playerSize === "homeHeroSmall"
         ? "max-w-[220px] sm:max-w-[260px] max-h-[min(42vh,400px)]"
         : compact
           ? "max-h-[min(72vh,680px)]"
@@ -547,10 +561,11 @@ function PlayerChrome({
     </div>
   );
 
-  const watchHref = `/shorts?promo=${item.id}`;
-  const teaserLink = isTeaser && !peekSide ? (
+  const teaserWatchHref =
+    item.ownerUid && item.workId ? workWatchHref(item.ownerUid, item.workId) : null;
+  const teaserLink = isTeaser && !peekSide && teaserWatchHref ? (
     <Link
-      href={watchHref}
+      href={teaserWatchHref}
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
       className="absolute inset-0 z-[15] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
@@ -580,7 +595,7 @@ function PlayerChrome({
           className={`absolute inset-0 w-full h-full bg-black ${videoObjectClass}`}
           playsInline
           muted
-          loop
+          loop={loop}
           preload={isActive ? "auto" : "none"}
           onDoubleClick={isTeaser ? undefined : () => onToggleFullscreen()}
         />
@@ -604,6 +619,8 @@ export default function PromoShortPlayer({
   compact = false,
   scrollExpand = false,
   scrollRootRef,
+  loop = true,
+  onPlaybackEnded,
   className = "",
 }: {
   item: PromoShort;
@@ -618,6 +635,8 @@ export default function PromoShortPlayer({
   /** true일 때 scrollRootRef(또는 카드) 안에서만 스크롤 펼침 */
   scrollExpand?: boolean;
   scrollRootRef?: RefObject<HTMLElement | null>;
+  loop?: boolean;
+  onPlaybackEnded?: () => void;
   className?: string;
 }) {
   const resolvedLayout: PromoShortLayout = layout ?? "stacked";
@@ -638,6 +657,8 @@ export default function PromoShortPlayer({
       compact={compact}
       scrollExpand={scrollExpand}
       scrollRootRef={scrollRootRef}
+      loop={loop}
+      onPlaybackEnded={onPlaybackEnded}
       onToggleFullscreen={() => void toggle()}
       onExitFullscreen={() => void exit()}
     />
