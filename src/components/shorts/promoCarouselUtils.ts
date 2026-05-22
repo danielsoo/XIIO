@@ -18,3 +18,14 @@ export function centerVideoPreload(
   if (shouldMountCenterPlayer(i, center, count)) return "metadata";
   return "none";
 }
+
+/** Triptych 피크·incoming — center 기준 인접 항목은 auto */
+export function peekVideoPreload(
+  itemIndex: number,
+  centerIndex: number,
+  count: number
+): "auto" | "metadata" | "none" {
+  if (count <= 1) return "metadata";
+  if (circularDistance(itemIndex, centerIndex, count) <= 1) return "auto";
+  return "metadata";
+}

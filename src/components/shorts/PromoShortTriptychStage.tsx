@@ -15,6 +15,8 @@ import {
   getRevolveDirection,
   getTransitionMode,
 } from "@/components/shorts/promoCarouselTransition";
+import { peekVideoPreload } from "@/components/shorts/promoCarouselUtils";
+import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
 import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
@@ -48,8 +50,17 @@ type Props = {
   viewportClassName?: string;
 };
 
-const PEEK_ARROW_BASE =
+const PEEK_CAROUSEL_ARROW_BASE =
   "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-xiio-accent hover:text-xiio-accent-hover transition pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+const PEEK_ARROW_ON_LEFT_PEEK = `absolute right-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_CAROUSEL_ARROW_BASE}`;
+const PEEK_ARROW_ON_RIGHT_PEEK = `absolute left-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_CAROUSEL_ARROW_BASE}`;
+const PEEK_TAP_LAYER =
+  "absolute inset-0 z-40 cursor-pointer rounded-2xl bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+
+function itemIndex(items: PromoShort[], id: string): number {
+  const i = items.findIndex((x) => x.id === id);
+  return i >= 0 ? i : 0;
+}
 
 function tripletAt(items: PromoShort[], centerIndex: number): Triplet {
   const n = items.length;
@@ -178,6 +189,7 @@ export default function PromoShortTriptychStage({
   const current = items[index];
 
   const prevIndexRef = useRef(index);
+  const isTransitioningRef = useRef(false);
   const stageRef = useRef<HTMLDivElement>(null);
   const centerMeasureRef = useRef<HTMLDivElement>(null);
   const peekMeasureRef = useRef<HTMLDivElement>(null);
@@ -193,22 +205,27 @@ export default function PromoShortTriptychStage({
   const [incomingAtEnter, setIncomingAtEnter] = useState(true);
 
   const endTransition = useCallback(() => {
+    isTransitioningRef.current = false;
     setIsTransitioning(false);
     setOutgoingCenterId(null);
     setSnapshot(null);
     setRevolvePhase("idle");
   }, []);
 
+  useEffect(() => {
+    isTransitioningRef.current = isTransitioning;
+  }, [isTransitioning]);
+
   const go = useCallback(
     (delta: number) => {
-      if (count === 0) return;
+      if (count === 0 || isTransitioningRef.current) return;
       onIndexChange((index + delta + count) % count);
     },
     [count, index, onIndexChange]
   );
 
   const handlePlaybackEnded = useCallback(() => {
-    if (count > 1) go(1);
+    if (count > 1 && !isTransitioningRef.current) go(1);
   }, [count, go]);
 
   useLayoutEffect(() => {
@@ -238,6 +255,7 @@ export default function PromoShortTriptychStage({
 
     const mode = getTransitionMode(prev, index, count);
     setTransitionMode(mode);
+    isTransitioningRef.current = true;
     setIsTransitioning(true);
     setOutgoingCenterId(items[prev]?.id ?? null);
     prevIndexRef.current = index;
@@ -343,9 +361,13 @@ export default function PromoShortTriptychStage({
   const liveTriplet = tripletAt(items, index);
   const displayTriplet = snapshot ?? liveTriplet;
   const animatingRevolve = revolvePhase !== "idle";
+  const revolveDurationClass =
+    REVOLVE_MS === 500 ? "duration-500" : `duration-[${REVOLVE_MS}ms]`;
   const transitionClass = animatingRevolve
-    ? "transition-[transform,opacity] duration-500 ease-in-out motion-reduce:transition-none"
+    ? `transition-[transform,opacity] ${revolveDurationClass} ease-in-out motion-reduce:transition-none`
     : "motion-reduce:transition-none";
+
+  const preloadCenterIndex = snapshot ? animPrevIndex : index;
 
   const stageOpacityClass =
     transitionMode === "fade"
@@ -400,9 +422,17 @@ export default function PromoShortTriptychStage({
             const isLiveCenter = !snapshot && isCenter;
             const wasOutgoingCenter = snapshot && isCenter && item.id === outgoingCenterId;
 
+            const peekPreload = peekVideoPreload(
+              itemIndex(items, item.id),
+              preloadCenterIndex,
+              count
+            );
+
+            const slotKey = count === 2 ? `${role}-${item.id}` : item.id;
+
             return (
               <div
-                key={`${role}-${item.id}`}
+                key={slotKey}
                 className={`absolute top-1/2 left-1/2 -translate-y-1/2 will-change-transform ${transitionClass} ${
                   isCenter ? HOME_HERO_TEASER_FRAME_CLASS : HOME_HERO_PEEK_SIDE_FRAME_CLASS
                 }`}
@@ -413,45 +443,63 @@ export default function PromoShortTriptychStage({
                 }}
                 aria-hidden={!isCenter}
               >
-                {swipeEnabled && isCenter && (
+                {swipeEnabled && role === "left" && (
                   <>
                     <button
                       type="button"
+                      className={PEEK_TAP_LAYER}
                       onClick={() => go(-1)}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_ARROW_BASE}`}
                       aria-label={t("home.promoPrev")}
                     />
                     <button
                       type="button"
-                      onClick={() => go(1)}
-                      className={`absolute left-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_ARROW_BASE}`}
-                      aria-label={t("home.promoNext")}
-                    />
+                      onClick={() => go(-1)}
+                      className={PEEK_ARROW_ON_LEFT_PEEK}
+                      aria-hidden
+                      tabIndex={-1}
+                    >
+                      ‹
+                    </button>
                   </>
                 )}
-                <PromoShortPlayer
-                  item={item}
-                  isActive={isLiveCenter}
-                  playbackEnabled={isLiveCenter && !isTransitioning}
-                  preserveFrame={Boolean(snapshot && wasOutgoingCenter)}
-                  videoPreload={isCenter ? "auto" : "metadata"}
-                  variant="teaser"
-                  playerSize={playerSize}
-                  peekSide={!isCenter}
-                  layout={layout}
-                  compact={compact}
-                  scrollExpand={false}
-                  loop={false}
-                  onPlaybackEnded={isLiveCenter && count > 1 ? handlePlaybackEnded : undefined}
-                  className="h-full w-full"
-                />
-                {swipeEnabled && !isCenter && (
-                  <button
-                    type="button"
-                    className="absolute inset-0 z-40 cursor-pointer rounded-2xl bg-transparent border-0 p-0"
-                    onClick={() => (role === "left" ? go(-1) : go(1))}
-                    aria-label={role === "left" ? t("home.promoPrev") : t("home.promoNext")}
+                {swipeEnabled && role === "right" && (
+                  <>
+                    <button
+                      type="button"
+                      className={PEEK_TAP_LAYER}
+                      onClick={() => go(1)}
+                      aria-label={t("home.promoNext")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => go(1)}
+                      className={PEEK_ARROW_ON_RIGHT_PEEK}
+                      aria-hidden
+                      tabIndex={-1}
+                    >
+                      ›
+                    </button>
+                  </>
+                )}
+                {isCenter ? (
+                  <PromoShortPlayer
+                    item={item}
+                    isActive={isLiveCenter}
+                    playbackEnabled={isLiveCenter && !isTransitioning}
+                    preserveFrame={Boolean(snapshot && wasOutgoingCenter)}
+                    videoPreload="auto"
+                    variant="teaser"
+                    playerSize={playerSize}
+                    peekSide={false}
+                    layout={layout}
+                    compact={compact}
+                    scrollExpand={false}
+                    loop={false}
+                    onPlaybackEnded={isLiveCenter && count > 1 ? handlePlaybackEnded : undefined}
+                    className="h-full w-full"
                   />
+                ) : (
+                  <PromoShortPeekPreview item={item} preload={peekPreload} />
                 )}
               </div>
             );
@@ -467,19 +515,13 @@ export default function PromoShortTriptychStage({
               }}
               aria-hidden
             >
-              <PromoShortPlayer
+              <PromoShortPeekPreview
                 item={incomingItem}
-                isActive={false}
-                playbackEnabled={false}
-                videoPreload="metadata"
-                variant="teaser"
-                playerSize={playerSize}
-                peekSide
-                layout={layout}
-                compact={compact}
-                scrollExpand={false}
-                loop={false}
-                className="h-full w-full"
+                preload={peekVideoPreload(
+                  itemIndex(items, incomingItem.id),
+                  preloadCenterIndex,
+                  count
+                )}
               />
             </div>
           )}
