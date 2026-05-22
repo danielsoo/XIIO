@@ -148,6 +148,8 @@ export type PromoFeedItem = {
   description: string;
   videoUrl: string;
   aspectRatio: number;
+  streamUid?: string;
+  thumbnailUrl?: string;
   likeCount?: number;
   viewCount?: number;
   likedByMe?: boolean;

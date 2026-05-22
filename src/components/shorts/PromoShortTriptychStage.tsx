@@ -441,8 +441,29 @@ export default function PromoShortTriptychStage({
                   opacity,
                   zIndex,
                 }}
-                aria-hidden={!isCenter}
               >
+                {isCenter ? (
+                  <PromoShortPlayer
+                    item={item}
+                    isActive={isLiveCenter}
+                    playbackEnabled={isLiveCenter && !isTransitioning}
+                    preserveFrame={Boolean(snapshot && wasOutgoingCenter)}
+                    videoPreload="auto"
+                    variant="teaser"
+                    playerSize={playerSize}
+                    peekSide={false}
+                    layout={layout}
+                    compact={compact}
+                    scrollExpand={false}
+                    loop={false}
+                    onPlaybackEnded={isLiveCenter && count > 1 ? handlePlaybackEnded : undefined}
+                    className="h-full w-full"
+                  />
+                ) : (
+                  <div className="relative h-full w-full" aria-hidden>
+                    <PromoShortPeekPreview item={item} preload={peekPreload} />
+                  </div>
+                )}
                 {swipeEnabled && role === "left" && (
                   <>
                     <button
@@ -480,26 +501,6 @@ export default function PromoShortTriptychStage({
                       ›
                     </button>
                   </>
-                )}
-                {isCenter ? (
-                  <PromoShortPlayer
-                    item={item}
-                    isActive={isLiveCenter}
-                    playbackEnabled={isLiveCenter && !isTransitioning}
-                    preserveFrame={Boolean(snapshot && wasOutgoingCenter)}
-                    videoPreload="auto"
-                    variant="teaser"
-                    playerSize={playerSize}
-                    peekSide={false}
-                    layout={layout}
-                    compact={compact}
-                    scrollExpand={false}
-                    loop={false}
-                    onPlaybackEnded={isLiveCenter && count > 1 ? handlePlaybackEnded : undefined}
-                    className="h-full w-full"
-                  />
-                ) : (
-                  <PromoShortPeekPreview item={item} preload={peekPreload} />
                 )}
               </div>
             );

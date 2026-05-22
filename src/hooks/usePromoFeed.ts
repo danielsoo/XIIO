@@ -18,6 +18,8 @@ function toPromoShort(item: PromoFeedItem): PromoShort {
     viewCount: item.viewCount,
     ownerUid: item.ownerUid,
     workId: item.workId,
+    streamUid: item.streamUid,
+    thumbnailUrl: item.thumbnailUrl,
     likedByMe: item.likedByMe,
   };
 }

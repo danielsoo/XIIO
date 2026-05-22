@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   aspectRatioFromVideo,
+  getStreamThumbnailUrl,
   getStreamVideo,
   resolvePlaybackUrl,
 } from "@/lib/cloudflare/stream";
@@ -46,6 +47,9 @@ export async function GET(request: Request) {
       likedByMe = await isPromoLiked(db, viewerUid, ownerUid, workId);
     }
 
+    const thumbnailUrl =
+      info?.thumbnail ?? getStreamThumbnailUrl(promo.streamUid) ?? undefined;
+
     items.push({
       id: `${ownerUid}_${workId}`,
       workId,
@@ -54,6 +58,8 @@ export async function GET(request: Request) {
       director: work.director ?? "—",
       description: promo.description ?? work.description ?? "",
       videoUrl,
+      streamUid: promo.streamUid,
+      thumbnailUrl,
       aspectRatio: aspectRatioFromVideo(info),
       likeCount: promo.likeCount ?? 0,
       viewCount: promo.viewCount ?? 0,

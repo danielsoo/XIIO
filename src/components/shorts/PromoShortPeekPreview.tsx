@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import StreamHlsVideo, { type StreamHlsVideoHandle } from "@/components/shorts/StreamHlsVideo";
 import type { PromoShort } from "@/types/promoShort";
 
 type Props = {
@@ -15,38 +16,27 @@ export default function PromoShortPeekPreview({
   visible = true,
   preload = "auto",
 }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<StreamHlsVideoHandle>(null);
   const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const showFrame = useCallback(() => {
-    const video = videoRef.current;
-    if (!video || video.readyState < 1) return;
-    video.currentTime = 0.1;
-    video.pause();
+    const handle = videoRef.current;
+    if (!handle) return;
+    handle.pause();
+    if (handle.currentTime < 0.05) {
+      handle.currentTime = 0.1;
+    }
     setReady(true);
+    setFailed(false);
   }, []);
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.pause();
+    setReady(false);
+    setFailed(false);
+  }, [item.videoUrl, item.id]);
 
-    if (video.readyState >= 1) {
-      showFrame();
-    } else {
-      setReady(false);
-    }
-
-    video.addEventListener("loadeddata", showFrame);
-    return () => video.removeEventListener("loadeddata", showFrame);
-  }, [item.videoUrl, item.id, showFrame]);
-
-  useEffect(() => {
-    if (preload === "none") return;
-    const video = videoRef.current;
-    if (!video) return;
-    video.load();
-  }, [preload, item.videoUrl]);
+  const usePoster = failed && Boolean(item.thumbnailUrl);
 
   return (
     <div
@@ -54,18 +44,30 @@ export default function PromoShortPeekPreview({
     >
       <div
         className="relative h-full w-full scale-90 origin-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-gray-900 via-[#1a0533]/90 to-gray-900 shadow-lg shadow-black/40"
-        aria-hidden
       >
-        <video
-          ref={videoRef}
-          src={item.videoUrl}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-150 ${
-            ready ? "opacity-100" : "opacity-0"
-          }`}
-          playsInline
-          muted
-          preload={preload}
-        />
+        {usePoster ? (
+          <img
+            src={item.thumbnailUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <StreamHlsVideo
+            ref={videoRef}
+            src={item.videoUrl}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-150 ${
+              ready ? "opacity-100" : "opacity-0"
+            }`}
+            muted
+            playsInline
+            preload={preload}
+            onReady={showFrame}
+            onError={() => {
+              setFailed(true);
+              setReady(true);
+            }}
+          />
+        )}
         <div className="absolute inset-0 bg-black/35 pointer-events-none" />
       </div>
     </div>

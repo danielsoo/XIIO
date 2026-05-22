@@ -12,6 +12,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import ReportContentModal from "@/components/report/ReportContentModal";
+import StreamHlsVideo, { type StreamHlsVideoHandle } from "@/components/shorts/StreamHlsVideo";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useElementFullscreen } from "@/hooks/useElementFullscreen";
@@ -246,7 +247,7 @@ function PlayerChrome({
   const isTeaser = variant === "teaser" && !isFullscreen;
   const { t } = useTranslations();
   const { user } = useAuth();
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<StreamHlsVideoHandle>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const metaMeasureRef = useRef<HTMLDivElement>(null);
   const metaScrollRef = useRef<HTMLDivElement>(null);
@@ -267,6 +268,7 @@ function PlayerChrome({
   const [likeHint, setLikeHint] = useState(false);
   const [shareHint, setShareHint] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   useRecordEngagementView(item.ownerUid, item.workId, "promo", isActive && persisted);
 
@@ -274,6 +276,10 @@ function PlayerChrome({
     setLiked(item.likedByMe ?? false);
     setLikeCount(item.likeCount ?? 0);
   }, [item.id, item.likedByMe, item.likeCount]);
+
+  useEffect(() => {
+    setVideoFailed(false);
+  }, [item.videoUrl, item.id]);
 
   const shouldPlay = playbackEnabled ?? isActive;
 
@@ -288,17 +294,7 @@ function PlayerChrome({
         video.currentTime = 0;
       }
     }
-  }, [shouldPlay, preserveFrame]);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !onPlaybackEnded) return;
-    const onEnded = () => {
-      if (isActive) onPlaybackEnded();
-    };
-    video.addEventListener("ended", onEnded);
-    return () => video.removeEventListener("ended", onEnded);
-  }, [isActive, onPlaybackEnded]);
+  }, [shouldPlay, preserveFrame, item.videoUrl]);
 
   const shareUrl = useCallback(() => {
     if (item.ownerUid && item.workId) {
@@ -601,16 +597,28 @@ function PlayerChrome({
         className={cardShellClass}
         style={cardAspectStyle}
       >
-        <video
-          ref={videoRef}
-          src={item.videoUrl}
-          className={`absolute inset-0 w-full h-full bg-black ${videoObjectClass}`}
-          playsInline
-          muted
-          loop={loop}
-          preload={videoPreload ?? (isActive ? "auto" : "none")}
-          onDoubleClick={isTeaser ? undefined : () => onToggleFullscreen()}
-        />
+        {videoFailed && item.thumbnailUrl ? (
+          <img
+            src={item.thumbnailUrl}
+            alt=""
+            className={`absolute inset-0 w-full h-full object-cover ${videoObjectClass}`}
+          />
+        ) : (
+          <StreamHlsVideo
+            ref={videoRef}
+            src={item.videoUrl}
+            className={`absolute inset-0 w-full h-full bg-black ${videoObjectClass}`}
+            playsInline
+            muted
+            loop={loop}
+            preload={videoPreload ?? (isActive ? "auto" : "none")}
+            autoPlay={shouldPlay}
+            onEnded={
+              onPlaybackEnded && isActive ? () => onPlaybackEnded() : undefined
+            }
+            onError={() => setVideoFailed(true)}
+          />
+        )}
 
         {teaserLink}
         {!isTeaser && fullscreenControls}

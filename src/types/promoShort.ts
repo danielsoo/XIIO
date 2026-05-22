@@ -3,6 +3,8 @@ export type PromoShort = {
   id: string;
   /** 재생 URL (Cloudflare Stream HLS/MP4 등) */
   videoUrl: string;
+  streamUid?: string;
+  thumbnailUrl?: string;
   /** width / height — 예: 16/9, 9/16, 1/1 */
   aspectRatio: number;
   title: string;

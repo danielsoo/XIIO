@@ -218,6 +218,13 @@ export async function getStreamVideo(streamUid: string): Promise<StreamVideoInfo
   };
 }
 
+/** Public thumbnail for Stream UID (customer subdomain) */
+export function getStreamThumbnailUrl(streamUid: string): string | null {
+  const sub = getCustomerSubdomain();
+  if (!sub) return null;
+  return `https://${sub}/${streamUid}/thumbnails/thumbnail.jpg`;
+}
+
 export function getPlaybackUrl(streamUid: string): string | null {
   const sub = getCustomerSubdomain();
   if (sub) {
