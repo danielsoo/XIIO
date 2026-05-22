@@ -31,6 +31,9 @@ const PEEK_ARROW_ON_RIGHT_PEEK = `absolute left-2 top-1/2 -translate-y-1/2 z-50 
 const PEEK_TAP_LAYER =
   "absolute inset-0 z-40 cursor-pointer rounded-2xl bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 
+const SLIDE_TRACK_CLASS =
+  "flex h-full transition-transform duration-500 ease-in-out motion-reduce:transition-none";
+
 export default function PromoShortCarousel({
   items,
   index,
@@ -113,32 +116,38 @@ export default function PromoShortCarousel({
         )}
       </div>
 
-      <div className={`relative z-10 shrink-0 ${HOME_HERO_TEASER_FRAME_CLASS}`}>
-        {items.map((item, i) => (
-          <div
-            key={item.id}
-            className={`transition-opacity duration-300 ${
-              i === index
-                ? "relative z-10 opacity-100"
-                : "absolute inset-0 opacity-0 pointer-events-none z-0"
-            }`}
-            aria-hidden={i !== index}
-          >
-            <PromoShortPlayer
-              item={item}
-              isActive={i === index}
-              variant="teaser"
-              playerSize={playerSize}
-              peekSide={false}
-              layout={layout}
-              compact={compact}
-              scrollExpand={false}
-              loop={false}
-              onPlaybackEnded={i === index && count > 1 ? handlePlaybackEnded : undefined}
-              className="mx-auto"
-            />
-          </div>
-        ))}
+      <div
+        className={`relative z-10 shrink-0 overflow-hidden ${HOME_HERO_TEASER_FRAME_CLASS}`}
+        aria-live="polite"
+      >
+        <div
+          className={SLIDE_TRACK_CLASS}
+          style={{
+            transform: count > 0 ? `translateX(calc(-100% * ${index} / ${count}))` : undefined,
+          }}
+        >
+          {items.map((item, i) => (
+            <div
+              key={item.id}
+              className={`relative shrink-0 ${HOME_HERO_TEASER_FRAME_CLASS}`}
+              aria-hidden={i !== index}
+            >
+              <PromoShortPlayer
+                item={item}
+                isActive={i === index}
+                variant="teaser"
+                playerSize={playerSize}
+                peekSide={false}
+                layout={layout}
+                compact={compact}
+                scrollExpand={false}
+                loop={false}
+                onPlaybackEnded={i === index && count > 1 ? handlePlaybackEnded : undefined}
+                className="mx-auto"
+              />
+            </div>
+          ))}
+        </div>
         {count > 1 && (
           <div
             className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 pointer-events-auto"
