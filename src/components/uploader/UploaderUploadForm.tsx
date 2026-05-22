@@ -38,7 +38,9 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("16:9");
   const [contentCategory, setContentCategory] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [director, setDirector] = useState(initialDirector?.trim() ?? "");
+  const directorLocked = Boolean(initialDirector?.trim());
+  const lockedDirectorName = initialDirector?.trim() ?? "";
+  const [director, setDirector] = useState(lockedDirectorName);
   const [description, setDescription] = useState("");
   const [promoTitle, setPromoTitle] = useState("");
   const [promoDescription, setPromoDescription] = useState("");
@@ -122,7 +124,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             uploadLength: file.size,
             contentCategory: contentCategory.trim() || undefined,
             tags: tagList.length > 0 ? tagList : undefined,
-            director: director || undefined,
+            director: (directorLocked ? lockedDirectorName : director.trim()) || undefined,
             description: description || undefined,
             promoDraft: {
               title: promoTitle.trim(),
@@ -185,7 +187,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       setTitle("");
       setContentCategory("");
       setTags([]);
-      setDirector(initialDirector?.trim() ?? "");
+      setDirector(lockedDirectorName);
       setDescription("");
       setPromoTitle("");
       setPromoDescription("");
@@ -252,6 +254,31 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
                   className={`${uploaderInputClass} text-lg font-semibold py-3`}
                 />
               </div>
+              {directorLocked ? (
+                <div>
+                  <p className="text-xs text-xiio-muted mb-1.5">{t("uploader.uploadDirectorLabel")}</p>
+                  <p className="text-base font-semibold text-white">
+                    {t("uploader.uploadDirectorDisplayValue", { name: lockedDirectorName })}
+                  </p>
+                  <p className="text-xs text-xiio-muted mt-1.5">{t("uploader.uploadDirectorReadOnlyHint")}</p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-director-main">
+                    {t("uploader.uploadDirectorLabel")}
+                  </label>
+                  <input
+                    id="upload-director-main"
+                    type="text"
+                    value={director}
+                    onChange={(e) => setDirector(e.target.value)}
+                    placeholder={t("uploader.uploadDirectorPlaceholder")}
+                    disabled={busy}
+                    className={uploaderInputClass}
+                    maxLength={120}
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-category">
                   {t("uploader.uploadContentCategoryLabel")}
@@ -303,24 +330,6 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
                 </span>
               </summary>
               <div className="px-4 pb-4 pt-0 space-y-4 border-t border-white/10">
-                <div>
-                  <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-director">
-                    {t("uploader.uploadDirectorLabel")}
-                  </label>
-                  {initialDirector?.trim() ? (
-                    <p className="text-xs text-xiio-muted mb-1.5">{t("uploader.directorSavedHint")}</p>
-                  ) : null}
-                  <input
-                    id="upload-director"
-                    type="text"
-                    value={director}
-                    onChange={(e) => setDirector(e.target.value)}
-                    placeholder={t("uploader.uploadDirectorPlaceholder")}
-                    disabled={busy}
-                    className={uploaderInputClass}
-                    maxLength={120}
-                  />
-                </div>
                 <div>
                   <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-description">
                     {t("uploader.uploadDescriptionLabel")}

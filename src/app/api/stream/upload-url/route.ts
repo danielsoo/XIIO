@@ -7,6 +7,7 @@ import {
 import { hasDepositVerifiedClaim } from "@/lib/server/deposit-verification";
 import { isUploaderDepositEnabled } from "@/lib/payments/config";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
+import { parseUserProfileDoc } from "@/lib/userAccess";
 import {
   FieldValue,
   getDbOrNull,
@@ -151,13 +152,21 @@ export async function POST(request: Request) {
   const db = await getDbOrNull();
   if (db) {
     try {
+      const userSnap = await db.collection("users").doc(session.uid).get();
+      const profile = userSnap.exists
+        ? parseUserProfileDoc(userSnap.data() as Record<string, unknown>)
+        : null;
+      const directorFromBody = body.director?.trim().slice(0, 120) || "";
+      const director =
+        directorFromBody || profile?.defaultDirectorName?.trim().slice(0, 120) || null;
+
       const sortOrder = await nextWorkSortOrder(db, session.uid);
       await worksCol(db, session.uid).doc(workId).set({
         kind: "full",
         section: sectionRaw,
         title,
         description: body.description?.trim() || null,
-        director: body.director?.trim().slice(0, 120) || null,
+        director,
         proposedCategory: proposedCategory || null,
         proposedTags: proposedTags.length > 0 ? proposedTags : null,
         proposedAspectRatio,
