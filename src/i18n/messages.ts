@@ -760,7 +760,9 @@ export const messages = {
       loadError: "영상 정보를 불러오지 못했습니다.",
       notFound: "영상을 찾을 수 없거나 아직 공개되지 않았습니다.",
       director: "감독",
-      altPlayer: "다른 플레이어로 보기",
+      adminDirectPlayerTitle: "관리자: 브라우저 직접 재생 (HTML5)",
+      adminDirectPlayerHint:
+        "위 영상은 Cloudflare Stream 임베드입니다. 여기서는 같은 영상 원본(HLS)을 브라우저 기본 플레이어로 재생합니다. 임베드가 안 되거나 재생·비율을 확인할 때 사용하세요.",
       report: "신고",
     },
     report: {
@@ -1605,7 +1607,9 @@ export const messages = {
       loadError: "Could not load video.",
       notFound: "Video not found or not published yet.",
       director: "Director",
-      altPlayer: "Alternate player",
+      adminDirectPlayerTitle: "Admin: direct browser playback (HTML5)",
+      adminDirectPlayerHint:
+        "The player above is the Cloudflare Stream embed. Here the same source (HLS) plays in the browser’s native video element. Use this when the embed fails or you need to check playback or aspect ratio.",
       report: "Report",
     },
     report: {

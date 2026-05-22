@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import ReportContentModal from "@/components/report/ReportContentModal";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useAuth } from "@/context/AuthContext";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useRecordEngagementView } from "@/hooks/useRecordEngagementView";
 import { useTranslations } from "@/context/LocaleContext";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
@@ -25,6 +26,7 @@ const SECTION_TITLE_KEYS: Record<PublicWorkWatch["section"], string> = {
 
 export default function WatchPageContent({ ownerUid, workId }: Props) {
   const { user } = useAuth();
+  const { isAdmin, checked: adminChecked } = useAdminAccess();
   const { t } = useTranslations();
   const [data, setData] = useState<PublicWorkWatch | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,11 +146,14 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
           </p>
         )}
 
-        {data.playbackUrl && (
-          <details className="text-sm text-xiio-muted">
-            <summary className="cursor-pointer hover:text-white transition mb-2">
-              {t("watch.altPlayer")}
+        {adminChecked && isAdmin && data.playbackUrl && (
+          <details className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-xiio-muted">
+            <summary className="cursor-pointer hover:text-white transition font-medium text-amber-200/90">
+              {t("watch.adminDirectPlayerTitle")}
             </summary>
+            <p className="mt-3 mb-3 text-xs leading-relaxed text-xiio-muted">
+              {t("watch.adminDirectPlayerHint")}
+            </p>
             <PlaybackVideo src={data.playbackUrl} maxHeightClass="max-h-[70vh]" />
           </details>
         )}
