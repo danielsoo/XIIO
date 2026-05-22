@@ -9,7 +9,11 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useHorizontalSwipe } from "@/hooks/useHorizontalSwipe";
-import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
+import PromoShortPeekPool from "@/components/shorts/PromoShortPeekPool";
+import {
+  centerVideoPreload,
+  shouldMountCenterPlayer,
+} from "@/components/shorts/promoCarouselUtils";
 import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
@@ -191,7 +195,7 @@ export default function PromoShortCarousel({
             aria-label={t("home.promoPrev")}
           />
         )}
-        <PromoShortPeekPreview item={prevItem} />
+        <PromoShortPeekPool items={items} activeIndex={index} visibleId={prevItem.id} />
         {swipeEnabled && (
           <button
             type="button"
@@ -225,21 +229,29 @@ export default function PromoShortCarousel({
               style={{ width: "calc(100% / var(--n))" }}
               aria-hidden={i !== index}
             >
-              <PromoShortPlayer
-                item={item}
-                isActive={i === index}
-                playbackEnabled={i === index && !isTransitioning}
-                preserveFrame={isTransitioning && outgoingIndex === i}
-                variant="teaser"
-                playerSize={playerSize}
-                peekSide={false}
-                layout={layout}
-                compact={compact}
-                scrollExpand={false}
-                loop={false}
-                onPlaybackEnded={i === index && count > 1 ? handlePlaybackEnded : undefined}
-                className="mx-auto h-full w-full"
-              />
+              {shouldMountCenterPlayer(i, index, count) ? (
+                <PromoShortPlayer
+                  item={item}
+                  isActive={i === index}
+                  playbackEnabled={i === index && !isTransitioning}
+                  preserveFrame={isTransitioning && outgoingIndex === i}
+                  videoPreload={centerVideoPreload(i, index, count)}
+                  variant="teaser"
+                  playerSize={playerSize}
+                  peekSide={false}
+                  layout={layout}
+                  compact={compact}
+                  scrollExpand={false}
+                  loop={false}
+                  onPlaybackEnded={i === index && count > 1 ? handlePlaybackEnded : undefined}
+                  className="mx-auto h-full w-full"
+                />
+              ) : (
+                <div
+                  className="mx-auto h-full w-full rounded-2xl bg-gradient-to-br from-gray-900 via-[#1a0533]/80 to-gray-900 border border-white/10"
+                  aria-hidden
+                />
+              )}
             </div>
           ))}
         </div>
@@ -273,7 +285,7 @@ export default function PromoShortCarousel({
             aria-label={t("home.promoNext")}
           />
         )}
-        <PromoShortPeekPreview item={nextItem} />
+        <PromoShortPeekPool items={items} activeIndex={index} visibleId={nextItem.id} />
         {swipeEnabled && (
           <button
             type="button"

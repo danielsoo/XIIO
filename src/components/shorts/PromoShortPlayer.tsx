@@ -218,6 +218,7 @@ function PlayerChrome({
   onPlaybackEnded,
   playbackEnabled,
   preserveFrame = false,
+  videoPreload,
   onToggleFullscreen,
   onExitFullscreen,
 }: {
@@ -227,6 +228,7 @@ function PlayerChrome({
   playbackEnabled?: boolean;
   /** true면 비활성 시 currentTime 유지 (슬라이드 아웃 프레임) */
   preserveFrame?: boolean;
+  videoPreload?: "auto" | "metadata" | "none";
   isFullscreen: boolean;
   layout: PromoShortLayout;
   compact?: boolean;
@@ -606,7 +608,7 @@ function PlayerChrome({
           playsInline
           muted
           loop={loop}
-          preload={isActive ? "auto" : "none"}
+          preload={videoPreload ?? (isActive ? "auto" : "none")}
           onDoubleClick={isTeaser ? undefined : () => onToggleFullscreen()}
         />
 
@@ -633,12 +635,14 @@ export default function PromoShortPlayer({
   onPlaybackEnded,
   playbackEnabled,
   preserveFrame = false,
+  videoPreload,
   className = "",
 }: {
   item: PromoShort;
   isActive: boolean;
   playbackEnabled?: boolean;
   preserveFrame?: boolean;
+  videoPreload?: "auto" | "metadata" | "none";
   embedded?: boolean;
   layout?: PromoShortLayout;
   variant?: PromoShortVariant;
@@ -675,6 +679,7 @@ export default function PromoShortPlayer({
       onPlaybackEnded={onPlaybackEnded}
       playbackEnabled={playbackEnabled}
       preserveFrame={preserveFrame}
+      videoPreload={videoPreload}
       onToggleFullscreen={() => void toggle()}
       onExitFullscreen={() => void exit()}
     />
