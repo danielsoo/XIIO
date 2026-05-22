@@ -29,7 +29,9 @@ type Triplet = { left: PromoShort; center: PromoShort; right: PromoShort };
 
 type RevolvePhase = "idle" | "toNext" | "toPrev";
 
-type SlotRole = "left" | "center" | "right";
+type SlotRole = "left" | "center" | "right" | "incoming";
+
+const ENTER_GAP_PX = 100;
 
 type LayoutMetrics = {
   offsetX: number;
@@ -119,6 +121,49 @@ function slotTransform(
   return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 10 };
 }
 
+function incomingSlotTransform(
+  phase: "toNext" | "toPrev",
+  atEnter: boolean,
+  metrics: LayoutMetrics
+): { transform: string; opacity: number; zIndex: number } {
+  const { offsetX, peekScale } = metrics;
+  const enterX = offsetX + ENTER_GAP_PX;
+
+  if (phase === "toNext") {
+    if (atEnter) {
+      return {
+        transform: `translateX(${enterX}px) scale(${peekScale})`,
+        opacity: 1,
+        zIndex: 4,
+      };
+    }
+    return {
+      transform: `translateX(${offsetX}px) scale(${peekScale})`,
+      opacity: 1,
+      zIndex: 5,
+    };
+  }
+
+  if (atEnter) {
+    return {
+      transform: `translateX(${-enterX}px) scale(${peekScale})`,
+      opacity: 1,
+      zIndex: 4,
+    };
+  }
+  return {
+    transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+    opacity: 1,
+    zIndex: 5,
+  };
+}
+
+function incomingItemAt(items: PromoShort[], centerIndex: number, phase: "toNext" | "toPrev"): PromoShort {
+  const n = items.length;
+  if (phase === "toNext") return items[(centerIndex + 2) % n]!;
+  return items[(centerIndex - 2 + n) % n]!;
+}
+
 export default function PromoShortTriptychStage({
   items,
   index,
@@ -144,6 +189,8 @@ export default function PromoShortTriptychStage({
   const [outgoingCenterId, setOutgoingCenterId] = useState<string | null>(null);
   const [viewportOpacity, setViewportOpacity] = useState(1);
   const [transitionMode, setTransitionMode] = useState<"revolve" | "fade">("revolve");
+  const [animPrevIndex, setAnimPrevIndex] = useState(0);
+  const [incomingAtEnter, setIncomingAtEnter] = useState(true);
 
   const endTransition = useCallback(() => {
     setIsTransitioning(false);
@@ -210,7 +257,9 @@ export default function PromoShortTriptychStage({
     }
 
     const direction = getRevolveDirection(prev, index, count);
+    setAnimPrevIndex(prev);
     setSnapshot(tripletAt(items, prev));
+    setIncomingAtEnter(true);
     setRevolvePhase("idle");
     const targetPhase = direction === 1 ? "toNext" : "toPrev";
     const raf = requestAnimationFrame(() => {
@@ -218,6 +267,20 @@ export default function PromoShortTriptychStage({
     });
     return () => cancelAnimationFrame(raf);
   }, [index, count, items, endTransition]);
+
+  useEffect(() => {
+    if (revolvePhase === "idle") {
+      setIncomingAtEnter(true);
+      return;
+    }
+    if (revolvePhase === "toNext" || revolvePhase === "toPrev") {
+      setIncomingAtEnter(true);
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIncomingAtEnter(false));
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [revolvePhase]);
 
   useEffect(() => {
     if (!isTransitioning || transitionMode !== "revolve" || revolvePhase === "idle") return;
@@ -295,6 +358,14 @@ export default function PromoShortTriptychStage({
     { role: "right", item: displayTriplet.right },
   ];
 
+  const showIncoming = revolvePhase === "toNext" || revolvePhase === "toPrev";
+  const incomingItem =
+    showIncoming && count >= 3 ? incomingItemAt(items, animPrevIndex, revolvePhase) : null;
+  const incomingStyle =
+    incomingItem && showIncoming
+      ? incomingSlotTransform(revolvePhase, incomingAtEnter, metrics)
+      : null;
+
   const stageMinHeight = "min-h-[min(42vh,400px)]";
 
   return (
@@ -320,8 +391,8 @@ export default function PromoShortTriptychStage({
       >
         <div
           ref={stageRef}
-          className={`relative mx-auto flex items-center justify-center ${stageMinHeight}`}
-          style={{ minWidth: `${Math.round(metrics.offsetX * 2 + 48)}px` }}
+          className={`relative mx-auto overflow-hidden flex items-center justify-center ${stageMinHeight}`}
+          style={{ minWidth: `${Math.round(metrics.offsetX * 2 + ENTER_GAP_PX + 48)}px` }}
         >
           {slots.map(({ role, item }) => {
             const { transform, opacity, zIndex } = slotTransform(role, revolvePhase, metrics);
@@ -340,7 +411,7 @@ export default function PromoShortTriptychStage({
                   opacity,
                   zIndex,
                 }}
-                aria-hidden={isCenter ? false : true}
+                aria-hidden={!isCenter}
               >
                 {swipeEnabled && isCenter && (
                   <>
@@ -385,6 +456,33 @@ export default function PromoShortTriptychStage({
               </div>
             );
           })}
+          {incomingItem && incomingStyle && (
+            <div
+              key={`incoming-${incomingItem.id}`}
+              className={`absolute top-1/2 left-1/2 -translate-y-1/2 will-change-transform ${transitionClass} ${HOME_HERO_PEEK_SIDE_FRAME_CLASS}`}
+              style={{
+                transform: `translate(-50%, -50%) ${incomingStyle.transform}`,
+                opacity: incomingStyle.opacity,
+                zIndex: incomingStyle.zIndex,
+              }}
+              aria-hidden
+            >
+              <PromoShortPlayer
+                item={incomingItem}
+                isActive={false}
+                playbackEnabled={false}
+                videoPreload="metadata"
+                variant="teaser"
+                playerSize={playerSize}
+                peekSide
+                layout={layout}
+                compact={compact}
+                scrollExpand={false}
+                loop={false}
+                className="h-full w-full"
+              />
+            </div>
+          )}
         </div>
 
         {count > 1 && (
