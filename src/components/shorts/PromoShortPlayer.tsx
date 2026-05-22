@@ -216,11 +216,17 @@ function PlayerChrome({
   scrollRootRef,
   loop = true,
   onPlaybackEnded,
+  playbackEnabled,
+  preserveFrame = false,
   onToggleFullscreen,
   onExitFullscreen,
 }: {
   item: PromoShort;
   isActive: boolean;
+  /** false면 재생/리셋 보류 (캐러셀 전환 중) */
+  playbackEnabled?: boolean;
+  /** true면 비활성 시 currentTime 유지 (슬라이드 아웃 프레임) */
+  preserveFrame?: boolean;
   isFullscreen: boolean;
   layout: PromoShortLayout;
   compact?: boolean;
@@ -267,16 +273,20 @@ function PlayerChrome({
     setLikeCount(item.likeCount ?? 0);
   }, [item.id, item.likedByMe, item.likeCount]);
 
+  const shouldPlay = playbackEnabled ?? isActive;
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (isActive) {
+    if (shouldPlay) {
       void video.play().catch(() => {});
     } else {
       video.pause();
-      video.currentTime = 0;
+      if (!preserveFrame) {
+        video.currentTime = 0;
+      }
     }
-  }, [isActive]);
+  }, [shouldPlay, preserveFrame]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -621,10 +631,14 @@ export default function PromoShortPlayer({
   scrollRootRef,
   loop = true,
   onPlaybackEnded,
+  playbackEnabled,
+  preserveFrame = false,
   className = "",
 }: {
   item: PromoShort;
   isActive: boolean;
+  playbackEnabled?: boolean;
+  preserveFrame?: boolean;
   embedded?: boolean;
   layout?: PromoShortLayout;
   variant?: PromoShortVariant;
@@ -659,6 +673,8 @@ export default function PromoShortPlayer({
       scrollRootRef={scrollRootRef}
       loop={loop}
       onPlaybackEnded={onPlaybackEnded}
+      playbackEnabled={playbackEnabled}
+      preserveFrame={preserveFrame}
       onToggleFullscreen={() => void toggle()}
       onExitFullscreen={() => void exit()}
     />
