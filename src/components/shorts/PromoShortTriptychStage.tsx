@@ -91,7 +91,6 @@ function slotTransform(
   metrics: LayoutMetrics
 ): { transform: string; opacity: number; zIndex: number } {
   const { offsetX, peekScale } = metrics;
-  const exitX = offsetX + 80;
 
   if (phase === "idle") {
     if (role === "left") {
@@ -114,9 +113,9 @@ function slotTransform(
   if (phase === "toNext") {
     if (role === "left") {
       return {
-        transform: `translateX(${-exitX}px) scale(${peekScale})`,
-        opacity: 0,
-        zIndex: 1,
+        transform: `translateX(${offsetX}px) scale(${peekScale})`,
+        opacity: 1,
+        zIndex: 15,
       };
     }
     if (role === "center") {
@@ -131,9 +130,9 @@ function slotTransform(
 
   if (role === "right") {
     return {
-      transform: `translateX(${exitX}px) scale(${peekScale})`,
-      opacity: 0,
-      zIndex: 1,
+      transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+      opacity: 1,
+      zIndex: 15,
     };
   }
   if (role === "center") {
@@ -462,8 +461,16 @@ export default function PromoShortTriptychStage({
       : "";
 
   const showIncoming = revolvePhase === "toNext" || revolvePhase === "toPrev";
-  const incomingItem =
+  const wrapCandidate =
     showIncoming && count >= 3 ? incomingItemAt(items, animPrevIndex, revolvePhase) : null;
+  const incomingItem =
+    wrapCandidate &&
+    !(
+      (revolvePhase === "toNext" && wrapCandidate.id === displayTriplet.left.id) ||
+      (revolvePhase === "toPrev" && wrapCandidate.id === displayTriplet.right.id)
+    )
+      ? wrapCandidate
+      : null;
   const incomingStyle =
     incomingItem && showIncoming
       ? incomingSlotTransform(revolvePhase, incomingAtEnter, metrics)
