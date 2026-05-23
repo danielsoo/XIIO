@@ -37,12 +37,17 @@ body {
       scale(var(--carousel-peek-scale));
     z-index: 15;
   }
-  45% {
-    transform: translate(-50%, -50%) translateX(0) scale(var(--carousel-back-scale));
+  8% {
+    transform: translate(-50%, -50%) translateX(calc(-1 * var(--carousel-offset-x)))
+      scale(var(--carousel-peek-scale));
     z-index: 1;
   }
-  55% {
-    transform: translate(-50%, -50%) translateX(0) scale(var(--carousel-back-scale));
+  50% {
+    transform: translate(-50%, -50%) translateX(0) translateZ(-80px) scale(var(--carousel-back-scale));
+    z-index: 1;
+  }
+  92% {
+    transform: translate(-50%, -50%) translateX(var(--carousel-offset-x)) scale(var(--carousel-peek-scale));
     z-index: 1;
   }
   100% {
@@ -56,12 +61,17 @@ body {
     transform: translate(-50%, -50%) translateX(var(--carousel-offset-x)) scale(var(--carousel-peek-scale));
     z-index: 15;
   }
-  45% {
-    transform: translate(-50%, -50%) translateX(0) scale(var(--carousel-back-scale));
+  8% {
+    transform: translate(-50%, -50%) translateX(var(--carousel-offset-x)) scale(var(--carousel-peek-scale));
     z-index: 1;
   }
-  55% {
-    transform: translate(-50%, -50%) translateX(0) scale(var(--carousel-back-scale));
+  50% {
+    transform: translate(-50%, -50%) translateX(0) translateZ(-80px) scale(var(--carousel-back-scale));
+    z-index: 1;
+  }
+  92% {
+    transform: translate(-50%, -50%) translateX(calc(-1 * var(--carousel-offset-x)))
+      scale(var(--carousel-peek-scale));
     z-index: 1;
   }
   100% {

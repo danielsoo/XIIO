@@ -9,10 +9,16 @@ type Props = {
   item: PromoShort;
   /** triptych: 외부 scale(peekScale)만 사용, 내부 scale-90 비활성 */
   compactShell?: boolean;
+  /** false: wrap arc 전환 시 bg-black/35 미적용 (앞 레이어 착시 방지) */
+  dimOverlay?: boolean;
 };
 
 /** 홈 히어로 좌·우 피크 — 썸네일만 (HLS 없음, 깜빡임 없음) */
-export default function PromoShortPeekPreview({ item, compactShell = false }: Props) {
+export default function PromoShortPeekPreview({
+  item,
+  compactShell = false,
+  dimOverlay = true,
+}: Props) {
   const shellClass = compactShell ? `${PEEK_SHELL_BASE} h-full w-full` : `${PEEK_SHELL_BASE} scale-90`;
   return (
     <div className="relative h-full w-full pointer-events-none">
@@ -26,7 +32,9 @@ export default function PromoShortPeekPreview({ item, compactShell = false }: Pr
             decoding="async"
           />
         ) : null}
-        <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+        {dimOverlay ? (
+          <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+        ) : null}
       </div>
     </div>
   );

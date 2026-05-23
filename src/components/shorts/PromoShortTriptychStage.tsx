@@ -38,7 +38,9 @@ const STAGE_GAP_PX = 4;
 const PEEK_SCALE_SM = 180 / 236;
 const PEEK_SCALE_DEFAULT = 160 / 200;
 const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-2xl overflow-hidden isolate";
+const HERO_CAROUSEL_WRAP_ROUNDED_CLASS = "rounded-2xl overflow-hidden";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
+const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
 const CAROUSEL_BACK_SCALE_RATIO = 0.52;
 
 function peekScaleRatio(): number {
@@ -550,20 +552,23 @@ export default function PromoShortTriptychStage({
               : "";
             const slotMotionClass = isWrapArc ? wrapArcClass : transitionClass;
             const slotCenteringClass = isWrapArc ? "" : "-translate-y-1/2";
+            const slotFrameClass = placement.visible
+              ? isWrapArc
+                ? HERO_CAROUSEL_WRAP_FRAME_CLASS
+                : placement.frameClass
+              : HERO_CAROUSEL_FRAME_CLASS;
 
             return (
               <div
                 key={item.id}
-                className={`absolute top-1/2 left-1/2 ${slotCenteringClass} will-change-transform ${slotMotionClass} ${
-                  placement.visible ? placement.frameClass : HERO_CAROUSEL_FRAME_CLASS
-                }`}
+                className={`absolute top-1/2 left-1/2 ${slotCenteringClass} will-change-transform ${slotMotionClass} ${slotFrameClass}`}
                 style={{
                   transform: placement.visible
                     ? isWrapArc
                       ? undefined
                       : `translate(-50%, -50%) ${placement.transform}`
                     : "translate(-50%, -50%) scale(0.85)",
-                  opacity: placement.visible ? placement.opacity : 0,
+                  opacity: placement.visible ? (isWrapArc ? 1 : placement.opacity) : 0,
                   zIndex: isWrapArc ? undefined : placement.visible ? placement.zIndex : 0,
                   pointerEvents: placement.visible ? undefined : "none",
                 }}
@@ -590,7 +595,7 @@ export default function PromoShortTriptychStage({
                     className="h-full w-full"
                   />
                 ) : (
-                  <PromoShortPeekPreview item={item} compactShell />
+                  <PromoShortPeekPreview item={item} compactShell dimOverlay={!isWrapArc} />
                 )}
                 {swipeEnabled && placement.visible && placement.role === "left" && (
                   <>
