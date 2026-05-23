@@ -70,11 +70,11 @@ type Props = {
 };
 
 const PEEK_CAROUSEL_ARROW_BASE =
-  "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-xiio-accent hover:text-xiio-accent-hover transition pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+  "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-white hover:text-white/80 transition pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
 const PEEK_ARROW_ON_LEFT_PEEK = `absolute right-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_CAROUSEL_ARROW_BASE}`;
 const PEEK_ARROW_ON_RIGHT_PEEK = `absolute left-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_CAROUSEL_ARROW_BASE}`;
 const PEEK_TAP_LAYER =
-  "absolute inset-0 z-40 cursor-pointer rounded-2xl bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
+  "absolute inset-0 z-40 cursor-pointer rounded-2xl bg-transparent";
 
 function tripletAt(items: PromoShort[], centerIndex: number): Triplet {
   const n = items.length;
@@ -564,11 +564,11 @@ export default function PromoShortTriptychStage({
                 )}
                 {swipeEnabled && placement.visible && placement.role === "left" && (
                   <>
-                    <button
-                      type="button"
+                    <div
+                      role="presentation"
                       className={PEEK_TAP_LAYER}
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => go(-1)}
-                      aria-label={t("home.promoPrev")}
                     />
                     <button
                       type="button"
@@ -583,11 +583,11 @@ export default function PromoShortTriptychStage({
                 )}
                 {swipeEnabled && placement.visible && placement.role === "right" && (
                   <>
-                    <button
-                      type="button"
+                    <div
+                      role="presentation"
                       className={PEEK_TAP_LAYER}
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => go(1)}
-                      aria-label={t("home.promoNext")}
                     />
                     <button
                       type="button"
