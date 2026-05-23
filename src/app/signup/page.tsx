@@ -21,6 +21,13 @@ import type { PlatformPurpose, SignupProfile } from "@/types/user";
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { useTranslations } from "@/context/LocaleContext";
+import { LOCALES, getStoredLocale, type Locale } from "@/i18n";
+import {
+  birthDateToIso,
+  maxBirthDateInputValue,
+  parseBirthDateInput,
+  validateSignupBirthDate,
+} from "@/lib/userBirthDate";
 
 const inputClass =
   "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent transition";
@@ -54,7 +61,7 @@ export default function SignupPage() {
     resendVerificationEmail,
     reloadUser,
   } = useAuth();
-  const { t } = useTranslations();
+  const { t, setLocale } = useTranslations();
   const router = useRouter();
 
   const stepLabels: Record<StepId, string> = useMemo(
@@ -77,7 +84,8 @@ export default function SignupPage() {
   const [stepIndex, setStepIndex] = useState(0);
 
   const [name, setName] = useState("");
-  const [age, setAge] = useState("");
+  const [signupLocale, setSignupLocale] = useState<Locale>("ko");
+  const [birthDate, setBirthDate] = useState("");
   const [platformPurpose, setPlatformPurpose] = useState<PlatformPurpose | "">("");
   const [directorName, setDirectorName] = useState("");
 
@@ -103,6 +111,12 @@ export default function SignupPage() {
   const googleEmail = auth?.currentUser?.email ?? email;
   const isLastStep = stepIndex === steps.length - 1;
   const progress = ((stepIndex + 1) / steps.length) * 100;
+
+  useEffect(() => {
+    const stored = getStoredLocale();
+    setSignupLocale(stored);
+    setLocale(stored);
+  }, [setLocale]);
 
   useEffect(() => {
     if (stepIndex >= steps.length) {
@@ -176,21 +190,33 @@ export default function SignupPage() {
     };
   }, [verifyPhase]);
 
-  const buildProfile = (): SignupProfile | null => {
-    if (!name.trim() || !platformPurpose) return null;
-    const ageTrimmed = age.trim();
-    let ageNum: number | undefined;
-    if (ageTrimmed) {
-      ageNum = parseInt(ageTrimmed, 10);
-      if (Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120) return null;
+  const birthDateValidationMessage = (result: ReturnType<typeof validateSignupBirthDate>) => {
+    switch (result) {
+      case "empty":
+        return t("auth.signup.errorBirthDateRequired");
+      case "future":
+        return t("auth.signup.errorBirthDateFuture");
+      case "tooYoung":
+        return t("auth.signup.errorBirthDateTooYoung");
+      case "tooOld":
+        return t("auth.signup.errorBirthDateTooOld");
+      default:
+        return t("auth.signup.errorBirthDateInvalid");
     }
+  };
+
+  const buildProfile = (): SignupProfile | null => {
+    if (!name.trim() || !platformPurpose || !signupLocale) return null;
+    const parsedBirth = parseBirthDateInput(birthDate);
+    if (validateSignupBirthDate(parsedBirth) !== "ok") return null;
     const trimmedDirector = directorName.trim();
     const includeDirector =
       needsDirectorStep(platformPurpose) && trimmedDirector.length > 0;
 
     return {
       displayName: name.trim(),
-      ...(ageNum != null ? { age: ageNum } : {}),
+      locale: signupLocale,
+      birthDate: birthDateToIso(parsedBirth!),
       platformPurpose,
       ...(includeDirector ? { defaultDirectorName: trimmedDirector.slice(0, 120) } : {}),
     };
@@ -199,17 +225,19 @@ export default function SignupPage() {
   const validateStep = (step: StepId): boolean => {
     switch (step) {
       case "basic": {
+        if (!signupLocale) {
+          setError(t("auth.signup.errorLocaleRequired"));
+          return false;
+        }
         if (!name.trim()) {
           setError(t("auth.signup.errorNameRequired"));
           return false;
         }
-        const ageTrimmed = age.trim();
-        if (ageTrimmed) {
-          const ageNum = parseInt(ageTrimmed, 10);
-          if (Number.isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
-            setError(t("auth.signup.errorAgeInvalid"));
-            return false;
-          }
+        const parsedBirth = parseBirthDateInput(birthDate);
+        const birthResult = validateSignupBirthDate(parsedBirth);
+        if (birthResult !== "ok") {
+          setError(birthDateValidationMessage(birthResult));
+          return false;
         }
         return true;
       }
@@ -257,6 +285,7 @@ export default function SignupPage() {
     }
 
     try {
+      setLocale(profile.locale);
       if (googleSignup || profileOnlyMode) {
         const currentUser = auth?.currentUser;
         if (!currentUser) {
@@ -518,6 +547,29 @@ export default function SignupPage() {
             {currentStep === "basic" && (
               <StepShell title={t("auth.signup.basicTitle")} subtitle={t("auth.signup.basicSubtitle")}>
                 <div className="flex flex-col gap-4">
+                  <div>
+                    <p className="block text-sm text-xiio-muted mb-1.5">{t("auth.signup.languageLabel")}</p>
+                    <p className="text-xs text-xiio-muted mb-2">{t("auth.signup.languageHint")}</p>
+                    <div className="flex gap-2">
+                      {LOCALES.map(({ code, label }) => (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => {
+                            setSignupLocale(code);
+                            setLocale(code);
+                          }}
+                          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition border ${
+                            signupLocale === code
+                              ? "bg-xiio-accent border-xiio-accent text-white"
+                              : "border-white/20 text-xiio-muted hover:text-white hover:border-white/40"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <Field label={t("auth.signup.nameLabel")}>
                     <input
                       type="text"
@@ -528,14 +580,13 @@ export default function SignupPage() {
                       className={inputClass}
                     />
                   </Field>
-                  <Field label={t("auth.signup.ageLabel")}>
+                  <Field label={t("auth.signup.birthDateLabel")}>
                     <input
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      placeholder={t("auth.signup.agePlaceholder")}
+                      type="date"
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      max={maxBirthDateInputValue()}
+                      required
                       className={inputClass}
                     />
                   </Field>

@@ -13,6 +13,7 @@ export type OnboardingStatsPayload = {
   signupsByDay: Record<string, number>;
 };
 
+import type { Locale } from "@/i18n";
 import type { DirectorNameChangeRequest, PlatformPurpose, UserRole } from "@/types/user";
 import type { PlatformStatus, PromoPlatformStatus, StreamStatus, WorkDoc, WorkSection } from "@/types/work";
 
@@ -156,6 +157,8 @@ export type AdminUserDetail = {
   email: string | null;
   emailVerified: boolean;
   age?: number | null;
+  birthDate?: string | null;
+  locale?: Locale | null;
   isStudent: boolean;
   schoolName?: string;
   platformPurpose: PlatformPurpose;

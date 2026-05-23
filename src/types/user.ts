@@ -1,3 +1,5 @@
+import type { Locale } from "@/i18n";
+
 export type PlatformPurpose = "watch" | "upload" | "both";
 
 export type UserRole = "member" | "admin" | "super_admin";
@@ -15,7 +17,8 @@ export type DirectorNameChangeRequest = {
 
 export interface SignupProfile {
   displayName: string;
-  age?: number;
+  locale: Locale;
+  birthDate: string;
   platformPurpose: PlatformPurpose;
   defaultDirectorName?: string;
 }
@@ -23,7 +26,10 @@ export interface SignupProfile {
 /** Firestore `users/{uid}` — 회원 프로필·어드민 역할 */
 export interface UserProfileDoc {
   displayName: string;
+  /** @deprecated 레거시 — 신규 가입은 birthDate 사용 */
   age?: number | null;
+  locale?: Locale;
+  birthDate?: string | null;
   isStudent: boolean;
   schoolName?: string;
   platformPurpose: PlatformPurpose;

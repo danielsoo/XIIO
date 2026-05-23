@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { formatBirthDateForDisplay } from "@/lib/userBirthDate";
 import { getUserProfile } from "@/lib/userProfile";
+import { LOCALES } from "@/i18n";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import type { AccountActivityItem } from "@/types/account-activity";
 import type { UserProfileDoc } from "@/types/user";
@@ -24,7 +26,7 @@ function MetaField({ label, value }: { label: string; value: string }) {
 
 export default function AccountProfileContent() {
   const { user } = useAuth();
-  const { t, formatDateTime } = useTranslations();
+  const { t, formatDateTime, dateLocale } = useTranslations();
   const [profile, setProfile] = useState<UserProfileDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -118,17 +120,33 @@ export default function AccountProfileContent() {
     return <p className="text-red-400 text-sm">{err ?? t("accountProfile.noProfile")}</p>;
   }
 
-  const showAge = profile.age != null && profile.age >= 1;
+  const showBirthDate = Boolean(profile.birthDate?.trim());
+  const showAge = !showBirthDate && profile.age != null && profile.age >= 1;
   const showJoined = profile.createdAt != null;
+  const localeLabel =
+    profile.locale === "en"
+      ? LOCALES.find((l) => l.code === "en")?.label ?? "English"
+      : profile.locale === "ko"
+        ? LOCALES.find((l) => l.code === "ko")?.label ?? "한국어"
+        : null;
 
   return (
     <div className="space-y-6">
       <AccountProfileHero profile={profile} email={user?.email ?? null} />
 
-      {(showAge || showJoined) && (
+      {(showBirthDate || showAge || showJoined || localeLabel) && (
         <section className="bg-xiio-surface rounded-2xl p-5 border border-white/10">
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+            {showBirthDate && profile.birthDate && (
+              <MetaField
+                label={t("accountProfile.birthDate")}
+                value={formatBirthDateForDisplay(profile.birthDate, dateLocale)}
+              />
+            )}
             {showAge && <MetaField label={t("accountProfile.age")} value={String(profile.age)} />}
+            {localeLabel && (
+              <MetaField label={t("settings.language")} value={localeLabel} />
+            )}
             {showJoined && (
               <MetaField label={t("accountProfile.joinedAt")} value={formatDateTime(profile.createdAt)} />
             )}

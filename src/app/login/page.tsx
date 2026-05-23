@@ -9,18 +9,13 @@ import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { auth } from "@/lib/firebase";
 import { resolvePostLoginPath } from "@/lib/activeWatchProfile";
-import {
-  createGoogleMemberProfile,
-  getPostAuthPath,
-  getUserProfile,
-  markEmailVerified,
-} from "@/lib/userProfile";
+import { getPostAuthPath, getUserProfile, markEmailVerified } from "@/lib/userProfile";
 import { loadRememberLogin, saveRememberLogin } from "@/lib/authPersistence";
 import { formatClientError } from "@/lib/clientErrors";
 import { formatLoginErrorMessage } from "@/lib/authErrors";
 
 function LoginForm() {
-  const { loginWithEmail, loginWithGoogle, logout } = useAuth();
+  const { loginWithEmail, loginWithGoogle } = useAuth();
   const { t } = useTranslations();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -35,22 +30,11 @@ function LoginForm() {
     if (savedEmail) setEmail(savedEmail);
   }, []);
 
-  const routeAfterAuth = async (
-    uid: string,
-    userEmail: string | null,
-    displayName: string | null,
-    isGoogle: boolean
-  ) => {
-    let profile = await getUserProfile(uid);
-
-    if (!profile && isGoogle) {
-      await createGoogleMemberProfile(uid, userEmail, displayName);
-      profile = await getUserProfile(uid);
-    }
+  const routeAfterAuth = async (uid: string) => {
+    const profile = await getUserProfile(uid);
 
     if (!profile) {
-      await logout();
-      setError(t("auth.login.errorNoProfile"));
+      router.push("/signup");
       return;
     }
 
@@ -71,7 +55,7 @@ function LoginForm() {
       await loginWithEmail(email, password, rememberMe);
       const current = auth?.currentUser;
       if (!current) throw new Error("no user");
-      await routeAfterAuth(current.uid, current.email, current.displayName, false);
+      await routeAfterAuth(current.uid);
     } catch (err: unknown) {
       if (err instanceof Error && err.message === EMAIL_NOT_VERIFIED) {
         setError(t("auth.login.errorEmailNotVerified"));
@@ -89,12 +73,7 @@ function LoginForm() {
     try {
       saveRememberLogin(rememberMe, email);
       const googleUser = await loginWithGoogle(rememberMe);
-      await routeAfterAuth(
-        googleUser.uid,
-        googleUser.email,
-        googleUser.displayName,
-        true
-      );
+      await routeAfterAuth(googleUser.uid);
     } catch (e) {
       setError(formatClientError(t, e, { titleKey: "auth.login.errorGoogleFailed" }));
     } finally {

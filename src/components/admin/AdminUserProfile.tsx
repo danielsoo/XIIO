@@ -140,8 +140,24 @@ export default function AdminUserProfile({ uid }: Props) {
         <section className="rounded-2xl border border-white/10 bg-xiio-surface p-5 space-y-3 text-sm">
           <h2 className="text-white font-semibold mb-2">{t("admin.userProfile.profileSection")}</h2>
           <Row
-            label={t("admin.userProfile.age")}
-            value={data.age != null && data.age >= 1 ? String(data.age) : "—"}
+            label={t("admin.userProfile.birthDate")}
+            value={
+              data.birthDate
+                ? data.birthDate
+                : data.age != null && data.age >= 1
+                  ? `${data.age} (${t("admin.userProfile.age")})`
+                  : "—"
+            }
+          />
+          <Row
+            label={t("admin.userProfile.locale")}
+            value={
+              data.locale === "en"
+                ? t("admin.userProfile.localeEn")
+                : data.locale === "ko"
+                  ? t("admin.userProfile.localeKo")
+                  : "—"
+            }
           />
           {data.isStudent && (
             <>

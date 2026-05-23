@@ -1,3 +1,4 @@
+import type { Locale } from "@/i18n";
 import type {
   DirectorNameChangeRequest,
   DirectorNameChangeRequestStatus,
@@ -5,6 +6,18 @@ import type {
   UserRole,
   UserProfileDoc,
 } from "@/types/user";
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseLocale(value: unknown): Locale | undefined {
+  return value === "en" ? "en" : value === "ko" ? "ko" : undefined;
+}
+
+function parseBirthDate(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return ISO_DATE_RE.test(trimmed) ? trimmed : undefined;
+}
 
 export const DEFAULT_ADMIN_ALLOWED_ROLES: UserRole[] = ["admin", "super_admin"];
 
@@ -46,6 +59,8 @@ export function parseUserProfileDoc(data: Record<string, unknown>): UserProfileD
   return {
     displayName: String(data.displayName ?? ""),
     age,
+    locale: parseLocale(data.locale),
+    birthDate: parseBirthDate(data.birthDate) ?? null,
     isStudent: !!data.isStudent,
     schoolName: data.schoolName ? String(data.schoolName) : undefined,
     platformPurpose: parsePlatformPurpose(data.platformPurpose),

@@ -55,7 +55,9 @@ export async function saveUserProfile(
       ref,
       {
         displayName: profile.displayName,
-        age: profile.age ?? null,
+        locale: profile.locale,
+        birthDate: profile.birthDate,
+        age: null,
         isStudent: false,
         schoolName: null,
         platformPurpose: profile.platformPurpose,
@@ -78,22 +80,6 @@ export async function saveUserProfile(
 }
 
 /** Google 로그인 직후 최소 프로필 */
-export async function createGoogleMemberProfile(
-  uid: string,
-  email: string | null,
-  displayName: string | null
-): Promise<void> {
-  await saveUserProfile(
-    uid,
-    {
-      displayName: displayName?.trim() || email?.split("@")[0] || "User",
-      platformPurpose: "watch",
-    },
-    email,
-    { emailVerified: true, role: "member" }
-  );
-}
-
 export async function markEmailVerified(uid: string): Promise<void> {
   if (!db) return;
   const ref = doc(db, "users", uid);
@@ -106,6 +92,8 @@ export async function markEmailVerified(uid: string): Promise<void> {
 export function isProfileComplete(profile: UserProfileDoc): boolean {
   if (!profile.displayName.trim()) return false;
   if (!profile.platformPurpose) return false;
+  if (!profile.birthDate?.trim()) return false;
+  if (!profile.locale) return false;
   return true;
 }
 
