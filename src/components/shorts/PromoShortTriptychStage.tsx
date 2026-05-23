@@ -51,23 +51,28 @@ function peekScaleRatio(): number {
   return window.matchMedia("(min-width: 640px)").matches ? PEEK_SCALE_SM : PEEK_SCALE_DEFAULT;
 }
 
+/** 피크 카드 안 화살표가 쓰이던 inset (right-2 / left-2) */
 const NAV_ARROW_INSET_PX = 8;
 
 function layoutMetricsFromCenterWidth(centerW: number): LayoutMetrics {
   const peekScale = peekScaleRatio();
   const peekVisualW = centerW * peekScale;
   const offsetX = centerW / 2 + STAGE_GAP_PX + peekVisualW / 2;
+  /** 슬롯 scale 적용 후 피크 안쪽 가장자리(화살표 앵커) — 이전 in-peek right-2/left-2 와 동일 */
+  const peekInnerArrowAnchorPx = (centerW / 2 - NAV_ARROW_INSET_PX) * peekScale;
   return {
+    centerW,
     offsetX,
     peekScale,
-    navArrowOffsetPx: offsetX - peekVisualW / 2 + NAV_ARROW_INSET_PX,
+    peekInnerArrowAnchorPx,
   };
 }
 
 type LayoutMetrics = {
+  centerW: number;
   offsetX: number;
   peekScale: number;
-  navArrowOffsetPx: number;
+  peekInnerArrowAnchorPx: number;
 };
 
 type Props = {
@@ -82,7 +87,8 @@ type Props = {
 
 const PEEK_CAROUSEL_ARROW_BASE =
   "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-white hover:text-white/80 transition pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
-const FIXED_CAROUSEL_ARROW_CLASS = `absolute top-1/2 -translate-y-1/2 ${PEEK_CAROUSEL_ARROW_BASE}`;
+/** top-1/2 + translate Y만 공통 — X는 피크 right-2/left-2 와 동일 앵커 */
+const FIXED_CAROUSEL_ARROW_CLASS = `absolute top-1/2 ${PEEK_CAROUSEL_ARROW_BASE}`;
 const PEEK_TAP_LAYER =
   "absolute inset-0 z-40 cursor-pointer rounded-2xl bg-transparent";
 
@@ -723,8 +729,8 @@ export default function PromoShortTriptychStage({
                 data-carousel-nav
                 className={FIXED_CAROUSEL_ARROW_CLASS}
                 style={{
-                  left: `calc(50% - ${metrics.navArrowOffsetPx}px)`,
-                  transform: "translate(-50%, -50%)",
+                  left: `calc(50% - ${metrics.offsetX}px + ${metrics.peekInnerArrowAnchorPx}px)`,
+                  transform: "translate(-100%, -50%)",
                 }}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => go(-1)}
@@ -737,8 +743,8 @@ export default function PromoShortTriptychStage({
                 data-carousel-nav
                 className={FIXED_CAROUSEL_ARROW_CLASS}
                 style={{
-                  left: `calc(50% + ${metrics.navArrowOffsetPx}px)`,
-                  transform: "translate(-50%, -50%)",
+                  left: `calc(50% + ${metrics.offsetX}px - ${metrics.peekInnerArrowAnchorPx}px)`,
+                  transform: "translate(0, -50%)",
                 }}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => go(1)}
