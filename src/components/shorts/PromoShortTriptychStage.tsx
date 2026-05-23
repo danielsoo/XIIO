@@ -37,7 +37,7 @@ const STAGE_GAP_PX = 4;
 /** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
 const PEEK_SCALE_SM = 180 / 236;
 const PEEK_SCALE_DEFAULT = 160 / 200;
-const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-3xl overflow-hidden isolate";
+const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-2xl overflow-hidden isolate";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
 
 function peekScaleRatio(): number {
@@ -494,7 +494,7 @@ export default function PromoShortTriptychStage({
       >
         <div
           ref={stageRef}
-          className={`relative mx-auto overflow-hidden rounded-3xl flex items-center justify-center ${stageMinHeight}`}
+          className={`relative mx-auto overflow-visible px-2 flex items-center justify-center ${stageMinHeight}`}
           style={{ minWidth: `${Math.round(metrics.offsetX * 2 + ENTER_GAP_PX + 48)}px` }}
         >
           {items.map((item, itemIdx) => {
@@ -536,7 +536,6 @@ export default function PromoShortTriptychStage({
                   opacity: placement.visible ? placement.opacity : 0,
                   zIndex: placement.visible ? placement.zIndex : 0,
                   pointerEvents: placement.visible ? undefined : "none",
-                  borderRadius: placement.visible ? "1.5rem" : undefined,
                 }}
                 aria-hidden={placement.visible ? !ariaLiveCenter : true}
               >

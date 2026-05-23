@@ -13,11 +13,9 @@ type Props = {
 
 /** 홈 히어로 좌·우 피크 — 썸네일만 (HLS 없음, 깜빡임 없음) */
 export default function PromoShortPeekPreview({ item, compactShell = false }: Props) {
-  const shellClass = compactShell
-    ? `${PEEK_SHELL_BASE} h-full w-full rounded-3xl`
-    : `${PEEK_SHELL_BASE} scale-90`;
+  const shellClass = compactShell ? `${PEEK_SHELL_BASE} h-full w-full` : `${PEEK_SHELL_BASE} scale-90`;
   return (
-    <div className="relative h-full w-full pointer-events-none overflow-hidden rounded-3xl">
+    <div className="relative h-full w-full pointer-events-none">
       <div className={shellClass}>
         {item.thumbnailUrl ? (
           <img
