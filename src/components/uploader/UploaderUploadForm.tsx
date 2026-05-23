@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
+import UploaderFormSection from "@/components/uploader/UploaderFormSection";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
 import { uploaderInputClass } from "@/components/uploader/uploaderFormStyles";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
@@ -85,6 +86,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const clipInvalid = validatePromoClipRange(clipStart, clipEnd, fileDuration ?? undefined) != null;
   const canSubmit =
     Boolean(file) &&
+    Boolean(description.trim()) &&
     Boolean(thumbnailFile) &&
     Boolean(promoTitle.trim()) &&
     !clipInvalid &&
@@ -124,6 +126,10 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       onError(t("uploader.errorUploadLengthRequired"));
       return;
     }
+    if (!description.trim()) {
+      onError(t("uploader.errorDescriptionRequired"));
+      return;
+    }
     if (!thumbnailFile) {
       onError(t("uploader.errorThumbnailRequired"));
       return;
@@ -150,6 +156,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       }
 
       const tagList = normalizeTags(tags);
+      const trimmedDescription = description.trim();
       let sessionRes: Response;
       try {
         sessionRes = await fetch("/api/stream/upload-url", {
@@ -166,7 +173,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             contentCategory: contentCategory.trim() || undefined,
             tags: tagList.length > 0 ? tagList : undefined,
             director: (directorLocked ? lockedDirectorName : director.trim()) || undefined,
-            description: description || undefined,
+            description: trimmedDescription,
             promoDraft: {
               title: promoTitle.trim(),
               description: promoDescription.trim() || undefined,
@@ -258,171 +265,22 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   return (
     <form onSubmit={(e) => void handleUpload(e)}>
       <UploaderFormShell
-        left={<VideoUploadDropzone file={file} onFileChange={setFile} disabled={busy} />}
-        right={
-          <>
-            <section className="space-y-4">
-              <h2 className="text-sm font-semibold text-white">{t("uploader.uploadGroupPlacement")}</h2>
-              <div>
-                <p className="text-xs text-xiio-muted mb-2">{t("uploader.uploadSectionLabel")}</p>
-                <div className="flex gap-2 overflow-x-auto pb-1 -mx-0.5 px-0.5 scrollbar-thin">
-                  {WORK_SECTIONS.map((s) => {
-                    const selected = section === s;
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        disabled={busy}
-                        onClick={() => setSection(s)}
-                        className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition disabled:opacity-40 ${
-                          selected
-                            ? "bg-xiio-accent text-white"
-                            : "bg-white/5 border border-white/15 text-xiio-muted hover:text-white hover:border-white/30"
-                        }`}
-                      >
-                        {t(`myWorks.section.${s}`)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-xiio-muted mb-2">{t("uploader.uploadAspectRatioLabel")}</p>
-                <AspectRatioPicker value={aspectRatio} onChange={setAspectRatio} disabled={busy} />
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="text-sm font-semibold text-white">{t("uploader.uploadGroupDetails")}</h2>
-              <div>
-                <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-title">
-                  {t("uploader.uploadTitleLabel")}
-                </label>
-                <input
-                  id="upload-title"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={t("uploader.uploadTitlePlaceholder")}
-                  disabled={busy}
-                  className={`${uploaderInputClass} text-lg font-semibold py-3`}
-                />
-              </div>
-              {directorLocked ? (
-                <div>
-                  <p className="text-xs text-xiio-muted mb-1.5">{t("uploader.uploadDirectorLabel")}</p>
-                  <p className="text-base font-semibold text-white">
-                    {t("uploader.uploadDirectorDisplayValue", { name: lockedDirectorName })}
-                  </p>
-                  <p className="text-xs text-xiio-muted mt-1.5">{t("uploader.uploadDirectorReadOnlyHint")}</p>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-director-main">
-                    {t("uploader.uploadDirectorLabel")}
-                  </label>
-                  <input
-                    id="upload-director-main"
-                    type="text"
-                    value={director}
-                    onChange={(e) => setDirector(e.target.value)}
-                    placeholder={t("uploader.uploadDirectorPlaceholder")}
-                    disabled={busy}
-                    className={uploaderInputClass}
-                    maxLength={120}
-                  />
-                </div>
-              )}
-              <div>
-                <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-category">
-                  {t("uploader.uploadContentCategoryLabel")}
-                </label>
-                <input
-                  id="upload-category"
-                  type="text"
-                  value={contentCategory}
-                  onChange={(e) => setContentCategory(e.target.value)}
-                  placeholder={t("uploader.uploadContentCategoryPlaceholder")}
-                  disabled={busy}
-                  className={uploaderInputClass}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-tags">
-                  {t("uploader.uploadTagsLabel")}
-                </label>
-                <WorkTagInput
-                  value={tags}
-                  onChange={setTags}
-                  disabled={busy}
-                  user={user}
-                  inputClassName={uploaderInputClass}
-                />
-              </div>
-            </section>
-
-            <ThumbnailUploadField
-              file={thumbnailFile}
-              previewUrl={thumbnailPreview}
-              onFileChange={handleThumbnailChange}
-              disabled={busy}
-              error={thumbnailFieldError}
-            />
-
-            <PromoShortFields
-              duration={durationForClip}
-              clipStart={clipStart}
-              clipEnd={clipEnd}
-              onClipStartChange={setClipStart}
-              onClipEndChange={setClipEnd}
-              title={promoTitle}
-              onTitleChange={setPromoTitle}
-              description={promoDescription}
-              onDescriptionChange={setPromoDescription}
-              disabled={busy || fileDuration == null}
-              showRequiredHeader
-              hideClipSliders={fileDuration == null}
-            />
-
-            <details className="group rounded-xl border border-white/10 bg-white/[0.03]">
-              <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-white flex items-center justify-between gap-2">
-                <span>{t("uploader.uploadGroupOptional")}</span>
-                <span className="text-xs text-xiio-muted group-open:hidden">
-                  {t("uploader.uploadGroupOptionalExpand")}
-                </span>
-              </summary>
-              <div className="px-4 pb-4 pt-0 space-y-4 border-t border-white/10">
-                <div>
-                  <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-description">
-                    {t("uploader.uploadDescriptionLabel")}
-                  </label>
-                  <textarea
-                    id="upload-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={4}
-                    placeholder={t("uploader.uploadDescriptionPlaceholder")}
-                    disabled={busy}
-                    className={`${uploaderInputClass} resize-y min-h-[5rem]`}
-                  />
-                </div>
-              </div>
-            </details>
-
+        layout="stacked"
+        footer={
+          <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6 md:p-8 space-y-4">
             {uploadPercent != null && (
               <div className="space-y-1.5">
-                <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                   <div
                     className="h-full bg-xiio-accent transition-all duration-300"
                     style={{ width: `${uploadPercent}%` }}
                   />
                 </div>
-                <p className="text-xs text-xiio-muted text-center">
+                <p className="text-sm text-xiio-muted text-center">
                   {t("uploader.uploadProgress", { percent: uploadPercent })}
                 </p>
               </div>
             )}
-
             <button
               type="submit"
               disabled={busy || !canSubmit}
@@ -434,9 +292,162 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
                   : t("uploader.uploadSubmitting")
                 : t("uploader.uploadSubmit")}
             </button>
-          </>
+          </div>
         }
-      />
+      >
+        <UploaderFormSection
+          title={t("uploader.uploadZoneFullWorkTitle")}
+          hint={t("uploader.uploadZoneFullWorkHint")}
+        >
+          <div className="min-h-[320px] md:min-h-[400px]">
+            <VideoUploadDropzone file={file} onFileChange={setFile} disabled={busy} />
+          </div>
+          <div>
+            <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-title">
+              {t("uploader.uploadTitleLabel")}
+            </label>
+            <input
+              id="upload-title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t("uploader.uploadTitlePlaceholder")}
+              disabled={busy}
+              className={`${uploaderInputClass} text-lg font-semibold py-3`}
+            />
+          </div>
+          {directorLocked ? (
+            <div>
+              <p className="text-xs text-xiio-muted mb-1.5">{t("uploader.uploadDirectorLabel")}</p>
+              <p className="text-base font-semibold text-white">
+                {t("uploader.uploadDirectorDisplayValue", { name: lockedDirectorName })}
+              </p>
+              <p className="text-xs text-xiio-muted mt-1.5">{t("uploader.uploadDirectorReadOnlyHint")}</p>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-director-main">
+                {t("uploader.uploadDirectorLabel")}
+              </label>
+              <input
+                id="upload-director-main"
+                type="text"
+                value={director}
+                onChange={(e) => setDirector(e.target.value)}
+                placeholder={t("uploader.uploadDirectorPlaceholder")}
+                disabled={busy}
+                className={uploaderInputClass}
+                maxLength={120}
+              />
+            </div>
+          )}
+          <div>
+            <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-description">
+              {t("uploader.uploadDescriptionLabel")}{" "}
+              <span className="text-xiio-accent" aria-hidden>
+                *
+              </span>
+            </label>
+            <textarea
+              id="upload-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              required
+              placeholder={t("uploader.uploadDescriptionPlaceholder")}
+              disabled={busy}
+              className={`${uploaderInputClass} resize-y min-h-[6rem]`}
+            />
+          </div>
+        </UploaderFormSection>
+
+        <UploaderFormSection
+          title={t("uploader.uploadZoneCatalogTitle")}
+          hint={t("uploader.uploadZoneCatalogHint")}
+        >
+          <div>
+            <p className="text-xs text-xiio-muted mb-2">{t("uploader.uploadSectionLabel")}</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-0.5 px-0.5 scrollbar-thin">
+              {WORK_SECTIONS.map((s) => {
+                const selected = section === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setSection(s)}
+                    className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition disabled:opacity-40 ${
+                      selected
+                        ? "bg-xiio-accent text-white"
+                        : "bg-white/5 border border-white/15 text-xiio-muted hover:text-white hover:border-white/30"
+                    }`}
+                  >
+                    {t(`myWorks.section.${s}`)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-category">
+              {t("uploader.uploadContentCategoryLabel")}
+            </label>
+            <input
+              id="upload-category"
+              type="text"
+              value={contentCategory}
+              onChange={(e) => setContentCategory(e.target.value)}
+              placeholder={t("uploader.uploadContentCategoryPlaceholder")}
+              disabled={busy}
+              className={uploaderInputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-tags">
+              {t("uploader.uploadTagsLabel")}
+            </label>
+            <WorkTagInput
+              value={tags}
+              onChange={setTags}
+              disabled={busy}
+              user={user}
+              inputClassName={uploaderInputClass}
+            />
+          </div>
+          <div>
+            <p className="text-xs text-xiio-muted mb-1">{t("uploader.uploadAspectRatioLabel")}</p>
+            <p className="text-xs text-xiio-muted/80 mb-2">{t("uploader.uploadAspectRatioHint")}</p>
+            <AspectRatioPicker value={aspectRatio} onChange={setAspectRatio} disabled={busy} />
+          </div>
+        </UploaderFormSection>
+
+        <UploaderFormSection
+          title={t("uploader.uploadZonePromoTitle")}
+          hint={t("uploader.uploadZonePromoHint")}
+        >
+          <ThumbnailUploadField
+            file={thumbnailFile}
+            previewUrl={thumbnailPreview}
+            onFileChange={handleThumbnailChange}
+            disabled={busy}
+            error={thumbnailFieldError}
+          />
+          <PromoShortFields
+            duration={durationForClip}
+            clipStart={clipStart}
+            clipEnd={clipEnd}
+            onClipStartChange={setClipStart}
+            onClipEndChange={setClipEnd}
+            title={promoTitle}
+            onTitleChange={setPromoTitle}
+            description={promoDescription}
+            onDescriptionChange={setPromoDescription}
+            disabled={busy || fileDuration == null}
+            showRequiredHeader={false}
+            hideClipSliders={fileDuration == null}
+          />
+        </UploaderFormSection>
+      </UploaderFormShell>
     </form>
   );
 }

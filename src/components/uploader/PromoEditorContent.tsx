@@ -500,6 +500,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         <p className="text-xiio-muted text-sm mb-6">{work.title}</p>
 
         <UploaderFormShell
+          layout="split"
           banners={
             <>
               {justUploaded && (

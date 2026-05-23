@@ -94,6 +94,11 @@ export async function POST(request: Request) {
 
   const title = (body.title ?? "Untitled").trim().slice(0, 200) || "Untitled";
 
+  const description = body.description?.trim() ?? "";
+  if (!description) {
+    return jsonError("description_required", "작품 소개를 입력해 주세요.", 400);
+  }
+
   const promoRaw = body.promoDraft;
   if (!promoRaw || typeof promoRaw !== "object") {
     return jsonError("promo_required", "홍보 쇼츠 정보가 필요합니다.", 400);
@@ -165,7 +170,7 @@ export async function POST(request: Request) {
         kind: "full",
         section: sectionRaw,
         title,
-        description: body.description?.trim() || null,
+        description,
         director,
         proposedCategory: proposedCategory || null,
         proposedTags: proposedTags.length > 0 ? proposedTags : null,
