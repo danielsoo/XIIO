@@ -179,7 +179,7 @@ export default function AccountProfileContent() {
                 items={likes}
                 emptyMessage={t("accountProfile.likesEmpty")}
                 emptyCtaLabel={t("accountProfile.emptyLikesCta")}
-                emptyCtaHref="/shorts"
+                emptyCtaHref="/"
               />
             </>
           )

@@ -21,7 +21,6 @@ export default function Navbar() {
       { label: t("nav.movies"), href: "/movies" },
       { label: t("nav.entertainment"), href: "/entertainment" },
       { label: t("nav.series"), href: "/series" },
-      { label: t("nav.shorts"), href: "/shorts" },
       { label: t("nav.schoolBattle"), href: "/school-battle" },
     ],
     [t]

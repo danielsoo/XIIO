@@ -14,7 +14,6 @@ const HOME_SECTIONS: { href: string; section: WorkSection; titleKey: string }[] 
   { href: "/movies", section: "movies", titleKey: "nav.movies" },
   { href: "/entertainment", section: "entertainment", titleKey: "nav.entertainment" },
   { href: "/series", section: "series", titleKey: "nav.series" },
-  { href: "/shorts", section: "shorts", titleKey: "nav.shorts" },
   { href: "/school-battle", section: "school-battle", titleKey: "nav.schoolBattle" },
 ];
 

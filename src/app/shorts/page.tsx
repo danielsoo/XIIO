@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import CategoryPageClient from "@/components/category/CategoryPageClient";
 
 type Props = {
   searchParams: Promise<{ promo?: string }>;
@@ -7,15 +6,9 @@ type Props = {
 
 export default async function ShortsPage({ searchParams }: Props) {
   const params = await searchParams;
-  if (params.promo) {
-    redirect(`/?promo=${encodeURIComponent(params.promo)}`);
+  const promo = params.promo?.trim();
+  if (promo) {
+    redirect(`/?promo=${encodeURIComponent(promo)}`);
   }
-
-  return (
-    <CategoryPageClient
-      section="shorts"
-      titleKey="category.shortsTitle"
-      subtitleKey="category.shortsSubtitle"
-    />
-  );
+  redirect("/");
 }

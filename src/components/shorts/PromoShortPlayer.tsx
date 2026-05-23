@@ -220,6 +220,7 @@ function PlayerChrome({
   playbackEnabled,
   preserveFrame = false,
   videoPreload,
+  heroCarouselEmbed = false,
   onToggleFullscreen,
   onExitFullscreen,
 }: {
@@ -230,6 +231,8 @@ function PlayerChrome({
   /** true면 비활성 시 currentTime 유지 (슬라이드 아웃 프레임) */
   preserveFrame?: boolean;
   videoPreload?: "auto" | "metadata" | "none";
+  /** 홈 히어로 triptych — 부모 프레임에 맞춰 모서리 클리핑 */
+  heroCarouselEmbed?: boolean;
   isFullscreen: boolean;
   layout: PromoShortLayout;
   compact?: boolean;
@@ -413,7 +416,9 @@ function PlayerChrome({
 
   const cardShellClass = isFullscreen
     ? "relative w-full h-full max-w-lg mx-auto rounded-2xl overflow-hidden bg-black"
-    : `relative mx-auto ${fixedPortraitFrame ? "" : "w-full "} ${maxWidthClass} rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
+    : heroCarouselEmbed
+      ? "relative h-full w-full overflow-hidden rounded-3xl bg-black"
+      : `relative mx-auto ${fixedPortraitFrame ? "" : "w-full "} ${maxWidthClass} rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
 
   const cardAspectStyle =
     isFullscreen || fixedPortraitFrame ? undefined : { aspectRatio: item.aspectRatio };
@@ -578,7 +583,9 @@ function PlayerChrome({
       href={teaserWatchHref}
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
-      className="absolute inset-0 z-[15] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+      className={`absolute inset-0 z-[15] focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+        heroCarouselEmbed ? "rounded-3xl" : "rounded-2xl"
+      }`}
       aria-label={t("home.promoWatch", { title: item.title })}
     />
   ) : null;
@@ -660,6 +667,7 @@ export default function PromoShortPlayer({
   playbackEnabled,
   preserveFrame = false,
   videoPreload,
+  heroCarouselEmbed = false,
   className = "",
 }: {
   item: PromoShort;
@@ -667,6 +675,7 @@ export default function PromoShortPlayer({
   playbackEnabled?: boolean;
   preserveFrame?: boolean;
   videoPreload?: "auto" | "metadata" | "none";
+  heroCarouselEmbed?: boolean;
   embedded?: boolean;
   layout?: PromoShortLayout;
   variant?: PromoShortVariant;
@@ -704,6 +713,7 @@ export default function PromoShortPlayer({
       playbackEnabled={playbackEnabled}
       preserveFrame={preserveFrame}
       videoPreload={videoPreload}
+      heroCarouselEmbed={heroCarouselEmbed}
       onToggleFullscreen={() => void toggle()}
       onExitFullscreen={() => void exit()}
     />

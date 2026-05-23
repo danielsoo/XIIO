@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
   title: "XIIO — 다음 세대 콘텐츠 플랫폼",
-  description: "영화, 예능, 시리즈, 쇼츠폼, 학교 대항전 — 대학생이 만드는 새로운 콘텐츠",
+  description: "영화, 예능, 시리즈, 학교 대항전 — 대학생이 만드는 새로운 콘텐츠",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

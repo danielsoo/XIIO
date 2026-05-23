@@ -37,7 +37,8 @@ const STAGE_GAP_PX = 4;
 /** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
 const PEEK_SCALE_SM = 180 / 236;
 const PEEK_SCALE_DEFAULT = 160 / 200;
-const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} rounded-2xl overflow-hidden`;
+const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-3xl overflow-hidden isolate";
+const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
 
 function peekScaleRatio(): number {
   if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
@@ -535,6 +536,7 @@ export default function PromoShortTriptychStage({
                   opacity: placement.visible ? placement.opacity : 0,
                   zIndex: placement.visible ? placement.zIndex : 0,
                   pointerEvents: placement.visible ? undefined : "none",
+                  borderRadius: placement.visible ? "1.5rem" : undefined,
                 }}
                 aria-hidden={placement.visible ? !ariaLiveCenter : true}
               >
@@ -544,6 +546,7 @@ export default function PromoShortTriptychStage({
                     isActive={isLiveCenter}
                     playbackEnabled={isLiveCenter && !isTransitioning}
                     preserveFrame={preserveCenterFrame}
+                    heroCarouselEmbed
                     videoPreload="auto"
                     variant="teaser"
                     playerSize={playerSize}
