@@ -29,3 +29,68 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* 홈 히어로 프로모 캐러셀 — 돌아가는 카드가 중앙 뒤로 scale down 후 반대편 피크 (3D 회전문) */
+@keyframes carousel-wrap-to-next {
+  0% {
+    transform: translate(-50%, -50%) translateX(calc(-1 * var(--carousel-offset-x)))
+      scale(var(--carousel-peek-scale));
+    z-index: 15;
+  }
+  45% {
+    transform: translate(-50%, -50%) translateX(0) scale(var(--carousel-back-scale));
+    z-index: 1;
+  }
+  55% {
+    transform: translate(-50%, -50%) translateX(0) scale(var(--carousel-back-scale));
+    z-index: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translateX(var(--carousel-offset-x)) scale(var(--carousel-peek-scale));
+    z-index: 15;
+  }
+}
+
+@keyframes carousel-wrap-to-prev {
+  0% {
+    transform: translate(-50%, -50%) translateX(var(--carousel-offset-x)) scale(var(--carousel-peek-scale));
+    z-index: 15;
+  }
+  45% {
+    transform: translate(-50%, -50%) translateX(0) scale(var(--carousel-back-scale));
+    z-index: 1;
+  }
+  55% {
+    transform: translate(-50%, -50%) translateX(0) scale(var(--carousel-back-scale));
+    z-index: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translateX(calc(-1 * var(--carousel-offset-x)))
+      scale(var(--carousel-peek-scale));
+    z-index: 15;
+  }
+}
+
+.animate-carousel-wrap-to-next {
+  animation: carousel-wrap-to-next 500ms ease-in-out forwards;
+}
+
+.animate-carousel-wrap-to-prev {
+  animation: carousel-wrap-to-prev 500ms ease-in-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-carousel-wrap-to-next {
+    animation: none;
+    transform: translate(-50%, -50%) translateX(var(--carousel-offset-x))
+      scale(var(--carousel-peek-scale));
+    z-index: 15;
+  }
+
+  .animate-carousel-wrap-to-prev {
+    animation: none;
+    transform: translate(-50%, -50%) translateX(calc(-1 * var(--carousel-offset-x)))
+      scale(var(--carousel-peek-scale));
+    z-index: 15;
+  }
+}

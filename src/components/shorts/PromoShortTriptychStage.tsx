@@ -39,6 +39,7 @@ const PEEK_SCALE_SM = 180 / 236;
 const PEEK_SCALE_DEFAULT = 160 / 200;
 const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-2xl overflow-hidden isolate";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
+const CAROUSEL_BACK_SCALE_RATIO = 0.52;
 
 function peekScaleRatio(): number {
   if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
@@ -478,6 +479,14 @@ export default function PromoShortTriptychStage({
 
   const liveCenterId = items[index]!.id;
   const stageMinHeight = "min-h-[min(42vh,400px)]";
+  const stageMetricsStyle = {
+    minWidth: `${Math.round(metrics.offsetX * 2 + ENTER_GAP_PX + 48)}px`,
+    perspective: "1000px",
+    transformStyle: "preserve-3d" as const,
+    ["--carousel-offset-x" as string]: `${metrics.offsetX}px`,
+    ["--carousel-peek-scale" as string]: String(metrics.peekScale),
+    ["--carousel-back-scale" as string]: String(metrics.peekScale * CAROUSEL_BACK_SCALE_RATIO),
+  };
 
   return (
     <div
@@ -502,7 +511,7 @@ export default function PromoShortTriptychStage({
         <div
           ref={stageRef}
           className={`relative mx-auto overflow-visible px-2 flex items-center justify-center ${stageMinHeight}`}
-          style={{ minWidth: `${Math.round(metrics.offsetX * 2 + ENTER_GAP_PX + 48)}px` }}
+          style={stageMetricsStyle}
         >
           {items.map((item, itemIdx) => {
             const placement = placementForItem(
@@ -529,19 +538,33 @@ export default function PromoShortTriptychStage({
             const showAsCenter =
               placement.isCenter || isPromoting || (warmCenter && !placement.visible);
             const ariaLiveCenter = isLiveCenter || isPromoting;
+            const isWrapArc =
+              animatingRevolve &&
+              placement.visible &&
+              ((revolvePhase === "toNext" && placement.role === "left") ||
+                (revolvePhase === "toPrev" && placement.role === "right"));
+            const wrapArcClass = isWrapArc
+              ? revolvePhase === "toNext"
+                ? "animate-carousel-wrap-to-next"
+                : "animate-carousel-wrap-to-prev"
+              : "";
+            const slotMotionClass = isWrapArc ? wrapArcClass : transitionClass;
+            const slotCenteringClass = isWrapArc ? "" : "-translate-y-1/2";
 
             return (
               <div
                 key={item.id}
-                className={`absolute top-1/2 left-1/2 -translate-y-1/2 will-change-transform ${transitionClass} ${
+                className={`absolute top-1/2 left-1/2 ${slotCenteringClass} will-change-transform ${slotMotionClass} ${
                   placement.visible ? placement.frameClass : HERO_CAROUSEL_FRAME_CLASS
                 }`}
                 style={{
                   transform: placement.visible
-                    ? `translate(-50%, -50%) ${placement.transform}`
+                    ? isWrapArc
+                      ? undefined
+                      : `translate(-50%, -50%) ${placement.transform}`
                     : "translate(-50%, -50%) scale(0.85)",
                   opacity: placement.visible ? placement.opacity : 0,
-                  zIndex: placement.visible ? placement.zIndex : 0,
+                  zIndex: isWrapArc ? undefined : placement.visible ? placement.zIndex : 0,
                   pointerEvents: placement.visible ? undefined : "none",
                 }}
                 aria-hidden={placement.visible ? !ariaLiveCenter : true}
