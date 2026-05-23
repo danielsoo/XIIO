@@ -18,8 +18,14 @@ import {
   saveUserProfile,
 } from "@/lib/userProfile";
 import type { PlatformPurpose, SignupProfile } from "@/types/user";
-import { GoogleIcon } from "@/components/auth/GoogleIcon";
+import SocialAuthButtons from "@/components/auth/SocialAuthButtons";
+import KakaoScript from "@/components/auth/KakaoScript";
 import { PasswordInput } from "@/components/auth/PasswordInput";
+import {
+  isOAuthProfileUser,
+  type SocialProviderKey,
+} from "@/lib/authProviders";
+import { formatSocialAuthError } from "@/lib/socialAuthClient";
 import { useTranslations } from "@/context/LocaleContext";
 import { LOCALES, getStoredLocale, type Locale } from "@/i18n";
 import {
@@ -46,9 +52,12 @@ function needsDirectorStep(purpose: PlatformPurpose | ""): boolean {
   return purpose === "upload" || purpose === "both";
 }
 
-function isGoogleAuthUser(user: { providerData: { providerId: string }[] } | null): boolean {
-  return !!user?.providerData.some((p) => p.providerId === "google.com");
-}
+const PROVIDER_LABEL_KEYS: Record<SocialProviderKey, string> = {
+  google: "auth.signup.providerGoogle",
+  apple: "auth.signup.providerApple",
+  kakao: "auth.signup.providerKakao",
+  naver: "auth.signup.providerNaver",
+};
 
 type VerifyPhase = "pending" | "verified";
 
@@ -57,6 +66,9 @@ export default function SignupPage() {
     signupWithEmail,
     resumeEmailSignup,
     loginWithGoogle,
+    loginWithApple,
+    loginWithKakao,
+    loginWithNaver,
     logout,
     resendVerificationEmail,
     reloadUser,
@@ -78,7 +90,8 @@ export default function SignupPage() {
   const [sentEmail, setSentEmail] = useState("");
   const [resendMessage, setResendMessage] = useState("");
 
-  const [googlePending, setGooglePending] = useState(false);
+  const [socialPending, setSocialPending] = useState(false);
+  const [pendingProvider, setPendingProvider] = useState<SocialProviderKey | null>(null);
   /** Auth에는 있으나 Firestore users 문서가 없을 때 ({t("common.login")}만 한 경우) */
   const [profileOnlyMode, setProfileOnlyMode] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
@@ -96,19 +109,22 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const googleSignup = useMemo(() => {
-    if (googlePending) return true;
-    if (profileOnlyMode && isGoogleAuthUser(auth?.currentUser ?? null)) return true;
-    return isGoogleAuthUser(auth?.currentUser ?? null);
-  }, [googlePending, profileOnlyMode, auth?.currentUser]);
+  const oauthSignup = useMemo(() => {
+    if (socialPending) return true;
+    if (profileOnlyMode && isOAuthProfileUser(auth?.currentUser ?? null)) return true;
+    return isOAuthProfileUser(auth?.currentUser ?? null);
+  }, [socialPending, profileOnlyMode, auth?.currentUser]);
 
   const needsDirector = needsDirectorStep(platformPurpose);
   const steps = useMemo(
-    () => buildStepList(googleSignup, needsDirector),
-    [googleSignup, needsDirector]
+    () => buildStepList(oauthSignup, needsDirector),
+    [oauthSignup, needsDirector]
   );
   const currentStep = steps[stepIndex] ?? "basic";
-  const googleEmail = auth?.currentUser?.email ?? email;
+  const connectedEmail = auth?.currentUser?.email ?? email;
+  const connectedProviderLabel = pendingProvider
+    ? t(PROVIDER_LABEL_KEYS[pendingProvider])
+    : t("auth.signup.providerGoogle");
   const isLastStep = stepIndex === steps.length - 1;
   const progress = ((stepIndex + 1) / steps.length) * 100;
 
@@ -147,7 +163,7 @@ export default function SignupPage() {
   // 가입은 됐는데 화면 전환 전 새로고침·멈춤 시 인증 대기 화면 복구
   useEffect(() => {
     const currentUser = auth?.currentUser;
-    if (!currentUser || verifyPhase || googlePending) return;
+    if (!currentUser || verifyPhase || socialPending) return;
     if (currentUser.emailVerified) return;
     const isEmailProvider = currentUser.providerData.some((p) => p.providerId === "password");
     if (!isEmailProvider || !currentUser.email) return;
@@ -155,15 +171,14 @@ export default function SignupPage() {
     setSentEmail(currentUser.email);
     setVerifyPhase("pending");
     setLoading(false);
-  }, [verifyPhase, googlePending]);
+  }, [verifyPhase, socialPending]);
 
-  // Google 연결 후 account 단계로 남지 않도록
   useEffect(() => {
-    if (!googleSignup) return;
+    if (!oauthSignup) return;
     if (stepIndex >= steps.length) {
       setStepIndex(Math.max(0, steps.length - 1));
     }
-  }, [googleSignup, stepIndex, steps.length]);
+  }, [oauthSignup, stepIndex, steps.length]);
 
   // {t("common.login")}만 하고 Firestore 프로필이 없는 경우 → 가입 단계만 이어서 진행
   useEffect(() => {
@@ -176,10 +191,15 @@ export default function SignupPage() {
       if (cancelled || exists) return;
       if (currentUser.displayName) setName(currentUser.displayName);
       if (currentUser.email) setEmail(currentUser.email);
-      const isGoogle = isGoogleAuthUser(currentUser);
-      if (isGoogle) {
-        setGooglePending(true);
+      if (isOAuthProfileUser(currentUser)) {
+        setSocialPending(true);
         setProfileOnlyMode(true);
+        void currentUser.getIdTokenResult().then((token) => {
+          const claim = token.claims.socialProvider;
+          if (claim === "kakao" || claim === "naver" || claim === "google" || claim === "apple") {
+            setPendingProvider(claim);
+          }
+        });
       } else {
         setProfileOnlyMode(true);
       }
@@ -286,7 +306,7 @@ export default function SignupPage() {
 
     try {
       setLocale(profile.locale);
-      if (googleSignup || profileOnlyMode) {
+      if (oauthSignup || profileOnlyMode) {
         const currentUser = auth?.currentUser;
         if (!currentUser) {
           setError(t("auth.signup.errorSessionExpired"));
@@ -294,7 +314,7 @@ export default function SignupPage() {
         }
         await updateProfile(currentUser, { displayName: profile.displayName });
         await saveUserProfile(currentUser.uid, profile, currentUser.email, {
-          emailVerified: isGoogleAuthUser(currentUser) || currentUser.emailVerified,
+          emailVerified: isOAuthProfileUser(currentUser) || currentUser.emailVerified,
         });
       } else {
         await signupWithEmail(email, password, profile);
@@ -369,18 +389,25 @@ export default function SignupPage() {
     setStepIndex((i) => Math.max(i - 1, 0));
   };
 
-  const handleGoogle = async () => {
+  const handleSocial = async (
+    provider: SocialProviderKey,
+    action: () => Promise<import("firebase/auth").User> | void
+  ) => {
     setError("");
     setLoading(true);
     try {
-      const googleUser = await loginWithGoogle();
-      if (await hasUserProfile(googleUser.uid)) {
-        router.push(resolvePostLoginPath(googleUser.uid, "/profiles"));
+      const result = action();
+      if (!(result instanceof Promise)) return;
+
+      const signedIn = await result;
+      if (await hasUserProfile(signedIn.uid)) {
+        router.push(resolvePostLoginPath(signedIn.uid, "/profiles"));
         return;
       }
-      if (googleUser.displayName) setName(googleUser.displayName);
-      if (googleUser.email) setEmail(googleUser.email);
-      setGooglePending(true);
+      if (signedIn.displayName) setName(signedIn.displayName);
+      if (signedIn.email) setEmail(signedIn.email);
+      setSocialPending(true);
+      setPendingProvider(provider);
       setProfileOnlyMode(true);
 
       const profile = buildProfile();
@@ -391,7 +418,8 @@ export default function SignupPage() {
 
       setStepIndex(0);
     } catch (err) {
-      setError(formatSignupErrorMessage(err, t));
+      const msg = formatSocialAuthError(err, t, provider, "signup");
+      setError(msg || formatSignupErrorMessage(err, t));
     } finally {
       setLoading(false);
     }
@@ -435,6 +463,7 @@ export default function SignupPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-xiio-bg">
+      <KakaoScript />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-black tracking-widest text-white">
@@ -490,17 +519,16 @@ export default function SignupPage() {
 
         {verifyPhase === null && (
         <div className="bg-xiio-surface rounded-2xl p-8 border border-white/10 min-h-[420px] flex flex-col">
-          {!googleSignup ? (
+          {!oauthSignup ? (
             <div className="mb-6">
-              <button
-                type="button"
-                onClick={() => void handleGoogle()}
+              <SocialAuthButtons
+                layout="signup"
                 disabled={loading}
-                className="w-full py-3 rounded-lg border border-white/20 text-white font-medium flex items-center justify-center gap-3 hover:bg-white/5 disabled:opacity-50 transition"
-              >
-                <GoogleIcon />
-                {t("auth.signup.googleSignup")}
-              </button>
+                onGoogle={() => void handleSocial("google", () => loginWithGoogle())}
+                onApple={() => void handleSocial("apple", () => loginWithApple())}
+                onKakao={() => void handleSocial("kakao", () => loginWithKakao())}
+                onNaver={() => void handleSocial("naver", () => loginWithNaver())}
+              />
               <p className="text-xs text-xiio-muted text-center mt-2">
                 {t("auth.signup.googleSignupHint")}
               </p>
@@ -512,8 +540,12 @@ export default function SignupPage() {
             </div>
           ) : (
             <div className="mb-6 rounded-lg border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3">
-              <p className="text-sm text-white font-medium">{t("auth.signup.googleConnected")}</p>
-              <p className="text-xs text-xiio-muted mt-1">{googleEmail}</p>
+              <p className="text-sm text-white font-medium">
+                {t("auth.signup.socialConnectedProvider", { provider: connectedProviderLabel })}
+              </p>
+              {connectedEmail ? (
+                <p className="text-xs text-xiio-muted mt-1">{connectedEmail}</p>
+              ) : null}
               <p className="text-xs text-xiio-muted mt-2">
                 {t("auth.signup.googleConnectedHint")}
               </p>
@@ -638,7 +670,7 @@ export default function SignupPage() {
               </StepShell>
             )}
 
-            {currentStep === "account" && !googleSignup && (
+            {currentStep === "account" && !oauthSignup && (
               <StepShell title={t("auth.signup.accountTitle")} subtitle={t("auth.signup.accountSubtitle")}>
                 <div className="flex flex-col gap-4">
                   <Field label={t("auth.signup.emailLabel")}>

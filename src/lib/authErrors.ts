@@ -35,6 +35,9 @@ export function formatSignupErrorMessage(err: unknown, t: TranslateFn): string {
   if (code === "auth/invalid-email") {
     return t("auth.signup.errorEmailInvalid");
   }
+  if (code === "auth/account-exists-with-different-credential") {
+    return t("auth.login.errorAccountExistsDifferent");
+  }
   if (code === "permission-denied") {
     return t("auth.signup.errorFirestoreRules");
   }
@@ -64,6 +67,9 @@ export function formatLoginErrorMessage(err: unknown, t: TranslateFn): string {
     code === "auth/invalid-email"
   ) {
     return t("auth.login.errorInvalidCredentials");
+  }
+  if (code === "auth/account-exists-with-different-credential") {
+    return t("auth.login.errorAccountExistsDifferent");
   }
 
   const detail = [code, message].filter(Boolean).join(" — ");

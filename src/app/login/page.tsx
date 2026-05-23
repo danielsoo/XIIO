@@ -5,17 +5,20 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { EMAIL_NOT_VERIFIED, useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { GoogleIcon } from "@/components/auth/GoogleIcon";
+import SocialAuthButtons from "@/components/auth/SocialAuthButtons";
+import KakaoScript from "@/components/auth/KakaoScript";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { auth } from "@/lib/firebase";
-import { resolvePostLoginPath } from "@/lib/activeWatchProfile";
-import { getPostAuthPath, getUserProfile, markEmailVerified } from "@/lib/userProfile";
+import { routeAfterAuth } from "@/lib/postAuthRoute";
 import { loadRememberLogin, saveRememberLogin } from "@/lib/authPersistence";
-import { formatClientError } from "@/lib/clientErrors";
 import { formatLoginErrorMessage } from "@/lib/authErrors";
+import type { SocialProviderKey } from "@/lib/authProviders";
+import { formatSocialAuthError } from "@/lib/socialAuthClient";
+import type { User } from "firebase/auth";
 
 function LoginForm() {
-  const { loginWithEmail, loginWithGoogle } = useAuth();
+  const { loginWithEmail, loginWithGoogle, loginWithApple, loginWithKakao, loginWithNaver } =
+    useAuth();
   const { t } = useTranslations();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -30,20 +33,30 @@ function LoginForm() {
     if (savedEmail) setEmail(savedEmail);
   }, []);
 
-  const routeAfterAuth = async (uid: string) => {
-    const profile = await getUserProfile(uid);
+  const completeSocialLogin = async (signedIn: User) => {
+    saveRememberLogin(rememberMe, email);
+    await routeAfterAuth(signedIn.uid, router);
+  };
 
-    if (!profile) {
-      router.push("/signup");
-      return;
+  const runSocial = async (
+    provider: SocialProviderKey,
+    action: () => Promise<User> | void
+  ) => {
+    setError("");
+    setLoading(true);
+    try {
+      saveRememberLogin(rememberMe, email);
+      const result = action();
+      if (result instanceof Promise) {
+        const signedIn = await result;
+        await completeSocialLogin(signedIn);
+      }
+    } catch (e) {
+      const msg = formatSocialAuthError(e, t, provider, "login");
+      if (msg) setError(msg);
+    } finally {
+      setLoading(false);
     }
-
-    const authUser = auth?.currentUser;
-    if (authUser?.emailVerified && !profile.emailVerified) {
-      await markEmailVerified(uid);
-    }
-
-    router.push(resolvePostLoginPath(uid, await getPostAuthPath(uid)));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +68,7 @@ function LoginForm() {
       await loginWithEmail(email, password, rememberMe);
       const current = auth?.currentUser;
       if (!current) throw new Error("no user");
-      await routeAfterAuth(current.uid);
+      await routeAfterAuth(current.uid, router);
     } catch (err: unknown) {
       if (err instanceof Error && err.message === EMAIL_NOT_VERIFIED) {
         setError(t("auth.login.errorEmailNotVerified"));
@@ -67,22 +80,9 @@ function LoginForm() {
     }
   };
 
-  const handleGoogle = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      saveRememberLogin(rememberMe, email);
-      const googleUser = await loginWithGoogle(rememberMe);
-      await routeAfterAuth(googleUser.uid);
-    } catch (e) {
-      setError(formatClientError(t, e, { titleKey: "auth.login.errorGoogleFailed" }));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <main className="min-h-screen flex items-center justify-center px-4 bg-xiio-bg">
+      <KakaoScript />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-black tracking-widest text-white">
@@ -156,15 +156,14 @@ function LoginForm() {
             <div className="flex-1 h-px bg-white/10" />
           </div>
 
-          <button
-            type="button"
-            onClick={() => void handleGoogle()}
+          <SocialAuthButtons
+            layout="login"
             disabled={loading}
-            className="w-full py-3 rounded-lg border border-white/20 text-white font-medium flex items-center justify-center gap-3 hover:bg-white/5 disabled:opacity-50 transition"
-          >
-            <GoogleIcon />
-            {t("auth.login.google")}
-          </button>
+            onGoogle={() => void runSocial("google", () => loginWithGoogle(rememberMe))}
+            onApple={() => void runSocial("apple", () => loginWithApple(rememberMe))}
+            onKakao={() => void runSocial("kakao", () => loginWithKakao(rememberMe))}
+            onNaver={() => void runSocial("naver", () => loginWithNaver(rememberMe))}
+          />
         </div>
       </div>
     </main>

@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import ProfileMenu from "@/components/ProfileMenu";
 
-const HIDE_NAV_PATHS = ["/login", "/signup", "/profiles", "/admin", "/uploader"];
+const HIDE_NAV_PATHS = ["/login", "/signup", "/profiles", "/admin", "/uploader", "/auth"];
 
 export default function Navbar() {
   const { user } = useAuth();

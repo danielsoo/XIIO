@@ -8,11 +8,12 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   signInWithPopup,
+  signInWithCustomToken,
   updateProfile,
   sendEmailVerification,
   deleteUser,
 } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { auth, appleProvider, googleProvider } from "@/lib/firebase";
 import { applyAuthPersistence } from "@/lib/authPersistence";
 import { hasUserProfile, saveUserProfile } from "@/lib/userProfile";
 import type { SignupProfile } from "@/types/user";
@@ -22,20 +23,21 @@ interface AuthContextType {
   loading: boolean;
   loginWithEmail: (email: string, password: string, remember?: boolean) => Promise<void>;
   signupWithEmail: (email: string, password: string, profile: SignupProfile) => Promise<void>;
-  /** Auth만 있고 Firestore 프로필이 없을 때 같은 비밀번호로 이어서 가입 */
   resumeEmailSignup: (
     email: string,
     password: string,
     profile: SignupProfile
   ) => Promise<{ needsVerification: boolean }>;
   loginWithGoogle: (remember?: boolean) => Promise<User>;
+  loginWithApple: (remember?: boolean) => Promise<User>;
+  loginWithKakao: (remember?: boolean) => Promise<User>;
+  loginWithNaver: (remember?: boolean) => void;
   logout: () => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   reloadUser: () => Promise<boolean>;
 }
 
 export const EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED";
-/** 프로필은 저장됐으나 인증 메일 전송만 실패 (Auth 계정 유지) */
 export const SIGNUP_VERIFY_EMAIL_FAILED = "SIGNUP_VERIFY_EMAIL_FAILED";
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -45,8 +47,45 @@ async function rollbackAuthUser(user: User | null) {
   try {
     await deleteUser(user);
   } catch {
-    // 이미 삭제됐거나 권한 없음 — 무시
+    // ignore
   }
+}
+
+function ensureKakaoReady(): void {
+  const key = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim();
+  if (!key) throw new Error("KAKAO_NOT_CONFIGURED");
+  if (!window.Kakao?.isInitialized()) {
+    window.Kakao?.init(key);
+  }
+  if (!window.Kakao?.isInitialized()) {
+    throw new Error("KAKAO_NOT_READY");
+  }
+}
+
+async function signInWithKakaoAccessToken(accessToken: string): Promise<void> {
+  if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
+
+  const res = await fetch("/api/auth/kakao", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accessToken }),
+  });
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    if (body.error === "account_exists") {
+      const err = new Error("account_exists");
+      Object.assign(err, { code: "auth/account-exists-with-different-credential" });
+      throw err;
+    }
+    if (body.error === "admin_not_configured") {
+      throw new Error("ADMIN_NOT_CONFIGURED");
+    }
+    throw new Error("KAKAO_AUTH_FAILED");
+  }
+
+  const { customToken } = (await res.json()) as { customToken: string };
+  await signInWithCustomToken(auth, customToken);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -73,8 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (currentUser && !currentUser.emailVerified) {
       await sendEmailVerification(currentUser);
       await signOut(auth);
-      const err = new Error(EMAIL_NOT_VERIFIED);
-      throw err;
+      throw new Error(EMAIL_NOT_VERIFIED);
     }
   };
 
@@ -115,8 +153,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let profileSaved = false;
 
     try {
-      const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      newUser = user;
+      const { user: created } = await createUserWithEmailAndPassword(auth, email, password);
+      newUser = created;
       await updateProfile(newUser, { displayName: profile.displayName });
       await saveUserProfile(newUser.uid, profile, newUser.email);
       profileSaved = true;
@@ -124,8 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await sendEmailVerification(newUser);
       } catch {
-        const err = new Error(SIGNUP_VERIFY_EMAIL_FAILED);
-        throw err;
+        throw new Error(SIGNUP_VERIFY_EMAIL_FAILED);
       }
     } catch (err) {
       if (newUser && !profileSaved) {
@@ -149,8 +186,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = async (remember = true) => {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
     await applyAuthPersistence(remember);
-    const { user: googleUser } = await signInWithPopup(auth, googleProvider);
-    return googleUser;
+    const { user: signedIn } = await signInWithPopup(auth, googleProvider);
+    return signedIn;
+  };
+
+  const loginWithApple = async (remember = true) => {
+    if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
+    await applyAuthPersistence(remember);
+    const { user: signedIn } = await signInWithPopup(auth, appleProvider);
+    return signedIn;
+  };
+
+  const loginWithKakao = async (remember = true) => {
+    if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
+    await applyAuthPersistence(remember);
+    ensureKakaoReady();
+
+    return new Promise<User>((resolve, reject) => {
+      window.Kakao!.Auth.login({
+        success: ({ access_token }) => {
+          void (async () => {
+            try {
+              if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
+              await signInWithKakaoAccessToken(access_token);
+              const current = auth.currentUser;
+              if (!current) throw new Error("로그인에 실패했습니다.");
+              resolve(current);
+            } catch (e) {
+              reject(e);
+            }
+          })();
+        },
+        fail: (err) => reject(err),
+      });
+    });
+  };
+
+  const loginWithNaver = (remember = true) => {
+    if (typeof window === "undefined") return;
+    void applyAuthPersistence(remember);
+    window.location.href = "/api/auth/naver/start";
   };
 
   const logout = async () => {
@@ -167,6 +242,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signupWithEmail,
         resumeEmailSignup,
         loginWithGoogle,
+        loginWithApple,
+        loginWithKakao,
+        loginWithNaver,
         logout,
         resendVerificationEmail,
         reloadUser,
