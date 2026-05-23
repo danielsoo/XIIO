@@ -20,7 +20,6 @@ import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
 import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
-  HOME_HERO_PEEK_SIDE_FRAME_CLASS,
   HOME_HERO_PEEK_VIEWPORT_CLASS,
   HOME_HERO_TEASER_FRAME_CLASS,
 } from "@/components/shorts/PromoShortPlayer";
@@ -34,6 +33,25 @@ type RevolvePhase = "idle" | "toNext" | "toPrev";
 type SlotRole = "left" | "center" | "right" | "incoming";
 
 const ENTER_GAP_PX = 100;
+const STAGE_GAP_PX = 4;
+/** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
+const PEEK_SCALE_SM = 180 / 236;
+const PEEK_SCALE_DEFAULT = 160 / 200;
+const HERO_CAROUSEL_FRAME_CLASS = HOME_HERO_TEASER_FRAME_CLASS;
+
+function peekScaleRatio(): number {
+  if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
+  return window.matchMedia("(min-width: 640px)").matches ? PEEK_SCALE_SM : PEEK_SCALE_DEFAULT;
+}
+
+function layoutMetricsFromCenterWidth(centerW: number): LayoutMetrics {
+  const peekScale = peekScaleRatio();
+  const peekVisualW = centerW * peekScale;
+  return {
+    offsetX: centerW / 2 + STAGE_GAP_PX + peekVisualW / 2,
+    peekScale,
+  };
+}
 
 type LayoutMetrics = {
   offsetX: number;
@@ -195,7 +213,7 @@ function placementForItem(
       transform: incomingStyle.transform,
       opacity: incomingStyle.opacity,
       zIndex: incomingStyle.zIndex,
-      frameClass: HOME_HERO_PEEK_SIDE_FRAME_CLASS,
+      frameClass: HERO_CAROUSEL_FRAME_CLASS,
       isCenter: false,
     };
   }
@@ -207,7 +225,7 @@ function placementForItem(
       transform: s.transform,
       opacity: s.opacity,
       zIndex: s.zIndex,
-      frameClass: HOME_HERO_PEEK_SIDE_FRAME_CLASS,
+      frameClass: HERO_CAROUSEL_FRAME_CLASS,
       isCenter: false,
     };
   }
@@ -219,7 +237,7 @@ function placementForItem(
       transform: s.transform,
       opacity: s.opacity,
       zIndex: s.zIndex,
-      frameClass: HOME_HERO_TEASER_FRAME_CLASS,
+      frameClass: HERO_CAROUSEL_FRAME_CLASS,
       isCenter: true,
     };
   }
@@ -231,7 +249,7 @@ function placementForItem(
       transform: s.transform,
       opacity: s.opacity,
       zIndex: s.zIndex,
-      frameClass: HOME_HERO_PEEK_SIDE_FRAME_CLASS,
+      frameClass: HERO_CAROUSEL_FRAME_CLASS,
       isCenter: false,
     };
   }
@@ -240,7 +258,7 @@ function placementForItem(
     transform: "translateX(0) scale(1)",
     opacity: 0,
     zIndex: 0,
-    frameClass: HOME_HERO_PEEK_SIDE_FRAME_CLASS,
+    frameClass: HERO_CAROUSEL_FRAME_CLASS,
     isCenter: false,
   };
 }
@@ -262,9 +280,10 @@ export default function PromoShortTriptychStage({
   const isTransitioningRef = useRef(false);
   const stageRef = useRef<HTMLDivElement>(null);
   const centerMeasureRef = useRef<HTMLDivElement>(null);
-  const peekMeasureRef = useRef<HTMLDivElement>(null);
 
-  const [metrics, setMetrics] = useState<LayoutMetrics>({ offsetX: 200, peekScale: 0.76 });
+  const [metrics, setMetrics] = useState<LayoutMetrics>(() =>
+    layoutMetricsFromCenterWidth(200)
+  );
   const [revolvePhase, setRevolvePhase] = useState<RevolvePhase>("idle");
   const [snapshot, setSnapshot] = useState<Triplet | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -301,22 +320,21 @@ export default function PromoShortTriptychStage({
   useLayoutEffect(() => {
     const measure = () => {
       const centerEl = centerMeasureRef.current;
-      const peekEl = peekMeasureRef.current;
-      if (!centerEl || !peekEl) return;
+      if (!centerEl) return;
       const centerW = centerEl.offsetWidth;
-      const peekW = peekEl.offsetWidth;
-      if (centerW <= 0 || peekW <= 0) return;
-      const gap = 4;
-      setMetrics({
-        offsetX: centerW / 2 + gap + peekW / 2,
-        peekScale: peekW / centerW,
-      });
+      if (centerW <= 0) return;
+      setMetrics(layoutMetricsFromCenterWidth(centerW));
     };
     measure();
     const ro = new ResizeObserver(measure);
     if (centerMeasureRef.current) ro.observe(centerMeasureRef.current);
-    if (peekMeasureRef.current) ro.observe(peekMeasureRef.current);
-    return () => ro.disconnect();
+    const mq = window.matchMedia("(min-width: 640px)");
+    const onMq = () => measure();
+    mq.addEventListener("change", onMq);
+    return () => {
+      ro.disconnect();
+      mq.removeEventListener("change", onMq);
+    };
   }, []);
 
   useEffect(() => {
@@ -463,10 +481,9 @@ export default function PromoShortTriptychStage({
       onKeyDown={onViewportKeyDown}
       className={`${viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS} touch-pan-y select-none outline-none`}
     >
-      {/* layout measure */}
-      <div className="pointer-events-none absolute opacity-0 -z-50 flex gap-1" aria-hidden>
-        <div ref={peekMeasureRef} className={HOME_HERO_PEEK_SIDE_FRAME_CLASS} />
-        <div ref={centerMeasureRef} className={HOME_HERO_TEASER_FRAME_CLASS} />
+      {/* layout measure — teaser 프레임 하나만 */}
+      <div className="pointer-events-none absolute opacity-0 -z-50" aria-hidden>
+        <div ref={centerMeasureRef} className={HERO_CAROUSEL_FRAME_CLASS} />
       </div>
 
       <div
@@ -493,16 +510,23 @@ export default function PromoShortTriptychStage({
 
             const isTargetCenter = item.id === liveCenterId;
             const isLiveCenter = !snapshot && isTargetCenter;
+            const isPromoting =
+              animatingRevolve &&
+              ((revolvePhase === "toNext" && item.id === displayTriplet.right.id) ||
+                (revolvePhase === "toPrev" && item.id === displayTriplet.left.id));
             const preserveCenterFrame = Boolean(
-              snapshot && (item.id === outgoingCenterId || item.id === liveCenterId)
+              snapshot &&
+                (item.id === outgoingCenterId || item.id === liveCenterId || isPromoting)
             );
-            const showAsCenter = placement.isCenter || (warmCenter && !placement.visible);
+            const showAsCenter =
+              placement.isCenter || isPromoting || (warmCenter && !placement.visible);
+            const ariaLiveCenter = isLiveCenter || isPromoting;
 
             return (
               <div
                 key={item.id}
                 className={`absolute top-1/2 left-1/2 -translate-y-1/2 will-change-transform ${transitionClass} ${
-                  placement.visible ? placement.frameClass : HOME_HERO_TEASER_FRAME_CLASS
+                  placement.visible ? placement.frameClass : HERO_CAROUSEL_FRAME_CLASS
                 }`}
                 style={{
                   transform: placement.visible
@@ -512,12 +536,12 @@ export default function PromoShortTriptychStage({
                   zIndex: placement.visible ? placement.zIndex : 0,
                   pointerEvents: placement.visible ? undefined : "none",
                 }}
-                aria-hidden={placement.visible ? !placement.isCenter : true}
+                aria-hidden={placement.visible ? !ariaLiveCenter : true}
               >
                 {showAsCenter ? (
                   <PromoShortPlayer
                     item={item}
-                    isActive={isTargetCenter}
+                    isActive={isLiveCenter}
                     playbackEnabled={isLiveCenter && !isTransitioning}
                     preserveFrame={preserveCenterFrame}
                     videoPreload="auto"
@@ -534,7 +558,7 @@ export default function PromoShortTriptychStage({
                     className="h-full w-full"
                   />
                 ) : (
-                  <PromoShortPeekPreview item={item} />
+                  <PromoShortPeekPreview item={item} compactShell />
                 )}
                 {swipeEnabled && placement.visible && placement.role === "left" && (
                   <>
