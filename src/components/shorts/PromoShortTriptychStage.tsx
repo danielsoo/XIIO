@@ -283,7 +283,10 @@ export default function PromoShortTriptychStage({
   const current = items[index];
 
   const prevIndexRef = useRef(index);
+  const indexRef = useRef(index);
   const isTransitioningRef = useRef(false);
+  const pendingStepRef = useRef(0);
+  const pendingFadeTargetRef = useRef<number | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const centerMeasureRef = useRef<HTMLDivElement>(null);
 
@@ -291,6 +294,7 @@ export default function PromoShortTriptychStage({
     layoutMetricsFromCenterWidth(200)
   );
   const [revolvePhase, setRevolvePhase] = useState<RevolvePhase>("idle");
+  const [revolveEpoch, setRevolveEpoch] = useState(0);
   const [snapshot, setSnapshot] = useState<Triplet | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [outgoingCenterId, setOutgoingCenterId] = useState<string | null>(null);
@@ -299,7 +303,9 @@ export default function PromoShortTriptychStage({
   const [animPrevIndex, setAnimPrevIndex] = useState(0);
   const [incomingAtEnter, setIncomingAtEnter] = useState(true);
 
-  const endTransition = useCallback(() => {
+  indexRef.current = index;
+
+  const finishTransition = useCallback(() => {
     isTransitioningRef.current = false;
     setIsTransitioning(false);
     setOutgoingCenterId(null);
@@ -307,20 +313,80 @@ export default function PromoShortTriptychStage({
     setRevolvePhase("idle");
   }, []);
 
+  const endTransition = useCallback(() => {
+    const fadeTarget = pendingFadeTargetRef.current;
+    if (fadeTarget !== null && fadeTarget !== indexRef.current) {
+      pendingFadeTargetRef.current = null;
+      pendingStepRef.current = 0;
+      isTransitioningRef.current = true;
+      setIsTransitioning(true);
+      onIndexChange(fadeTarget);
+      return;
+    }
+
+    const pending = pendingStepRef.current;
+    if (pending !== 0) {
+      const d = pending > 0 ? 1 : -1;
+      pendingStepRef.current = pending - d;
+      isTransitioningRef.current = true;
+      setIsTransitioning(true);
+      onIndexChange((indexRef.current + d + count) % count);
+      return;
+    }
+
+    finishTransition();
+  }, [count, onIndexChange, finishTransition]);
+
   useEffect(() => {
     isTransitioningRef.current = isTransitioning;
   }, [isTransitioning]);
 
+  const requestIndex = useCallback(
+    (target: number) => {
+      if (count === 0) return;
+      const next = ((target % count) + count) % count;
+      if (next === indexRef.current) return;
+
+      if (isTransitioningRef.current) {
+        const mode = getTransitionMode(indexRef.current, next, count);
+        if (mode === "fade") {
+          pendingFadeTargetRef.current = next;
+          pendingStepRef.current = 0;
+          return;
+        }
+        let step = next - indexRef.current;
+        if (step > count / 2) step -= count;
+        if (step < -count / 2) step += count;
+        if (step === 1 || step === -1) {
+          pendingStepRef.current += step;
+          pendingFadeTargetRef.current = null;
+        } else {
+          pendingFadeTargetRef.current = next;
+          pendingStepRef.current = 0;
+        }
+        return;
+      }
+
+      onIndexChange(next);
+    },
+    [count, onIndexChange]
+  );
+
   const go = useCallback(
     (delta: number) => {
-      if (count === 0 || isTransitioningRef.current) return;
-      onIndexChange((index + delta + count) % count);
+      if (count === 0) return;
+      if (isTransitioningRef.current) {
+        pendingStepRef.current += delta;
+        pendingFadeTargetRef.current = null;
+        return;
+      }
+      onIndexChange((indexRef.current + delta + count) % count);
     },
-    [count, index, onIndexChange]
+    [count, onIndexChange]
   );
 
   const handlePlaybackEnded = useCallback(() => {
-    if (count > 1 && !isTransitioningRef.current) go(1);
+    if (count > 1) go(1);
   }, [count, go]);
 
   useLayoutEffect(() => {
@@ -343,7 +409,7 @@ export default function PromoShortTriptychStage({
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const prev = prevIndexRef.current;
     if (prev === index) return;
 
@@ -358,6 +424,21 @@ export default function PromoShortTriptychStage({
       setSnapshot(null);
       setRevolvePhase("idle");
       setViewportOpacity(0);
+      return;
+    }
+
+    const direction = getRevolveDirection(prev, index, count);
+    setAnimPrevIndex(prev);
+    setSnapshot(tripletAt(items, prev));
+    setIncomingAtEnter(true);
+    setRevolvePhase(direction === 1 ? "toNext" : "toPrev");
+    setRevolveEpoch((e) => e + 1);
+  }, [index, count, items]);
+
+  useEffect(() => {
+    if (!isTransitioning) return;
+
+    if (transitionMode === "fade") {
       const raf = requestAnimationFrame(() => {
         requestAnimationFrame(() => setViewportOpacity(1));
       });
@@ -368,17 +449,11 @@ export default function PromoShortTriptychStage({
       };
     }
 
-    const direction = getRevolveDirection(prev, index, count);
-    setAnimPrevIndex(prev);
-    setSnapshot(tripletAt(items, prev));
-    setIncomingAtEnter(true);
-    setRevolvePhase("idle");
-    const targetPhase = direction === 1 ? "toNext" : "toPrev";
-    const raf = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setRevolvePhase(targetPhase));
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [index, count, items, endTransition]);
+    if (revolvePhase === "toNext" || revolvePhase === "toPrev") {
+      const timer = window.setTimeout(() => endTransition(), REVOLVE_MS + 80);
+      return () => window.clearTimeout(timer);
+    }
+  }, [index, isTransitioning, transitionMode, revolvePhase, endTransition]);
 
   useEffect(() => {
     if (revolvePhase === "idle") {
@@ -393,13 +468,6 @@ export default function PromoShortTriptychStage({
       return () => cancelAnimationFrame(raf);
     }
   }, [revolvePhase]);
-
-  useEffect(() => {
-    if (!isTransitioning || transitionMode !== "revolve" || revolvePhase === "idle") return;
-
-    const timer = window.setTimeout(() => endTransition(), REVOLVE_MS + 80);
-    return () => window.clearTimeout(timer);
-  }, [index, isTransitioning, transitionMode, revolvePhase, endTransition]);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const swipeEnabled = count > 1;
@@ -531,7 +599,8 @@ export default function PromoShortTriptychStage({
                 revolvePhase,
                 metrics
               );
-              const warmCenter = circularDistance(itemIdx, index, count) <= 1;
+              const warmCenter =
+                !snapshot && circularDistance(itemIdx, index, count) <= 1;
               if (!placement.visible && !warmCenter) return;
 
               const isTargetCenter = item.id === liveCenterId;
@@ -567,7 +636,7 @@ export default function PromoShortTriptychStage({
 
               const slotEl = (
                 <div
-                  key={item.id}
+                  key={isWrapArc ? `${item.id}-rev-${revolveEpoch}` : item.id}
                   className={`absolute top-1/2 left-1/2 ${slotCenteringClass} will-change-transform ${slotMotionClass} ${slotFrameClass}`}
                   style={{
                     transform: placement.visible
@@ -673,7 +742,7 @@ export default function PromoShortTriptychStage({
               <button
                 key={item.id}
                 type="button"
-                onClick={() => onIndexChange(i)}
+                onClick={() => requestIndex(i)}
                 className={`h-1.5 rounded-full transition-all ${
                   i === index ? "w-8 bg-xiio-accent" : "w-1.5 bg-white/25 hover:bg-white/40"
                 }`}
