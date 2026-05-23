@@ -225,12 +225,36 @@ export function getStreamThumbnailUrl(streamUid: string): string | null {
   return `https://${sub}/${streamUid}/thumbnails/thumbnail.jpg`;
 }
 
-export function getPlaybackUrl(streamUid: string): string | null {
-  const sub = getCustomerSubdomain();
-  if (sub) {
-    return `https://${sub}/${streamUid}/manifest/video.m3u8`;
+/** 홈 히어로·promo 피드 — HLS manifest를 고화질 rendition 위주로 */
+export const STREAM_TEASER_BANDWIDTH_HINT_MBPS = 50;
+
+export type PlaybackUrlOptions = {
+  clientBandwidthHintMbps?: number;
+};
+
+export function appendPlaybackBandwidthHint(url: string, hintMbps: number): string {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("clientBandwidthHint", String(hintMbps));
+    return parsed.toString();
+  } catch {
+    const sep = url.includes("?") ? "&" : "?";
+    return `${url}${sep}clientBandwidthHint=${hintMbps}`;
   }
-  return null;
+}
+
+export function getPlaybackUrl(
+  streamUid: string,
+  opts?: PlaybackUrlOptions
+): string | null {
+  const sub = getCustomerSubdomain();
+  if (!sub) return null;
+  const base = `https://${sub}/${streamUid}/manifest/video.m3u8`;
+  const hint = opts?.clientBandwidthHintMbps;
+  if (hint != null && hint > 0) {
+    return appendPlaybackBandwidthHint(base, hint);
+  }
+  return base;
 }
 
 export async function resolvePlaybackUrl(streamUid: string): Promise<string | null> {

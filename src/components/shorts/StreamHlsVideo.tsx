@@ -32,13 +32,27 @@ type Props = {
   onError?: () => void;
 };
 
-const HLS_OPTIONS: Partial<Hls["config"]> = {
+const HLS_BUFFER_OPTS: Partial<Hls["config"]> = {
   enableWorker: true,
-  /** -1: ABR 자동 (0이면 항상 최저 화질부터 ~3초 후 상승) */
-  startLevel: -1,
-  capLevelToPlayerSize: true,
   maxBufferLength: 15,
   maxMaxBufferLength: 30,
+};
+
+/** 일반 숏츠 피드 — ABR·대역폭 프로브 유지 */
+const HLS_OPTIONS_ABR: Partial<Hls["config"]> = {
+  ...HLS_BUFFER_OPTS,
+  startLevel: -1,
+  testBandwidth: true,
+  capLevelToPlayerSize: true,
+};
+
+/** 히어로 teaser — 최고 레벨만 로드, 프로브 세그먼트 없음 */
+const HLS_OPTIONS_HIGH_START: Partial<Hls["config"]> = {
+  ...HLS_BUFFER_OPTS,
+  startLevel: -1,
+  testBandwidth: false,
+  autoStartLoad: false,
+  capLevelToPlayerSize: false,
 };
 
 function canPlayNativeHls(): boolean {
@@ -107,7 +121,25 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
     };
 
     const handleError = () => onErrorRef.current?.();
-    const handleCanPlay = () => fireReady();
+
+    let targetMaxLevel = -1;
+    let useHlsJsHighStart = false;
+
+    const tryFireReadyAtMaxLevel = () => {
+      const hls = hlsRef.current;
+      if (!hls || targetMaxLevel < 0) return;
+      if (hls.currentLevel !== targetMaxLevel) return;
+      if (video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) return;
+      fireReady();
+    };
+
+    const handleCanPlay = () => {
+      if (useHlsJsHighStart) {
+        tryFireReadyAtMaxLevel();
+        return;
+      }
+      fireReady();
+    };
 
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("error", handleError);
@@ -117,6 +149,7 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
       hlsRef.current = null;
     }
     attachedSrcRef.current = null;
+    useHlsJsHighStart = false;
 
     if (!isHlsSource(src)) {
       video.src = src;
@@ -125,16 +158,32 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
       video.src = src;
       attachedSrcRef.current = src;
     } else if (Hls.isSupported()) {
-      const hls = new Hls(HLS_OPTIONS);
+      const highStart = preferHighStart;
+      useHlsJsHighStart = highStart;
+      const hls = new Hls(highStart ? HLS_OPTIONS_HIGH_START : HLS_OPTIONS_ABR);
       hlsRef.current = hls;
       hls.loadSource(src);
       hls.attachMedia(video);
       attachedSrcRef.current = src;
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (preferHighStart && hls.levels.length > 0) {
-          hls.startLevel = hls.levels.length - 1;
-        }
-      });
+
+      if (highStart) {
+        const onManifestParsed = () => {
+          if (hls.levels.length === 0) {
+            hls.startLoad(-1);
+            return;
+          }
+          const max = hls.levels.length - 1;
+          targetMaxLevel = max;
+          hls.startLevel = max;
+          hls.nextLoadLevel = max;
+          hls.loadLevel = max;
+          hls.startLoad(-1);
+        };
+        hls.on(Hls.Events.MANIFEST_PARSED, onManifestParsed);
+        hls.on(Hls.Events.LEVEL_SWITCHED, tryFireReadyAtMaxLevel);
+        hls.on(Hls.Events.FRAG_BUFFERED, tryFireReadyAtMaxLevel);
+      }
+
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) handleError();
       });

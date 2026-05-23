@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import {
   aspectRatioFromVideo,
+  appendPlaybackBandwidthHint,
   getPlaybackUrl,
   getStreamThumbnailUrl,
   getStreamVideo,
+  STREAM_TEASER_BANDWIDTH_HINT_MBPS,
 } from "@/lib/cloudflare/stream";
 import { isPromoLiked } from "@/lib/server/engagement";
 import { verifyBearerIdToken } from "@/lib/server/firebase-admin";
@@ -40,7 +42,13 @@ export async function GET(request: Request) {
       const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
 
       const info = await getStreamVideo(promo.streamUid);
-      const videoUrl = getPlaybackUrl(promo.streamUid) ?? info?.playbackHls ?? null;
+      const rawPlayback =
+        getPlaybackUrl(promo.streamUid, {
+          clientBandwidthHintMbps: STREAM_TEASER_BANDWIDTH_HINT_MBPS,
+        }) ?? info?.playbackHls ?? null;
+      const videoUrl = rawPlayback
+        ? appendPlaybackBandwidthHint(rawPlayback, STREAM_TEASER_BANDWIDTH_HINT_MBPS)
+        : null;
       if (!videoUrl) return null;
 
       let likedByMe = false;
