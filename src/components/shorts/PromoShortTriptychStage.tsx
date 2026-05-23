@@ -98,14 +98,14 @@ function slotTransform(
       return {
         transform: `translateX(${-offsetX}px) scale(${peekScale})`,
         opacity: 1,
-        zIndex: 5,
+        zIndex: 15,
       };
     }
     if (role === "right") {
       return {
         transform: `translateX(${offsetX}px) scale(${peekScale})`,
         opacity: 1,
-        zIndex: 5,
+        zIndex: 15,
       };
     }
     return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 10 };
@@ -165,7 +165,7 @@ function incomingSlotTransform(
     return {
       transform: `translateX(${offsetX}px) scale(${peekScale})`,
       opacity: 1,
-      zIndex: 5,
+      zIndex: 15,
     };
   }
 
@@ -179,7 +179,7 @@ function incomingSlotTransform(
   return {
     transform: `translateX(${-offsetX}px) scale(${peekScale})`,
     opacity: 1,
-    zIndex: 5,
+    zIndex: 15,
   };
 }
 
@@ -566,38 +566,42 @@ export default function PromoShortTriptychStage({
                   <>
                     <div
                       role="presentation"
+                      data-carousel-nav
                       className={PEEK_TAP_LAYER}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => go(-1)}
                     />
-                    <button
-                      type="button"
-                      onClick={() => go(-1)}
+                    <div
+                      role="presentation"
+                      data-carousel-nav
                       className={PEEK_ARROW_ON_LEFT_PEEK}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => go(-1)}
                       aria-hidden
-                      tabIndex={-1}
                     >
                       ‹
-                    </button>
+                    </div>
                   </>
                 )}
                 {swipeEnabled && placement.visible && placement.role === "right" && (
                   <>
                     <div
                       role="presentation"
+                      data-carousel-nav
                       className={PEEK_TAP_LAYER}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => go(1)}
                     />
-                    <button
-                      type="button"
-                      onClick={() => go(1)}
+                    <div
+                      role="presentation"
+                      data-carousel-nav
                       className={PEEK_ARROW_ON_RIGHT_PEEK}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => go(1)}
                       aria-hidden
-                      tabIndex={-1}
                     >
                       ›
-                    </button>
+                    </div>
                   </>
                 )}
               </div>

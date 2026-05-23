@@ -105,6 +105,9 @@ export function useHorizontalSwipe(
       if (e.button !== 0) return;
       if (!el.contains(e.target as Node)) return;
 
+      const target = e.target;
+      if (target instanceof Element && target.closest("[data-carousel-nav]")) return;
+
       active = true;
       activePointerId = e.pointerId;
       axis = "none";
