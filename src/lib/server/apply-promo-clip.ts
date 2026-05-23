@@ -8,6 +8,7 @@ export type PromoClipInput = {
   clipEndSec: number;
   title: string;
   description?: string | null;
+  thumbnailUrl?: string | null;
 };
 
 /** 신규 홍보 쇼츠 클립 생성 (draft, processing) */
@@ -47,6 +48,7 @@ export async function applyPromoClipToWork(
       clipEndSec: clip.clipEndSec,
       title: clip.title.trim().slice(0, 200),
       description: clip.description?.trim() || null,
+      thumbnailUrl: clip.thumbnailUrl?.trim() || null,
       updatedAt: FieldValue.serverTimestamp(),
       ...(existing.exists && options?.mergeExisting ? {} : { createdAt: FieldValue.serverTimestamp() }),
     },

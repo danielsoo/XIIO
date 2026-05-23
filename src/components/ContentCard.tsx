@@ -12,14 +12,10 @@ interface ContentCardProps {
 
 export default function ContentCard({
   title,
-  contentCategory,
-  tags = [],
   gradient,
   thumbnailUrl,
   href,
 }: ContentCardProps) {
-  const tagLine = tags.length > 0 ? tags.join(" · ") : null;
-
   const inner = (
     <>
       {thumbnailUrl ? (
@@ -41,13 +37,6 @@ export default function ContentCard({
             <path d="M8 5v14l11-7z" />
           </svg>
         </span>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-        {contentCategory && (
-          <p className="text-xs font-medium text-white/90 mb-0.5">{contentCategory}</p>
-        )}
-        {tagLine && <p className="text-[11px] text-xiio-muted mb-0.5 line-clamp-1">{tagLine}</p>}
-        <p className="text-sm font-semibold text-white leading-tight line-clamp-2">{title}</p>
       </div>
     </>
   );

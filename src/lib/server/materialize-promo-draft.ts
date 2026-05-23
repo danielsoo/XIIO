@@ -40,6 +40,7 @@ export async function materializePromoFromDraft(
       clipEndSec: draft.clipEndSec,
       title: draft.title,
       description: draft.description,
+      thumbnailUrl: draft.thumbnailUrl,
     }, { mergeExisting: promoSnap.exists });
 
     await workRef.update({

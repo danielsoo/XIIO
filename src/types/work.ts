@@ -58,6 +58,7 @@ export type PromoDraft = {
   clipEndSec: number;
   title: string;
   description?: string | null;
+  thumbnailUrl?: string | null;
 };
 
 export type PromoPendingRevision = {
@@ -68,6 +69,7 @@ export type PromoPendingRevision = {
   clipEndSec: number;
   title?: string;
   description?: string;
+  thumbnailUrl?: string | null;
   rejectReason?: string;
   submittedAt?: unknown;
   updatedAt?: unknown;
@@ -117,6 +119,7 @@ export type PromoShortDoc = {
   clipEndSec: number;
   title?: string;
   description?: string;
+  thumbnailUrl?: string | null;
   rejectReason?: string;
   deletionRequest?: DeletionRequest;
   submittedAt?: unknown;

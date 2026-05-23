@@ -4,11 +4,17 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
+import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
+import {
+  patchPromoThumbnailUrl,
+  uploadPromoThumbnail,
+  validatePromoThumbnailFile,
+} from "@/lib/works/promoThumbnailUpload";
 import type {
   PromoPendingRevision,
   PromoShortDoc,
@@ -49,6 +55,10 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const [clipEnd, setClipEnd] = useState(30);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [thumbnailFieldError, setThumbnailFieldError] = useState<string | null>(null);
+  const [savedThumbnailUrl, setSavedThumbnailUrl] = useState<string | null>(null);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!user) return;
@@ -87,6 +97,12 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       setDescription(
         source?.description ?? promo?.description ?? draft?.description ?? json.work.description ?? ""
       );
+      const thumb =
+        promo?.thumbnailUrl ?? draft?.thumbnailUrl ?? null;
+      setSavedThumbnailUrl(thumb);
+      setThumbnailFile(null);
+      setThumbnailPreview(thumb);
+      setThumbnailFieldError(null);
       const encStatus = json.revisionMode ? rev?.streamStatus : promo?.streamStatus;
       if (encStatus && !isPromoEncoding(encStatus) && encStatus === "ready") {
         setJustSavedClip(false);
@@ -134,6 +150,51 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         ...(init?.headers ?? {}),
       },
     });
+  };
+
+  const handleThumbnailChange = (next: File | null, preview: string | null) => {
+    if (!next) {
+      setThumbnailFile(null);
+      setThumbnailPreview(preview ?? savedThumbnailUrl);
+      return;
+    }
+    const validation = validatePromoThumbnailFile(next);
+    if (validation === "type") {
+      setThumbnailFile(null);
+      setThumbnailPreview(savedThumbnailUrl);
+      setThumbnailFieldError(t("uploader.errorThumbnailInvalidType"));
+      return;
+    }
+    if (validation === "size") {
+      setThumbnailFile(null);
+      setThumbnailPreview(savedThumbnailUrl);
+      setThumbnailFieldError(t("uploader.errorThumbnailTooLarge"));
+      return;
+    }
+    setThumbnailFieldError(null);
+    setThumbnailFile(next);
+    setThumbnailPreview(preview);
+  };
+
+  const saveThumbnail = async () => {
+    if (!user || !thumbnailFile) return;
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const token = await user.getIdToken();
+      const url = await uploadPromoThumbnail(user.uid, workId, thumbnailFile);
+      await patchPromoThumbnailUrl(token, workId, url);
+      setSavedThumbnailUrl(url);
+      setThumbnailFile(null);
+      setThumbnailPreview(url);
+      setMsg(t("promoEditor.thumbnailSaved"));
+      await load({ silent: true });
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "uploader.errorThumbnailUploadFailed" }));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const saveClip = async () => {
@@ -350,7 +411,27 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       )}
 
       {showEditor && (
-        <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6">
+        <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6 space-y-6">
+          <section>
+            <h2 className="text-sm font-semibold text-white mb-3">{t("promoEditor.thumbnailSection")}</h2>
+            <ThumbnailUploadField
+              file={thumbnailFile}
+              previewUrl={thumbnailPreview}
+              onFileChange={handleThumbnailChange}
+              disabled={busy}
+              error={thumbnailFieldError}
+            />
+            {thumbnailFile ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void saveThumbnail()}
+                className="mt-3 px-4 py-2 rounded-lg border border-white/15 text-white text-sm hover:bg-white/5 disabled:opacity-40"
+              >
+                {busy ? t("common.processing") : t("promoEditor.saveThumbnail")}
+              </button>
+            ) : null}
+          </section>
           <PromoShortFields
             duration={duration}
             clipStart={clipStart}

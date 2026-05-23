@@ -218,6 +218,8 @@ export async function PUT(request: Request, { params }: Params) {
     existingData?.description ||
     work.description ||
     null;
+  const clipThumbnailUrl =
+    existingData?.thumbnailUrl ?? work.promoDraft?.thumbnailUrl ?? null;
 
   if (isPublishedRevision) {
     await promoDocRef.set(
@@ -230,6 +232,7 @@ export async function PUT(request: Request, { params }: Params) {
           clipEndSec: end,
           title: clipTitle,
           description: clipDescription,
+          thumbnailUrl: clipThumbnailUrl,
           updatedAt: FieldValue.serverTimestamp(),
         },
         revisionReviewStatus: FieldValue.delete(),
@@ -256,6 +259,7 @@ export async function PUT(request: Request, { params }: Params) {
       clipEndSec: end,
       title: clipTitle,
       description: clipDescription,
+      thumbnailUrl: clipThumbnailUrl,
       updatedAt: FieldValue.serverTimestamp(),
       ...(existing.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
     },

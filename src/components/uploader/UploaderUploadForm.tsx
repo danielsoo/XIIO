@@ -5,6 +5,7 @@ import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
 import { uploaderInputClass } from "@/components/uploader/uploaderFormStyles";
+import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
 import WorkTagInput from "@/components/uploader/WorkTagInput";
 import { useTranslations } from "@/context/LocaleContext";
@@ -17,6 +18,11 @@ import {
   type ApiErrorBody,
 } from "@/lib/clientErrors";
 import { uploadFileViaTus } from "@/lib/streamTusUpload";
+import {
+  patchPromoThumbnailUrl,
+  uploadPromoThumbnail,
+  validatePromoThumbnailFile,
+} from "@/lib/works/promoThumbnailUpload";
 import { defaultPromoClipEnd, validatePromoClipRange } from "@/lib/works/promo-clip";
 import { normalizeTags } from "@/lib/works/label-utils";
 import { WORK_SECTIONS, type VideoAspectRatio, type WorkSection } from "@/types/work";
@@ -32,6 +38,9 @@ type Props = {
 export default function UploaderUploadForm({ user, initialDirector, onSuccess, onError }: Props) {
   const { t } = useTranslations();
   const [file, setFile] = useState<File | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [thumbnailFieldError, setThumbnailFieldError] = useState<string | null>(null);
   const fileDuration = useVideoFileDuration(file);
   const [title, setTitle] = useState("");
   const [section, setSection] = useState<WorkSection>("movies");
@@ -75,7 +84,35 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const durationForClip = fileDuration ?? 120;
   const clipInvalid = validatePromoClipRange(clipStart, clipEnd, fileDuration ?? undefined) != null;
   const canSubmit =
-    Boolean(file) && Boolean(promoTitle.trim()) && !clipInvalid && fileDuration != null;
+    Boolean(file) &&
+    Boolean(thumbnailFile) &&
+    Boolean(promoTitle.trim()) &&
+    !clipInvalid &&
+    fileDuration != null;
+
+  const handleThumbnailChange = (next: File | null, preview: string | null) => {
+    if (!next) {
+      setThumbnailFile(null);
+      setThumbnailPreview(preview);
+      return;
+    }
+    const validation = validatePromoThumbnailFile(next);
+    if (validation === "type") {
+      setThumbnailFile(null);
+      setThumbnailPreview(null);
+      setThumbnailFieldError(t("uploader.errorThumbnailInvalidType"));
+      return;
+    }
+    if (validation === "size") {
+      setThumbnailFile(null);
+      setThumbnailPreview(null);
+      setThumbnailFieldError(t("uploader.errorThumbnailTooLarge"));
+      return;
+    }
+    setThumbnailFieldError(null);
+    setThumbnailFile(next);
+    setThumbnailPreview(preview);
+  };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,6 +122,10 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     }
     if (!file.size || !Number.isFinite(file.size)) {
       onError(t("uploader.errorUploadLengthRequired"));
+      return;
+    }
+    if (!thumbnailFile) {
+      onError(t("uploader.errorThumbnailRequired"));
       return;
     }
     if (!promoTitle.trim()) {
@@ -174,6 +215,16 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       }
 
       try {
+        const thumbUrl = await uploadPromoThumbnail(user.uid, workId, thumbnailFile);
+        await patchPromoThumbnailUrl(token, workId, thumbUrl);
+      } catch (thumbErr) {
+        onError(
+          formatClientError(t, thumbErr, { titleKey: "uploader.errorThumbnailUploadFailed" })
+        );
+        return;
+      }
+
+      try {
         await uploadFileViaTus(file, tusEndpoint, {
           onProgress: (percent) => setUploadPercent(percent),
         });
@@ -184,6 +235,9 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
 
       onSuccess({ workId, message: t("uploader.uploadSuccess") });
       setFile(null);
+      setThumbnailFile(null);
+      setThumbnailPreview(null);
+      setThumbnailFieldError(null);
       setTitle("");
       setContentCategory("");
       setTags([]);
@@ -306,6 +360,14 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
                 />
               </div>
             </section>
+
+            <ThumbnailUploadField
+              file={thumbnailFile}
+              previewUrl={thumbnailPreview}
+              onFileChange={handleThumbnailChange}
+              disabled={busy}
+              error={thumbnailFieldError}
+            />
 
             <PromoShortFields
               duration={durationForClip}

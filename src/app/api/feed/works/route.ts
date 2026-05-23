@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStreamVideo } from "@/lib/cloudflare/stream";
 import { syncWorkStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
-import { getDbOrNull, parseWorkDoc } from "@/lib/server/works";
+import { getDbOrNull, parsePromoDoc, parseWorkDoc, promoRef } from "@/lib/server/works";
 import type { CatalogFeedItem, WorkSection } from "@/types/work";
 import { isWorkSection } from "@/lib/works/constants";
 
@@ -49,7 +49,15 @@ export async function GET(request: Request) {
     if (work.streamStatus !== "ready") continue;
 
     let thumbnailUrl: string | undefined;
-    if (work.streamUid) {
+    const promoSnap = await promoRef(db, ownerUid, doc.id).get();
+    if (promoSnap.exists) {
+      const promo = parsePromoDoc(promoSnap.data() as Record<string, unknown>);
+      if (promo.thumbnailUrl) thumbnailUrl = promo.thumbnailUrl;
+    }
+    if (!thumbnailUrl && work.promoDraft?.thumbnailUrl) {
+      thumbnailUrl = work.promoDraft.thumbnailUrl;
+    }
+    if (!thumbnailUrl && work.streamUid) {
       const info = await getStreamVideo(work.streamUid);
       thumbnailUrl = info?.thumbnail;
     }

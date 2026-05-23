@@ -248,6 +248,7 @@ function PlayerChrome({
   onExitFullscreen: () => void;
 }) {
   const isTeaser = variant === "teaser" && !isFullscreen;
+  const hideHeroChrome = heroCarouselEmbed && !isFullscreen;
   const { t } = useTranslations();
   const { user } = useAuth();
   const videoRef = useRef<StreamHlsVideoHandle>(null);
@@ -433,7 +434,7 @@ function PlayerChrome({
     ? { maxHeight: bandMaxHeightPx }
     : undefined;
 
-  const actionButtons = (
+  const actionButtons = hideHeroChrome ? null : (
     <div className="flex flex-col items-center justify-center gap-4 shrink-0">
       <button
         type="button"
@@ -553,7 +554,7 @@ function PlayerChrome({
     </div>
   );
 
-  const bottomOverlay = isTeaser ? null : (
+  const bottomOverlay = isTeaser || hideHeroChrome ? null : (
     <div
       className={`absolute inset-x-0 bottom-0 pointer-events-none ${
         expandable ? "h-auto min-h-[5rem]" : overlayBandClass

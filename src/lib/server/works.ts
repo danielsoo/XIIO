@@ -48,6 +48,10 @@ export function parsePromoDraft(data: Record<string, unknown>): PromoDraft | und
   const end = Number(d.clipEndSec);
   const title = typeof d.title === "string" ? d.title.trim() : "";
   if (!title || !Number.isFinite(start) || !Number.isFinite(end)) return undefined;
+  const thumbnailUrl =
+    typeof d.thumbnailUrl === "string" && d.thumbnailUrl.trim()
+      ? d.thumbnailUrl.trim()
+      : null;
   return {
     clipStartSec: start,
     clipEndSec: end,
@@ -56,6 +60,7 @@ export function parsePromoDraft(data: Record<string, unknown>): PromoDraft | und
       typeof d.description === "string" && d.description.trim()
         ? d.description.trim()
         : null,
+    thumbnailUrl,
   };
 }
 
@@ -114,6 +119,10 @@ export function parsePromoDoc(data: Record<string, unknown>): PromoShortDoc {
     clipEndSec: typeof data.clipEndSec === "number" ? data.clipEndSec : 0,
     title: data.title ? String(data.title) : undefined,
     description: data.description ? String(data.description) : undefined,
+    thumbnailUrl:
+      typeof data.thumbnailUrl === "string" && data.thumbnailUrl.trim()
+        ? data.thumbnailUrl.trim()
+        : null,
     rejectReason: data.rejectReason ? String(data.rejectReason) : undefined,
     deletionRequest: data.deletionRequest as PromoShortDoc["deletionRequest"],
     submittedAt: data.submittedAt,

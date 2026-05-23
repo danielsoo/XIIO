@@ -49,7 +49,11 @@ export async function GET(request: Request) {
       }
 
       const thumbnailUrl =
-        info?.thumbnail ?? getStreamThumbnailUrl(promo.streamUid) ?? undefined;
+        promo.thumbnailUrl ??
+        work.promoDraft?.thumbnailUrl ??
+        info?.thumbnail ??
+        getStreamThumbnailUrl(promo.streamUid) ??
+        undefined;
 
       const feedItem: PromoFeedItem = {
         id: `${ownerUid}_${workId}`,
