@@ -53,7 +53,7 @@ export default function ContentCard({
   );
 
   const className =
-    "group relative block rounded-xl overflow-hidden aspect-video cursor-pointer hover:scale-[1.02] transition-transform duration-200";
+    "group relative block rounded-2xl overflow-hidden aspect-video cursor-pointer hover:scale-[1.02] transition-transform duration-200";
 
   if (href) {
     return (
