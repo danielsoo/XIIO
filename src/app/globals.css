@@ -35,49 +35,25 @@ body {
   0% {
     transform: translate(-50%, -50%) translateX(calc(-1 * var(--carousel-offset-x)))
       scale(var(--carousel-peek-scale));
-    z-index: 15;
-  }
-  8% {
-    transform: translate(-50%, -50%) translateX(calc(-1 * var(--carousel-offset-x)))
-      scale(var(--carousel-peek-scale));
-    z-index: 1;
   }
   50% {
-    transform: translate(-50%, -50%) translateX(0) translateZ(-80px) scale(var(--carousel-back-scale));
-    z-index: 1;
-  }
-  92% {
-    transform: translate(-50%, -50%) translateX(var(--carousel-offset-x)) scale(var(--carousel-peek-scale));
-    z-index: 1;
+    transform: translate(-50%, -50%) translateX(0) scale(var(--carousel-back-scale));
   }
   100% {
     transform: translate(-50%, -50%) translateX(var(--carousel-offset-x)) scale(var(--carousel-peek-scale));
-    z-index: 15;
   }
 }
 
 @keyframes carousel-wrap-to-prev {
   0% {
     transform: translate(-50%, -50%) translateX(var(--carousel-offset-x)) scale(var(--carousel-peek-scale));
-    z-index: 15;
-  }
-  8% {
-    transform: translate(-50%, -50%) translateX(var(--carousel-offset-x)) scale(var(--carousel-peek-scale));
-    z-index: 1;
   }
   50% {
-    transform: translate(-50%, -50%) translateX(0) translateZ(-80px) scale(var(--carousel-back-scale));
-    z-index: 1;
-  }
-  92% {
-    transform: translate(-50%, -50%) translateX(calc(-1 * var(--carousel-offset-x)))
-      scale(var(--carousel-peek-scale));
-    z-index: 1;
+    transform: translate(-50%, -50%) translateX(0) scale(var(--carousel-back-scale));
   }
   100% {
     transform: translate(-50%, -50%) translateX(calc(-1 * var(--carousel-offset-x)))
       scale(var(--carousel-peek-scale));
-    z-index: 15;
   }
 }
 
@@ -94,13 +70,11 @@ body {
     animation: none;
     transform: translate(-50%, -50%) translateX(var(--carousel-offset-x))
       scale(var(--carousel-peek-scale));
-    z-index: 15;
   }
 
   .animate-carousel-wrap-to-prev {
     animation: none;
     transform: translate(-50%, -50%) translateX(calc(-1 * var(--carousel-offset-x)))
       scale(var(--carousel-peek-scale));
-    z-index: 15;
   }
 }

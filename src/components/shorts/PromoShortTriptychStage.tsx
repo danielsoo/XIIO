@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type ReactNode,
 } from "react";
 import { useHorizontalSwipe } from "@/hooks/useHorizontalSwipe";
 import {
@@ -37,8 +38,10 @@ const STAGE_GAP_PX = 4;
 /** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
 const PEEK_SCALE_SM = 180 / 236;
 const PEEK_SCALE_DEFAULT = 160 / 200;
-const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-2xl overflow-hidden isolate";
+const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-2xl overflow-hidden";
 const HERO_CAROUSEL_WRAP_ROUNDED_CLASS = "rounded-2xl overflow-hidden";
+const CAROUSEL_BACK_LAYER_CLASS = "absolute inset-0 z-[1] pointer-events-none [&>*]:pointer-events-auto";
+const CAROUSEL_FRONT_LAYER_CLASS = "absolute inset-0 z-[10]";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
 const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
 const CAROUSEL_BACK_SCALE_RATIO = 0.52;
@@ -118,34 +121,34 @@ function slotTransform(
       return {
         transform: `translateX(${offsetX}px) scale(${peekScale})`,
         opacity: 1,
-        zIndex: 15,
+        zIndex: 1,
       };
     }
     if (role === "center") {
       return {
         transform: `translateX(${-offsetX}px) scale(${peekScale})`,
         opacity: 1,
-        zIndex: 5,
+        zIndex: 20,
       };
     }
-    return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 10 };
+    return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
   }
 
   if (role === "right") {
     return {
       transform: `translateX(${-offsetX}px) scale(${peekScale})`,
       opacity: 1,
-      zIndex: 15,
+      zIndex: 1,
     };
   }
   if (role === "center") {
     return {
       transform: `translateX(${offsetX}px) scale(${peekScale})`,
       opacity: 1,
-      zIndex: 5,
+      zIndex: 20,
     };
   }
-  return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 10 };
+  return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
 }
 
 function incomingSlotTransform(
@@ -515,133 +518,150 @@ export default function PromoShortTriptychStage({
           className={`relative mx-auto overflow-visible px-2 flex items-center justify-center ${stageMinHeight}`}
           style={stageMetricsStyle}
         >
-          {items.map((item, itemIdx) => {
-            const placement = placementForItem(
-              item.id,
-              displayTriplet,
-              incomingItem,
-              incomingStyle,
-              revolvePhase,
-              metrics
-            );
-            const warmCenter = circularDistance(itemIdx, index, count) <= 1;
-            if (!placement.visible && !warmCenter) return null;
+          {(() => {
+            const backSlots: ReactNode[] = [];
+            const frontSlots: ReactNode[] = [];
 
-            const isTargetCenter = item.id === liveCenterId;
-            const isLiveCenter = !snapshot && isTargetCenter;
-            const isPromoting =
-              animatingRevolve &&
-              ((revolvePhase === "toNext" && item.id === displayTriplet.right.id) ||
-                (revolvePhase === "toPrev" && item.id === displayTriplet.left.id));
-            const preserveCenterFrame = Boolean(
-              snapshot &&
-                (item.id === outgoingCenterId || item.id === liveCenterId || isPromoting)
-            );
-            const showAsCenter =
-              placement.isCenter || isPromoting || (warmCenter && !placement.visible);
-            const ariaLiveCenter = isLiveCenter || isPromoting;
-            const isWrapArc =
-              animatingRevolve &&
-              placement.visible &&
-              ((revolvePhase === "toNext" && placement.role === "left") ||
-                (revolvePhase === "toPrev" && placement.role === "right"));
-            const wrapArcClass = isWrapArc
-              ? revolvePhase === "toNext"
-                ? "animate-carousel-wrap-to-next"
-                : "animate-carousel-wrap-to-prev"
-              : "";
-            const slotMotionClass = isWrapArc ? wrapArcClass : transitionClass;
-            const slotCenteringClass = isWrapArc ? "" : "-translate-y-1/2";
-            const slotFrameClass = placement.visible
-              ? isWrapArc
-                ? HERO_CAROUSEL_WRAP_FRAME_CLASS
-                : placement.frameClass
-              : HERO_CAROUSEL_FRAME_CLASS;
+            items.forEach((item, itemIdx) => {
+              const placement = placementForItem(
+                item.id,
+                displayTriplet,
+                incomingItem,
+                incomingStyle,
+                revolvePhase,
+                metrics
+              );
+              const warmCenter = circularDistance(itemIdx, index, count) <= 1;
+              if (!placement.visible && !warmCenter) return;
+
+              const isTargetCenter = item.id === liveCenterId;
+              const isLiveCenter = !snapshot && isTargetCenter;
+              const isPromoting =
+                animatingRevolve &&
+                ((revolvePhase === "toNext" && item.id === displayTriplet.right.id) ||
+                  (revolvePhase === "toPrev" && item.id === displayTriplet.left.id));
+              const preserveCenterFrame = Boolean(
+                snapshot &&
+                  (item.id === outgoingCenterId || item.id === liveCenterId || isPromoting)
+              );
+              const showAsCenter =
+                placement.isCenter || isPromoting || (warmCenter && !placement.visible);
+              const ariaLiveCenter = isLiveCenter || isPromoting;
+              const isWrapArc =
+                animatingRevolve &&
+                placement.visible &&
+                ((revolvePhase === "toNext" && placement.role === "left") ||
+                  (revolvePhase === "toPrev" && placement.role === "right"));
+              const wrapArcClass = isWrapArc
+                ? revolvePhase === "toNext"
+                  ? "animate-carousel-wrap-to-next"
+                  : "animate-carousel-wrap-to-prev"
+                : "";
+              const slotMotionClass = isWrapArc ? wrapArcClass : transitionClass;
+              const slotCenteringClass = isWrapArc ? "" : "-translate-y-1/2";
+              const slotFrameClass = placement.visible
+                ? isWrapArc
+                  ? HERO_CAROUSEL_WRAP_FRAME_CLASS
+                  : placement.frameClass
+                : HERO_CAROUSEL_FRAME_CLASS;
+
+              const slotEl = (
+                <div
+                  key={item.id}
+                  className={`absolute top-1/2 left-1/2 ${slotCenteringClass} will-change-transform ${slotMotionClass} ${slotFrameClass}`}
+                  style={{
+                    transform: placement.visible
+                      ? isWrapArc
+                        ? undefined
+                        : `translate(-50%, -50%) ${placement.transform}`
+                      : "translate(-50%, -50%) scale(0.85)",
+                    opacity: placement.visible ? (isWrapArc ? 1 : placement.opacity) : 0,
+                    zIndex: placement.visible ? placement.zIndex : 0,
+                    pointerEvents: placement.visible ? undefined : "none",
+                  }}
+                  aria-hidden={placement.visible ? !ariaLiveCenter : true}
+                >
+                  {showAsCenter ? (
+                    <PromoShortPlayer
+                      item={item}
+                      isActive={isLiveCenter}
+                      playbackEnabled={isLiveCenter && !isTransitioning}
+                      preserveFrame={preserveCenterFrame}
+                      heroCarouselEmbed
+                      videoPreload="auto"
+                      variant="teaser"
+                      playerSize={playerSize}
+                      peekSide={false}
+                      layout={layout}
+                      compact={compact}
+                      scrollExpand={false}
+                      loop={false}
+                      onPlaybackEnded={
+                        isLiveCenter && count > 1 ? handlePlaybackEnded : undefined
+                      }
+                      className="h-full w-full"
+                    />
+                  ) : (
+                    <PromoShortPeekPreview item={item} compactShell dimOverlay={!isWrapArc} />
+                  )}
+                  {swipeEnabled && placement.visible && placement.role === "left" && !isWrapArc && (
+                    <>
+                      <div
+                        role="presentation"
+                        data-carousel-nav
+                        className={PEEK_TAP_LAYER}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => go(-1)}
+                      />
+                      <div
+                        role="presentation"
+                        data-carousel-nav
+                        className={PEEK_ARROW_ON_LEFT_PEEK}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => go(-1)}
+                        aria-hidden
+                      >
+                        ‹
+                      </div>
+                    </>
+                  )}
+                  {swipeEnabled && placement.visible && placement.role === "right" && !isWrapArc && (
+                    <>
+                      <div
+                        role="presentation"
+                        data-carousel-nav
+                        className={PEEK_TAP_LAYER}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => go(1)}
+                      />
+                      <div
+                        role="presentation"
+                        data-carousel-nav
+                        className={PEEK_ARROW_ON_RIGHT_PEEK}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => go(1)}
+                        aria-hidden
+                      >
+                        ›
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+
+              if (isWrapArc) backSlots.push(slotEl);
+              else frontSlots.push(slotEl);
+            });
 
             return (
-              <div
-                key={item.id}
-                className={`absolute top-1/2 left-1/2 ${slotCenteringClass} will-change-transform ${slotMotionClass} ${slotFrameClass}`}
-                style={{
-                  transform: placement.visible
-                    ? isWrapArc
-                      ? undefined
-                      : `translate(-50%, -50%) ${placement.transform}`
-                    : "translate(-50%, -50%) scale(0.85)",
-                  opacity: placement.visible ? (isWrapArc ? 1 : placement.opacity) : 0,
-                  zIndex: isWrapArc ? undefined : placement.visible ? placement.zIndex : 0,
-                  pointerEvents: placement.visible ? undefined : "none",
-                }}
-                aria-hidden={placement.visible ? !ariaLiveCenter : true}
-              >
-                {showAsCenter ? (
-                  <PromoShortPlayer
-                    item={item}
-                    isActive={isLiveCenter}
-                    playbackEnabled={isLiveCenter && !isTransitioning}
-                    preserveFrame={preserveCenterFrame}
-                    heroCarouselEmbed
-                    videoPreload="auto"
-                    variant="teaser"
-                    playerSize={playerSize}
-                    peekSide={false}
-                    layout={layout}
-                    compact={compact}
-                    scrollExpand={false}
-                    loop={false}
-                    onPlaybackEnded={
-                      isLiveCenter && count > 1 ? handlePlaybackEnded : undefined
-                    }
-                    className="h-full w-full"
-                  />
-                ) : (
-                  <PromoShortPeekPreview item={item} compactShell dimOverlay={!isWrapArc} />
-                )}
-                {swipeEnabled && placement.visible && placement.role === "left" && (
-                  <>
-                    <div
-                      role="presentation"
-                      data-carousel-nav
-                      className={PEEK_TAP_LAYER}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => go(-1)}
-                    />
-                    <div
-                      role="presentation"
-                      data-carousel-nav
-                      className={PEEK_ARROW_ON_LEFT_PEEK}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => go(-1)}
-                      aria-hidden
-                    >
-                      ‹
-                    </div>
-                  </>
-                )}
-                {swipeEnabled && placement.visible && placement.role === "right" && (
-                  <>
-                    <div
-                      role="presentation"
-                      data-carousel-nav
-                      className={PEEK_TAP_LAYER}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => go(1)}
-                    />
-                    <div
-                      role="presentation"
-                      data-carousel-nav
-                      className={PEEK_ARROW_ON_RIGHT_PEEK}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => go(1)}
-                      aria-hidden
-                    >
-                      ›
-                    </div>
-                  </>
-                )}
-              </div>
+              <>
+                {backSlots.length > 0 ? (
+                  <div className={CAROUSEL_BACK_LAYER_CLASS}>{backSlots}</div>
+                ) : null}
+                <div className={CAROUSEL_FRONT_LAYER_CLASS}>{frontSlots}</div>
+              </>
             );
-          })}
+          })()}
         </div>
 
         {count > 1 && (
