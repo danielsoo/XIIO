@@ -633,6 +633,7 @@ function PlayerChrome({
             muted
             loop={loop}
             preload={videoPreload ?? (isActive ? "auto" : "none")}
+            preferHighStart={isTeaser}
             autoPlay={shouldPlay}
             onReady={() => setVideoReady(true)}
             onEnded={
