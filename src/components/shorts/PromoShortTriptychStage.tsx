@@ -428,11 +428,16 @@ export default function PromoShortTriptychStage({
     }
 
     const direction = getRevolveDirection(prev, index, count);
+    const targetPhase = direction === 1 ? "toNext" : "toPrev";
     setAnimPrevIndex(prev);
     setSnapshot(tripletAt(items, prev));
     setIncomingAtEnter(true);
-    setRevolvePhase(direction === 1 ? "toNext" : "toPrev");
-    setRevolveEpoch((e) => e + 1);
+    setRevolvePhase("idle");
+    const raf = requestAnimationFrame(() => {
+      setRevolvePhase(targetPhase);
+      setRevolveEpoch((e) => e + 1);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [index, count, items]);
 
   useEffect(() => {
