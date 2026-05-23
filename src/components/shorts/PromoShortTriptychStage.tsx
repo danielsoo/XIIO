@@ -51,18 +51,23 @@ function peekScaleRatio(): number {
   return window.matchMedia("(min-width: 640px)").matches ? PEEK_SCALE_SM : PEEK_SCALE_DEFAULT;
 }
 
+const NAV_ARROW_INSET_PX = 8;
+
 function layoutMetricsFromCenterWidth(centerW: number): LayoutMetrics {
   const peekScale = peekScaleRatio();
   const peekVisualW = centerW * peekScale;
+  const offsetX = centerW / 2 + STAGE_GAP_PX + peekVisualW / 2;
   return {
-    offsetX: centerW / 2 + STAGE_GAP_PX + peekVisualW / 2,
+    offsetX,
     peekScale,
+    navArrowOffsetPx: offsetX - peekVisualW / 2 + NAV_ARROW_INSET_PX,
   };
 }
 
 type LayoutMetrics = {
   offsetX: number;
   peekScale: number;
+  navArrowOffsetPx: number;
 };
 
 type Props = {
@@ -77,8 +82,7 @@ type Props = {
 
 const PEEK_CAROUSEL_ARROW_BASE =
   "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 shadow-none text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-white hover:text-white/80 transition pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
-const PEEK_ARROW_ON_LEFT_PEEK = `absolute right-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_CAROUSEL_ARROW_BASE}`;
-const PEEK_ARROW_ON_RIGHT_PEEK = `absolute left-2 top-1/2 -translate-y-1/2 z-50 ${PEEK_CAROUSEL_ARROW_BASE}`;
+const FIXED_CAROUSEL_ARROW_CLASS = `absolute top-1/2 -translate-y-1/2 ${PEEK_CAROUSEL_ARROW_BASE}`;
 const PEEK_TAP_LAYER =
   "absolute inset-0 z-40 cursor-pointer rounded-2xl bg-transparent";
 
@@ -679,46 +683,22 @@ export default function PromoShortTriptychStage({
                     <PromoShortPeekPreview item={item} compactShell dimOverlay={!isWrapArc} />
                   )}
                   {swipeEnabled && placement.visible && placement.role === "left" && !isWrapArc && (
-                    <>
-                      <div
-                        role="presentation"
-                        data-carousel-nav
-                        className={PEEK_TAP_LAYER}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => go(-1)}
-                      />
-                      <div
-                        role="presentation"
-                        data-carousel-nav
-                        className={PEEK_ARROW_ON_LEFT_PEEK}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => go(-1)}
-                        aria-hidden
-                      >
-                        ‹
-                      </div>
-                    </>
+                    <div
+                      role="presentation"
+                      data-carousel-nav
+                      className={PEEK_TAP_LAYER}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => go(-1)}
+                    />
                   )}
                   {swipeEnabled && placement.visible && placement.role === "right" && !isWrapArc && (
-                    <>
-                      <div
-                        role="presentation"
-                        data-carousel-nav
-                        className={PEEK_TAP_LAYER}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => go(1)}
-                      />
-                      <div
-                        role="presentation"
-                        data-carousel-nav
-                        className={PEEK_ARROW_ON_RIGHT_PEEK}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => go(1)}
-                        aria-hidden
-                      >
-                        ›
-                      </div>
-                    </>
+                    <div
+                      role="presentation"
+                      data-carousel-nav
+                      className={PEEK_TAP_LAYER}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => go(1)}
+                    />
                   )}
                 </div>
               );
@@ -736,6 +716,38 @@ export default function PromoShortTriptychStage({
               </>
             );
           })()}
+          {swipeEnabled ? (
+            <div className="pointer-events-none absolute inset-0 z-[60]">
+              <button
+                type="button"
+                data-carousel-nav
+                className={FIXED_CAROUSEL_ARROW_CLASS}
+                style={{
+                  left: `calc(50% - ${metrics.navArrowOffsetPx}px)`,
+                  transform: "translate(-50%, -50%)",
+                }}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => go(-1)}
+                aria-label={t("home.promoPrev")}
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                data-carousel-nav
+                className={FIXED_CAROUSEL_ARROW_CLASS}
+                style={{
+                  left: `calc(50% + ${metrics.navArrowOffsetPx}px)`,
+                  transform: "translate(-50%, -50%)",
+                }}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => go(1)}
+                aria-label={t("home.promoNext")}
+              >
+                ›
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {count > 1 && (
