@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import DirectorNameSetupModal from "@/components/uploader/DirectorNameSetupModal";
 import UploaderUploadForm from "@/components/uploader/UploaderUploadForm";
@@ -71,27 +72,24 @@ export default function UploaderUploadInner() {
 
   if (needsDeposit) {
     return (
-      <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16">
-        <div className="max-w-md mx-auto">
-          <SubpageHeader variant="standalone" backFallbackHref="/" />
-          <div className="rounded-2xl border border-white/10 bg-xiio-surface p-8">
-            <h1 className="text-2xl font-bold text-white mb-2">{t("uploader.uploadDepositTitle")}</h1>
-            <p className="text-xiio-muted text-sm mb-6">{t("uploader.uploadDepositBody")}</p>
-            <Link
-              href="/uploader/verify"
-              className="block w-full text-center py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
-            >
-              {t("uploader.uploadDepositCta")}
-            </Link>
-          </div>
+      <AppPageShell standalone>
+        <SubpageHeader variant="standalone" backFallbackHref="/" />
+        <div className="max-w-lg mx-auto rounded-2xl border border-white/10 bg-xiio-surface p-8">
+          <h1 className="text-2xl font-bold text-white mb-2">{t("uploader.uploadDepositTitle")}</h1>
+          <p className="text-xiio-muted text-sm mb-6">{t("uploader.uploadDepositBody")}</p>
+          <Link
+            href="/uploader/verify"
+            className="block w-full text-center py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
+          >
+            {t("uploader.uploadDepositCta")}
+          </Link>
         </div>
-      </main>
+      </AppPageShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16 md:px-8">
-      <div className="max-w-5xl mx-auto">
+    <AppPageShell standalone>
         <SubpageHeader
           variant="standalone"
           title={t("uploader.uploadTitle")}
@@ -138,7 +136,6 @@ export default function UploaderUploadInner() {
             {t("myWorks.title")}
           </Link>
         </p>
-      </div>
-    </main>
+    </AppPageShell>
   );
 }

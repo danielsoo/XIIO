@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import ReportContentModal from "@/components/report/ReportContentModal";
 import PlaybackVideo from "@/components/PlaybackVideo";
@@ -76,12 +77,10 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
 
   if (err || !data) {
     return (
-      <main className="min-h-screen bg-xiio-bg pt-24 px-6 md:px-12 pb-16">
-        <div className="max-w-5xl mx-auto">
-          <SubpageHeader title={t("watch.notFound")} backFallbackHref="/" />
-          <p className="text-red-400 whitespace-pre-wrap break-words">{err ?? t("watch.notFound")}</p>
-        </div>
-      </main>
+      <AppPageShell>
+        <SubpageHeader title={t("watch.notFound")} backFallbackHref="/" />
+        <p className="text-red-400 whitespace-pre-wrap break-words">{err ?? t("watch.notFound")}</p>
+      </AppPageShell>
     );
   }
 
@@ -90,8 +89,7 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
   const tagLine = data.approvedTags.length > 0 ? data.approvedTags.join(" · ") : null;
 
   return (
-    <main className="min-h-screen bg-xiio-bg pt-24 px-4 md:px-12 pb-16">
-      <div className="max-w-5xl mx-auto">
+    <AppPageShell>
         <SubpageHeader
           backHref={sectionCatalogHref(data.section)}
           backLabel={t(SECTION_TITLE_KEYS[data.section])}
@@ -158,7 +156,6 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
             <PlaybackVideo src={data.playbackUrl} maxHeightClass="max-h-[70vh]" />
           </details>
         )}
-      </div>
 
       <ReportContentModal
         open={reportOpen}
@@ -167,6 +164,6 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
         targetOwnerUid={ownerUid}
         targetWorkId={workId}
       />
-    </main>
+    </AppPageShell>
   );
 }

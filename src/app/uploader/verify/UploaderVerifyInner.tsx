@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
+import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
@@ -76,28 +77,25 @@ export default function UploaderVerifyInner() {
 
   if (depositVerified) {
     return (
-      <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16">
-        <div className="max-w-md mx-auto">
-          <SubpageHeader variant="standalone" title={t("uploader.verifyDoneTitle")} backFallbackHref="/" />
-          <div className="rounded-2xl border border-white/10 bg-xiio-surface p-8 text-center">
-            <p className="text-xiio-muted text-sm mb-6">{t("uploader.verifyDoneBody")}</p>
-            <Link
-              href="/uploader/upload"
-              className="block w-full py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
-            >
-              {t("uploader.verifyDoneCta")}
-            </Link>
-          </div>
+      <AppPageShell standalone>
+        <SubpageHeader variant="standalone" title={t("uploader.verifyDoneTitle")} backFallbackHref="/" />
+        <div className="max-w-lg mx-auto rounded-2xl border border-white/10 bg-xiio-surface p-8 text-center">
+          <p className="text-xiio-muted text-sm mb-6">{t("uploader.verifyDoneBody")}</p>
+          <Link
+            href="/uploader/upload"
+            className="block w-full py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
+          >
+            {t("uploader.verifyDoneCta")}
+          </Link>
         </div>
-      </main>
+      </AppPageShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16">
-      <div className="max-w-md mx-auto">
-        <SubpageHeader variant="standalone" title={t("uploader.verifyTitle")} backFallbackHref="/" />
-        <div className="rounded-2xl border border-white/10 bg-xiio-surface p-8">
+    <AppPageShell standalone>
+      <SubpageHeader variant="standalone" title={t("uploader.verifyTitle")} backFallbackHref="/" />
+      <div className="max-w-lg mx-auto rounded-2xl border border-white/10 bg-xiio-surface p-8">
           <p className="text-xiio-muted text-sm mb-6">{t("uploader.verifyBody")}</p>
 
           {status === "success" && (
@@ -138,8 +136,7 @@ export default function UploaderVerifyInner() {
           >
             {t("uploader.verifyRefresh")}
           </button>
-        </div>
       </div>
-    </main>
+    </AppPageShell>
   );
 }

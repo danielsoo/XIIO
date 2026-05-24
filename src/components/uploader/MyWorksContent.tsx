@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import { useMyWorks } from "@/hooks/useMyWorks";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
@@ -138,8 +139,7 @@ export default function MyWorksContent() {
   }
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16 md:px-8">
-      <div className="max-w-3xl mx-auto">
+    <AppPageShell standalone>
         <SubpageHeader variant="standalone" title={t("myWorks.title")} backFallbackHref="/" />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 -mt-2">
           <div>
@@ -351,7 +351,6 @@ export default function MyWorksContent() {
             })}
           </ul>
         )}
-      </div>
-    </main>
+    </AppPageShell>
   );
 }

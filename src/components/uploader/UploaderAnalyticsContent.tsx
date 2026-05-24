@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
@@ -96,8 +97,8 @@ export default function UploaderAnalyticsContent() {
   }
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16 md:px-8">
-      <div className="max-w-5xl mx-auto space-y-10">
+    <AppPageShell standalone>
+      <div className="space-y-10">
         <div>
           <SubpageHeader
             variant="standalone"
@@ -183,7 +184,7 @@ export default function UploaderAnalyticsContent() {
           </>
         ) : null}
       </div>
-    </main>
+    </AppPageShell>
   );
 }
 

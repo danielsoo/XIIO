@@ -107,7 +107,7 @@ export default function DirectorNameSettingsSection() {
   };
 
   return (
-    <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">
+    <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10">
       <h2 className="text-sm font-semibold text-xiio-muted mb-2">{t("settings.directorNameSection")}</h2>
       <p className="text-xs text-xiio-muted mb-4 leading-relaxed">{t("settings.directorNameLockedHint")}</p>
 

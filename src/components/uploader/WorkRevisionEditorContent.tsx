@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import WorkTagInput from "@/components/uploader/WorkTagInput";
@@ -246,8 +247,7 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
     (!rev.streamUid || rev.streamStatus === "ready");
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16 md:px-8">
-      <div className="max-w-2xl mx-auto">
+    <AppPageShell standalone>
         <SubpageHeader
           variant="standalone"
           title={t("workRevision.title")}
@@ -424,7 +424,6 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
             </button>
           </div>
         )}
-      </div>
-    </main>
+    </AppPageShell>
   );
 }

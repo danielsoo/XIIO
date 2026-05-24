@@ -7,6 +7,11 @@ import { useProfile } from "@/context/ProfileContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { LOCALES, type Locale } from "@/i18n";
 import type { XiioTimezoneId } from "@/lib/timezone";
+import AppPageShell from "@/components/layout/AppPageShell";
+import SubpageHeader from "@/components/layout/SubpageHeader";
+import ProfileAvatar from "@/components/ProfileAvatar";
+import DirectorNameSettingsSection from "@/components/settings/DirectorNameSettingsSection";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 
 const TIMEZONE_OPTIONS: { id: XiioTimezoneId; labelKey: string }[] = [
   { id: "auto", labelKey: "settings.timezoneAuto" },
@@ -15,10 +20,8 @@ const TIMEZONE_OPTIONS: { id: XiioTimezoneId; labelKey: string }[] = [
   { id: "us_pacific", labelKey: "settings.timezoneUsPacific" },
   { id: "utc", labelKey: "settings.timezoneUtc" },
 ];
-import SubpageHeader from "@/components/layout/SubpageHeader";
-import ProfileAvatar from "@/components/ProfileAvatar";
-import DirectorNameSettingsSection from "@/components/settings/DirectorNameSettingsSection";
-import { useAdminAccess } from "@/hooks/useAdminAccess";
+
+const settingsCard = "bg-xiio-surface rounded-2xl p-6 border border-white/10";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -43,11 +46,11 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="min-h-screen pt-24 pb-16 px-4 bg-xiio-bg">
-      <div className="max-w-lg mx-auto">
-        <SubpageHeader title={t("settings.title")} backFallbackHref="/" />
+    <AppPageShell>
+      <SubpageHeader title={t("settings.title")} backFallbackHref="/" />
 
-        <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className={settingsCard}>
           <h2 className="text-sm font-semibold text-xiio-muted mb-2">{t("settings.language")}</h2>
           <p className="text-xs text-xiio-muted mb-4">{t("settings.languageHint")}</p>
           <div className="flex gap-2">
@@ -68,8 +71,8 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {adminChecked && isAdmin && (
-          <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">
+        {adminChecked && isAdmin ? (
+          <section className={settingsCard}>
             <h2 className="text-sm font-semibold text-xiio-muted mb-2">{t("settings.timezone")}</h2>
             <p className="text-xs text-xiio-muted mb-4">{t("settings.timezoneHint")}</p>
             <div className="flex flex-col gap-2">
@@ -89,12 +92,10 @@ export default function SettingsPage() {
               ))}
             </div>
           </section>
-        )}
-
-        <DirectorNameSettingsSection />
+        ) : null}
 
         {activeProfile && (
-          <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">
+          <section className={settingsCard}>
             <h2 className="text-sm font-semibold text-xiio-muted mb-4">{t("settings.watchProfileSection")}</h2>
             <div className="flex items-center gap-4">
               <ProfileAvatar profile={activeProfile} size="lg" />
@@ -108,24 +109,27 @@ export default function SettingsPage() {
           </section>
         )}
 
-        <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">
+        <section className={settingsCard}>
           <h2 className="text-sm font-semibold text-xiio-muted mb-4">{t("settings.accountSection")}</h2>
-          <Link
-            href="/account"
-            className="text-sm text-xiio-accent hover:underline"
-          >
+          <Link href="/account" className="text-sm text-xiio-accent hover:underline">
             {t("settings.viewAccountProfile")}
           </Link>
         </section>
 
-        <button
-          type="button"
-          onClick={() => void handleLogout()}
-          className="w-full py-3 rounded-lg border border-white/20 text-white hover:bg-white/5 transition"
-        >
-          {t("settings.logout")}
-        </button>
+        <div className="lg:col-span-2">
+          <DirectorNameSettingsSection />
+        </div>
+
+        <div className="lg:col-span-2">
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            className="w-full py-3 rounded-lg border border-white/20 text-white hover:bg-white/5 transition"
+          >
+            {t("settings.logout")}
+          </button>
+        </div>
       </div>
-    </main>
+    </AppPageShell>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
@@ -492,8 +493,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   );
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16 md:px-8">
-      <div className="max-w-5xl mx-auto">
+    <AppPageShell standalone>
         <SubpageHeader
           variant="standalone"
           title={t("promoEditor.title")}
@@ -587,8 +587,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
             ) : null
           }
         />
-      </div>
-    </main>
+    </AppPageShell>
   );
 }
 
