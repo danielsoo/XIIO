@@ -5,6 +5,9 @@ import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
 import UploaderFormSection from "@/components/uploader/UploaderFormSection";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
+import UploadWizardStepper, {
+  type UploadWizardStepMeta,
+} from "@/components/uploader/UploadWizardStepper";
 import { uploaderInputClass } from "@/components/uploader/uploaderFormStyles";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
@@ -32,6 +35,24 @@ import type { User } from "firebase/auth";
 type UploadStepId = "fullWork" | "catalog" | "promo";
 
 const UPLOAD_STEPS: UploadStepId[] = ["fullWork", "catalog", "promo"];
+
+const UPLOAD_STEP_META: UploadWizardStepMeta[] = [
+  {
+    id: "fullWork",
+    titleKey: "uploader.uploadZoneFullWorkTitle",
+    hintKey: "uploader.uploadZoneFullWorkHint",
+  },
+  {
+    id: "catalog",
+    titleKey: "uploader.uploadZoneCatalogTitle",
+    hintKey: "uploader.uploadZoneCatalogHint",
+  },
+  {
+    id: "promo",
+    titleKey: "uploader.uploadZonePromoTitle",
+    hintKey: "uploader.uploadZonePromoHint",
+  },
+];
 
 type Props = {
   user: User;
@@ -74,6 +95,15 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       fullWork: t("uploader.uploadZoneFullWorkTitle"),
       catalog: t("uploader.uploadZoneCatalogTitle"),
       promo: t("uploader.uploadZonePromoTitle"),
+    }),
+    [t]
+  );
+
+  const stepHints: Record<UploadStepId, string> = useMemo(
+    () => ({
+      fullWork: t("uploader.uploadZoneFullWorkHint"),
+      catalog: t("uploader.uploadZoneCatalogHint"),
+      promo: t("uploader.uploadZonePromoHint"),
     }),
     [t]
   );
@@ -155,6 +185,13 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const handleBack = () => {
     setFormError("");
     setStepIndex((i) => Math.max(i - 1, 0));
+    scrollWizardTop();
+  };
+
+  const handleStepClick = (index: number) => {
+    if (busy || index >= stepIndex) return;
+    setFormError("");
+    setStepIndex(index);
     scrollWizardTop();
   };
 
@@ -344,9 +381,9 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
 
   return (
     <form onSubmit={handleFormSubmit}>
-      <div className="mb-6">
-        <div className="flex justify-between text-xs text-xiio-muted mb-2">
-          <span>{stepLabels[currentStep]}</span>
+      <div className="mb-6 lg:hidden">
+        <div className="flex justify-between text-xs text-xiio-muted mb-1">
+          <span className="font-medium text-white">{stepLabels[currentStep]}</span>
           <span>
             {t("uploader.uploadStepProgress", {
               current: stepIndex + 1,
@@ -354,7 +391,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             })}
           </span>
         </div>
-        <div className="h-1 rounded-full bg-white/10 overflow-hidden">
+        <p className="text-xs text-xiio-muted mb-2 leading-relaxed">{stepHints[currentStep]}</p>
+        <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
           <div
             className="h-full bg-xiio-accent transition-all duration-300"
             style={{ width: `${progress}%` }}
@@ -368,7 +406,18 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         </div>
       )}
 
-      <UploaderFormShell
+      <div className="lg:grid lg:grid-cols-[minmax(200px,240px)_1fr] lg:gap-8 lg:items-start">
+        <div className="hidden lg:block sticky top-28 self-start">
+          <UploadWizardStepper
+            steps={UPLOAD_STEP_META}
+            currentIndex={stepIndex}
+            onStepClick={handleStepClick}
+            disabled={busy}
+          />
+        </div>
+
+        <div className="min-w-0">
+          <UploaderFormShell
         layout="stacked"
         footer={
           <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6 md:p-8 space-y-4">
@@ -573,7 +622,9 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             />
           </UploaderFormSection>
         )}
-      </UploaderFormShell>
+          </UploaderFormShell>
+        </div>
+      </div>
     </form>
   );
 }

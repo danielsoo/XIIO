@@ -90,7 +90,7 @@ export default function UploaderUploadInner() {
 
   return (
     <main className="min-h-screen bg-xiio-bg px-4 pt-24 pb-16 md:px-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <header className="mb-8">
           <h1 className="text-3xl font-black text-white mb-2">{t("uploader.uploadTitle")}</h1>
           <p className="text-xiio-muted text-sm md:text-base max-w-2xl">{t("uploader.uploadBody")}</p>
