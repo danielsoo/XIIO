@@ -461,10 +461,6 @@ export default function SignupPage() {
         router.push(resolvePostLoginPath(signedIn.uid, "/profiles"));
         return;
       }
-      if (await hasUserProfile(signedIn.uid)) {
-        router.push(resolvePostLoginPath(signedIn.uid, "/profiles"));
-        return;
-      }
       if (signedIn.displayName) setName(signedIn.displayName);
       if (signedIn.email) setEmail(signedIn.email);
       setSocialPending(true);

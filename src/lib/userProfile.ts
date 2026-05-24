@@ -90,9 +90,19 @@ export async function markEmailVerified(uid: string): Promise<void> {
   });
 }
 
+/** 예전 가입(나이만 저장, birthDate·locale·gender 없음) */
+export function isLegacyProfile(profile: UserProfileDoc): boolean {
+  if (profile.birthDate?.trim()) return false;
+  const age = profile.age;
+  return age != null && age >= 13 && age <= 120;
+}
+
 export function isProfileComplete(profile: UserProfileDoc): boolean {
   if (!profile.displayName.trim()) return false;
   if (!profile.platformPurpose) return false;
+
+  if (isLegacyProfile(profile)) return true;
+
   if (!profile.birthDate?.trim()) return false;
   if (!profile.locale) return false;
   if (!profile.gender) return false;
