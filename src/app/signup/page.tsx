@@ -20,7 +20,8 @@ import {
   markEmailVerified,
   saveUserProfile,
 } from "@/lib/userProfile";
-import type { PlatformPurpose, SignupProfile } from "@/types/user";
+import type { PlatformPurpose, SignupProfile, UserGender } from "@/types/user";
+import { USER_GENDERS, genderLabelKey } from "@/lib/userGender";
 import SocialAuthButtons from "@/components/auth/SocialAuthButtons";
 import KakaoScript from "@/components/auth/KakaoScript";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -103,6 +104,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [signupLocale, setSignupLocale] = useState<Locale>("ko");
   const [birthDate, setBirthDate] = useState("");
+  const [gender, setGender] = useState<UserGender | "">("");
   const [platformPurpose, setPlatformPurpose] = useState<PlatformPurpose | "">("");
   const [directorName, setDirectorName] = useState("");
 
@@ -204,6 +206,31 @@ export default function SignupPage() {
     };
   }, [verifyPhase, router]);
 
+  // 미완성 프로필 → 기존 값 prefill
+  useEffect(() => {
+    const currentUser = auth?.currentUser;
+    if (!currentUser || verifyPhase) return;
+
+    let cancelled = false;
+    void (async () => {
+      const profile = await getUserProfile(currentUser.uid);
+      if (cancelled || !profile || isProfileComplete(profile)) return;
+      if (profile.displayName.trim()) setName(profile.displayName.trim());
+      if (profile.locale) {
+        setSignupLocale(profile.locale);
+        setLocale(profile.locale);
+      }
+      if (profile.birthDate) setBirthDate(profile.birthDate);
+      if (profile.gender) setGender(profile.gender);
+      if (profile.platformPurpose) setPlatformPurpose(profile.platformPurpose);
+      if (profile.defaultDirectorName) setDirectorName(profile.defaultDirectorName);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [verifyPhase, setLocale]);
+
   // {t("common.login")}만 하고 Firestore 프로필이 없는 경우 → 가입 단계만 이어서 진행
   useEffect(() => {
     const currentUser = auth?.currentUser;
@@ -250,7 +277,7 @@ export default function SignupPage() {
   };
 
   const buildProfile = (): SignupProfile | null => {
-    if (!name.trim() || !platformPurpose || !signupLocale) return null;
+    if (!name.trim() || !platformPurpose || !signupLocale || !gender) return null;
     const parsedBirth = parseBirthDateInput(birthDate);
     if (validateSignupBirthDate(parsedBirth) !== "ok") return null;
     const trimmedDirector = directorName.trim();
@@ -261,6 +288,7 @@ export default function SignupPage() {
       displayName: name.trim(),
       locale: signupLocale,
       birthDate: birthDateToIso(parsedBirth!),
+      gender,
       platformPurpose,
       ...(includeDirector ? { defaultDirectorName: trimmedDirector.slice(0, 120) } : {}),
     };
@@ -281,6 +309,10 @@ export default function SignupPage() {
         const birthResult = validateSignupBirthDate(parsedBirth);
         if (birthResult !== "ok") {
           setError(birthDateValidationMessage(birthResult));
+          return false;
+        }
+        if (!gender) {
+          setError(t("auth.signup.errorGenderRequired"));
           return false;
         }
         return true;
@@ -652,6 +684,31 @@ export default function SignupPage() {
                       className={inputClass}
                     />
                   </Field>
+                  <div>
+                    <p className="text-sm text-white/80 mb-2">{t("auth.signup.genderLabel")}</p>
+                    <div
+                      className="flex flex-col sm:flex-row gap-2"
+                      role="radiogroup"
+                      aria-label={t("auth.signup.genderLabel")}
+                    >
+                      {USER_GENDERS.map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          role="radio"
+                          aria-checked={gender === value}
+                          onClick={() => setGender(value)}
+                          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition border ${
+                            gender === value
+                              ? "bg-xiio-accent border-xiio-accent text-white"
+                              : "border-white/20 text-xiio-muted hover:text-white hover:border-white/40"
+                          }`}
+                        >
+                          {t(genderLabelKey(value))}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </StepShell>
             )}

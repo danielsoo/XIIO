@@ -57,6 +57,7 @@ export async function saveUserProfile(
         displayName: profile.displayName,
         locale: profile.locale,
         birthDate: profile.birthDate,
+        gender: profile.gender,
         age: null,
         isStudent: false,
         schoolName: null,
@@ -94,6 +95,7 @@ export function isProfileComplete(profile: UserProfileDoc): boolean {
   if (!profile.platformPurpose) return false;
   if (!profile.birthDate?.trim()) return false;
   if (!profile.locale) return false;
+  if (!profile.gender) return false;
   return true;
 }
 

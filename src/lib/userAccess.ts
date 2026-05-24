@@ -3,6 +3,7 @@ import type {
   DirectorNameChangeRequest,
   DirectorNameChangeRequestStatus,
   PlatformPurpose,
+  UserGender,
   UserRole,
   UserProfileDoc,
 } from "@/types/user";
@@ -17,6 +18,11 @@ function parseBirthDate(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   return ISO_DATE_RE.test(trimmed) ? trimmed : undefined;
+}
+
+export function parseUserGender(value: unknown): UserGender | undefined {
+  if (value === "male" || value === "female" || value === "undisclosed") return value;
+  return undefined;
 }
 
 export const DEFAULT_ADMIN_ALLOWED_ROLES: UserRole[] = ["admin", "super_admin"];
@@ -61,6 +67,7 @@ export function parseUserProfileDoc(data: Record<string, unknown>): UserProfileD
     age,
     locale: parseLocale(data.locale),
     birthDate: parseBirthDate(data.birthDate) ?? null,
+    gender: parseUserGender(data.gender) ?? null,
     isStudent: !!data.isStudent,
     schoolName: data.schoolName ? String(data.schoolName) : undefined,
     platformPurpose: parsePlatformPurpose(data.platformPurpose),

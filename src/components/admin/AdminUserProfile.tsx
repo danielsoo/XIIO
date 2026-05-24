@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useTranslations } from "@/context/LocaleContext";
 import type { AdminUserDetail } from "@/types/admin";
+import { genderLabelKey } from "@/lib/userGender";
 import AdminUserActivityTimeline from "@/components/admin/AdminUserActivityTimeline";
 import { AdminWorkLink } from "@/components/admin/AdminEntityLinks";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
@@ -148,6 +149,10 @@ export default function AdminUserProfile({ uid }: Props) {
                   ? `${data.age} (${t("admin.userProfile.age")})`
                   : "—"
             }
+          />
+          <Row
+            label={t("admin.userProfile.gender")}
+            value={data.gender ? t(genderLabelKey(data.gender)) : "—"}
           />
           <Row
             label={t("admin.userProfile.locale")}

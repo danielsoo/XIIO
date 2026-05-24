@@ -14,6 +14,7 @@ export type OnboardingStatsPayload = {
 };
 
 import type { Locale } from "@/i18n";
+import type { UserGender } from "@/types/user";
 import type { DirectorNameChangeRequest, PlatformPurpose, UserRole } from "@/types/user";
 import type { PlatformStatus, PromoPlatformStatus, StreamStatus, WorkDoc, WorkSection } from "@/types/work";
 
@@ -158,6 +159,7 @@ export type AdminUserDetail = {
   emailVerified: boolean;
   age?: number | null;
   birthDate?: string | null;
+  gender?: UserGender | null;
   locale?: Locale | null;
   isStudent: boolean;
   schoolName?: string;

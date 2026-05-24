@@ -48,6 +48,7 @@ export async function GET(request: Request, { params }: Params) {
     emailVerified: profile.emailVerified,
     age: profile.age ?? null,
     birthDate: profile.birthDate ?? null,
+    gender: profile.gender ?? null,
     locale: profile.locale ?? null,
     isStudent: profile.isStudent,
     schoolName: profile.schoolName,

@@ -2,6 +2,9 @@ import type { Locale } from "@/i18n";
 
 export type PlatformPurpose = "watch" | "upload" | "both";
 
+/** 가입·프로필 성별 */
+export type UserGender = "male" | "female" | "undisclosed";
+
 export type UserRole = "member" | "admin" | "super_admin";
 
 export type DirectorNameChangeRequestStatus = "pending" | "approved" | "rejected";
@@ -19,6 +22,7 @@ export interface SignupProfile {
   displayName: string;
   locale: Locale;
   birthDate: string;
+  gender: UserGender;
   platformPurpose: PlatformPurpose;
   defaultDirectorName?: string;
 }
@@ -30,6 +34,7 @@ export interface UserProfileDoc {
   age?: number | null;
   locale?: Locale;
   birthDate?: string | null;
+  gender?: UserGender | null;
   isStudent: boolean;
   schoolName?: string;
   platformPurpose: PlatformPurpose;
