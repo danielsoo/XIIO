@@ -7,13 +7,16 @@ import { updateProfile } from "firebase/auth";
 import {
   SIGNUP_VERIFY_EMAIL_FAILED,
   useAuth,
+  isAuthAccountConflict,
 } from "@/context/AuthContext";
 import { formatAuthError, formatSignupErrorMessage } from "@/lib/authErrors";
 import { auth, db } from "@/lib/firebase";
 import { resolvePostLoginPath } from "@/lib/activeWatchProfile";
 import {
   FIRESTORE_PERMISSION_DENIED,
+  getUserProfile,
   hasUserProfile,
+  isProfileComplete,
   markEmailVerified,
   saveUserProfile,
 } from "@/lib/userProfile";
@@ -23,6 +26,7 @@ import KakaoScript from "@/components/auth/KakaoScript";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import {
   isOAuthProfileUser,
+  resolveSocialProvider,
   type SocialProviderKey,
 } from "@/lib/authProviders";
 import { formatSocialAuthError } from "@/lib/socialAuthClient";
@@ -122,9 +126,10 @@ export default function SignupPage() {
   );
   const currentStep = steps[stepIndex] ?? "basic";
   const connectedEmail = auth?.currentUser?.email ?? email;
-  const connectedProviderLabel = pendingProvider
-    ? t(PROVIDER_LABEL_KEYS[pendingProvider])
-    : t("auth.signup.providerGoogle");
+  const connectedProviderKey = resolveSocialProvider(auth?.currentUser ?? null, pendingProvider);
+  const connectedProviderLabel = connectedProviderKey
+    ? t(PROVIDER_LABEL_KEYS[connectedProviderKey])
+    : t("auth.signup.googleConnected");
   const isLastStep = stepIndex === steps.length - 1;
   const progress = ((stepIndex + 1) / steps.length) * 100;
 
@@ -179,6 +184,25 @@ export default function SignupPage() {
       setStepIndex(Math.max(0, steps.length - 1));
     }
   }, [oauthSignup, stepIndex, steps.length]);
+
+  useEffect(() => {
+    const currentUser = auth?.currentUser;
+    if (!currentUser || verifyPhase) return;
+
+    let cancelled = false;
+    void (async () => {
+      const profile = await getUserProfile(currentUser.uid);
+      if (cancelled) return;
+      if (profile && isProfileComplete(profile)) {
+        router.replace(resolvePostLoginPath(currentUser.uid, "/profiles"));
+        return;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [verifyPhase, router]);
 
   // {t("common.login")}만 하고 Firestore 프로필이 없는 경우 → 가입 단계만 이어서 진행
   useEffect(() => {
@@ -400,6 +424,11 @@ export default function SignupPage() {
       if (!(result instanceof Promise)) return;
 
       const signedIn = await result;
+      const existingProfile = await getUserProfile(signedIn.uid);
+      if (existingProfile && isProfileComplete(existingProfile)) {
+        router.push(resolvePostLoginPath(signedIn.uid, "/profiles"));
+        return;
+      }
       if (await hasUserProfile(signedIn.uid)) {
         router.push(resolvePostLoginPath(signedIn.uid, "/profiles"));
         return;
@@ -410,14 +439,15 @@ export default function SignupPage() {
       setPendingProvider(provider);
       setProfileOnlyMode(true);
 
-      const profile = buildProfile();
-      if (profile) {
-        await finishSignup(profile);
+      const builtProfile = buildProfile();
+      if (builtProfile) {
+        await finishSignup(builtProfile);
         return;
       }
 
       setStepIndex(0);
     } catch (err) {
+      if (isAuthAccountConflict(err)) return;
       const msg = formatSocialAuthError(err, t, provider, "signup");
       setError(msg || formatSignupErrorMessage(err, t));
     } finally {

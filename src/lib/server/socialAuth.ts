@@ -6,6 +6,17 @@ export type SocialProvider = "kakao" | "naver";
 export const ADMIN_NOT_CONFIGURED = "ADMIN_NOT_CONFIGURED";
 export const ACCOUNT_EXISTS = "ACCOUNT_EXISTS";
 
+export class AccountEmailConflictError extends Error {
+  readonly email: string;
+  readonly existingProviderIds: string[];
+
+  constructor(email: string, existingProviderIds: string[]) {
+    super(ACCOUNT_EXISTS);
+    this.email = email;
+    this.existingProviderIds = existingProviderIds;
+  }
+}
+
 function linkDocId(provider: SocialProvider, providerUserId: string): string {
   return `${provider}_${providerUserId}`;
 }
@@ -57,8 +68,15 @@ export async function findOrCreateFirebaseUser(params: {
       e && typeof e === "object" && "code" in e
         ? String((e as { code: unknown }).code)
         : "";
-    if (code === "auth/email-already-exists") {
-      throw new Error(ACCOUNT_EXISTS);
+    if (code === "auth/email-already-exists" && normalizedEmail) {
+      try {
+        const existingUser = await adminAuth.getUserByEmail(normalizedEmail);
+        const existingProviderIds = existingUser.providerData.map((p) => p.providerId);
+        throw new AccountEmailConflictError(normalizedEmail, existingProviderIds);
+      } catch (inner) {
+        if (inner instanceof AccountEmailConflictError) throw inner;
+        throw new Error(ACCOUNT_EXISTS);
+      }
     }
     throw e;
   }
@@ -85,4 +103,20 @@ export function getRequestOrigin(request: Request): string {
   if (host) return `${proto}://${host}`;
 
   return "http://localhost:3000";
+}
+
+export async function linkSocialProviderToUid(params: {
+  provider: SocialProvider;
+  providerUserId: string;
+  uid: string;
+}): Promise<void> {
+  const db = getAdminDb();
+  if (!db) throw new Error(ADMIN_NOT_CONFIGURED);
+
+  await db.collection("authLinks").doc(linkDocId(params.provider, params.providerUserId)).set({
+    uid: params.uid,
+    provider: params.provider,
+    providerUserId: params.providerUserId,
+    linkedAt: FieldValue.serverTimestamp(),
+  });
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import {
   User,
   onAuthStateChanged,
@@ -9,13 +10,24 @@ import {
   signOut,
   signInWithPopup,
   signInWithCustomToken,
+  linkWithCredential,
   updateProfile,
   sendEmailVerification,
   deleteUser,
 } from "firebase/auth";
+import AccountConflictDialog from "@/components/auth/AccountConflictDialog";
 import { auth, appleProvider, googleProvider } from "@/lib/firebase";
 import { applyAuthPersistence } from "@/lib/authPersistence";
+import {
+  AUTH_ACCOUNT_CONFLICT,
+  type AccountConflictState,
+  enrichConflictWithSignInMethods,
+  parseOAuthConflictError,
+  primaryExistingSocialProvider,
+} from "@/lib/authConflict";
 import { hasUserProfile, saveUserProfile } from "@/lib/userProfile";
+import { routeAfterAuth } from "@/lib/postAuthRoute";
+import type { SocialProviderKey } from "@/lib/authProviders";
 import type { SignupProfile } from "@/types/user";
 
 interface AuthContextType {
@@ -42,6 +54,12 @@ export const SIGNUP_VERIFY_EMAIL_FAILED = "SIGNUP_VERIFY_EMAIL_FAILED";
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+function rememberSocialProvider(provider: SocialProviderKey) {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem("lastSocialProvider", provider);
+  }
+}
+
 async function rollbackAuthUser(user: User | null) {
   if (!user) return;
   try {
@@ -62,7 +80,17 @@ function ensureKakaoReady(): void {
   }
 }
 
-async function signInWithKakaoAccessToken(accessToken: string): Promise<void> {
+type KakaoAuthResult =
+  | { ok: true }
+  | {
+      ok: false;
+      conflict: AccountConflictState;
+    };
+
+async function authenticateKakaoAccessToken(
+  accessToken: string,
+  remember: boolean
+): Promise<KakaoAuthResult> {
   if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
 
   const res = await fetch("/api/auth/kakao", {
@@ -71,26 +99,63 @@ async function signInWithKakaoAccessToken(accessToken: string): Promise<void> {
     body: JSON.stringify({ accessToken }),
   });
 
+  if (res.status === 409) {
+    const body = (await res.json()) as {
+      email?: string;
+      existingProviderIds?: string[];
+    };
+    if (body.email) {
+      return {
+        ok: false,
+        conflict: {
+          email: body.email,
+          existingProviderIds: body.existingProviderIds ?? [],
+          attemptedProvider: "kakao",
+          pendingCredential: null,
+          pendingKakaoAccessToken: accessToken,
+          remember,
+        },
+      };
+    }
+  }
+
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    if (body.error === "account_exists") {
-      const err = new Error("account_exists");
-      Object.assign(err, { code: "auth/account-exists-with-different-credential" });
-      throw err;
-    }
-    if (body.error === "admin_not_configured") {
-      throw new Error("ADMIN_NOT_CONFIGURED");
-    }
+    if (res.status === 503) throw new Error("ADMIN_NOT_CONFIGURED");
     throw new Error("KAKAO_AUTH_FAILED");
   }
 
   const { customToken } = (await res.json()) as { customToken: string };
   await signInWithCustomToken(auth, customToken);
+  return { ok: true };
+}
+
+async function loginWithExistingProvider(conflict: AccountConflictState): Promise<User> {
+  if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
+
+  const existing = primaryExistingSocialProvider(conflict.existingProviderIds);
+  if (!existing || existing === "email" || existing === "kakao" || existing === "naver") {
+    throw new Error("UNSUPPORTED_EXISTING_PROVIDER");
+  }
+
+  await applyAuthPersistence(conflict.remember);
+
+  if (existing === "google") {
+    const { user: signedIn } = await signInWithPopup(auth, googleProvider);
+    rememberSocialProvider("google");
+    return signedIn;
+  }
+
+  const { user: signedIn } = await signInWithPopup(auth, appleProvider);
+  rememberSocialProvider("apple");
+  return signedIn;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accountConflict, setAccountConflict] = useState<AccountConflictState | null>(null);
+  const [conflictBusy, setConflictBusy] = useState(false);
 
   useEffect(() => {
     if (!auth) {
@@ -103,6 +168,85 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return unsubscribe;
   }, []);
+
+  const raiseConflict = useCallback(async (conflict: AccountConflictState) => {
+    const enriched = await enrichConflictWithSignInMethods(conflict);
+    setAccountConflict(enriched);
+    throw new Error(AUTH_ACCOUNT_CONFLICT);
+  }, []);
+
+  const clearAccountConflict = useCallback(() => {
+    setAccountConflict(null);
+  }, []);
+
+  const loginWithProviderPopup = useCallback(
+    async (provider: SocialProviderKey, remember: boolean) => {
+      if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
+      await applyAuthPersistence(remember);
+      rememberSocialProvider(provider);
+
+      const authProvider = provider === "apple" ? appleProvider : googleProvider;
+      try {
+        const { user: signedIn } = await signInWithPopup(auth, authProvider);
+        return signedIn;
+      } catch (err) {
+        const conflict = parseOAuthConflictError(err, provider, remember);
+        if (conflict) {
+          await raiseConflict(conflict);
+        }
+        throw err;
+      }
+    },
+    [raiseConflict]
+  );
+
+  const handleConflictLoginExisting = useCallback(async () => {
+    if (!accountConflict) return;
+    const snapshot = accountConflict;
+    setConflictBusy(true);
+    try {
+      const signedIn = await loginWithExistingProvider(snapshot);
+      clearAccountConflict();
+      await routeAfterAuth(signedIn.uid, router);
+    } finally {
+      setConflictBusy(false);
+    }
+  }, [accountConflict, clearAccountConflict, router]);
+
+  const handleConflictLink = useCallback(async () => {
+    if (!accountConflict || !auth) return;
+    const snapshot = accountConflict;
+    setConflictBusy(true);
+    try {
+      const signedIn = await loginWithExistingProvider(snapshot);
+
+      if (snapshot.pendingCredential) {
+        await linkWithCredential(signedIn, snapshot.pendingCredential);
+      } else if (snapshot.pendingKakaoAccessToken) {
+        const idToken = await signedIn.getIdToken();
+        const res = await fetch("/api/auth/kakao/link", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ accessToken: snapshot.pendingKakaoAccessToken }),
+        });
+        if (!res.ok) throw new Error("KAKAO_LINK_FAILED");
+      } else {
+        throw new Error("NOTHING_TO_LINK");
+      }
+
+      rememberSocialProvider(snapshot.attemptedProvider);
+      await signedIn.reload();
+      const current = auth.currentUser;
+      if (!current) throw new Error("로그인에 실패했습니다.");
+      clearAccountConflict();
+      await routeAfterAuth(current.uid, router);
+    } finally {
+      setConflictBusy(false);
+    }
+  }, [accountConflict, clearAccountConflict, router]);
 
   const loginWithEmail = async (email: string, password: string, remember = true) => {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
@@ -183,19 +327,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return auth.currentUser.emailVerified;
   };
 
-  const loginWithGoogle = async (remember = true) => {
-    if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
-    await applyAuthPersistence(remember);
-    const { user: signedIn } = await signInWithPopup(auth, googleProvider);
-    return signedIn;
-  };
-
-  const loginWithApple = async (remember = true) => {
-    if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
-    await applyAuthPersistence(remember);
-    const { user: signedIn } = await signInWithPopup(auth, appleProvider);
-    return signedIn;
-  };
+  const loginWithGoogle = (remember = true) => loginWithProviderPopup("google", remember);
+  const loginWithApple = (remember = true) => loginWithProviderPopup("apple", remember);
 
   const loginWithKakao = async (remember = true) => {
     if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
@@ -208,7 +341,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           void (async () => {
             try {
               if (!auth) throw new Error("Firebase가 설정되지 않았습니다.");
-              await signInWithKakaoAccessToken(access_token);
+              const result = await authenticateKakaoAccessToken(access_token, remember);
+              if (!result.ok) {
+                await raiseConflict(result.conflict);
+                return;
+              }
+              rememberSocialProvider("kakao");
               const current = auth.currentUser;
               if (!current) throw new Error("로그인에 실패했습니다.");
               resolve(current);
@@ -225,6 +363,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithNaver = (remember = true) => {
     if (typeof window === "undefined") return;
     void applyAuthPersistence(remember);
+    rememberSocialProvider("naver");
     window.location.href = "/api/auth/naver/start";
   };
 
@@ -251,6 +390,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {accountConflict ? (
+        <AccountConflictDialog
+          conflict={accountConflict}
+          busy={conflictBusy}
+          onLoginExisting={() => void handleConflictLoginExisting()}
+          onLinkAccounts={() => void handleConflictLink()}
+          onCancel={clearAccountConflict}
+        />
+      ) : null}
     </AuthContext.Provider>
   );
 }
@@ -260,3 +408,5 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
+
+export { AUTH_ACCOUNT_CONFLICT, isAuthAccountConflict } from "@/lib/authConflict";

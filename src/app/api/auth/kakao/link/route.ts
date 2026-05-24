@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { fetchKakaoProfile } from "@/lib/server/kakaoAuth";
 import {
-  ACCOUNT_EXISTS,
   ADMIN_NOT_CONFIGURED,
-  AccountEmailConflictError,
-  findOrCreateFirebaseUser,
+  linkSocialProviderToUid,
 } from "@/lib/server/socialAuth";
+import { verifyBearerIdToken } from "@/lib/server/firebase-admin";
 
 export async function POST(request: Request) {
+  const session = await verifyBearerIdToken(request.headers.get("authorization"));
+  if (!session) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   let body: { accessToken?: string };
   try {
     body = (await request.json()) as { accessToken?: string };
@@ -26,29 +30,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { customToken } = await findOrCreateFirebaseUser({
+    await linkSocialProviderToUid({
       provider: "kakao",
       providerUserId: profile.id,
-      email: profile.email,
-      displayName: profile.displayName,
+      uid: session.uid,
     });
-    return NextResponse.json({ customToken });
+    return NextResponse.json({ ok: true });
   } catch (e: unknown) {
-    if (e instanceof AccountEmailConflictError) {
-      return NextResponse.json(
-        {
-          error: "account_exists",
-          email: e.email,
-          existingProviderIds: e.existingProviderIds,
-        },
-        { status: 409 }
-      );
-    }
     const message = e instanceof Error ? e.message : "";
     if (message === ADMIN_NOT_CONFIGURED) {
       return NextResponse.json({ error: "admin_not_configured" }, { status: 503 });
     }
-    console.error("[auth/kakao]", e);
-    return NextResponse.json({ error: "auth_failed" }, { status: 500 });
+    console.error("[auth/kakao/link]", e);
+    return NextResponse.json({ error: "link_failed" }, { status: 500 });
   }
 }

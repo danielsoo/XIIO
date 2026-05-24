@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { EMAIL_NOT_VERIFIED, useAuth } from "@/context/AuthContext";
+import { EMAIL_NOT_VERIFIED, useAuth, isAuthAccountConflict } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import SocialAuthButtons from "@/components/auth/SocialAuthButtons";
 import KakaoScript from "@/components/auth/KakaoScript";
@@ -52,6 +52,7 @@ function LoginForm() {
         await completeSocialLogin(signedIn);
       }
     } catch (e) {
+      if (isAuthAccountConflict(e)) return;
       const msg = formatSocialAuthError(e, t, provider, "login");
       if (msg) setError(msg);
     } finally {

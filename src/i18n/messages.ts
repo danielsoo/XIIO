@@ -122,6 +122,13 @@ export const messages = {
         errorUserDisabled: "이 계정은 비활성화되었습니다. 관리자에게 문의해 주세요.",
         errorTooManyRequests: "시도 횟수가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
       },
+      conflict: {
+        title: "이미 가입된 이메일",
+        body: "{email}은(는) 이미 {existingProvider} 계정으로 등록되어 있습니다.\n{existingProvider}로 다시 로그인하거나, {attemptedProvider} 계정을 연결할 수 있습니다.",
+        loginExisting: "{provider}로 로그인",
+        linkAccounts: "{provider} 계정 연결하기",
+        useEmailLogin: "이메일·비밀번호로 로그인해 주세요.",
+      },
       signup: {
         googleSignup: "Google로 가입",
         google: "Google로 가입",
@@ -137,6 +144,7 @@ export const messages = {
         providerApple: "Apple",
         providerKakao: "카카오",
         providerNaver: "네이버",
+        providerEmail: "이메일",
         hasAccount: "이미 계정이 있으신가요?",
         stepBasic: "기본 정보",
         stepStudent: "학생 정보",
@@ -1028,6 +1036,13 @@ export const messages = {
         errorUserDisabled: "This account has been disabled. Contact support.",
         errorTooManyRequests: "Too many attempts. Please try again later.",
       },
+      conflict: {
+        title: "Email already registered",
+        body: "{email} is already registered with {existingProvider}.\nSign in with {existingProvider}, or link your {attemptedProvider} account.",
+        loginExisting: "Sign in with {provider}",
+        linkAccounts: "Link {provider} account",
+        useEmailLogin: "Please sign in with your email and password.",
+      },
       signup: {
         googleSignup: "Sign up with Google",
         google: "Sign up with Google",
@@ -1043,6 +1058,7 @@ export const messages = {
         providerApple: "Apple",
         providerKakao: "Kakao",
         providerNaver: "Naver",
+        providerEmail: "Email",
         hasAccount: "Already have an account?",
         stepBasic: "Basic info",
         stepStudent: "Student",

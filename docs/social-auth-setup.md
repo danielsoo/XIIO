@@ -60,6 +60,33 @@ Web Authentication에서 **「No App ID is available」** / **Next 비활성** �
 
 클라이언트 env는 별도 없음 (Firebase 설정만).
 
+### Apple 로그인 `invalid_client` (Invalid client)
+
+Apple 팝업에 **`invalid_client`** → Firebase에 넣은 **Services ID**가 Apple에 등록·저장된 값과 다르거나, 웹 설정이 완료되지 않은 경우입니다.
+
+| 확인 | 올바른 예 | 흔한 실수 |
+|------|-----------|-----------|
+| Firebase → Apple → **Services ID** | Services IDs 목록의 **Identifier** (예: `com.xiio.web`) | App ID `com.xiio.app` 를 넣음 |
+| Apple → Services ID → Sign in with Apple | **Configure** 완료 후 **Save** | Configure만 열고 저장 안 함 |
+| Domains | `xiio.vercel.app` (https 없음) | `https://` 포함 |
+| Return URLs | `https://xiio-9d86b.firebaseapp.com/__/auth/handler` | authDomain과 다른 호스트 |
+| Key ID / `.p8` | `C8UXZ9L5KG` + 해당 키 파일 | 다른 키·Team ID |
+
+**디버깅:** Apple 팝업 주소창 URL의 `client_id=` 값을 복사 → Apple Developer **Services IDs**의 **Identifier**와 **완전히 동일**해야 합니다.
+
+Firebase **Authorized domains**에 `xiio.vercel.app` 추가 (Apple `invalid_client`와는 별개이나 로그인 완료 후 필요).
+
+## 동일 이메일 (Google · Apple · 카카오)
+
+같은 이메일로 **다른 소셜 로그인**을 시도하면 자동 통합하지 않고 **선택 다이얼로그**가 뜹니다.
+
+| 선택 | 동작 |
+|------|------|
+| **기존 수단으로 로그인** | Google/Apple 등 기존 방법으로 로그인 |
+| **계정 연결** | 기존 수단 로그인 후 새 수단을 Firebase에 연결 |
+
+이미 **완성된 프로필**이 있는 계정은 가입 위저드로 보내지 않습니다.
+
 ## 카카오
 
 1. [Kakao Developers](https://developers.kakao.com) → 애플리케이션 추가
