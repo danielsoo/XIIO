@@ -7,6 +7,7 @@ import { useTranslations } from "@/context/LocaleContext";
 
 type Props = {
   title?: string;
+  description?: string;
   /** When set, back is a direct link instead of browser history. */
   backHref?: string;
   backLabel?: string;
@@ -14,6 +15,7 @@ type Props = {
   showHome?: boolean;
   variant?: "withNavbar" | "standalone";
   endContent?: ReactNode;
+  className?: string;
 };
 
 function XiioLogoLink({ className }: { className?: string }) {
@@ -33,16 +35,19 @@ function XiioLogoLink({ className }: { className?: string }) {
 
 export default function SubpageHeader({
   title,
+  description,
   backHref,
   backLabel,
   backFallbackHref = "/",
-  showHome = true,
+  showHome,
   variant = "withNavbar",
   endContent,
+  className = "",
 }: Props) {
   const router = useRouter();
   const { t } = useTranslations();
   const backText = backLabel ?? t("common.goBack");
+  const showHomeButton = showHome ?? variant === "standalone";
 
   const handleBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -52,30 +57,24 @@ export default function SubpageHeader({
     router.push(backFallbackHref);
   };
 
+  const backClass =
+    variant === "withNavbar"
+      ? "inline-flex items-center gap-1.5 text-sm font-medium text-xiio-muted hover:text-white transition"
+      : "inline-flex items-center gap-1.5 min-h-[44px] py-2 pr-2 text-base font-medium text-white hover:text-xiio-accent transition";
+
   const backControl = backHref ? (
-    <Link
-      href={backHref}
-      className="inline-flex items-center gap-1.5 min-h-[44px] py-2 pr-2 text-base font-medium text-white hover:text-xiio-accent transition"
-    >
-      <span aria-hidden className="text-lg leading-none">
-        ←
-      </span>
+    <Link href={backHref} className={backClass}>
+      <span aria-hidden>←</span>
       <span>{backText}</span>
     </Link>
   ) : (
-    <button
-      type="button"
-      onClick={handleBack}
-      className="inline-flex items-center gap-1.5 min-h-[44px] py-2 pr-2 text-base font-medium text-white hover:text-xiio-accent transition"
-    >
-      <span aria-hidden className="text-lg leading-none">
-        ←
-      </span>
+    <button type="button" onClick={handleBack} className={backClass}>
+      <span aria-hidden>←</span>
       <span>{backText}</span>
     </button>
   );
 
-  const homeControl = showHome ? (
+  const homeControl = showHomeButton ? (
     <Link
       href="/"
       className="inline-flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2 rounded-lg text-base font-medium text-white border border-white/20 hover:bg-white/5 transition"
@@ -93,37 +92,34 @@ export default function SubpageHeader({
     </Link>
   ) : null;
 
-  const navRow = (
-    <div className="flex items-center gap-2 border-b border-white/10 mb-6 pb-1">
-      <div className="flex-1 min-w-0 flex items-center">{backControl}</div>
-      {title ? (
-        <p className="hidden sm:block flex-shrink-0 max-w-[40%] truncate text-base font-semibold text-xiio-muted text-center px-2">
-          {title}
-        </p>
-      ) : null}
-      <div className="flex-1 min-w-0 flex items-center justify-end gap-2">
-        {endContent}
-        {homeControl}
-      </div>
-    </div>
-  );
-
-  if (variant === "standalone") {
+  if (variant === "withNavbar") {
     return (
-      <header className="mb-6">
-        <div className="flex items-center border-b border-white/10 pb-4 mb-4">
-          <XiioLogoLink />
-        </div>
-        {navRow}
-        {title ? <h1 className="text-2xl md:text-3xl font-bold text-white">{title}</h1> : null}
+      <header className={`mb-8 md:mb-10 ${className}`.trim()}>
+        {backControl}
+        {title ? (
+          <h1 className="mt-4 text-3xl md:text-4xl font-black text-white tracking-tight">{title}</h1>
+        ) : null}
+        {description ? (
+          <p className="mt-2 text-sm md:text-base text-xiio-muted max-w-2xl leading-relaxed">{description}</p>
+        ) : null}
       </header>
     );
   }
 
   return (
-    <header className="mb-6">
-      {navRow}
-      {title ? <h1 className="text-2xl font-bold text-white">{title}</h1> : null}
+    <header className="mb-6 md:mb-8">
+      <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+        <XiioLogoLink />
+        {endContent}
+      </div>
+      <div className="flex items-center gap-2 border-b border-white/10 mb-4 pb-2">
+        <div className="flex-1 min-w-0">{backControl}</div>
+        <div className="flex shrink-0 items-center gap-2">{homeControl}</div>
+      </div>
+      {title ? <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">{title}</h1> : null}
+      {description ? (
+        <p className="mt-2 text-sm text-xiio-muted max-w-2xl leading-relaxed">{description}</p>
+      ) : null}
     </header>
   );
 }

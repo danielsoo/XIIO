@@ -64,6 +64,7 @@ export const messages = {
     },
     settings: {
       title: "설정",
+      pageLead: "언어, 프로필, 계정을 관리합니다.",
       language: "언어",
       languageHint: "앱 전체 표시 언어를 변경합니다.",
       timezone: "시간대",
@@ -76,7 +77,7 @@ export const messages = {
       watchProfileSection: "시청 프로필",
       changeProfile: "프로필 변경",
       accountSection: "계정",
-      viewAccountProfile: "계정 프로필 보기 →",
+      viewAccountProfile: "계정 프로필 보기",
       emailVerified: "이메일 인증 완료",
       emailNotVerified: "이메일 미인증",
       logout: "로그아웃",
@@ -989,6 +990,7 @@ export const messages = {
     },
     settings: {
       title: "Settings",
+      pageLead: "Manage language, profiles, and your account.",
       language: "Language",
       languageHint: "Changes the language across the app.",
       timezone: "Time zone",
@@ -1001,7 +1003,7 @@ export const messages = {
       watchProfileSection: "Watch profile",
       changeProfile: "Change profile",
       accountSection: "Account",
-      viewAccountProfile: "View account profile →",
+      viewAccountProfile: "View account profile",
       emailVerified: "Email verified",
       emailNotVerified: "Email not verified",
       logout: "Sign out",

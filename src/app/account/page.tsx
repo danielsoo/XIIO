@@ -23,8 +23,11 @@ export default function AccountPage() {
 
   return (
     <AppPageShell>
-      <SubpageHeader title={t("accountProfile.title")} backFallbackHref="/" />
-      <p className="text-sm text-xiio-muted mb-6 -mt-2">{t("accountProfile.subtitle")}</p>
+      <SubpageHeader
+        title={t("accountProfile.title")}
+        description={t("accountProfile.subtitle")}
+        backFallbackHref="/"
+      />
       <AccountProfileContent />
     </AppPageShell>
   );

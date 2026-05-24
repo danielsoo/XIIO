@@ -21,7 +21,16 @@ const TIMEZONE_OPTIONS: { id: XiioTimezoneId; labelKey: string }[] = [
   { id: "utc", labelKey: "settings.timezoneUtc" },
 ];
 
-const settingsCard = "bg-xiio-surface rounded-2xl p-6 border border-white/10";
+const card =
+  "h-full rounded-2xl border border-white/10 bg-xiio-surface/90 p-6 shadow-lg shadow-black/25 backdrop-blur-sm";
+
+function CardTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="text-base font-semibold text-white mb-1">{children}</h2>;
+}
+
+function CardHint({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm text-xiio-muted mb-4 leading-relaxed">{children}</p>;
+}
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -47,22 +56,36 @@ export default function SettingsPage() {
 
   return (
     <AppPageShell>
-      <SubpageHeader title={t("settings.title")} backFallbackHref="/" />
+      <section className="relative mb-8 md:mb-10 overflow-hidden rounded-2xl border border-white/10">
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-[#1a0533]/90 via-[#0a0a20]/70 to-xiio-bg"
+          aria-hidden
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-xiio-accent/15 to-transparent" aria-hidden />
+        <div className="relative px-6 py-8 md:px-8 md:py-10">
+          <SubpageHeader
+            className="mb-0"
+            title={t("settings.title")}
+            description={t("settings.pageLead")}
+            backFallbackHref="/"
+          />
+        </div>
+      </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className={settingsCard}>
-          <h2 className="text-sm font-semibold text-xiio-muted mb-2">{t("settings.language")}</h2>
-          <p className="text-xs text-xiio-muted mb-4">{t("settings.languageHint")}</p>
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <section className={card}>
+          <CardTitle>{t("settings.language")}</CardTitle>
+          <CardHint>{t("settings.languageHint")}</CardHint>
           <div className="flex gap-2">
             {LOCALES.map(({ code, label }) => (
               <button
                 key={code}
                 type="button"
                 onClick={() => setLocale(code as Locale)}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition border ${
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition border ${
                   locale === code
-                    ? "bg-xiio-accent border-xiio-accent text-white"
-                    : "border-white/20 text-xiio-muted hover:text-white hover:border-white/40"
+                    ? "bg-xiio-accent border-xiio-accent text-white shadow-md shadow-xiio-accent/30"
+                    : "border-white/15 text-xiio-muted hover:text-white hover:border-white/30 hover:bg-white/5"
                 }`}
               >
                 {label}
@@ -71,20 +94,20 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {adminChecked && isAdmin ? (
-          <section className={settingsCard}>
-            <h2 className="text-sm font-semibold text-xiio-muted mb-2">{t("settings.timezone")}</h2>
-            <p className="text-xs text-xiio-muted mb-4">{t("settings.timezoneHint")}</p>
-            <div className="flex flex-col gap-2">
+        {adminChecked && isAdmin && (
+          <section className={card}>
+            <CardTitle>{t("settings.timezone")}</CardTitle>
+            <CardHint>{t("settings.timezoneHint")}</CardHint>
+            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
               {TIMEZONE_OPTIONS.map(({ id, labelKey }) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => setTimezone(id)}
-                  className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium text-left transition border ${
+                  className={`w-full py-2.5 px-4 rounded-xl text-sm font-medium text-left transition border ${
                     timezone === id
                       ? "bg-xiio-accent border-xiio-accent text-white"
-                      : "border-white/20 text-xiio-muted hover:text-white hover:border-white/40"
+                      : "border-white/15 text-xiio-muted hover:text-white hover:border-white/30 hover:bg-white/5"
                   }`}
                 >
                   {t(labelKey)}
@@ -92,16 +115,19 @@ export default function SettingsPage() {
               ))}
             </div>
           </section>
-        ) : null}
+        )}
 
         {activeProfile && (
-          <section className={settingsCard}>
-            <h2 className="text-sm font-semibold text-xiio-muted mb-4">{t("settings.watchProfileSection")}</h2>
-            <div className="flex items-center gap-4">
+          <section className={card}>
+            <CardTitle>{t("settings.watchProfileSection")}</CardTitle>
+            <div className="flex items-center gap-4 mt-4">
               <ProfileAvatar profile={activeProfile} size="lg" />
-              <div>
-                <p className="text-white font-medium">{activeProfile.name}</p>
-                <Link href="/profiles" className="text-sm text-xiio-accent hover:underline mt-1 inline-block">
+              <div className="min-w-0">
+                <p className="text-lg font-medium text-white truncate">{activeProfile.name}</p>
+                <Link
+                  href="/profiles"
+                  className="inline-block mt-2 text-sm font-medium text-xiio-accent hover:underline"
+                >
                   {t("settings.changeProfile")}
                 </Link>
               </div>
@@ -109,26 +135,35 @@ export default function SettingsPage() {
           </section>
         )}
 
-        <section className={settingsCard}>
-          <h2 className="text-sm font-semibold text-xiio-muted mb-4">{t("settings.accountSection")}</h2>
-          <Link href="/account" className="text-sm text-xiio-accent hover:underline">
-            {t("settings.viewAccountProfile")}
+        <section className={card}>
+          <CardTitle>{t("settings.accountSection")}</CardTitle>
+          <Link
+            href="/account"
+            className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm font-medium text-white hover:border-xiio-accent/40 hover:bg-xiio-accent/10 transition group"
+          >
+            <span>{t("settings.viewAccountProfile")}</span>
+            <span
+              className="text-xiio-muted group-hover:text-xiio-accent transition shrink-0"
+              aria-hidden
+            >
+              →
+            </span>
           </Link>
         </section>
+      </div>
 
-        <div className="lg:col-span-2">
-          <DirectorNameSettingsSection />
-        </div>
+      <div className="mt-8">
+        <DirectorNameSettingsSection />
+      </div>
 
-        <div className="lg:col-span-2">
-          <button
-            type="button"
-            onClick={() => void handleLogout()}
-            className="w-full py-3 rounded-lg border border-white/20 text-white hover:bg-white/5 transition"
-          >
-            {t("settings.logout")}
-          </button>
-        </div>
+      <div className="mt-10 pt-6 border-t border-white/10">
+        <button
+          type="button"
+          onClick={() => void handleLogout()}
+          className="text-sm font-medium text-xiio-muted hover:text-red-400 transition"
+        >
+          {t("settings.logout")}
+        </button>
       </div>
     </AppPageShell>
   );
