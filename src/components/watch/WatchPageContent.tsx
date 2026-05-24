@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import SubpageHeader from "@/components/layout/SubpageHeader";
 import ReportContentModal from "@/components/report/ReportContentModal";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useAuth } from "@/context/AuthContext";
@@ -76,10 +77,10 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
   if (err || !data) {
     return (
       <main className="min-h-screen bg-xiio-bg pt-24 px-6 md:px-12 pb-16">
-        <p className="text-red-400 mb-4 whitespace-pre-wrap break-words">{err ?? t("watch.notFound")}</p>
-        <Link href="/" className="text-sm text-xiio-accent hover:underline">
-          {t("common.home")}
-        </Link>
+        <div className="max-w-5xl mx-auto">
+          <SubpageHeader title={t("watch.notFound")} backFallbackHref="/" />
+          <p className="text-red-400 whitespace-pre-wrap break-words">{err ?? t("watch.notFound")}</p>
+        </div>
       </main>
     );
   }
@@ -91,12 +92,12 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
   return (
     <main className="min-h-screen bg-xiio-bg pt-24 px-4 md:px-12 pb-16">
       <div className="max-w-5xl mx-auto">
-        <Link
-          href={sectionCatalogHref(data.section)}
-          className="text-sm text-xiio-muted hover:text-xiio-accent transition mb-6 inline-block"
-        >
-          ← {t(SECTION_TITLE_KEYS[data.section])}
-        </Link>
+        <SubpageHeader
+          backHref={sectionCatalogHref(data.section)}
+          backLabel={t(SECTION_TITLE_KEYS[data.section])}
+          backFallbackHref={sectionCatalogHref(data.section)}
+          showHome
+        />
 
         <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
           <h1 className="text-2xl md:text-4xl font-bold text-white">{data.title}</h1>

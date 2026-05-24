@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import SubpageHeader from "@/components/layout/SubpageHeader";
 import DirectorNameSetupModal from "@/components/uploader/DirectorNameSetupModal";
 import UploaderUploadForm from "@/components/uploader/UploaderUploadForm";
 import { useAuth } from "@/context/AuthContext";
@@ -70,31 +71,41 @@ export default function UploaderUploadInner() {
 
   if (needsDeposit) {
     return (
-      <main className="min-h-screen bg-xiio-bg flex items-center justify-center px-4 py-16">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-xiio-surface p-8">
-          <h1 className="text-2xl font-bold text-white mb-2">{t("uploader.uploadDepositTitle")}</h1>
-          <p className="text-xiio-muted text-sm mb-6">{t("uploader.uploadDepositBody")}</p>
-          <Link
-            href="/uploader/verify"
-            className="block w-full text-center py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
-          >
-            {t("uploader.uploadDepositCta")}
-          </Link>
-          <Link href="/" className="block text-center text-sm text-xiio-muted hover:text-white mt-6 transition">
-            {t("common.home")}
-          </Link>
+      <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16">
+        <div className="max-w-md mx-auto">
+          <SubpageHeader variant="standalone" backFallbackHref="/" />
+          <div className="rounded-2xl border border-white/10 bg-xiio-surface p-8">
+            <h1 className="text-2xl font-bold text-white mb-2">{t("uploader.uploadDepositTitle")}</h1>
+            <p className="text-xiio-muted text-sm mb-6">{t("uploader.uploadDepositBody")}</p>
+            <Link
+              href="/uploader/verify"
+              className="block w-full text-center py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
+            >
+              {t("uploader.uploadDepositCta")}
+            </Link>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 pt-24 pb-16 md:px-8">
+    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16 md:px-8">
       <div className="max-w-5xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-black text-white mb-2">{t("uploader.uploadTitle")}</h1>
-          <p className="text-xiio-muted text-sm md:text-base max-w-2xl">{t("uploader.uploadBody")}</p>
-        </header>
+        <SubpageHeader
+          variant="standalone"
+          title={t("uploader.uploadTitle")}
+          backFallbackHref="/"
+          endContent={
+            <Link
+              href="/uploader/works"
+              className="hidden sm:inline-flex items-center min-h-[44px] px-3 py-2 text-sm font-medium text-xiio-accent hover:underline"
+            >
+              {t("myWorks.title")}
+            </Link>
+          }
+        />
+        <p className="text-xiio-muted text-sm md:text-base max-w-2xl mb-8 -mt-4">{t("uploader.uploadBody")}</p>
 
         {err && (
           <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-400 text-sm whitespace-pre-wrap break-words">
@@ -122,17 +133,11 @@ export default function UploaderUploadInner() {
           }}
         />
 
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 text-sm">
-          <Link href="/uploader/works" className="text-xiio-accent hover:underline">
+        <p className="mt-6 text-center sm:hidden">
+          <Link href="/uploader/works" className="text-base font-medium text-xiio-accent hover:underline">
             {t("myWorks.title")}
           </Link>
-          <span className="hidden sm:inline text-white/20" aria-hidden>
-            |
-          </span>
-          <Link href="/" className="text-xiio-muted hover:text-white transition">
-            {t("common.home")}
-          </Link>
-        </div>
+        </p>
       </div>
     </main>
   );

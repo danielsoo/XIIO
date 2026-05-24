@@ -15,6 +15,7 @@ const TIMEZONE_OPTIONS: { id: XiioTimezoneId; labelKey: string }[] = [
   { id: "us_pacific", labelKey: "settings.timezoneUsPacific" },
   { id: "utc", labelKey: "settings.timezoneUtc" },
 ];
+import SubpageHeader from "@/components/layout/SubpageHeader";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import DirectorNameSettingsSection from "@/components/settings/DirectorNameSettingsSection";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
@@ -44,7 +45,7 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen pt-24 pb-16 px-4 bg-xiio-bg">
       <div className="max-w-lg mx-auto">
-        <h1 className="text-2xl font-bold text-white mb-8">{t("settings.title")}</h1>
+        <SubpageHeader title={t("settings.title")} backFallbackHref="/" />
 
         <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10 mb-6">
           <h2 className="text-sm font-semibold text-xiio-muted mb-2">{t("settings.language")}</h2>

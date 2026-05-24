@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import SubpageHeader from "@/components/layout/SubpageHeader";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
@@ -491,13 +492,16 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   );
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 py-16 md:px-8">
+    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16 md:px-8">
       <div className="max-w-5xl mx-auto">
-        <Link href="/uploader/works" className="text-sm text-xiio-muted hover:text-white mb-6 inline-block">
-          ← {t("promoEditor.backToWorks")}
-        </Link>
-        <h1 className="text-2xl font-bold text-white mb-1">{t("promoEditor.title")}</h1>
-        <p className="text-xiio-muted text-sm mb-6">{work.title}</p>
+        <SubpageHeader
+          variant="standalone"
+          title={t("promoEditor.title")}
+          backHref="/uploader/works"
+          backLabel={t("promoEditor.backToWorks")}
+          backFallbackHref="/uploader/works"
+        />
+        <p className="text-xiio-muted text-sm mb-6 -mt-2">{work.title}</p>
 
         <UploaderFormShell
           layout="split"

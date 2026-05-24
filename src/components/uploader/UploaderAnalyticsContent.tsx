@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import SubpageHeader from "@/components/layout/SubpageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import type { UploaderAnalyticsPayload } from "@/types/engagement";
@@ -95,14 +96,17 @@ export default function UploaderAnalyticsContent() {
   }
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 py-16 md:px-8">
+    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16 md:px-8">
       <div className="max-w-5xl mx-auto space-y-10">
         <div>
-          <Link href="/uploader/works" className="text-sm text-xiio-muted hover:text-xiio-accent transition mb-4 inline-block">
-            {t("uploader.analytics.backToWorks")}
-          </Link>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">{t("uploader.analytics.title")}</h1>
-          <p className="text-xiio-muted text-sm mt-2">{t("uploader.analytics.subtitle")}</p>
+          <SubpageHeader
+            variant="standalone"
+            title={t("uploader.analytics.title")}
+            backHref="/uploader/works"
+            backLabel={t("myWorks.title")}
+            backFallbackHref="/uploader/works"
+          />
+          <p className="text-xiio-muted text-sm -mt-4">{t("uploader.analytics.subtitle")}</p>
         </div>
 
         {loading ? (

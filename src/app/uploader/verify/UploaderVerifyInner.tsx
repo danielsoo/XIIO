@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
+import SubpageHeader from "@/components/layout/SubpageHeader";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 export default function UploaderVerifyInner() {
@@ -75,72 +76,69 @@ export default function UploaderVerifyInner() {
 
   if (depositVerified) {
     return (
-      <main className="min-h-screen bg-xiio-bg flex items-center justify-center px-4 py-16">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-xiio-surface p-8 text-center">
-          <h1 className="text-2xl font-bold text-white mb-2">{t("uploader.verifyDoneTitle")}</h1>
-          <p className="text-xiio-muted text-sm mb-6">{t("uploader.verifyDoneBody")}</p>
-          <Link
-            href="/uploader/upload"
-            className="block w-full py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
-          >
-            {t("uploader.verifyDoneCta")}
-          </Link>
-          <Link href="/" className="block text-sm text-xiio-muted hover:text-white mt-6 transition">
-            {t("common.home")}
-          </Link>
+      <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16">
+        <div className="max-w-md mx-auto">
+          <SubpageHeader variant="standalone" title={t("uploader.verifyDoneTitle")} backFallbackHref="/" />
+          <div className="rounded-2xl border border-white/10 bg-xiio-surface p-8 text-center">
+            <p className="text-xiio-muted text-sm mb-6">{t("uploader.verifyDoneBody")}</p>
+            <Link
+              href="/uploader/upload"
+              className="block w-full py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
+            >
+              {t("uploader.verifyDoneCta")}
+            </Link>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-xiio-bg flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-xiio-surface p-8">
-        <h1 className="text-2xl font-bold text-white mb-2">{t("uploader.verifyTitle")}</h1>
-        <p className="text-xiio-muted text-sm mb-6">{t("uploader.verifyBody")}</p>
+    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16">
+      <div className="max-w-md mx-auto">
+        <SubpageHeader variant="standalone" title={t("uploader.verifyTitle")} backFallbackHref="/" />
+        <div className="rounded-2xl border border-white/10 bg-xiio-surface p-8">
+          <p className="text-xiio-muted text-sm mb-6">{t("uploader.verifyBody")}</p>
 
-        {status === "success" && (
-          <div className="mb-4 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-2 text-emerald-400 text-sm">
-            {t("uploader.verifySuccessHint")}
-          </div>
-        )}
-        {status === "cancel" && (
-          <div className="mb-4 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-400 text-sm">
-            {t("uploader.verifyCancelHint")}
-          </div>
-        )}
+          {status === "success" && (
+            <div className="mb-4 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-2 text-emerald-400 text-sm">
+              {t("uploader.verifySuccessHint")}
+            </div>
+          )}
+          {status === "cancel" && (
+            <div className="mb-4 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-400 text-sm">
+              {t("uploader.verifyCancelHint")}
+            </div>
+          )}
 
-        {!depositEnabled && (
-          <div className="mb-4 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-xiio-muted text-sm">
-            {t("uploader.verifyDisabledHint")}
-          </div>
-        )}
+          {!depositEnabled && (
+            <div className="mb-4 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-xiio-muted text-sm">
+              {t("uploader.verifyDisabledHint")}
+            </div>
+          )}
 
-        {err && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
-            {err}
-          </div>
-        )}
+          {err && (
+            <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
+              {err}
+            </div>
+          )}
 
-        <button
-          type="button"
-          disabled={busy || !depositEnabled}
-          onClick={() => void startDeposit()}
-          className="w-full py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover disabled:opacity-40 text-white font-medium transition"
-        >
-          {busy ? t("common.processing") : t("uploader.verifyPay")}
-        </button>
-        <button
-          type="button"
-          onClick={() => void refresh()}
-          className="w-full mt-3 py-2 rounded-lg border border-white/20 text-sm text-white hover:bg-white/5 transition"
-        >
-          {t("uploader.verifyRefresh")}
-        </button>
-
-        <Link href="/" className="block text-center text-sm text-xiio-muted hover:text-white mt-6 transition">
-          {t("common.home")}
-        </Link>
+          <button
+            type="button"
+            disabled={busy || !depositEnabled}
+            onClick={() => void startDeposit()}
+            className="w-full py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover disabled:opacity-40 text-white font-medium transition"
+          >
+            {busy ? t("common.processing") : t("uploader.verifyPay")}
+          </button>
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            className="w-full mt-3 py-2 rounded-lg border border-white/20 text-sm text-white hover:bg-white/5 transition"
+          >
+            {t("uploader.verifyRefresh")}
+          </button>
+        </div>
       </div>
     </main>
   );

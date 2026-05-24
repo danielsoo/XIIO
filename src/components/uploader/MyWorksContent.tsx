@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import SubpageHeader from "@/components/layout/SubpageHeader";
 import { useMyWorks } from "@/hooks/useMyWorks";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
@@ -137,12 +138,12 @@ export default function MyWorksContent() {
   }
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 py-16 md:px-8">
+    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16 md:px-8">
       <div className="max-w-3xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <SubpageHeader variant="standalone" title={t("myWorks.title")} backFallbackHref="/" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 -mt-2">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{t("myWorks.title")}</h1>
-            <p className="text-xiio-muted text-sm mt-1">{t("myWorks.subtitle")}</p>
+            <p className="text-xiio-muted text-sm">{t("myWorks.subtitle")}</p>
             <Link
               href="/uploader/analytics"
               className="inline-block mt-2 text-sm text-xiio-accent hover:underline"
@@ -350,10 +351,6 @@ export default function MyWorksContent() {
             })}
           </ul>
         )}
-
-        <Link href="/" className="block text-center text-sm text-xiio-muted hover:text-white mt-10 transition">
-          {t("common.home")}
-        </Link>
       </div>
     </main>
   );

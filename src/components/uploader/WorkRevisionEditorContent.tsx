@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import SubpageHeader from "@/components/layout/SubpageHeader";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import WorkTagInput from "@/components/uploader/WorkTagInput";
 import PlaybackVideo from "@/components/PlaybackVideo";
@@ -245,13 +246,16 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
     (!rev.streamUid || rev.streamStatus === "ready");
 
   return (
-    <main className="min-h-screen bg-xiio-bg px-4 py-16 md:px-8">
+    <main className="min-h-screen bg-xiio-bg px-4 pt-6 pb-16 md:px-8">
       <div className="max-w-2xl mx-auto">
-        <Link href="/uploader/works" className="text-sm text-xiio-muted hover:text-white mb-6 inline-block">
-          ← {t("workRevision.backToWorks")}
-        </Link>
-        <h1 className="text-2xl font-bold text-white mb-1">{t("workRevision.title")}</h1>
-        <p className="text-xiio-muted text-sm mb-6">{work.title}</p>
+        <SubpageHeader
+          variant="standalone"
+          title={t("workRevision.title")}
+          backHref="/uploader/works"
+          backLabel={t("workRevision.backToWorks")}
+          backFallbackHref="/uploader/works"
+        />
+        <p className="text-xiio-muted text-sm mb-6 -mt-2">{work.title}</p>
 
         <p className="mb-4 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sky-100 text-sm">
           {t("workRevision.hint")}
