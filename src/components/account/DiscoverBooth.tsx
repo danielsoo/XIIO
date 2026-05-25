@@ -4,15 +4,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { PROFILE_ROLE_TAGS, type ProfileRoleTag } from "@/types/portfolio";
-
 type Person = {
   uid: string;
   handle: string;
   displayName: string;
   headline?: string;
-  roleTags: ProfileRoleTag[];
-  crewRoles?: string[];
   openToCollaborate: boolean;
   collaborationNote?: string;
 };
@@ -23,7 +19,6 @@ export default function DiscoverBooth() {
   const { user } = useAuth();
   const { t } = useTranslations();
   const [boothTab, setBoothTab] = useState<BoothTab>("all");
-  const [role, setRole] = useState<ProfileRoleTag | "">("");
   const [q, setQ] = useState("");
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +31,6 @@ export default function DiscoverBooth() {
     try {
       const token = await user.getIdToken();
       const params = new URLSearchParams();
-      if (role) params.set("role", role);
       if (boothTab === "open") params.set("openOnly", "1");
       if (boothTab === "following") params.set("followingOnly", "1");
       if (q.trim()) params.set("q", q.trim());
@@ -55,7 +49,7 @@ export default function DiscoverBooth() {
     } finally {
       setLoading(false);
     }
-  }, [user, boothTab, role, q, t]);
+  }, [user, boothTab, q, t]);
 
   useEffect(() => {
     void load();
@@ -95,18 +89,6 @@ export default function DiscoverBooth() {
           placeholder={t("discover.searchPlaceholder")}
           className="flex-1 min-w-[200px] bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
         />
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value as ProfileRoleTag | "")}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-        >
-          <option value="">{t("discover.roleAll")}</option>
-          {PROFILE_ROLE_TAGS.map((r) => (
-            <option key={r} value={r}>
-              {t(`network.field.${r}`)}
-            </option>
-          ))}
-        </select>
         <button
           type="button"
           onClick={() => void load()}

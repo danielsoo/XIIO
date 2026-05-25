@@ -7,8 +7,6 @@ import AppPageShell from "@/components/layout/AppPageShell";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import PeopleProfileActions from "@/components/profile/PeopleProfileActions";
-import type { ProfileRoleTag } from "@/types/portfolio";
-
 type WorkCard = {
   workId: string;
   ownerUid: string;
@@ -26,8 +24,6 @@ type ProfilePayload = {
     displayName: string;
     headline?: string;
     bio?: string;
-    roleTags?: ProfileRoleTag[];
-    crewRoles?: string[];
     openToCollaborate?: boolean;
     collaborationNote?: string;
     followerCount?: number;
@@ -126,23 +122,6 @@ export default function PeopleProfilePage() {
             <h1 className="text-2xl md:text-3xl font-bold text-white">{data.profile.displayName}</h1>
             {data.profile.headline && (
               <p className="text-white/80 mt-2 text-lg">{data.profile.headline}</p>
-            )}
-            {(data.profile.roleTags?.length ?? 0) > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {data.profile.roleTags!.map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs px-2 py-0.5 rounded-md border border-white/15 text-xiio-muted"
-                  >
-                    {t(`network.field.${tag}`)}
-                  </span>
-                ))}
-              </div>
-            )}
-            {(data.profile.crewRoles?.length ?? 0) > 0 && (
-              <p className="text-xs text-xiio-muted mt-2">
-                {data.profile.crewRoles!.join(" · ")}
-              </p>
             )}
             {data.profile.openToCollaborate && (
               <p className="mt-3 text-sm text-emerald-300/90">

@@ -17,12 +17,11 @@ XIIO는 **공개 스트리밍 피드**를 유지하면서, 영화·영상 업계
 
 ## 프로필 표현
 
-- **헤드라인·bio** — 사용자 자유 입력 (링크드인형)
-- **roleTags** — `director` / `actor` / `crew` 복수 선택 (최대 3, 단일 분야 강제 없음)
-- **crewRoles** — 조명·편집 등 자유 태그
-- **openToCollaborate** + **collaborationNote** — 창구·프로필 「협업 가능」
+- **헤드라인·bio** — 구직·협업용 **전부 자유 작성** (역할·분야 칩 없음)
+- **openToCollaborate** + **collaborationNote** — 사람 찾기에서 「협업 가능」 표시 (선택)
+- 검색은 headline·bio·handle 텍스트 기준
 
-레거시 `primaryField` 단일 값은 UI에서 사용하지 않으며, `roleTags`가 없을 때만 읽기 호환용으로 매핑합니다.
+레거시 `roleTags` / `primaryField`는 저장 시 비우며, API·DB 호환만 유지합니다.
 
 ## 공개 범위
 

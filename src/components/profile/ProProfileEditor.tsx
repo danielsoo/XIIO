@@ -4,18 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { PROFILE_ROLE_TAGS, type ProfileRoleTag } from "@/types/portfolio";
 
 const inputClass =
   "w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-xiio-muted/60 focus:outline-none focus:ring-2 focus:ring-xiio-accent/40";
-
-function parseCrewInput(raw: string): string[] {
-  return raw
-    .split(/[,，]/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 10);
-}
 
 export default function ProProfileEditor() {
   const { user } = useAuth();
@@ -23,8 +14,6 @@ export default function ProProfileEditor() {
   const [handle, setHandle] = useState("");
   const [headline, setHeadline] = useState("");
   const [bio, setBio] = useState("");
-  const [roleTags, setRoleTags] = useState<ProfileRoleTag[]>([]);
-  const [crewInput, setCrewInput] = useState("");
   const [isDiscoverable, setIsDiscoverable] = useState(true);
   const [openToCollaborate, setOpenToCollaborate] = useState(false);
   const [collaborationNote, setCollaborationNote] = useState("");
@@ -43,8 +32,6 @@ export default function ProProfileEditor() {
       handle?: string | null;
       headline?: string | null;
       bio?: string | null;
-      roleTags?: ProfileRoleTag[];
-      crewRoles?: string[];
       isDiscoverable?: boolean;
       openToCollaborate?: boolean;
       collaborationNote?: string | null;
@@ -52,8 +39,6 @@ export default function ProProfileEditor() {
     setHandle(data.handle ?? "");
     setHeadline(data.headline ?? "");
     setBio(data.bio ?? "");
-    setRoleTags(data.roleTags ?? []);
-    setCrewInput((data.crewRoles ?? []).join(", "));
     setIsDiscoverable(data.isDiscoverable !== false);
     setOpenToCollaborate(!!data.openToCollaborate);
     setCollaborationNote(data.collaborationNote ?? "");
@@ -62,14 +47,6 @@ export default function ProProfileEditor() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const toggleRole = (tag: ProfileRoleTag) => {
-    setRoleTags((prev) => {
-      if (prev.includes(tag)) return prev.filter((x) => x !== tag);
-      if (prev.length >= 3) return prev;
-      return [...prev, tag];
-    });
-  };
 
   const save = async () => {
     if (!user) return;
@@ -88,8 +65,8 @@ export default function ProProfileEditor() {
           handle: handle.trim() || undefined,
           headline,
           bio,
-          roleTags,
-          crewRoles: parseCrewInput(crewInput),
+          roleTags: [],
+          crewRoles: [],
           isDiscoverable,
           openToCollaborate,
           collaborationNote,
@@ -147,44 +124,11 @@ export default function ProProfileEditor() {
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              rows={5}
+              rows={8}
+              placeholder={t("profile.edit.bioPlaceholder")}
               className={inputClass}
             />
           </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-sm font-semibold text-white mb-1">{t("profile.edit.rolesTitle")}</h3>
-        <p className="text-xs text-xiio-muted mb-3">{t("profile.edit.rolesHint")}</p>
-        <div className="flex flex-wrap gap-2">
-          {PROFILE_ROLE_TAGS.map((tag) => {
-            const on = roleTags.includes(tag);
-            return (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => toggleRole(tag)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
-                  on
-                    ? "bg-xiio-accent/25 border-xiio-accent text-white"
-                    : "border-white/15 text-xiio-muted hover:border-white/30"
-                }`}
-              >
-                {t(`network.field.${tag}`)}
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-3">
-          <label className="block text-xs text-xiio-muted mb-1">{t("profile.edit.crewRoles")}</label>
-          <input
-            type="text"
-            value={crewInput}
-            onChange={(e) => setCrewInput(e.target.value)}
-            placeholder={t("profile.edit.crewRolesPlaceholder")}
-            className={inputClass}
-          />
         </div>
       </div>
 
