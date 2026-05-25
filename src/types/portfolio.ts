@@ -6,6 +6,10 @@ export const PROFESSIONAL_FIELDS = ["director", "actor", "crew", "multi"] as con
 
 export type ProfessionalField = (typeof PROFESSIONAL_FIELDS)[number];
 
+export function isProfessionalField(v: string): v is ProfessionalField {
+  return (PROFESSIONAL_FIELDS as readonly string[]).includes(v);
+}
+
 export type PortfolioShareDoc = {
   token: string;
   title: string;

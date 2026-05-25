@@ -2,14 +2,12 @@ import type { Firestore } from "firebase-admin/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import { normalizeHandle } from "@/lib/server/credits";
 import type { ProfessionalField } from "@/types/portfolio";
-import { PROFESSIONAL_FIELDS } from "@/types/portfolio";
+import { isProfessionalField } from "@/types/portfolio";
+
+export { isProfessionalField };
 
 export function handlesCol(db: Firestore) {
   return db.collection("handles");
-}
-
-export function isProfessionalField(v: string): v is ProfessionalField {
-  return (PROFESSIONAL_FIELDS as readonly string[]).includes(v);
 }
 
 export async function getUidByHandle(db: Firestore, handle: string): Promise<string | null> {

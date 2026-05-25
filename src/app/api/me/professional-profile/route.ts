@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
-import { claimHandle, isProfessionalField } from "@/lib/server/handles";
+import { claimHandle } from "@/lib/server/handles";
+import { isProfessionalField } from "@/types/portfolio";
 import { getDbOrNull } from "@/lib/server/works";
 import { parseUserProfileDoc } from "@/lib/userAccess";
 

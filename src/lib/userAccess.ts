@@ -1,6 +1,5 @@
 import type { Locale } from "@/i18n";
-import { isProfessionalField } from "@/lib/server/handles";
-import type { ProfessionalField } from "@/types/portfolio";
+import { isProfessionalField, type ProfessionalField } from "@/types/portfolio";
 import type {
   DirectorNameChangeRequest,
   DirectorNameChangeRequestStatus,
