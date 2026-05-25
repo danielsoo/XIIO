@@ -16,15 +16,18 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const navItems = useMemo(
-    () => [
+  const navItems = useMemo(() => {
+    const items = [
       { label: t("nav.movies"), href: "/movies" },
       { label: t("nav.entertainment"), href: "/entertainment" },
       { label: t("nav.series"), href: "/series" },
       { label: t("nav.schoolBattle"), href: "/school-battle" },
-    ],
-    [t]
-  );
+    ];
+    if (user) {
+      items.push({ label: t("nav.discover"), href: "/discover" });
+    }
+    return items;
+  }, [t, user]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);

@@ -1,4 +1,6 @@
 import type { Locale } from "@/i18n";
+import { resolveRoleTags } from "@/lib/roleTags";
+import type { ProfileRoleTag } from "@/types/portfolio";
 import { isProfessionalField, type ProfessionalField } from "@/types/portfolio";
 import type {
   DirectorNameChangeRequest,
@@ -88,10 +90,23 @@ export function parseUserProfileDoc(data: Record<string, unknown>): UserProfileD
       typeof data.primaryField === "string" && isProfessionalField(data.primaryField)
         ? (data.primaryField as ProfessionalField)
         : undefined,
+    roleTags: resolveRoleTags(data) as ProfileRoleTag[],
     crewRoles: Array.isArray(data.crewRoles)
       ? data.crewRoles.map((x) => String(x).trim()).filter(Boolean).slice(0, 10)
       : undefined,
     isDiscoverable: data.isDiscoverable !== false,
+    openToCollaborate: data.openToCollaborate === true,
+    collaborationNote: data.collaborationNote
+      ? String(data.collaborationNote).trim().slice(0, 200)
+      : undefined,
+    followerCount:
+      typeof data.followerCount === "number" && data.followerCount >= 0
+        ? data.followerCount
+        : 0,
+    followingCount:
+      typeof data.followingCount === "number" && data.followingCount >= 0
+        ? data.followingCount
+        : 0,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };

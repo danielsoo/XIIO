@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStreamThumbnailUrl } from "@/lib/cloudflare/stream";
+import { isFollowing } from "@/lib/server/follows";
+import { verifyBearerIdToken } from "@/lib/server/firebase-admin";
 import { getUidByHandle } from "@/lib/server/handles";
 import { listEligibleWorksForUser } from "@/lib/server/portfolio";
 import { getDbOrNull, parseWorkDoc, worksCol } from "@/lib/server/works";
@@ -7,7 +9,7 @@ import { parseUserProfileDoc } from "@/lib/userAccess";
 
 type Params = { params: Promise<{ handle: string }> };
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const { handle } = await params;
   const db = await getDbOrNull();
   if (!db) return NextResponse.json({ error: "not_configured" }, { status: 503 });
@@ -21,6 +23,14 @@ export async function GET(_request: Request, { params }: Params) {
   const profile = parseUserProfileDoc(userSnap.data() as Record<string, unknown>);
   if (profile.isDiscoverable === false) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  const session = await verifyBearerIdToken(request.headers.get("authorization"));
+  const viewerUid = session?.uid ?? null;
+  const isSelf = viewerUid === uid;
+  let following = false;
+  if (viewerUid && !isSelf) {
+    following = await isFollowing(db, viewerUid, uid);
   }
 
   const eligible = await listEligibleWorksForUser(db, uid);
@@ -62,9 +72,17 @@ export async function GET(_request: Request, { params }: Params) {
       displayName: profile.displayName,
       headline: profile.headline,
       bio: profile.bio,
-      primaryField: profile.primaryField,
+      roleTags: profile.roleTags ?? [],
+      crewRoles: profile.crewRoles ?? [],
+      openToCollaborate: profile.openToCollaborate === true,
+      collaborationNote: profile.collaborationNote,
       defaultDirectorName: profile.defaultDirectorName,
+      followerCount: profile.followerCount ?? 0,
+      followingCount: profile.followingCount ?? 0,
     },
+    viewer: viewerUid
+      ? { uid: viewerUid, isSelf, isFollowing: following }
+      : null,
     directed,
     credited,
   });

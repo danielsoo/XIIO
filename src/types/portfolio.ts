@@ -6,6 +6,11 @@ export const PROFESSIONAL_FIELDS = ["director", "actor", "crew", "multi"] as con
 
 export type ProfessionalField = (typeof PROFESSIONAL_FIELDS)[number];
 
+/** 전문 프로필 역할 칩 (복수 선택, multi 없음) */
+export const PROFILE_ROLE_TAGS = ["director", "actor", "crew"] as const;
+
+export type ProfileRoleTag = (typeof PROFILE_ROLE_TAGS)[number];
+
 export function isProfessionalField(v: string): v is ProfessionalField {
   return (PROFESSIONAL_FIELDS as readonly string[]).includes(v);
 }

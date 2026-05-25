@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
 import { claimHandle } from "@/lib/server/handles";
-import { isProfessionalField } from "@/types/portfolio";
+import { normalizeRoleTagsInput } from "@/lib/roleTags";
 import { getDbOrNull } from "@/lib/server/works";
 import { parseUserProfileDoc } from "@/lib/userAccess";
 
@@ -21,11 +21,15 @@ export async function GET(request: Request) {
     handle: profile.handle ?? null,
     headline: profile.headline ?? null,
     bio: profile.bio ?? null,
-    primaryField: profile.primaryField ?? null,
+    roleTags: profile.roleTags ?? [],
     crewRoles: profile.crewRoles ?? [],
     isDiscoverable: profile.isDiscoverable !== false,
+    openToCollaborate: profile.openToCollaborate === true,
+    collaborationNote: profile.collaborationNote ?? null,
     displayName: profile.displayName,
     defaultDirectorName: profile.defaultDirectorName ?? null,
+    followerCount: profile.followerCount ?? 0,
+    followingCount: profile.followingCount ?? 0,
   });
 }
 
@@ -40,9 +44,11 @@ export async function PATCH(request: Request) {
     handle?: string;
     headline?: string;
     bio?: string;
-    primaryField?: string;
+    roleTags?: string[];
     crewRoles?: string[];
     isDiscoverable?: boolean;
+    openToCollaborate?: boolean;
+    collaborationNote?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -59,12 +65,9 @@ export async function PATCH(request: Request) {
   if (body.bio !== undefined) {
     updates.bio = body.bio.trim().slice(0, 2000) || null;
   }
-  if (body.primaryField !== undefined) {
-    const pf = body.primaryField.trim();
-    if (pf && !isProfessionalField(pf)) {
-      return jsonError("invalid_field", "유효하지 않은 활동 분야입니다.", 400);
-    }
-    updates.primaryField = pf || null;
+  if (body.roleTags !== undefined) {
+    updates.roleTags = normalizeRoleTagsInput(body.roleTags);
+    updates.primaryField = null;
   }
   if (body.crewRoles !== undefined) {
     updates.crewRoles = Array.isArray(body.crewRoles)
@@ -73,6 +76,12 @@ export async function PATCH(request: Request) {
   }
   if (body.isDiscoverable !== undefined) {
     updates.isDiscoverable = !!body.isDiscoverable;
+  }
+  if (body.openToCollaborate !== undefined) {
+    updates.openToCollaborate = !!body.openToCollaborate;
+  }
+  if (body.collaborationNote !== undefined) {
+    updates.collaborationNote = body.collaborationNote.trim().slice(0, 200) || null;
   }
 
   const profileMerge =
@@ -99,8 +108,10 @@ export async function PATCH(request: Request) {
     handle: profile.handle ?? null,
     headline: profile.headline ?? null,
     bio: profile.bio ?? null,
-    primaryField: profile.primaryField ?? null,
+    roleTags: profile.roleTags ?? [],
     crewRoles: profile.crewRoles ?? [],
     isDiscoverable: profile.isDiscoverable !== false,
+    openToCollaborate: profile.openToCollaborate === true,
+    collaborationNote: profile.collaborationNote ?? null,
   });
 }

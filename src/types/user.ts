@@ -1,5 +1,5 @@
 import type { Locale } from "@/i18n";
-import type { ProfessionalField } from "@/types/portfolio";
+import type { ProfessionalField, ProfileRoleTag } from "@/types/portfolio";
 
 export type PlatformPurpose = "watch" | "upload" | "both";
 
@@ -49,10 +49,17 @@ export interface UserProfileDoc {
   handle?: string;
   headline?: string;
   bio?: string;
+  /** @deprecated UI 미사용 — roleTags 사용 */
   primaryField?: ProfessionalField;
+  roleTags?: ProfileRoleTag[];
   crewRoles?: string[];
   /** 태그·handle 검색 허용 */
   isDiscoverable?: boolean;
+  /** 창구·프로필 협업 가능 */
+  openToCollaborate?: boolean;
+  collaborationNote?: string;
+  followerCount?: number;
+  followingCount?: number;
   createdAt?: unknown;
   updatedAt?: unknown;
 }

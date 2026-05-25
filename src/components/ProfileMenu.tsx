@@ -65,6 +65,27 @@ export default function ProfileMenu() {
           >
             {t("profileMenu.accountProfile")}
           </Link>
+          <Link
+            href="/account/profile"
+            onClick={() => setOpen(false)}
+            className="block w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"
+          >
+            {t("profileMenu.editProProfile")}
+          </Link>
+          <Link
+            href="/discover"
+            onClick={() => setOpen(false)}
+            className="block w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"
+          >
+            {t("profileMenu.discover")}
+          </Link>
+          <Link
+            href="/messages"
+            onClick={() => setOpen(false)}
+            className="block w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"
+          >
+            {t("profileMenu.messages")}
+          </Link>
           <button
             type="button"
             onClick={handleSwitchProfile}

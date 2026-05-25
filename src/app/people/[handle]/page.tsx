@@ -6,6 +6,8 @@ import { useParams } from "next/navigation";
 import AppPageShell from "@/components/layout/AppPageShell";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import PeopleProfileActions from "@/components/profile/PeopleProfileActions";
+import type { ProfileRoleTag } from "@/types/portfolio";
 
 type WorkCard = {
   workId: string;
@@ -19,12 +21,19 @@ type WorkCard = {
 
 type ProfilePayload = {
   profile: {
+    uid: string;
     handle: string;
     displayName: string;
     headline?: string;
     bio?: string;
-    primaryField?: string;
+    roleTags?: ProfileRoleTag[];
+    crewRoles?: string[];
+    openToCollaborate?: boolean;
+    collaborationNote?: string;
+    followerCount?: number;
+    followingCount?: number;
   };
+  viewer?: { uid: string; isSelf: boolean; isFollowing: boolean } | null;
   directed: WorkCard[];
   credited: WorkCard[];
 };
@@ -42,20 +51,26 @@ export default function PeopleProfilePage() {
     void (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/people/${encodeURIComponent(handle)}`);
+        const headers: HeadersInit = {};
+        if (user) {
+          const token = await user.getIdToken();
+          headers.Authorization = `Bearer ${token}`;
+        }
+        const res = await fetch(`/api/people/${encodeURIComponent(handle)}`, { headers });
         if (!res.ok) {
           setErr(t("network.people.notFound"));
           setData(null);
           return;
         }
         setData((await res.json()) as ProfilePayload);
+        setErr(null);
       } catch {
         setErr(t("network.people.loadError"));
       } finally {
         setLoading(false);
       }
     })();
-  }, [handle, t]);
+  }, [handle, t, user]);
 
   const renderWorks = (items: WorkCard[], title: string) => {
     if (items.length === 0) return null;
@@ -110,18 +125,50 @@ export default function PeopleProfilePage() {
             <p className="text-sm text-xiio-accent mb-1">@{data.profile.handle}</p>
             <h1 className="text-2xl md:text-3xl font-bold text-white">{data.profile.displayName}</h1>
             {data.profile.headline && (
-              <p className="text-white/80 mt-2">{data.profile.headline}</p>
+              <p className="text-white/80 mt-2 text-lg">{data.profile.headline}</p>
             )}
+            {(data.profile.roleTags?.length ?? 0) > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {data.profile.roleTags!.map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-xs px-2 py-0.5 rounded-md border border-white/15 text-xiio-muted"
+                  >
+                    {t(`network.field.${tag}`)}
+                  </span>
+                ))}
+              </div>
+            )}
+            {(data.profile.crewRoles?.length ?? 0) > 0 && (
+              <p className="text-xs text-xiio-muted mt-2">
+                {data.profile.crewRoles!.join(" · ")}
+              </p>
+            )}
+            {data.profile.openToCollaborate && (
+              <p className="mt-3 text-sm text-emerald-300/90">
+                {t("discover.openBadge")}
+                {data.profile.collaborationNote
+                  ? ` — ${data.profile.collaborationNote}`
+                  : ""}
+              </p>
+            )}
+            <p className="text-xs text-xiio-muted mt-2">
+              {t("follow.counts", {
+                followers: data.profile.followerCount ?? 0,
+                following: data.profile.followingCount ?? 0,
+              })}
+            </p>
             {data.profile.bio && (
               <p className="text-xiio-muted mt-3 text-sm leading-relaxed whitespace-pre-wrap">
                 {data.profile.bio}
               </p>
             )}
-            {data.profile.primaryField && (
-              <p className="text-xs text-xiio-muted mt-2">
-                {t(`network.field.${data.profile.primaryField}`)}
-              </p>
-            )}
+            <PeopleProfileActions
+              profileUid={data.profile.uid}
+              handle={data.profile.handle}
+              isSelf={!!data.viewer?.isSelf}
+              initialFollowing={!!data.viewer?.isFollowing}
+            />
           </header>
           {renderWorks(data.directed, t("network.people.directed"))}
           {renderWorks(data.credited, t("network.people.credited"))}

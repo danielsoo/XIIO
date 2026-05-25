@@ -30,14 +30,19 @@ export default function PortfolioShareSection() {
   const [busy, setBusy] = useState(false);
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
+    setLoadErr(null);
     const token = await user.getIdToken();
     const res = await fetch("/api/me/portfolio-shares", {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      setLoadErr(t("portfolio.share.loadError"));
+      return;
+    }
     const data = (await res.json()) as {
       shares?: ShareRow[];
       eligibleWorks?: EligibleWork[];
@@ -128,6 +133,11 @@ export default function PortfolioShareSection() {
     <div>
       <h2 className="text-base font-semibold text-white mb-1">{t("portfolio.share.title")}</h2>
       <p className="text-sm text-xiio-muted mb-4">{t("portfolio.share.hint")}</p>
+
+      {loadErr && <p className="text-red-400 text-sm mb-3">{loadErr}</p>}
+      {!loadErr && works.length === 0 && (
+        <p className="text-xs text-xiio-muted mb-4">{t("portfolio.share.noPublishedWorks")}</p>
+      )}
 
       {works.length > 0 && (
         <div className="mb-4">

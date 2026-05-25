@@ -77,6 +77,12 @@ export default function AccountProfileHero({ profile, email }: Props) {
           </div>
 
           <div className="flex flex-wrap gap-2 mt-4">
+            <Link
+              href="/account/profile"
+              className="inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium bg-xiio-accent hover:bg-xiio-accent-hover text-white transition"
+            >
+              {t("accountProfile.linkEditProfile")}
+            </Link>
             <Link href="/profiles" className={quickBtn}>
               {t("accountProfile.linkWatchProfiles")}
             </Link>
