@@ -7,6 +7,7 @@ import AppPageShell from "@/components/layout/AppPageShell";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import PeopleProfileActions from "@/components/profile/PeopleProfileActions";
+import PublicProfileHeader from "@/components/profile/PublicProfileHeader";
 type WorkCard = {
   workId: string;
   ownerUid: string;
@@ -117,38 +118,24 @@ export default function PeopleProfilePage() {
         <p className="text-red-400">{err ?? t("network.people.notFound")}</p>
       ) : (
         <>
-          <header className="mb-8">
-            <p className="text-sm text-xiio-accent mb-1">@{data.profile.handle}</p>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{data.profile.displayName}</h1>
-            {data.profile.headline && (
-              <p className="text-white/80 mt-2 text-lg">{data.profile.headline}</p>
-            )}
-            {data.profile.openToCollaborate && (
-              <p className="mt-3 text-sm text-emerald-300/90">
-                {t("discover.openBadge")}
-                {data.profile.collaborationNote
-                  ? ` — ${data.profile.collaborationNote}`
-                  : ""}
-              </p>
-            )}
-            <p className="text-xs text-xiio-muted mt-2">
-              {t("follow.counts", {
-                followers: data.profile.followerCount ?? 0,
-                following: data.profile.followingCount ?? 0,
-              })}
-            </p>
-            {data.profile.bio && (
-              <p className="text-xiio-muted mt-3 text-sm leading-relaxed whitespace-pre-wrap">
-                {data.profile.bio}
-              </p>
-            )}
-            <PeopleProfileActions
-              profileUid={data.profile.uid}
-              handle={data.profile.handle}
-              isSelf={!!data.viewer?.isSelf}
-              initialFollowing={!!data.viewer?.isFollowing}
-            />
-          </header>
+          <PublicProfileHeader
+            handle={data.profile.handle}
+            displayName={data.profile.displayName}
+            headline={data.profile.headline}
+            bio={data.profile.bio}
+            openToCollaborate={data.profile.openToCollaborate}
+            collaborationNote={data.profile.collaborationNote}
+            followerCount={data.profile.followerCount}
+            followingCount={data.profile.followingCount}
+            actions={
+              <PeopleProfileActions
+                profileUid={data.profile.uid}
+                handle={data.profile.handle}
+                isSelf={!!data.viewer?.isSelf}
+                initialFollowing={!!data.viewer?.isFollowing}
+              />
+            }
+          />
           {renderWorks(data.directed, t("network.people.directed"))}
           {renderWorks(data.credited, t("network.people.credited"))}
         </>

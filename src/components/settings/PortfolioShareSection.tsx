@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import {
+  normalizePortfolioShareUrl,
+  portfolioSharePath,
+} from "@/lib/portfolioShareUrl";
 
 type EligibleWork = {
   workId: string;
@@ -121,12 +125,13 @@ export default function PortfolioShareSection() {
     await load();
   };
 
-  const copyUrl = (path: string) => {
-    const full =
-      typeof window !== "undefined"
-        ? `${window.location.origin}${path.startsWith("/") ? path : `/${path}`}`
-        : path;
-    void navigator.clipboard.writeText(full);
+  const resolveShareUrl = (urlOrPath: string) =>
+    typeof window !== "undefined"
+      ? normalizePortfolioShareUrl(urlOrPath, window.location.origin)
+      : normalizePortfolioShareUrl(urlOrPath);
+
+  const copyUrl = (urlOrPath: string) => {
+    void navigator.clipboard.writeText(resolveShareUrl(urlOrPath));
   };
 
   return (
@@ -185,14 +190,24 @@ export default function PortfolioShareSection() {
       {createdUrl && (
         <div className="mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
           <p className="text-xs text-emerald-300 mb-2">{t("portfolio.share.created")}</p>
-          <code className="text-xs text-white break-all">{createdUrl}</code>
-          <button
-            type="button"
-            onClick={() => copyUrl(createdUrl)}
-            className="block mt-2 text-xs text-xiio-accent hover:underline"
-          >
-            {t("portfolio.share.copy")}
-          </button>
+          <code className="text-xs text-white break-all">{resolveShareUrl(createdUrl)}</code>
+          <div className="flex flex-wrap gap-3 mt-2">
+            <button
+              type="button"
+              onClick={() => copyUrl(createdUrl)}
+              className="text-xs text-xiio-accent hover:underline"
+            >
+              {t("portfolio.share.copy")}
+            </button>
+            <a
+              href={resolveShareUrl(createdUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-xiio-accent hover:underline"
+            >
+              {t("portfolio.share.preview")}
+            </a>
+          </div>
         </div>
       )}
 
@@ -217,11 +232,19 @@ export default function PortfolioShareSection() {
                   <>
                     <button
                       type="button"
-                      onClick={() => copyUrl(`/p/${s.token}`)}
+                      onClick={() => copyUrl(portfolioSharePath(s.token))}
                       className="text-xs text-xiio-accent hover:underline"
                     >
                       {t("portfolio.share.copy")}
                     </button>
+                    <a
+                      href={portfolioSharePath(s.token)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-xiio-accent hover:underline"
+                    >
+                      {t("portfolio.share.preview")}
+                    </a>
                     <button
                       type="button"
                       onClick={() => void revoke(s.id)}

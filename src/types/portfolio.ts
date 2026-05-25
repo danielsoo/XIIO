@@ -41,15 +41,20 @@ export type PortfolioWorkItem = {
   thumbnailUrl?: string;
 };
 
+export type PublicProfilePayload = {
+  displayName: string;
+  handle: string;
+  headline?: string;
+  bio?: string;
+  openToCollaborate?: boolean;
+  collaborationNote?: string;
+  followerCount?: number;
+  followingCount?: number;
+  defaultDirectorName?: string;
+};
+
 export type PublicPortfolioPayload = {
-  profile: {
-    displayName: string;
-    handle: string;
-    headline?: string;
-    bio?: string;
-    primaryField?: ProfessionalField;
-    defaultDirectorName?: string;
-  };
+  profile: PublicProfilePayload;
   shareTitle: string;
   works: PortfolioWorkItem[];
 };

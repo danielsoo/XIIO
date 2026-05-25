@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import PlaybackVideo from "@/components/PlaybackVideo";
+import PublicProfileHeader from "@/components/profile/PublicProfileHeader";
 import { useTranslations } from "@/context/LocaleContext";
 import type { PublicPortfolioPayload } from "@/types/portfolio";
 
@@ -36,29 +37,24 @@ export default function PublicPortfolioPage() {
   return (
     <main className="min-h-screen bg-xiio-bg text-white">
       <div className="max-w-5xl mx-auto px-4 py-10">
-        <p className="text-xs text-xiio-muted mb-6 uppercase tracking-wide">
-          {t("portfolio.public.badge")}
-        </p>
-
         {loading ? (
           <p className="text-xiio-muted">{t("common.loading")}</p>
         ) : err || !data ? (
           <p className="text-red-400">{err}</p>
         ) : (
           <>
-            <header className="mb-8 border-b border-white/10 pb-6">
-              <p className="text-sm text-xiio-accent">@{data.profile.handle}</p>
-              <h1 className="text-2xl font-bold mt-1">{data.profile.displayName}</h1>
-              {data.shareTitle && (
-                <p className="text-white/80 mt-2 text-sm">{data.shareTitle}</p>
-              )}
-              {data.profile.headline && (
-                <p className="text-xiio-muted mt-2 text-sm">{data.profile.headline}</p>
-              )}
-              {data.profile.bio && (
-                <p className="text-xiio-muted mt-3 text-sm whitespace-pre-wrap">{data.profile.bio}</p>
-              )}
-            </header>
+            <PublicProfileHeader
+              handle={data.profile.handle}
+              displayName={data.profile.displayName}
+              headline={data.profile.headline}
+              bio={data.profile.bio}
+              openToCollaborate={data.profile.openToCollaborate}
+              collaborationNote={data.profile.collaborationNote}
+              followerCount={data.profile.followerCount}
+              followingCount={data.profile.followingCount}
+              submissionBadge={t("portfolio.public.badge")}
+              shareTitle={data.shareTitle}
+            />
 
             {data.works.length === 0 ? (
               <p className="text-xiio-muted">{t("portfolio.public.empty")}</p>
