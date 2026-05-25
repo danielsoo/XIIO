@@ -16,9 +16,15 @@ import {
 } from "@/lib/server/works";
 import { defaultAspectRatioForSection, isVideoAspectRatio } from "@/lib/works/aspect-ratio";
 import { isWorkSection } from "@/lib/works/constants";
+import {
+  ensureOwnerDirectorCredit,
+  validateCreditInputs,
+  writeWorkCredits,
+} from "@/lib/server/credits";
 import { parseUploadLength } from "@/lib/server/parse-upload-length";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
 import { validatePromoClipRange } from "@/lib/works/promo-clip";
+import type { WorkCreditInput } from "@/types/credits";
 import type { PromoDraft, VideoAspectRatio } from "@/types/work";
 
 export async function POST(request: Request) {
@@ -57,6 +63,7 @@ export async function POST(request: Request) {
       clipStartSec?: number;
       clipEndSec?: number;
     };
+    credits?: WorkCreditInput[];
   };
   try {
     body = (await request.json()) as typeof body;
@@ -166,6 +173,7 @@ export async function POST(request: Request) {
         directorFromBody || profile?.defaultDirectorName?.trim().slice(0, 120) || null;
 
       const sortOrder = await nextWorkSortOrder(db, session.uid);
+      const displayName = profile?.displayName || director || "Creator";
       await worksCol(db, session.uid).doc(workId).set({
         kind: "full",
         section: sectionRaw,
@@ -184,6 +192,51 @@ export async function POST(request: Request) {
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
+
+      const creditInputs = Array.isArray(body.credits) ? body.credits : [];
+      const withDirector: WorkCreditInput[] = [
+        { userId: session.uid, role: "director", sortOrder: 0 },
+        ...creditInputs.filter((c) => !(c.userId === session.uid && c.role === "director")),
+      ];
+      const validated = validateCreditInputs(withDirector, session.uid);
+      if (validated.ok && validated.credits.length > 0) {
+        const names = new Map<string, string>([[session.uid, displayName]]);
+        for (const c of validated.credits) {
+          if (names.has(c.userId)) continue;
+          const u = await db.collection("users").doc(c.userId).get();
+          if (u.exists) {
+            const p = parseUserProfileDoc(u.data() as Record<string, unknown>);
+            names.set(c.userId, p.displayName);
+          }
+        }
+        await writeWorkCredits(
+          db,
+          session.uid,
+          workId,
+          {
+            title,
+            section: sectionRaw,
+            platformStatus: "pending",
+            streamUid: upload.uid,
+          },
+          validated.credits,
+          names
+        );
+      } else {
+        await ensureOwnerDirectorCredit(
+          db,
+          session.uid,
+          workId,
+          {
+            title,
+            section: sectionRaw,
+            platformStatus: "pending",
+            streamUid: upload.uid,
+            director: director ?? undefined,
+          },
+          displayName
+        );
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[upload-url] Firestore:", msg);

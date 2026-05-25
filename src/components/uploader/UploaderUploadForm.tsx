@@ -12,6 +12,7 @@ import { uploaderInputClass } from "@/components/uploader/uploaderFormStyles";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
 import WorkTagInput from "@/components/uploader/WorkTagInput";
+import CreditTagInput, { type TaggedCredit } from "@/components/network/CreditTagInput";
 import { useTranslations } from "@/context/LocaleContext";
 import { useVideoFileDuration } from "@/hooks/useVideoFileDuration";
 import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
@@ -75,6 +76,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("16:9");
   const [contentCategory, setContentCategory] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [credits, setCredits] = useState<TaggedCredit[]>([]);
   const directorLocked = Boolean(initialDirector?.trim());
   const lockedDirectorName = initialDirector?.trim() ?? "";
   const [director, setDirector] = useState(lockedDirectorName);
@@ -286,6 +288,12 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               clipStartSec: clipStart,
               clipEndSec: clipEnd,
             },
+            credits: credits.map(({ userId, role, characterName, sortOrder }) => ({
+              userId,
+              role,
+              characterName,
+              sortOrder,
+            })),
           }),
         });
       } catch (fetchErr) {
@@ -585,6 +593,12 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
                 user={user}
                 inputClassName={uploaderInputClass}
               />
+            </div>
+            <div>
+              <label className="block text-xs text-xiio-muted mb-1.5">
+                {t("network.credits.sectionTitle")}
+              </label>
+              <CreditTagInput value={credits} onChange={setCredits} disabled={busy} />
             </div>
             <div>
               <p className="text-xs text-xiio-muted mb-1">{t("uploader.uploadAspectRatioLabel")}</p>

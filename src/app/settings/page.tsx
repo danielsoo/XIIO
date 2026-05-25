@@ -11,6 +11,8 @@ import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import DirectorNameSettingsSection from "@/components/settings/DirectorNameSettingsSection";
+import ProfessionalProfileSection from "@/components/settings/ProfessionalProfileSection";
+import PortfolioShareSection from "@/components/settings/PortfolioShareSection";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 
 const TIMEZONE_OPTIONS: { id: XiioTimezoneId; labelKey: string }[] = [
@@ -149,6 +151,15 @@ export default function SettingsPage() {
               →
             </span>
           </Link>
+        </section>
+      </div>
+
+      <div className="mt-8 grid gap-5 lg:grid-cols-2">
+        <section className={card}>
+          <ProfessionalProfileSection />
+        </section>
+        <section className={card}>
+          <PortfolioShareSection />
         </section>
       </div>
 

@@ -136,6 +136,60 @@
         { "fieldPath": "targetWorkId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "works",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "platformStatus", "order": "ASCENDING" },
+        { "fieldPath": "contentModeration.hasHighSeverity", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "works",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "revisionReviewStatus", "order": "ASCENDING" },
+        { "fieldPath": "pendingRevision.contentModeration.hasHighSeverity", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "promoShort",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "platformStatus", "order": "ASCENDING" },
+        { "fieldPath": "contentModeration.hasHighSeverity", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "promoShort",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "revisionReviewStatus", "order": "ASCENDING" },
+        { "fieldPath": "pendingRevision.contentModeration.hasHighSeverity", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "portfolioShares",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "token", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "creditIndex",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "platformStatus", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "creditIndex",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ownerUid", "order": "ASCENDING" },
+        { "fieldPath": "workId", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

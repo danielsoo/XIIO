@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
+import ModerationFlagsPanel from "@/components/admin/ModerationFlagsPanel";
 import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useTranslations } from "@/context/LocaleContext";
@@ -105,6 +106,13 @@ export default function FullWorkReviewCard({ item, busy, onApprove, onReject }: 
           <PlaybackVideo src={item.playbackUrl} />
         </div>
       )}
+
+      <ModerationFlagsPanel
+        moderation={
+          item.isRevision ? item.pendingRevision?.contentModeration : item.contentModeration
+        }
+        className="mb-3"
+      />
 
       <div className="grid gap-3 mb-3 max-w-lg">
         <div>

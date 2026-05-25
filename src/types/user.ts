@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n";
+import type { ProfessionalField } from "@/types/portfolio";
 
 export type PlatformPurpose = "watch" | "upload" | "both";
 
@@ -44,6 +45,14 @@ export interface UserProfileDoc {
   /** 업로더 기본 감독 표시명 (닉네임·본명 등) — 최초 1회 설정 후 직접 변경 불가 */
   defaultDirectorName?: string;
   directorNameChangeRequest?: DirectorNameChangeRequest;
+  /** 전문 프로필 @handle — /people/{handle} */
+  handle?: string;
+  headline?: string;
+  bio?: string;
+  primaryField?: ProfessionalField;
+  crewRoles?: string[];
+  /** 태그·handle 검색 허용 */
+  isDiscoverable?: boolean;
   createdAt?: unknown;
   updatedAt?: unknown;
 }

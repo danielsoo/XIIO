@@ -7,6 +7,7 @@ import {
   approveWorkRevision,
   rejectWorkRevision,
 } from "@/lib/server/content-revisions";
+import { refreshCreditIndexForWorkStatus } from "@/lib/server/credits";
 import {
   FieldValue,
   getDbOrNull,
@@ -203,6 +204,7 @@ export async function PATCH(request: Request, { params }: Params) {
       targetType: "full",
       workTitle: work.title,
     });
+    await refreshCreditIndexForWorkStatus(db, ownerUid, workId);
     return NextResponse.json({ ok: true, platformStatus: "published" });
   }
 

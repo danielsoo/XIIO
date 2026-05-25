@@ -15,6 +15,7 @@ import type {
   WorkSection,
 } from "@/types/work";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
+import { parseContentModeration } from "@/lib/server/moderation/parse-content-moderation";
 import { getAdminDb } from "@/lib/server/firebase-admin";
 import { isRejectReasonCode, isWorkSection } from "@/lib/works/constants";
 import { isVideoAspectRatio } from "@/lib/works/aspect-ratio";
@@ -103,6 +104,8 @@ export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc
     pendingRevision: parseWorkPendingRevision(data),
     revisionReviewStatus: parseRevisionReviewStatus(data),
     promoDraft: parsePromoDraft(data),
+    contentModeration: parseContentModeration(data),
+    portfolioSubmissionHidden: data.portfolioSubmissionHidden === true,
   };
 }
 
@@ -135,6 +138,7 @@ export function parsePromoDoc(data: Record<string, unknown>): PromoShortDoc {
     viewCount: parseCount(data, "viewCount"),
     pendingRevision: parsePromoPendingRevision(data),
     revisionReviewStatus: parseRevisionReviewStatus(data),
+    contentModeration: parseContentModeration(data),
   };
 }
 

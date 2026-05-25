@@ -12,12 +12,13 @@ import { useAdminWorkStats, type AdminWorkStats } from "@/hooks/useAdminWorkStat
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import type { StreamStatus, WorkSection } from "@/types/work";
 
-type Tab = "full_pending" | "promo_pending" | "removal";
+type Tab = "full_pending" | "promo_pending" | "ai_flagged" | "removal";
 
 function tabPendingCount(tab: Tab, stats: AdminWorkStats | null): number {
   if (!stats) return 0;
   if (tab === "full_pending") return stats.pendingFull;
   if (tab === "promo_pending") return stats.pendingPromo;
+  if (tab === "ai_flagged") return stats.aiFlagged;
   return stats.removalRequested;
 }
 
@@ -133,6 +134,7 @@ export default function AdminContentReview() {
   const tabs: { id: Tab; label: string }[] = [
     { id: "full_pending", label: t("admin.contentReview.tabFull") },
     { id: "promo_pending", label: t("admin.contentReview.tabPromo") },
+    { id: "ai_flagged", label: t("admin.contentReview.tabAiFlagged") },
     { id: "removal", label: t("admin.contentReview.tabRemoval") },
   ];
 
@@ -199,6 +201,58 @@ export default function AdminContentReview() {
               }
             />
           ))}
+        </ul>
+      ) : tab === "ai_flagged" ? (
+        <ul className="space-y-4">
+          {(
+            items as (
+              | ({ queueKind: "full" } & FullQueueItem)
+              | ({ queueKind: "promo" } & PromoReviewItem)
+            )[]
+          ).map((row) =>
+            row.queueKind === "full" ? (
+              <FullWorkReviewCard
+                key={`ai_full_${row.ownerUid}_${row.id}`}
+                item={row}
+                busy={busyKey === `${row.ownerUid}_${row.id}`}
+                onApprove={(approvedCategory, approvedTags) =>
+                  void patchFull(row.ownerUid, row.id, "approve", {
+                    approvedCategory,
+                    approvedTags,
+                  })
+                }
+                onReject={(rejectReasonCode, rejectReason) =>
+                  void patchFull(row.ownerUid, row.id, "reject", {
+                    rejectReasonCode,
+                    rejectReason,
+                  })
+                }
+              />
+            ) : (
+              <PromoReviewCard
+                key={`ai_promo_${row.ownerUid}_${row.workId}`}
+                row={row}
+                busy={busyKey === `promo_${row.ownerUid}_${row.workId}`}
+                rejectOpen={promoRejectOpenKey === `promo_${row.ownerUid}_${row.workId}`}
+                rejectReason={promoRejectReason}
+                onRejectOpen={() => {
+                  setPromoRejectOpenKey(`promo_${row.ownerUid}_${row.workId}`);
+                  setPromoRejectReason("");
+                }}
+                onRejectCancel={() => {
+                  setPromoRejectOpenKey(null);
+                  setPromoRejectReason("");
+                }}
+                onApprove={() => void patchPromo(row.ownerUid, row.workId, "approve")}
+                onRejectConfirm={() =>
+                  void patchPromo(row.ownerUid, row.workId, "reject", {
+                    rejectReason: promoRejectReason.trim(),
+                  })
+                }
+                onRejectReasonChange={setPromoRejectReason}
+              />
+            )
+          )}
         </ul>
       ) : tab === "promo_pending" ? (
         <ul className="space-y-4">

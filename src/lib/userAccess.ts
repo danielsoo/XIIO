@@ -1,4 +1,6 @@
 import type { Locale } from "@/i18n";
+import { isProfessionalField } from "@/lib/server/handles";
+import type { ProfessionalField } from "@/types/portfolio";
 import type {
   DirectorNameChangeRequest,
   DirectorNameChangeRequestStatus,
@@ -80,6 +82,17 @@ export function parseUserProfileDoc(data: Record<string, unknown>): UserProfileD
       ? String(data.defaultDirectorName).trim().slice(0, 120)
       : undefined,
     directorNameChangeRequest: parseDirectorNameChangeRequest(data.directorNameChangeRequest),
+    handle: data.handle ? String(data.handle).trim().toLowerCase() : undefined,
+    headline: data.headline ? String(data.headline).trim().slice(0, 200) : undefined,
+    bio: data.bio ? String(data.bio).trim().slice(0, 2000) : undefined,
+    primaryField:
+      typeof data.primaryField === "string" && isProfessionalField(data.primaryField)
+        ? (data.primaryField as ProfessionalField)
+        : undefined,
+    crewRoles: Array.isArray(data.crewRoles)
+      ? data.crewRoles.map((x) => String(x).trim()).filter(Boolean).slice(0, 10)
+      : undefined,
+    isDiscoverable: data.isDiscoverable !== false,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };

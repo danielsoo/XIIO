@@ -1,3 +1,4 @@
+import { parseContentModeration } from "@/lib/server/moderation/parse-content-moderation";
 import { isRejectReasonCode, isWorkSection } from "@/lib/works/constants";
 import { isVideoAspectRatio } from "@/lib/works/aspect-ratio";
 import type {
@@ -39,6 +40,7 @@ export function parseWorkPendingRevision(data: Record<string, unknown>): WorkPen
       typeof code === "string" && isRejectReasonCode(code) ? code : undefined,
     submittedAt: r.submittedAt,
     updatedAt: r.updatedAt,
+    contentModeration: parseContentModeration(r),
   };
 }
 
@@ -57,6 +59,7 @@ export function parsePromoPendingRevision(data: Record<string, unknown>): PromoP
     rejectReason: r.rejectReason ? String(r.rejectReason) : undefined,
     submittedAt: r.submittedAt,
     updatedAt: r.updatedAt,
+    contentModeration: parseContentModeration(r),
   };
 }
 

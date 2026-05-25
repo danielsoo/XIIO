@@ -4,6 +4,11 @@ import { verifyStreamWebhookSignature } from "@/lib/cloudflare/verify-stream-web
 import { getAdminDb } from "@/lib/server/firebase-admin";
 import { mapWebhookStreamStatus } from "@/lib/works/constants";
 import { materializePromoFromDraft } from "@/lib/server/materialize-promo-draft";
+import {
+  isModerationKind,
+  scheduleContentModerationByStreamUid,
+  scheduleContentModerationFromMeta,
+} from "@/lib/server/moderation/trigger-content-moderation";
 import { FieldValue, promoRef, worksCol } from "@/lib/server/works";
 
 export const runtime = "nodejs";
@@ -189,10 +194,16 @@ export async function POST(request: Request) {
 
   if (xiioUid && workId) {
     await applyStreamStatus(db, streamUid, streamStatus, xiioUid, workId, kind);
+    if (streamStatus === "ready" && isModerationKind(kind)) {
+      void scheduleContentModerationFromMeta(db, streamUid, xiioUid, workId, kind);
+    }
     return NextResponse.json({ received: true, handled: true, streamStatus, kind, workId, via: "meta" });
   }
 
   const found = await applyByStreamUidLookup(db, streamUid, streamStatus);
+  if (found && streamStatus === "ready") {
+    void scheduleContentModerationByStreamUid(db, streamUid);
+  }
   return NextResponse.json({
     received: true,
     handled: found,

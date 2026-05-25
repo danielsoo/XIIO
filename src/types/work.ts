@@ -25,6 +25,8 @@ export const WORK_ASPECT_RATIOS = ["16:9", "9:16", "4:3", "1:1", "21:9"] as cons
 
 export type VideoAspectRatio = (typeof WORK_ASPECT_RATIOS)[number];
 
+import type { ContentModeration } from "@/types/moderation";
+
 export type RejectReasonCode = "category_mismatch" | "tag_mismatch" | "other";
 
 export type DeletionRequest = {
@@ -50,6 +52,7 @@ export type WorkPendingRevision = {
   rejectReasonCode?: RejectReasonCode;
   submittedAt?: unknown;
   updatedAt?: unknown;
+  contentModeration?: ContentModeration;
 };
 
 /** 업로드 시 저장 — 본편 ready 후 자동 클립 생성 */
@@ -73,6 +76,7 @@ export type PromoPendingRevision = {
   rejectReason?: string;
   submittedAt?: unknown;
   updatedAt?: unknown;
+  contentModeration?: ContentModeration;
 };
 
 export type WorkDoc = {
@@ -109,6 +113,9 @@ export type WorkDoc = {
   pendingRevision?: WorkPendingRevision;
   revisionReviewStatus?: RevisionReviewStatus;
   promoDraft?: PromoDraft;
+  contentModeration?: ContentModeration;
+  /** 포트폴리오 제출 링크에서 기본 제외 (includedWorkIds로만 포함 가능) */
+  portfolioSubmissionHidden?: boolean;
 };
 
 export type PromoShortDoc = {
@@ -132,6 +139,7 @@ export type PromoShortDoc = {
   viewCount?: number;
   pendingRevision?: PromoPendingRevision;
   revisionReviewStatus?: RevisionReviewStatus;
+  contentModeration?: ContentModeration;
 };
 
 export const PROMO_SHORT_DOC_ID = "promo";

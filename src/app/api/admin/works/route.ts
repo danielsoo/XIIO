@@ -1,15 +1,12 @@
 import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
 import { resolvePlaybackUrl } from "@/lib/cloudflare/stream";
-import { jsonError, requireAdmin } from "@/lib/server/api-auth";
-import { getDbOrNull, parsePromoDoc, parseWorkDoc, promoRef, worksCol } from "@/lib/server/works";
 import {
-  syncPromoRevisionStreamStatusIfNeeded,
-  syncPromoStreamStatusIfNeeded,
-  syncWorkRevisionStreamStatusIfNeeded,
-  syncWorkStreamStatusIfNeeded,
-} from "@/lib/server/sync-stream-status";
-import { PROMO_SHORT_DOC_ID } from "@/types/work";
+  mapFullWorkQueueItem,
+  mapPromoWorkQueueItem,
+} from "@/lib/server/admin-work-queue-map";
+import { jsonError, requireAdmin } from "@/lib/server/api-auth";
+import { getDbOrNull, parsePromoDoc, parseWorkDoc, worksCol } from "@/lib/server/works";
 
 export async function GET(request: Request) {
   const auth = await requireAdmin(request);
@@ -31,44 +28,7 @@ export async function GET(request: Request) {
       const key = doc.ref.path;
       if (seen.has(key)) return null;
       seen.add(key);
-      let work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
-      const ownerUid = doc.ref.parent.parent?.id ?? "";
-      const rev = work.pendingRevision;
-      const streamUid = isRevision ? rev?.streamUid : work.streamUid;
-      let streamStatus = isRevision ? rev?.streamStatus : work.streamStatus;
-      if (ownerUid && streamUid && streamStatus) {
-        const synced = isRevision
-          ? await syncWorkRevisionStreamStatusIfNeeded(db, ownerUid, doc.id, streamUid, streamStatus)
-          : await syncWorkStreamStatusIfNeeded(db, ownerUid, doc.id, streamUid, streamStatus);
-        streamStatus = synced ?? streamStatus;
-        if (isRevision && rev) {
-          work = { ...work, pendingRevision: { ...rev, streamStatus } };
-        } else {
-          work = { ...work, streamStatus };
-        }
-      }
-      const userSnap = ownerUid ? await db.collection("users").doc(ownerUid).get() : null;
-      const playbackUrl =
-        streamUid && streamStatus === "ready" ? await resolvePlaybackUrl(streamUid) : undefined;
-      return {
-        ...work,
-        ...(isRevision && rev
-          ? {
-              title: rev.title ?? work.title,
-              section: rev.section ?? work.section,
-              description: rev.description ?? work.description,
-              director: rev.director ?? work.director,
-              proposedCategory: rev.proposedCategory ?? work.proposedCategory,
-              proposedTags: rev.proposedTags ?? work.proposedTags,
-              proposedAspectRatio: rev.proposedAspectRatio ?? work.proposedAspectRatio,
-            }
-          : {}),
-        ownerUid,
-        ownerEmail: userSnap?.data()?.email ?? null,
-        ownerName: userSnap?.data()?.displayName ?? null,
-        playbackUrl,
-        isRevision,
-      };
+      return mapFullWorkQueueItem(db, doc, isRevision);
     };
 
     const items = (
@@ -91,74 +51,7 @@ export async function GET(request: Request) {
       const key = promoDoc.ref.path;
       if (seen.has(key)) return null;
       seen.add(key);
-      const parsed = parsePromoDoc(promoDoc.data() as Record<string, unknown>);
-      const workRef = promoDoc.ref.parent.parent;
-      if (!workRef) return null;
-      const workId = workRef.id;
-      const ownerUid = workRef.parent.parent?.id ?? "";
-      const rev = parsed.pendingRevision;
-      const streamUid = isRevision ? rev?.streamUid : parsed.streamUid;
-      let streamStatus = isRevision ? rev?.streamStatus : parsed.streamStatus;
-      if (ownerUid && streamUid && streamStatus) {
-        streamStatus = isRevision
-          ? await syncPromoRevisionStreamStatusIfNeeded(db, ownerUid, workId, streamUid, streamStatus)
-          : await syncPromoStreamStatusIfNeeded(db, ownerUid, workId, streamUid, streamStatus);
-      }
-      const promoDescription = isRevision && rev ? rev.description : parsed.description;
-      const promo = isRevision && rev
-        ? {
-            ...parsed,
-            title: rev.title ?? parsed.title,
-            description: promoDescription,
-            clipStartSec: rev.clipStartSec,
-            clipEndSec: rev.clipEndSec,
-            streamUid,
-            streamStatus,
-          }
-        : { ...parsed, streamStatus, description: parsed.description };
-      const workSnap = await worksCol(db, ownerUid).doc(workId).get();
-      if (!workSnap.exists) return null;
-      const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
-      const userSnap = await db.collection("users").doc(ownerUid).get();
-      const playbackUrl =
-        streamUid && streamStatus === "ready" ? await resolvePlaybackUrl(streamUid) : undefined;
-
-      let livePromo: {
-        title?: string;
-        description?: string;
-        clipStartSec: number;
-        clipEndSec: number;
-        playbackUrl?: string;
-      } | undefined;
-      if (isRevision && parsed.platformStatus === "published") {
-        const livePlayback =
-          parsed.streamUid && parsed.streamStatus === "ready"
-            ? await resolvePlaybackUrl(parsed.streamUid)
-            : undefined;
-        livePromo = {
-          title: parsed.title,
-          description: parsed.description,
-          clipStartSec: parsed.clipStartSec,
-          clipEndSec: parsed.clipEndSec,
-          playbackUrl: livePlayback ?? undefined,
-        };
-      }
-
-      return {
-        promo: {
-          id: PROMO_SHORT_DOC_ID,
-          ...promo,
-          playbackUrl,
-          description: promoDescription ?? promo.description,
-        },
-        livePromo,
-        work: { ...work, id: workId },
-        workId,
-        ownerUid,
-        ownerEmail: userSnap.data()?.email ?? null,
-        ownerName: userSnap.data()?.displayName ?? null,
-        isRevision,
-      };
+      return mapPromoWorkQueueItem(db, promoDoc, isRevision);
     };
 
     const items = (
@@ -167,6 +60,62 @@ export async function GET(request: Request) {
         ...revSnap.docs.map((d) => mapPromo(d, true)),
       ])
     ).filter(Boolean);
+    return NextResponse.json({ items });
+  }
+
+  if (queue === "ai_flagged") {
+    const [fullSnap, fullRevSnap, promoSnap, promoRevSnap] = await Promise.all([
+      db
+        .collectionGroup("works")
+        .where("platformStatus", "==", "pending")
+        .where("contentModeration.hasHighSeverity", "==", true)
+        .get(),
+      db
+        .collectionGroup("works")
+        .where("revisionReviewStatus", "==", "pending")
+        .where("pendingRevision.contentModeration.hasHighSeverity", "==", true)
+        .get(),
+      db
+        .collectionGroup("promoShort")
+        .where("platformStatus", "==", "pending")
+        .where("contentModeration.hasHighSeverity", "==", true)
+        .get(),
+      db
+        .collectionGroup("promoShort")
+        .where("revisionReviewStatus", "==", "pending")
+        .where("pendingRevision.contentModeration.hasHighSeverity", "==", true)
+        .get(),
+    ]);
+
+    const seen = new Set<string>();
+    const items: Record<string, unknown>[] = [];
+
+    const mapFullAi = async (doc: QueryDocumentSnapshot, isRevision: boolean) => {
+      const key = doc.ref.path;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const row = await mapFullWorkQueueItem(db, doc, isRevision);
+      items.push({ queueKind: "full", ...row });
+    };
+
+    await Promise.all([
+      ...fullSnap.docs.map((d) => mapFullAi(d, false)),
+      ...fullRevSnap.docs.map((d) => mapFullAi(d, true)),
+    ]);
+
+    const mapPromoAi = async (doc: QueryDocumentSnapshot, isRevision: boolean) => {
+      const key = doc.ref.path;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const row = await mapPromoWorkQueueItem(db, doc, isRevision);
+      if (row) items.push({ queueKind: "promo", ...row });
+    };
+
+    await Promise.all([
+      ...promoSnap.docs.map((d) => mapPromoAi(d, false)),
+      ...promoRevSnap.docs.map((d) => mapPromoAi(d, true)),
+    ]);
+
     return NextResponse.json({ items });
   }
 

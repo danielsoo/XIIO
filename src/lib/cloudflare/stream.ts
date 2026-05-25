@@ -264,6 +264,70 @@ export async function resolvePlaybackUrl(streamUid: string): Promise<string | nu
   return info?.playbackHls ?? null;
 }
 
+/** MP4 download path for AI moderation (public videos). */
+export function getStreamMp4DownloadUrl(streamUid: string): string | null {
+  const sub = getCustomerSubdomain();
+  if (!sub) return null;
+  return `https://${sub}/${streamUid}/downloads/default.mp4`;
+}
+
+/** Thumbnail at offset — used when MP4 is unavailable. */
+export function getStreamThumbnailAtTime(streamUid: string, timeSeconds: number): string | null {
+  const sub = getCustomerSubdomain();
+  if (!sub) return null;
+  const sec = Math.max(0, Math.floor(timeSeconds));
+  return `https://${sub}/${streamUid}/thumbnails/thumbnail.jpg?time=${sec}s`;
+}
+
+type DownloadStatus = { status?: string; url?: string; percentComplete?: number };
+
+async function fetchStreamDownloads(streamUid: string): Promise<Record<string, DownloadStatus> | null> {
+  const res = await streamFetch(`/${streamUid}/downloads`, { method: "GET" });
+  const json = (await res.json()) as {
+    success?: boolean;
+    result?: Record<string, DownloadStatus>;
+  };
+  if (!res.ok || !json.success) return null;
+  return json.result ?? null;
+}
+
+/** Enable MP4 download generation if not started; return URL when ready. */
+export async function resolveModerationVideoUrl(streamUid: string): Promise<string | null> {
+  const staticUrl = getStreamMp4DownloadUrl(streamUid);
+  let downloads = await fetchStreamDownloads(streamUid);
+
+  if (!downloads?.default) {
+    await streamFetch(`/${streamUid}/downloads`, { method: "POST", body: JSON.stringify({}) });
+    downloads = await fetchStreamDownloads(streamUid);
+  }
+
+  const def = downloads?.default;
+  if (def?.status === "ready" && def.url) return def.url;
+  if (staticUrl && def?.status !== "error") {
+    return staticUrl;
+  }
+
+  return resolvePlaybackUrl(streamUid);
+}
+
+/** Sample thumbnails across duration for Gemini / fallback. */
+export async function sampleStreamThumbnailUrls(
+  streamUid: string,
+  count = 4
+): Promise<string[]> {
+  const info = await getStreamVideo(streamUid);
+  const duration = info?.duration && info.duration > 0 ? info.duration : 120;
+  const urls: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const t = Math.floor((duration * (i + 0.5)) / count);
+    const url = getStreamThumbnailAtTime(streamUid, t);
+    if (url) urls.push(url);
+  }
+  const fallback = getStreamThumbnailUrl(streamUid);
+  if (fallback && !urls.includes(fallback)) urls.unshift(fallback);
+  return urls;
+}
+
 /** Cloudflare Stream iframe player (works across browsers for HLS) */
 export function getStreamEmbedUrl(streamUid: string): string {
   const sub = getCustomerSubdomain();

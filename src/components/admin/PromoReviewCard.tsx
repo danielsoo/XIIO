@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
+import ModerationFlagsPanel from "@/components/admin/ModerationFlagsPanel";
+import type { ContentModeration } from "@/types/moderation";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
 import { useTranslations } from "@/context/LocaleContext";
@@ -34,6 +36,8 @@ export type PromoReviewItem = {
     description?: string;
     clipStartSec: number;
     clipEndSec: number;
+    contentModeration?: ContentModeration;
+    pendingRevision?: { contentModeration?: ContentModeration };
   };
   livePromo?: PromoLiveSnapshot;
 };
@@ -410,6 +414,15 @@ export default function PromoReviewCard({
           )}
         </>
       )}
+
+      <ModerationFlagsPanel
+        moderation={
+          row.isRevision
+            ? row.promo.pendingRevision?.contentModeration
+            : row.promo.contentModeration
+        }
+        className="mb-4"
+      />
 
       <div className="flex flex-wrap gap-2">
         <button
