@@ -377,7 +377,10 @@ export const messages = {
     },
     accountProfile: {
       title: "계정 프로필",
-      subtitle: "가입 정보와 업로드·좋아요·시청 활동을 확인합니다.",
+      subtitle: "활동·프로필 설정·사람 찾기를 한곳에서 관리합니다.",
+      tabActivity: "활동",
+      tabProfileSettings: "프로필 설정",
+      tabDiscover: "사람 찾기",
       infoSection: "계정 정보",
       displayName: "표시 이름",
       email: "이메일",
@@ -1459,7 +1462,10 @@ export const messages = {
     },
     accountProfile: {
       title: "Account profile",
-      subtitle: "Your signup info and upload, like, and watch activity.",
+      subtitle: "Manage activity, profile settings, and discover people in one place.",
+      tabActivity: "Activity",
+      tabProfileSettings: "Profile settings",
+      tabDiscover: "Find people",
       infoSection: "Account",
       displayName: "Display name",
       email: "Email",

@@ -149,18 +149,6 @@ export default function SettingsPage() {
               →
             </span>
           </Link>
-          <Link
-            href="/account/profile"
-            className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3.5 text-sm font-medium text-white hover:border-xiio-accent/50 transition group"
-          >
-            <span>{t("settings.editProProfile")}</span>
-            <span
-              className="text-xiio-muted group-hover:text-xiio-accent transition shrink-0"
-              aria-hidden
-            >
-              →
-            </span>
-          </Link>
         </section>
       </div>
 

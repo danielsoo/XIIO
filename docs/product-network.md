@@ -7,8 +7,8 @@ XIIO는 **공개 스트리밍 피드**를 유지하면서, 영화·영상 업계
 | 용어 | 설명 |
 |------|------|
 | **전문 프로필** | `/people/{handle}` — 헤드라인·소개·역할 칩·출연·감독 작품 |
-| **프로필 꾸미기** | `/account/profile` — 소개·역할·협업 창구·포트폴리오 제출 링크 |
-| **창구** | `/discover` — 프로필 카드로 배우·크루·작가 검색 |
+| **프로필 설정** | `/account?tab=profile` — 소개·역할·협업 창구·포트폴리오 제출 링크 |
+| **사람 찾기** | `/account?tab=discover` — 프로필 카드로 배우·크루·작가 검색 |
 | **크레딧** | 작품에 연결된 XIIO 회원 (`users/{owner}/works/{id}/credits`) |
 | **creditIndex** | `users/{uid}/creditIndex` — 출연작 조회용 역인덱스 |
 | **포트폴리오 제출 링크** | `/p/{token}` — 비로그인, 선별·승인 작품만 재생 |
@@ -31,7 +31,10 @@ XIIO는 **공개 스트리밍 피드**를 유지하면서, 영화·영상 업계
 | 홈·섹션 피드 | 회원 (기존) | 회원 |
 | `/watch/...` | 회원 (기존) | 회원 |
 | `/people/{handle}` | 불필요 (메타·팔로우·DM은 로그인) | 회원만 |
-| `/discover` | 회원 | — |
+| `/account?tab=profile` | 회원 | — |
+| `/account/profile` | — | → `/account?tab=profile` 리다이렉트 |
+| `/account?tab=discover` | 회원 | — |
+| `/discover` | — | → `/account?tab=discover` 리다이렉트 |
 | `/messages` | 회원 | — |
 | `/p/{token}` | **불필요** | **가능** |
 
@@ -39,7 +42,7 @@ XIIO는 **공개 스트리밍 피드**를 유지하면서, 영화·영상 업계
 
 | API | 용도 |
 |-----|------|
-| `GET/PATCH /api/me/professional-profile` | 프로필 꾸미기 |
+| `GET/PATCH /api/me/professional-profile` | 프로필 설정 (`/account?tab=profile`) |
 | `GET /api/people/{handle}` | 공개 프로필 (+ viewer 팔로우 여부) |
 | `GET /api/discover/people` | 창구 목록 |
 | `POST/DELETE /api/me/follows/{uid}` | 팔로우 |

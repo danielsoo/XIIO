@@ -28,7 +28,7 @@ export default function PeopleProfileActions({
   if (isSelf) {
     return (
       <Link
-        href="/account/profile"
+        href="/account?tab=profile"
         className="inline-flex px-4 py-2 rounded-lg bg-xiio-accent text-white text-sm font-medium"
       >
         {t("profile.edit.editProfile")}

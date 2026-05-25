@@ -1,11 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import AccountProfileContent from "@/components/account/AccountProfileContent";
+
+function AccountProfileFallback() {
+  const { t } = useTranslations();
+  return <p className="text-xiio-muted py-8 text-center">{t("common.loading")}</p>;
+}
 
 export default function AccountPage() {
   const { user } = useAuth();
@@ -28,7 +34,9 @@ export default function AccountPage() {
         description={t("accountProfile.subtitle")}
         backFallbackHref="/"
       />
-      <AccountProfileContent />
+      <Suspense fallback={<AccountProfileFallback />}>
+        <AccountProfileContent />
+      </Suspense>
     </AppPageShell>
   );
 }
