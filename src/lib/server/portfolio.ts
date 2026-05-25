@@ -1,10 +1,10 @@
 import { randomBytes } from "crypto";
 import type { Firestore } from "firebase-admin/firestore";
 import { FieldValue } from "firebase-admin/firestore";
-import { getStreamThumbnailUrl, resolvePlaybackUrl } from "@/lib/cloudflare/stream";
+import { resolvePlaybackUrl } from "@/lib/cloudflare/stream";
 import { getUidByHandle } from "@/lib/server/handles";
 import { parseUserProfileDoc } from "@/lib/userAccess";
-import { parseWorkDoc, worksCol } from "@/lib/server/works";
+import { parseWorkDoc, resolveWorkListThumbnailUrl, worksCol } from "@/lib/server/works";
 import {
   PORTFOLIO_SHARE_VISIBILITY,
   type PortfolioShareDoc,
@@ -145,11 +145,10 @@ export async function buildPublicPortfolio(
     const work = parseWorkDoc(item.workId, workSnap.data() as Record<string, unknown>);
     if (!workIncludedInShare(item.workId, work, share)) continue;
 
+    const thumbnailUrl = await resolveWorkListThumbnailUrl(db, item.ownerUid, item.workId, work);
     let playbackUrl: string | undefined;
-    let thumbnailUrl: string | undefined;
     if (work.streamUid && work.streamStatus === "ready") {
       playbackUrl = (await resolvePlaybackUrl(work.streamUid)) ?? undefined;
-      thumbnailUrl = getStreamThumbnailUrl(work.streamUid) ?? undefined;
     }
 
     works.push({

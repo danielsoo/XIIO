@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import PlaybackVideo from "@/components/PlaybackVideo";
+import PortfolioSubmissionWork from "@/components/profile/PortfolioSubmissionWork";
 import PublicProfileHeader from "@/components/profile/PublicProfileHeader";
 import { useTranslations } from "@/context/LocaleContext";
 import type { PublicPortfolioPayload } from "@/types/portfolio";
@@ -59,26 +59,12 @@ export default function PublicPortfolioPage() {
             {data.works.length === 0 ? (
               <p className="text-xiio-muted">{t("portfolio.public.empty")}</p>
             ) : (
-              <ul className="space-y-10">
+              <ul className="space-y-12">
                 {data.works.map((w) => (
-                  <li key={`${w.ownerUid}_${w.workId}`} className="rounded-2xl border border-white/10 bg-xiio-surface p-5">
-                    <h2 className="text-lg font-semibold">{w.title}</h2>
-                    <p className="text-xs text-xiio-muted mt-1">
-                      {t(`network.credits.role.${w.role}`)}
-                      {w.characterName ? ` · ${w.characterName}` : ""}
-                      {w.director ? ` · ${w.director}` : ""}
-                    </p>
-                    {w.description && (
-                      <p className="text-sm text-white/80 mt-2 whitespace-pre-wrap">{w.description}</p>
-                    )}
-                    {w.playbackUrl ? (
-                      <div className="mt-4 max-w-3xl">
-                        <PlaybackVideo src={w.playbackUrl} maxHeightClass="max-h-[60vh]" />
-                      </div>
-                    ) : (
-                      <p className="text-sm text-amber-300/90 mt-4">{t("portfolio.public.noPlayback")}</p>
-                    )}
-                  </li>
+                  <PortfolioSubmissionWork
+                    key={`${w.ownerUid}_${w.workId}`}
+                    work={w}
+                  />
                 ))}
               </ul>
             )}

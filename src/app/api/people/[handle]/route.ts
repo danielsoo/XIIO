@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
-import { getStreamThumbnailUrl } from "@/lib/cloudflare/stream";
 import { isFollowing } from "@/lib/server/follows";
 import { verifyBearerIdToken } from "@/lib/server/firebase-admin";
 import { getUidByHandle } from "@/lib/server/handles";
 import { listEligibleWorksForUser } from "@/lib/server/portfolio";
-import { getDbOrNull, parseWorkDoc, worksCol } from "@/lib/server/works";
+import {
+  getDbOrNull,
+  parseWorkDoc,
+  resolveWorkListThumbnailUrl,
+  worksCol,
+} from "@/lib/server/works";
 import { parseUserProfileDoc } from "@/lib/userAccess";
 
 type Params = { params: Promise<{ handle: string }> };
@@ -42,7 +46,7 @@ export async function GET(request: Request, { params }: Params) {
     const workSnap = await worksCol(db, item.ownerUid).doc(item.workId).get();
     if (!workSnap.exists) continue;
     const work = parseWorkDoc(item.workId, workSnap.data() as Record<string, unknown>);
-    const thumb = work.streamUid ? getStreamThumbnailUrl(work.streamUid) : null;
+    const thumb = await resolveWorkListThumbnailUrl(db, item.ownerUid, item.workId, work);
     const key = `${item.ownerUid}:${item.workId}`;
     const entry = {
       workId: item.workId,

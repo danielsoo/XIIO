@@ -16,6 +16,7 @@ import type {
 } from "@/types/work";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 import { parseContentModeration } from "@/lib/server/moderation/parse-content-moderation";
+import { getStreamThumbnailUrl } from "@/lib/cloudflare/stream";
 import { getAdminDb } from "@/lib/server/firebase-admin";
 import { isRejectReasonCode, isWorkSection } from "@/lib/works/constants";
 import { isVideoAspectRatio } from "@/lib/works/aspect-ratio";
@@ -159,6 +160,23 @@ export function canOwnerDeletePromo(platformStatus: PromoPlatformStatus): boolea
 
 export async function getDbOrNull() {
   return getAdminDb();
+}
+
+/** 홈 카탈로그와 동일 우선순위: 프로모 썸네일 → draft → Stream 기본 */
+export async function resolveWorkListThumbnailUrl(
+  db: Firestore,
+  ownerUid: string,
+  workId: string,
+  work: Pick<WorkDoc, "streamUid" | "promoDraft">
+): Promise<string | undefined> {
+  const promoSnap = await promoRef(db, ownerUid, workId).get();
+  if (promoSnap.exists) {
+    const promo = parsePromoDoc(promoSnap.data() as Record<string, unknown>);
+    if (promo.thumbnailUrl) return promo.thumbnailUrl;
+  }
+  if (work.promoDraft?.thumbnailUrl) return work.promoDraft.thumbnailUrl;
+  if (work.streamUid) return getStreamThumbnailUrl(work.streamUid) ?? undefined;
+  return undefined;
 }
 
 export { FieldValue };
