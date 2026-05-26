@@ -232,6 +232,17 @@ export const messages = {
         editHint: "저장 후 「공개 보기」 탭에서 확인할 수 있습니다.",
         savedGoPreview: "저장했습니다. 아래에서 공개 프로필을 확인하세요.",
       },
+      photo: {
+        title: "프로필 사진",
+        hint: "JPG, PNG, WebP, GIF · 최대 5MB",
+        changePhoto: "사진 변경",
+        removePhoto: "사진 제거",
+        uploading: "업로드 중…",
+        photoUpdated: "프로필 사진을 저장했습니다.",
+        uploadFailed: "프로필 사진을 저장하지 못했습니다.",
+        invalidType: "이미지 파일만 업로드할 수 있습니다.",
+        tooLarge: "파일 크기는 5MB 이하여야 합니다.",
+      },
     },
     discover: {
       title: "창구 — 사람 찾기",
@@ -447,6 +458,14 @@ export const messages = {
       openPublicProfile: "공개 프로필 페이지에서 보기",
       profileNoHandle:
         "공개 아이디(@handle)를 먼저 설정해 주세요. 저장 후 프로필을 꾸밀 수 있습니다.",
+      sections: {
+        about: "소개",
+        displayName: "표시 이름",
+        handle: "아이디",
+        discover: "노출",
+        portfolio: "제출 링크",
+        preview: "공개 보기",
+      },
     },
     profiles: {
       title: "시청할 프로필을 선택하세요",
@@ -1355,6 +1374,17 @@ export const messages = {
         editHint: "After saving, check the Public view tab to confirm.",
         savedGoPreview: "Saved. Review your public profile below.",
       },
+      photo: {
+        title: "Profile photo",
+        hint: "JPG, PNG, WebP, GIF · max 5MB",
+        changePhoto: "Change photo",
+        removePhoto: "Remove photo",
+        uploading: "Uploading…",
+        photoUpdated: "Profile photo saved.",
+        uploadFailed: "Could not save profile photo.",
+        invalidType: "Only image files are allowed.",
+        tooLarge: "File must be 5MB or smaller.",
+      },
     },
     discover: {
       title: "Discover",
@@ -1570,6 +1600,14 @@ export const messages = {
       openPublicProfile: "View on public profile page",
       profileNoHandle:
         "Set your public handle (@id) first. You can customize your profile after saving.",
+      sections: {
+        about: "About",
+        displayName: "Display name",
+        handle: "Handle",
+        discover: "Visibility",
+        portfolio: "Submission links",
+        preview: "Public view",
+      },
     },
     profiles: {
       title: "Who's watching?",

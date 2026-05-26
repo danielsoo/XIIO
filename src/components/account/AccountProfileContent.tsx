@@ -7,6 +7,7 @@ import { useTranslations } from "@/context/LocaleContext";
 import { formatBirthDateForDisplay } from "@/lib/userBirthDate";
 import { genderLabelKey } from "@/lib/userGender";
 import { getUserProfile } from "@/lib/userProfile";
+import { parseProfileSection, type ProfileSectionId } from "@/lib/profileSections";
 import { LOCALES } from "@/i18n";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import type { AccountActivityItem } from "@/types/account-activity";
@@ -41,6 +42,7 @@ export default function AccountProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const mainTab = parseMainTab(searchParams.get("tab"));
+  const profileSection = parseProfileSection(searchParams.get("section"));
 
   const [profile, setProfile] = useState<UserProfileDoc | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,17 +61,44 @@ export default function AccountProfileContent() {
     });
   }, [user]);
 
+  const replaceAccountQuery = useCallback(
+    (mutate: (params: URLSearchParams) => void) => {
+      const params = new URLSearchParams(searchParams.toString());
+      mutate(params);
+      const q = params.toString();
+      router.replace(q ? `/account?${q}` : "/account", { scroll: false });
+    },
+    [router, searchParams]
+  );
+
   const setMainTab = (id: MainTabId) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (id === "activity") {
-      params.delete("tab");
+    replaceAccountQuery((params) => {
+      if (id === "activity") {
+        params.delete("tab");
+        params.delete("section");
+        params.delete("view");
+      } else {
+        params.set("tab", id);
+        params.delete("view");
+        if (id === "profile") {
+          if (!params.get("section")) params.set("section", "about");
+        } else {
+          params.delete("section");
+        }
+      }
+    });
+  };
+
+  const setProfileSection = (id: ProfileSectionId) => {
+    replaceAccountQuery((params) => {
+      params.set("tab", "profile");
+      params.set("section", id);
       params.delete("view");
-    } else {
-      params.set("tab", id);
-      if (id !== "profile") params.delete("view");
-    }
-    const q = params.toString();
-    router.replace(q ? `/account?${q}` : "/account", { scroll: false });
+    });
+  };
+
+  const goPreviewSection = () => {
+    setProfileSection("preview");
   };
 
   useEffect(() => {
@@ -172,6 +201,18 @@ export default function AccountProfileContent() {
         ? LOCALES.find((l) => l.code === "ko")?.label ?? "한국어"
         : null;
 
+  const navProps = {
+    mainTab,
+    onMainTab: setMainTab,
+    mainTabLabels,
+    activityTab,
+    onActivityTab: setActivityTab,
+    activityTabs,
+    activityLoading,
+    profileSection,
+    onProfileSection: setProfileSection,
+  };
+
   const renderMainContent = () => {
     if (mainTab === "activity") {
       return (
@@ -211,71 +252,61 @@ export default function AccountProfileContent() {
     }
     if (mainTab === "profile") {
       return (
-        <AccountProfileSettingsPanel accountProfile={profile} onHandleClaimed={reloadProfile} />
+        <AccountProfileSettingsPanel
+          accountProfile={profile}
+          section={profileSection}
+          onHandleClaimed={reloadProfile}
+          onSavedGoPreview={goPreviewSection}
+          onAvatarUpdated={(avatarUrl) =>
+            setProfile((prev) => (prev ? { ...prev, avatarUrl } : prev))
+          }
+        />
       );
     }
     return <DiscoverBooth />;
   };
 
   return (
-    <div className="space-y-6">
-      <AccountProfileHero profile={profile} email={user?.email ?? null} />
+    <div className="lg:flex lg:gap-8 lg:items-start">
+      <aside className="hidden lg:block w-56 shrink-0">
+        <AccountProfileNav variant="sidebar" {...navProps} />
+      </aside>
 
-      {(showBirthDate || showAge || showGender || showJoined || localeLabel) && (
-        <section className="bg-xiio-surface rounded-2xl p-5 border border-white/10">
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-            {showBirthDate && profile.birthDate && (
-              <MetaField
-                label={t("accountProfile.birthDate")}
-                value={formatBirthDateForDisplay(profile.birthDate, dateLocale)}
-              />
-            )}
-            {showAge && <MetaField label={t("accountProfile.age")} value={String(profile.age)} />}
-            {showGender && profile.gender && (
-              <MetaField
-                label={t("accountProfile.gender")}
-                value={t(genderLabelKey(profile.gender))}
-              />
-            )}
-            {localeLabel && <MetaField label={t("settings.language")} value={localeLabel} />}
-            {showJoined && (
-              <MetaField
-                label={t("accountProfile.joinedAt")}
-                value={formatDateTime(profile.createdAt)}
-              />
-            )}
-          </dl>
-        </section>
-      )}
+      <div className="min-w-0 flex-1 space-y-6">
+        <div className="lg:hidden">
+          <AccountProfileNav variant="mobile" {...navProps} />
+        </div>
 
-      <div className="lg:hidden">
-        <AccountProfileNav
-          variant="mobile"
-          mainTab={mainTab}
-          onMainTab={setMainTab}
-          mainTabLabels={mainTabLabels}
-          activityTab={activityTab}
-          onActivityTab={setActivityTab}
-          activityTabs={activityTabs}
-          activityLoading={activityLoading}
-        />
-      </div>
+        <AccountProfileHero profile={profile} email={user?.email ?? null} />
 
-      <div className="lg:grid lg:grid-cols-[minmax(200px,240px)_1fr] lg:gap-8 lg:items-start">
-        <aside className="hidden lg:block shrink-0">
-          <AccountProfileNav
-            variant="sidebar"
-            mainTab={mainTab}
-            onMainTab={setMainTab}
-            mainTabLabels={mainTabLabels}
-            activityTab={activityTab}
-            onActivityTab={setActivityTab}
-            activityTabs={activityTabs}
-            activityLoading={activityLoading}
-          />
-        </aside>
+        {(showBirthDate || showAge || showGender || showJoined || localeLabel) && (
+          <section className="bg-xiio-surface rounded-2xl p-5 border border-white/10">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              {showBirthDate && profile.birthDate && (
+                <MetaField
+                  label={t("accountProfile.birthDate")}
+                  value={formatBirthDateForDisplay(profile.birthDate, dateLocale)}
+                />
+              )}
+              {showAge && <MetaField label={t("accountProfile.age")} value={String(profile.age)} />}
+              {showGender && profile.gender && (
+                <MetaField
+                  label={t("accountProfile.gender")}
+                  value={t(genderLabelKey(profile.gender))}
+                />
+              )}
+              {localeLabel && <MetaField label={t("settings.language")} value={localeLabel} />}
+              {showJoined && (
+                <MetaField
+                  label={t("accountProfile.joinedAt")}
+                  value={formatDateTime(profile.createdAt)}
+                />
+              )}
+            </dl>
+          </section>
+        )}
 
-        <section className="min-w-0 bg-xiio-surface rounded-2xl border border-white/10 p-5 lg:p-6 lg:min-h-[420px]">
+        <section className="bg-xiio-surface rounded-2xl border border-white/10 p-5 lg:p-6 min-h-[320px]">
           {renderMainContent()}
         </section>
       </div>

@@ -1,6 +1,10 @@
 "use client";
 
 import { useTranslations } from "@/context/LocaleContext";
+import {
+  PROFILE_SECTION_IDS,
+  type ProfileSectionId,
+} from "@/lib/profileSections";
 
 export type MainTabId = "activity" | "profile" | "discover";
 export type ActivityTabId = "uploads" | "likes" | "watched";
@@ -16,9 +20,20 @@ type Props = {
   onActivityTab: (id: ActivityTabId) => void;
   activityTabs: ActivityTab[];
   activityLoading: boolean;
+  profileSection?: ProfileSectionId;
+  onProfileSection?: (id: ProfileSectionId) => void;
 };
 
 const MAIN_IDS: MainTabId[] = ["activity", "profile", "discover"];
+
+const SECTION_LABEL_KEYS: Record<ProfileSectionId, string> = {
+  about: "accountProfile.sections.about",
+  displayName: "accountProfile.sections.displayName",
+  handle: "accountProfile.sections.handle",
+  discover: "accountProfile.sections.discover",
+  portfolio: "accountProfile.sections.portfolio",
+  preview: "accountProfile.sections.preview",
+};
 
 function mainBtnClass(active: boolean, sidebar: boolean) {
   if (sidebar) {
@@ -31,11 +46,12 @@ function mainBtnClass(active: boolean, sidebar: boolean) {
     : "shrink-0 px-4 py-2 rounded-lg text-sm font-medium text-xiio-muted hover:text-white transition";
 }
 
-function subBtnClass(active: boolean, sidebar: boolean) {
+function subBtnClass(active: boolean, sidebar: boolean, nested = false) {
   if (sidebar) {
+    const pad = nested ? "pl-6 pr-3" : "pl-3 pr-3";
     return active
-      ? "w-full text-left pl-3 pr-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white border-l-2 border-white/30"
-      : "w-full text-left px-3 py-2 rounded-lg text-sm text-xiio-muted hover:text-white hover:bg-white/5 transition";
+      ? `w-full text-left ${pad} py-2 rounded-lg text-sm font-medium bg-white/10 text-white border-l-2 border-white/30`
+      : `w-full text-left ${nested ? "pl-6 pr-3" : "px-3"} py-2 rounded-lg text-sm text-xiio-muted hover:text-white hover:bg-white/5 transition`;
   }
   return active
     ? "shrink-0 px-3 py-2 rounded-lg text-sm font-medium bg-white/15 text-white"
@@ -51,22 +67,42 @@ export default function AccountProfileNav({
   onActivityTab,
   activityTabs,
   activityLoading,
+  profileSection = "about",
+  onProfileSection,
 }: Props) {
   const { t } = useTranslations();
   const sidebar = variant === "sidebar";
 
-  if (sidebar) {
-    return (
-      <nav className="flex flex-col gap-0.5 py-2" aria-label={t("accountProfile.title")}>
-        {MAIN_IDS.map((id) => (
+  const profileSubNav =
+    mainTab === "profile" && onProfileSection ? (
+      <div className={sidebar ? "flex flex-col gap-0.5 ml-1" : "flex gap-2 overflow-x-auto pb-1 -mx-1 px-1"}>
+        {PROFILE_SECTION_IDS.map((id) => (
           <button
             key={id}
             type="button"
-            onClick={() => onMainTab(id)}
-            className={mainBtnClass(mainTab === id, true)}
+            onClick={() => onProfileSection(id)}
+            className={subBtnClass(profileSection === id, sidebar, true)}
           >
-            {mainTabLabels[id]}
+            {t(SECTION_LABEL_KEYS[id])}
           </button>
+        ))}
+      </div>
+    ) : null;
+
+  if (sidebar) {
+    return (
+      <nav className="flex flex-col gap-0.5 py-2 lg:sticky lg:top-28" aria-label={t("accountProfile.title")}>
+        {MAIN_IDS.map((id) => (
+          <div key={id}>
+            <button
+              type="button"
+              onClick={() => onMainTab(id)}
+              className={mainBtnClass(mainTab === id, true)}
+            >
+              {mainTabLabels[id]}
+            </button>
+            {id === "profile" && mainTab === "profile" && profileSubNav}
+          </div>
         ))}
         {mainTab === "activity" && (
           <>
@@ -106,6 +142,7 @@ export default function AccountProfileNav({
           </button>
         ))}
       </div>
+      {mainTab === "profile" && profileSubNav}
       {mainTab === "activity" && (
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           {activityTabs.map(({ id, labelKey, count }) => (

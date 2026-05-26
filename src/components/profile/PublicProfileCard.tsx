@@ -1,13 +1,14 @@
 "use client";
 
 import PeopleProfileActions from "@/components/profile/PeopleProfileActions";
-import { profileInitials } from "@/lib/profileFormStyles";
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useTranslations } from "@/context/LocaleContext";
 
 export type PublicProfileData = {
   uid?: string;
   handle: string;
   displayName: string;
+  avatarUrl?: string | null;
   headline?: string;
   bio?: string;
   openToCollaborate?: boolean;
@@ -52,12 +53,11 @@ export default function PublicProfileCard({
         {shareTitle && <p className="text-sm text-white/70 mb-4">{shareTitle}</p>}
 
         <div className="flex flex-col sm:flex-row gap-5 sm:gap-8 sm:items-start">
-          <div
-            className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-full bg-xiio-accent/20 ring-2 ring-xiio-accent/40 flex items-center justify-center text-3xl font-bold text-white mx-auto sm:mx-0"
-            aria-hidden
-          >
-            {profileInitials(profile.displayName)}
-          </div>
+          <ProfileAvatar
+            displayName={profile.displayName}
+            avatarUrl={profile.avatarUrl}
+            className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-full bg-xiio-accent/20 ring-2 ring-xiio-accent/40 flex items-center justify-center text-3xl font-bold text-white overflow-hidden mx-auto sm:mx-0"
+          />
 
           <div className="min-w-0 flex-1 text-center sm:text-left">
             <h1 className="text-2xl sm:text-3xl font-bold text-white">{profile.displayName}</h1>

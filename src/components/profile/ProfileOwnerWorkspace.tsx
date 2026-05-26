@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import PublicProfileCard from "@/components/profile/PublicProfileCard";
-import ProfileEditPanel from "@/components/profile/ProfileEditPanel";
+import ProfileAboutForm from "@/components/profile/ProfileAboutForm";
+import ProfileIdentityChangePanel from "@/components/profile/ProfileIdentityChangePanel";
+import ProfilePhotoEditor from "@/components/profile/ProfilePhotoEditor";
 import ProfileDiscoverSettings from "@/components/profile/ProfileDiscoverSettings";
 import ProfileWorksThumbnailGrid from "@/components/profile/ProfileWorksThumbnailGrid";
 import PortfolioShareSection from "@/components/settings/PortfolioShareSection";
@@ -30,14 +32,15 @@ type Props = {
   urlMode?: ProfileOwnerUrlMode;
   className?: string;
   showPublicProfileLink?: boolean;
+  onAvatarUpdated?: (avatarUrl: string | null) => void;
 };
 
 function parsePreviewFromPeopleUrl(tab: string | null): OwnerTabId {
   return tab === "preview" ? "preview" : "edit";
 }
 
-function parsePreviewFromAccountUrl(view: string | null): OwnerTabId {
-  return view === "preview" ? "preview" : "edit";
+function parsePreviewFromAccountUrl(section: string | null): OwnerTabId {
+  return section === "preview" ? "preview" : "edit";
 }
 
 function tabBtnClass(active: boolean) {
@@ -54,6 +57,7 @@ export default function ProfileOwnerWorkspace({
   urlMode = "none",
   className = "",
   showPublicProfileLink = false,
+  onAvatarUpdated,
 }: Props) {
   const { t } = useTranslations();
   const router = useRouter();
@@ -92,8 +96,8 @@ export default function ProfileOwnerWorkspace({
       }
 
       params.set("tab", "profile");
-      if (id === "preview") params.set("view", "preview");
-      else params.delete("view");
+      if (id === "preview") params.set("section", "preview");
+      else params.set("section", "about");
       router.replace(`/account?${params.toString()}`, { scroll: false });
     },
     [data.profile.handle, router, searchParams, urlMode]
@@ -163,17 +167,43 @@ export default function ProfileOwnerWorkspace({
         </div>
       ) : (
         <div className="space-y-6">
-          <ProfileEditPanel
-            profile={data.profile}
-            handleLocked={handleLocked}
-            displayNameChangeRequest={data.identity?.displayNameChangeRequest ?? null}
-            handleChangeRequest={data.identity?.handleChangeRequest ?? null}
-            onSaved={handleSaved}
-            onDisplayNameChangeSubmitted={(req) =>
-              onIdentityRequest("displayNameChangeRequest", req)
-            }
-            onHandleChangeSubmitted={(req) => onIdentityRequest("handleChangeRequest", req)}
-          />
+          <section className="bg-xiio-surface rounded-2xl border border-white/10 p-6 sm:p-8 space-y-6">
+            <p className="text-sm text-xiio-muted">{t("profile.tabs.editHint")}</p>
+            <ProfilePhotoEditor
+              displayName={data.profile.displayName}
+              avatarUrl={data.profile.avatarUrl}
+              onUpdated={onAvatarUpdated}
+            />
+            <div className="border-t border-white/10 pt-6">
+              <ProfileAboutForm
+                profile={data.profile}
+                handleLocked={handleLocked}
+                onSaved={handleSaved}
+              />
+            </div>
+            <ProfileIdentityChangePanel
+              kind="displayName"
+              currentValue={data.profile.displayName}
+              pendingRequest={
+                data.identity?.displayNameChangeRequest?.status === "pending"
+                  ? data.identity.displayNameChangeRequest
+                  : null
+              }
+              onSubmitted={(req) => onIdentityRequest("displayNameChangeRequest", req)}
+            />
+            {handleLocked && data.profile.handle && (
+              <ProfileIdentityChangePanel
+                kind="handle"
+                currentValue={data.profile.handle}
+                pendingRequest={
+                  data.identity?.handleChangeRequest?.status === "pending"
+                    ? data.identity.handleChangeRequest
+                    : null
+                }
+                onSubmitted={(req) => onIdentityRequest("handleChangeRequest", req)}
+              />
+            )}
+          </section>
           <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
             <ProfileDiscoverSettings initialDiscoverable={data.identity?.isDiscoverable} />
             <PortfolioShareSection />

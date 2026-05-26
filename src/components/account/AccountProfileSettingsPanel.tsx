@@ -1,25 +1,42 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import ProfileEditPanel from "@/components/profile/ProfileEditPanel";
-import ProfileOwnerWorkspace from "@/components/profile/ProfileOwnerWorkspace";
+import ProfileAboutForm from "@/components/profile/ProfileAboutForm";
+import ProfileDiscoverSettings from "@/components/profile/ProfileDiscoverSettings";
+import ProfileIdentityChangePanel from "@/components/profile/ProfileIdentityChangePanel";
+import ProfilePhotoEditor from "@/components/profile/ProfilePhotoEditor";
+import ProfileWorksThumbnailGrid from "@/components/profile/ProfileWorksThumbnailGrid";
+import PublicProfileCard from "@/components/profile/PublicProfileCard";
+import PortfolioShareSection from "@/components/settings/PortfolioShareSection";
 import type { PeopleProfilePayload } from "@/components/profile/PeopleProfileView";
+import type { ProfileSectionId } from "@/lib/profileSections";
 import type { ProfessionalProfileSaved } from "@/hooks/useProfessionalProfileSave";
 import type { DirectorNameChangeRequest, UserProfileDoc } from "@/types/user";
 
 type Props = {
   accountProfile: UserProfileDoc;
+  section: ProfileSectionId;
   onHandleClaimed?: () => void;
+  onSavedGoPreview?: () => void;
+  onAvatarUpdated?: (avatarUrl: string | null) => void;
 };
 
-function AccountProfileSettingsInner({ accountProfile, onHandleClaimed }: Props) {
+export default function AccountProfileSettingsPanel({
+  accountProfile,
+  section,
+  onHandleClaimed,
+  onSavedGoPreview,
+  onAvatarUpdated,
+}: Props) {
   const { user } = useAuth();
   const { t } = useTranslations();
   const [data, setData] = useState<PeopleProfilePayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [savedBanner, setSavedBanner] = useState(false);
 
   const handle = accountProfile.handle?.trim() ?? "";
 
@@ -73,8 +90,10 @@ function AccountProfileSettingsInner({ accountProfile, onHandleClaimed }: Props)
           },
         };
       });
+      setSavedBanner(true);
+      onSavedGoPreview?.();
     },
-    [handle, onHandleClaimed]
+    [handle, onHandleClaimed, onSavedGoPreview]
   );
 
   const onIdentityRequest = useCallback(
@@ -87,24 +106,43 @@ function AccountProfileSettingsInner({ accountProfile, onHandleClaimed }: Props)
     []
   );
 
+  const mergeAvatar = (avatarUrl: string | null) => {
+    onAvatarUpdated?.(avatarUrl);
+    setData((prev) => {
+      if (!prev) return prev;
+      return { ...prev, profile: { ...prev.profile, avatarUrl } };
+    });
+  };
+
   if (!handle) {
     const stubProfile = {
       uid: user?.uid ?? "",
       handle: "",
       displayName: accountProfile.displayName,
-      headline: undefined,
-      bio: undefined,
+      avatarUrl: accountProfile.avatarUrl ?? null,
     };
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <p className="text-sm text-xiio-muted">{t("accountProfile.profileNoHandle")}</p>
-        <ProfileEditPanel
-          profile={stubProfile}
-          handleLocked={false}
-          onSaved={(saved) => {
-            if (saved.handle?.trim()) onHandleClaimed?.();
-          }}
-        />
+        {section === "about" && (
+          <>
+            <ProfilePhotoEditor
+              displayName={stubProfile.displayName}
+              avatarUrl={stubProfile.avatarUrl}
+              onUpdated={mergeAvatar}
+            />
+            <ProfileAboutForm
+              profile={stubProfile}
+              handleLocked={false}
+              onSaved={(saved) => {
+                if (saved.handle?.trim()) onHandleClaimed?.();
+              }}
+            />
+          </>
+        )}
+        {section !== "about" && (
+          <p className="text-sm text-xiio-muted">{t("accountProfile.profileNoHandle")}</p>
+        )}
       </div>
     );
   }
@@ -118,24 +156,93 @@ function AccountProfileSettingsInner({ accountProfile, onHandleClaimed }: Props)
   }
 
   const handleLocked = !!data.profile.handle?.trim();
+  const publicHref = `/people/${encodeURIComponent(data.profile.handle)}`;
 
-  return (
-    <ProfileOwnerWorkspace
-      data={data}
-      handleLocked={handleLocked}
-      onProfileSaved={onProfileSaved}
-      onIdentityRequest={onIdentityRequest}
-      urlMode="account"
-      showPublicProfileLink
-    />
-  );
-}
+  const renderWorks = (items: PeopleProfilePayload["directed"], title: string) => {
+    if (items.length === 0) return null;
+    return (
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold text-white mb-4">{title}</h2>
+        <ProfileWorksThumbnailGrid items={items} linkToWatch />
+      </section>
+    );
+  };
 
-export default function AccountProfileSettingsPanel(props: Props) {
-  const { t } = useTranslations();
-  return (
-    <Suspense fallback={<p className="text-sm text-xiio-muted py-6">{t("common.loading")}</p>}>
-      <AccountProfileSettingsInner {...props} />
-    </Suspense>
-  );
+  switch (section) {
+    case "about":
+      return (
+        <div className="space-y-8">
+          <ProfilePhotoEditor
+            displayName={data.profile.displayName}
+            avatarUrl={data.profile.avatarUrl ?? accountProfile.avatarUrl}
+            onUpdated={mergeAvatar}
+          />
+          <div className="border-t border-white/10 pt-6">
+            <ProfileAboutForm
+              profile={data.profile}
+              handleLocked={handleLocked}
+              onSaved={onProfileSaved}
+            />
+          </div>
+        </div>
+      );
+    case "displayName":
+      return (
+        <ProfileIdentityChangePanel
+          kind="displayName"
+          currentValue={data.profile.displayName}
+          pendingRequest={
+            data.identity?.displayNameChangeRequest?.status === "pending"
+              ? data.identity.displayNameChangeRequest
+              : null
+          }
+          onSubmitted={(req) => onIdentityRequest("displayNameChangeRequest", req)}
+        />
+      );
+    case "handle":
+      return handleLocked ? (
+        <ProfileIdentityChangePanel
+          kind="handle"
+          currentValue={data.profile.handle}
+          pendingRequest={
+            data.identity?.handleChangeRequest?.status === "pending"
+              ? data.identity.handleChangeRequest
+              : null
+          }
+          onSubmitted={(req) => onIdentityRequest("handleChangeRequest", req)}
+        />
+      ) : (
+        <p className="text-sm text-xiio-muted">{t("accountProfile.profileNoHandle")}</p>
+      );
+    case "discover":
+      return <ProfileDiscoverSettings initialDiscoverable={data.identity?.isDiscoverable} />;
+    case "portfolio":
+      return <PortfolioShareSection />;
+    case "preview":
+      return (
+        <div className="space-y-8">
+          <p className="text-sm text-xiio-muted">{t("profile.tabs.previewHint")}</p>
+          {savedBanner && (
+            <p className="text-sm text-emerald-400 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2">
+              {t("profile.tabs.savedGoPreview")}
+            </p>
+          )}
+          <PublicProfileCard profile={data.profile} isSelf />
+          {renderWorks(data.directed, t("network.people.directed"))}
+          {renderWorks(data.credited, t("network.people.credited"))}
+          <p className="text-sm">
+            <Link
+              href={publicHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xiio-accent hover:underline"
+            >
+              {t("accountProfile.openPublicProfile")} →
+            </Link>
+          </p>
+        </div>
+      );
+    default:
+      return null;
+  }
 }

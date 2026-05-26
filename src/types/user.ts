@@ -53,6 +53,8 @@ export interface UserProfileDoc {
   directorNameChangeRequest?: DirectorNameChangeRequest;
   displayNameChangeRequest?: DisplayNameChangeRequest;
   handleChangeRequest?: HandleChangeRequest;
+  /** 공개 프로필 사진 URL */
+  avatarUrl?: string | null;
   /** 전문 프로필 @handle — /people/{handle} */
   handle?: string;
   headline?: string;

@@ -74,6 +74,7 @@ export async function GET(request: Request, { params }: Params) {
       uid,
       handle: profile.handle ?? handle,
       displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl ?? null,
       headline: profile.headline,
       bio: profile.bio,
       roleTags: profile.roleTags ?? [],

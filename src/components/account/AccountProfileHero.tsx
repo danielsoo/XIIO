@@ -1,16 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useTranslations } from "@/context/LocaleContext";
 import type { UserProfileDoc } from "@/types/user";
 import type { PlatformPurpose } from "@/types/user";
-
-function initials(displayName: string): string {
-  const parts = displayName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
-}
 
 function Badge({ children, variant = "default" }: { children: React.ReactNode; variant?: "default" | "accent" | "warn" }) {
   const cls =
@@ -44,12 +38,11 @@ export default function AccountProfileHero({ profile, email }: Props) {
   return (
     <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10">
       <div className="flex flex-col sm:flex-row gap-5 sm:gap-6">
-        <div
-          className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-full bg-xiio-accent/20 ring-2 ring-xiio-accent/40 flex items-center justify-center text-2xl sm:text-3xl font-bold text-white"
-          aria-hidden
-        >
-          {initials(profile.displayName || "?")}
-        </div>
+        <ProfileAvatar
+          displayName={profile.displayName || "?"}
+          avatarUrl={profile.avatarUrl}
+          className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-full bg-xiio-accent/20 ring-2 ring-xiio-accent/40 flex items-center justify-center text-2xl sm:text-3xl font-bold text-white overflow-hidden"
+        />
 
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold text-white truncate">{profile.displayName || "—"}</h1>

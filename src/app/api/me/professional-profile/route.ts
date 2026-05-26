@@ -7,6 +7,16 @@ import { normalizeRoleTagsInput } from "@/lib/roleTags";
 import { getDbOrNull } from "@/lib/server/works";
 import { parseUserProfileDoc } from "@/lib/userAccess";
 
+function parseAvatarUrl(value: unknown, uid: string): string | null | undefined {
+  if (value === null) return null;
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim().slice(0, 2048);
+  if (!trimmed) return null;
+  if (!trimmed.startsWith("https://")) return undefined;
+  if (!trimmed.includes(`/users/${uid}/profile/`)) return undefined;
+  return trimmed;
+}
+
 export async function GET(request: Request) {
   const auth = await requireUser(request);
   if ("error" in auth) return auth.error;
@@ -28,6 +38,7 @@ export async function GET(request: Request) {
     openToCollaborate: profile.openToCollaborate === true,
     collaborationNote: profile.collaborationNote ?? null,
     displayName: profile.displayName,
+    avatarUrl: profile.avatarUrl ?? null,
     defaultDirectorName: profile.defaultDirectorName ?? null,
     displayNameChangeRequest: profile.displayNameChangeRequest ?? null,
     handleChangeRequest: profile.handleChangeRequest ?? null,
@@ -52,6 +63,7 @@ export async function PATCH(request: Request) {
     isDiscoverable?: boolean;
     openToCollaborate?: boolean;
     collaborationNote?: string;
+    avatarUrl?: string | null;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -90,6 +102,15 @@ export async function PATCH(request: Request) {
   }
   if (body.collaborationNote !== undefined) {
     updates.collaborationNote = body.collaborationNote.trim().slice(0, 200) || null;
+  }
+  if (body.avatarUrl !== undefined) {
+    const parsed = parseAvatarUrl(body.avatarUrl, uid);
+    if (parsed === undefined && body.avatarUrl !== null) {
+      return jsonError("invalid_avatar_url", "유효하지 않은 프로필 사진 URL입니다.", 400);
+    }
+    if (parsed !== undefined) {
+      updates.avatarUrl = parsed;
+    }
   }
 
   const profileMerge =
@@ -132,5 +153,6 @@ export async function PATCH(request: Request) {
     isDiscoverable: profile.isDiscoverable !== false,
     openToCollaborate: profile.openToCollaborate === true,
     collaborationNote: profile.collaborationNote ?? null,
+    avatarUrl: profile.avatarUrl ?? null,
   });
 }

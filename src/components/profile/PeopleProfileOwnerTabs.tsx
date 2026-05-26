@@ -13,6 +13,7 @@ type Props = {
     field: "displayNameChangeRequest" | "handleChangeRequest",
     req: DirectorNameChangeRequest
   ) => void;
+  onAvatarUpdated?: (avatarUrl: string | null) => void;
 };
 
 export default function PeopleProfileOwnerTabs(props: Props) {

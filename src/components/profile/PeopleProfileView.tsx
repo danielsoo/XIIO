@@ -24,6 +24,7 @@ export type PeopleProfilePayload = {
     uid: string;
     handle: string;
     displayName: string;
+    avatarUrl?: string | null;
     headline?: string;
     bio?: string;
     openToCollaborate?: boolean;
@@ -97,6 +98,13 @@ export default function PeopleProfileView({ handle }: Props) {
     });
   }, []);
 
+  const onAvatarUpdated = useCallback((avatarUrl: string | null) => {
+    setData((prev) => {
+      if (!prev) return prev;
+      return { ...prev, profile: { ...prev.profile, avatarUrl } };
+    });
+  }, []);
+
   const onIdentityRequest = useCallback(
     (field: "displayNameChangeRequest" | "handleChangeRequest", req: DirectorNameChangeRequest) => {
       setData((prev) => {
@@ -139,6 +147,7 @@ export default function PeopleProfileView({ handle }: Props) {
           handleLocked={handleLocked}
           onProfileSaved={onProfileSaved}
           onIdentityRequest={onIdentityRequest}
+          onAvatarUpdated={onAvatarUpdated}
         />
       </Suspense>
     );
