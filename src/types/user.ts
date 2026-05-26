@@ -8,6 +8,8 @@ export type UserGender = "male" | "female" | "undisclosed";
 
 export type UserRole = "member" | "admin" | "super_admin";
 
+export type AccountStatus = "active" | "deleted";
+
 export type DirectorNameChangeRequestStatus = "pending" | "approved" | "rejected";
 
 export type DirectorNameChangeRequest = {
@@ -70,6 +72,8 @@ export interface UserProfileDoc {
   collaborationNote?: string;
   followerCount?: number;
   followingCount?: number;
+  accountStatus?: AccountStatus;
+  deletedAt?: unknown;
   createdAt?: unknown;
   updatedAt?: unknown;
 }

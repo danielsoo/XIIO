@@ -208,6 +208,20 @@
       ]
     },
     {
+      "collectionGroup": "follows",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "followingUid", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "authLinks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "dmThreads",
       "queryScope": "COLLECTION",
       "fields": [

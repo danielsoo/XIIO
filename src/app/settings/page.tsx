@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/context/ProfileContext";
 import { useTranslations } from "@/context/LocaleContext";
@@ -10,6 +11,7 @@ import type { XiioTimezoneId } from "@/lib/timezone";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import ProfileAvatar from "@/components/ProfileAvatar";
+import AccountDeleteDialog from "@/components/settings/AccountDeleteDialog";
 import DirectorNameSettingsSection from "@/components/settings/DirectorNameSettingsSection";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 
@@ -38,6 +40,7 @@ export default function SettingsPage() {
   const { isAdmin, checked: adminChecked } = useAdminAccess();
   const { t, locale, setLocale, timezone, setTimezone } = useTranslations();
   const router = useRouter();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -156,15 +159,35 @@ export default function SettingsPage() {
         <DirectorNameSettingsSection />
       </div>
 
-      <div className="mt-10 pt-6 border-t border-white/10">
+      <div className="mt-10 pt-6 border-t border-white/10 space-y-4">
+        <p className="text-xs text-xiio-muted">
+          {t("settings.deleteAccount.hint")}{" "}
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            className="text-xiio-muted/80 underline underline-offset-2 hover:text-xiio-accent transition"
+          >
+            {t("settings.deleteAccount.link")}
+          </button>
+        </p>
         <button
           type="button"
           onClick={() => void handleLogout()}
-          className="text-sm font-medium text-xiio-muted hover:text-red-400 transition"
+          className="block text-sm font-medium text-xiio-muted hover:text-red-400 transition"
         >
           {t("settings.logout")}
         </button>
       </div>
+
+      <AccountDeleteDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onSuccess={async () => {
+          setDeleteOpen(false);
+          await logout();
+          router.push("/");
+        }}
+      />
     </AppPageShell>
   );
 }

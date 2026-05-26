@@ -9,7 +9,7 @@ import {
   resolveWorkListThumbnailUrl,
   worksCol,
 } from "@/lib/server/works";
-import { parseUserProfileDoc } from "@/lib/userAccess";
+import { isAccountDeleted, parseUserProfileDoc } from "@/lib/userAccess";
 
 type Params = { params: Promise<{ handle: string }> };
 
@@ -29,6 +29,9 @@ export async function GET(request: Request, { params }: Params) {
   const isSelf = viewerUid === uid;
 
   const profile = parseUserProfileDoc(userSnap.data() as Record<string, unknown>);
+  if (isAccountDeleted(profile)) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   if (profile.isDiscoverable === false && !isSelf) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }

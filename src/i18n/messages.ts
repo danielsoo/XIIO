@@ -99,6 +99,75 @@ export const messages = {
         "변경 신청이 심사 중입니다. 승인 또는 반려 후 다시 신청할 수 있습니다.",
       directorNameSuccess: "변경 신청을 접수했습니다. 슈퍼 어드민 검토 후 반영됩니다.",
       directorNameRequestFailed: "변경 신청에 실패했습니다.",
+      deleteAccount: {
+        hint: "더 이상 XIIO를 이용하지 않으시나요?",
+        link: "회원 탈퇴",
+        dialogTitle: "회원 탈퇴",
+        dialogLead:
+          "탈퇴를 완료하면 되돌릴 수 없으며, 동일 계정으로 다시 로그인할 수 없습니다. 처리에는 시간이 걸릴 수 있으며, 일부 데이터는 법령·분쟁 대응·서비스 안전을 위해 일정 기간 보관될 수 있습니다.",
+        sectionAccount: "계정·로그인",
+        sectionRemoved: "삭제·익명화되는 정보",
+        sectionRetained: "유지되는 정보",
+        sectionRecovery: "복구·재가입",
+        sectionNotes: "유의 사항",
+        itemAuthDeleted:
+          "로그인 정보(이메일·비밀번호 또는 연결된 Google·Apple·카카오·네이버 등)가 삭제되어 같은 계정으로 재로그인할 수 없습니다.",
+        itemAuthLinksRemoved: "소셜·이메일 연동 정보가 삭제됩니다.",
+        itemNoServiceAccess: "탈퇴 완료 후 로그인이 필요한 XIIO 기능을 이용할 수 없습니다.",
+        itemProfileRemoved:
+          "공개 프로필 전체(표시 이름, @아이디, 프로필 사진, 소개, 헤드라인, 협업 문구, 노출·검색 설정)가 삭제·익명화됩니다.",
+        itemPeopleHidden: "/people/@아이디 페이지에 더 이상 접근할 수 없습니다.",
+        itemPiiRemoved:
+          "개인정보(생년월일, 성별, 학교명, 프로필에 저장된 이메일 등)가 삭제됩니다.",
+        itemWatchProfilesRemoved: "시청 프로필(가족·프로필 전환용)이 모두 삭제됩니다.",
+        itemUnpublishedWorksDeleted:
+          "미게시 작품(초안, 심사 대기·거절, 삭제 요청 중 등)과 관련 영상 파일이 삭제됩니다.",
+        itemPortfolioSharesRemoved: "제출·공유 링크(포트폴리오 토큰 URL)가 무효화됩니다.",
+        itemActivityRemoved: "좋아요·시청 기록·개인 활동 데이터가 삭제됩니다.",
+        itemFollowsRemoved: "팔로우·팔로워 관계가 해제됩니다.",
+        itemBlocksRemoved: "차단 목록이 삭제됩니다.",
+        itemDmRemoved:
+          "내가 참여한 DM 대화와 메시지가 삭제되며, 상대방 화면에서도 해당 대화가 사라질 수 있습니다.",
+        itemAvatarStorageRemoved: "프로필 사진 파일이 삭제됩니다.",
+        itemBillingRemoved: "업로더 결제·본인 확인 정보가 삭제됩니다.",
+        itemPendingRequestsCancelled:
+          "표시 이름·@아이디·감독명 변경 등 진행 중인 신청이 취소됩니다.",
+        itemPublishedWorksRemain:
+          "이미 게시(공개)된 풀영상·홍보 쇼츠는 플랫폼에 남습니다.",
+        itemWatchUrlsRemain: "게시 작품의 시청 URL(/watch/...)은 계속 동작할 수 있습니다.",
+        itemDirectorCreditNamesRemain:
+          "작품에 기록된 감독명·크레딧 표시명(등록 시점에 저장된 이름)은 그대로 노출될 수 있습니다.",
+        itemCreditsOnOthersWorksRemain:
+          "다른 회원 작품에 크레딧으로 등록된 경우, 해당 작품 크레딧 목록에 이름이 남을 수 있습니다.",
+        itemPaymentEventsRetained:
+          "결제·입금 이벤트 기록은 회계·분쟁·부정 이용 방지를 위해 내부적으로 보관될 수 있습니다.",
+        itemReportsAuditRetained:
+          "신고·관리자 검수·감사 로그에 포함된 계정·작품 ID는 운영·법적 의무에 따라 보관될 수 있습니다.",
+        itemModerationRetained:
+          "콘텐츠 심사·모더레이션 이력은 안전 운영을 위해 유지될 수 있습니다.",
+        itemNoRecovery: "탈퇴 취소·계정 복구는 불가하며 유예 기간이 없습니다.",
+        itemReregisterRequired:
+          "다시 이용하려면 새로 회원가입해야 하며, 이전 @아이디·데이터는 복구되지 않습니다.",
+        itemHandleMayBeReused: "해제된 @아이디는 다른 사용자가 나중에 사용할 수 있습니다.",
+        itemAdminCannotDelete: "관리자·슈퍼 관리자 계정은 탈퇴할 수 없습니다.",
+        itemPartialFailure:
+          "처리 중 오류가 발생하면 일부 데이터만 삭제된 상태가 될 수 있으며, 이 경우 고객 지원에 문의해야 합니다.",
+        itemLogoutAfterDelete: "탈퇴 완료 후 자동으로 로그아웃되며 홈으로 이동합니다.",
+        confirmCheckbox: "위 내용을 모두 확인했으며, 회원 탈퇴에 동의합니다.",
+        confirmPhraseLabel: "확인을 위해 아래에 「탈퇴」를 입력해 주세요.",
+        confirmPhrasePlaceholder: "탈퇴",
+        confirmPhraseExpected: "탈퇴",
+        passwordLabel: "비밀번호 (본인 확인)",
+        passwordRequired: "비밀번호를 입력해 주세요.",
+        submit: "탈퇴하기",
+        submitting: "처리 중…",
+        cancel: "취소",
+        success: "회원 탈퇴가 완료되었습니다.",
+        errorAdmin: "관리자 계정은 탈퇴할 수 없습니다.",
+        errorRecentLogin: "보안을 위해 다시 로그인한 뒤 탈퇴를 진행해 주세요.",
+        errorWrongPassword: "비밀번호가 올바르지 않습니다.",
+        errorGeneric: "탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+      },
     },
     network: {
       field: {
@@ -1242,6 +1311,73 @@ export const messages = {
         "A change request is under review. You can submit again after it is approved or rejected.",
       directorNameSuccess: "Your request was submitted. A super admin will review it.",
       directorNameRequestFailed: "Could not submit the change request.",
+      deleteAccount: {
+        hint: "No longer using XIIO?",
+        link: "Delete account",
+        dialogTitle: "Delete account",
+        dialogLead:
+          "Once deletion is complete, it cannot be undone and you will not be able to sign in with the same account again. Processing may take time, and some data may be retained for legal, dispute, or safety reasons.",
+        sectionAccount: "Account & sign-in",
+        sectionRemoved: "Deleted or anonymized",
+        sectionRetained: "Retained",
+        sectionRecovery: "Recovery & re-registration",
+        sectionNotes: "Important notes",
+        itemAuthDeleted:
+          "Your sign-in credentials (email/password or linked Google, Apple, Kakao, Naver, etc.) will be deleted and you cannot sign in again with the same account.",
+        itemAuthLinksRemoved: "Linked social and email provider records will be removed.",
+        itemNoServiceAccess: "After deletion you cannot use features that require sign-in.",
+        itemProfileRemoved:
+          "Your public profile (display name, @handle, photo, bio, headline, collaboration note, discoverability) will be deleted or anonymized.",
+        itemPeopleHidden: "Your /people/@handle page will no longer be available.",
+        itemPiiRemoved:
+          "Personal data (birth date, gender, school name, email stored on profile, etc.) will be deleted.",
+        itemWatchProfilesRemoved: "All watch profiles (family / profile switching) will be deleted.",
+        itemUnpublishedWorksDeleted:
+          "Unpublished works (drafts, pending or rejected review, removal requests, etc.) and related video files will be deleted.",
+        itemPortfolioSharesRemoved: "Portfolio submission and share token links will be invalidated.",
+        itemActivityRemoved: "Likes, watch history, and private activity data will be deleted.",
+        itemFollowsRemoved: "Follow and follower relationships will be removed.",
+        itemBlocksRemoved: "Your block list will be deleted.",
+        itemDmRemoved:
+          "DM threads and messages you participated in will be deleted and may disappear for the other participant too.",
+        itemAvatarStorageRemoved: "Profile photo files will be deleted.",
+        itemBillingRemoved: "Uploader payment and identity verification data will be deleted.",
+        itemPendingRequestsCancelled:
+          "Pending display name, @handle, or director name change requests will be cancelled.",
+        itemPublishedWorksRemain: "Published full videos and promo shorts will remain on the platform.",
+        itemWatchUrlsRemain: "Watch URLs (/watch/...) for published works may continue to work.",
+        itemDirectorCreditNamesRemain:
+          "Director and credit names stored on works at upload or acceptance may still be shown.",
+        itemCreditsOnOthersWorksRemain:
+          "If you are credited on others’ works, your name may remain on those credit lists.",
+        itemPaymentEventsRetained:
+          "Payment and deposit event records may be kept internally for accounting, disputes, and abuse prevention.",
+        itemReportsAuditRetained:
+          "Reports, admin review, and audit logs that reference your account or works may be retained for operations and legal obligations.",
+        itemModerationRetained: "Content moderation history may be kept for platform safety.",
+        itemNoRecovery: "Account deletion cannot be cancelled; there is no grace period.",
+        itemReregisterRequired:
+          "To use XIIO again you must sign up anew; your previous @handle and data cannot be restored.",
+        itemHandleMayBeReused: "Your released @handle may be used by someone else later.",
+        itemAdminCannotDelete: "Admin and super admin accounts cannot delete themselves.",
+        itemPartialFailure:
+          "If processing fails, some data may already be deleted; contact support in that case.",
+        itemLogoutAfterDelete: "You will be signed out and returned to the home page when deletion completes.",
+        confirmCheckbox: "I have read everything above and agree to delete my account.",
+        confirmPhraseLabel: 'Type "DELETE" below to confirm.',
+        confirmPhrasePlaceholder: "DELETE",
+        confirmPhraseExpected: "DELETE",
+        passwordLabel: "Password (verify identity)",
+        passwordRequired: "Please enter your password.",
+        submit: "Delete my account",
+        submitting: "Processing…",
+        cancel: "Cancel",
+        success: "Your account has been deleted.",
+        errorAdmin: "Admin accounts cannot be deleted.",
+        errorRecentLogin: "For security, please sign in again before deleting your account.",
+        errorWrongPassword: "Incorrect password.",
+        errorGeneric: "Could not delete your account. Please try again later.",
+      },
     },
     network: {
       field: {

@@ -1,7 +1,7 @@
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { SignupProfile, UserProfileDoc, UserRole } from "@/types/user";
-import { parseUserProfileDoc } from "@/lib/userAccess";
+import { isAccountDeleted, parseUserProfileDoc } from "@/lib/userAccess";
 
 export const FIRESTORE_PERMISSION_DENIED = "FIRESTORE_PERMISSION_DENIED";
 
@@ -21,7 +21,9 @@ export async function getUserProfile(uid: string): Promise<UserProfileDoc | null
   try {
     const snap = await getDoc(doc(db, "users", uid));
     if (!snap.exists()) return null;
-    return parseUserProfileDoc(snap.data() as Record<string, unknown>);
+    const profile = parseUserProfileDoc(snap.data() as Record<string, unknown>);
+    if (isAccountDeleted(profile)) return null;
+    return profile;
   } catch {
     return null;
   }
@@ -31,7 +33,9 @@ export async function hasUserProfile(uid: string): Promise<boolean> {
   if (!db) return false;
   try {
     const snap = await getDoc(doc(db, "users", uid));
-    return snap.exists();
+    if (!snap.exists()) return false;
+    const profile = parseUserProfileDoc(snap.data() as Record<string, unknown>);
+    return !isAccountDeleted(profile);
   } catch {
     return false;
   }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyBearerIdToken, getAdminDb, getFirebaseAdminApp } from "@/lib/server/firebase-admin";
 import { assertAdminApiAccess } from "@/lib/server/admin-access";
-import { parseUserProfileDoc } from "@/lib/userAccess";
+import { isAccountDeleted, parseUserProfileDoc } from "@/lib/userAccess";
 
 export function jsonError(error: string, message: string, status: number, detail?: string) {
   return NextResponse.json(
@@ -26,6 +26,24 @@ export async function requireUser(request: Request) {
       error: jsonError("unauthorized", "로그인이 필요합니다.", 401),
     };
   }
+
+  const db = getAdminDb();
+  if (db) {
+    const snap = await db.collection("users").doc(session.uid).get();
+    if (snap.exists) {
+      const profile = parseUserProfileDoc(snap.data() as Record<string, unknown>);
+      if (isAccountDeleted(profile)) {
+        return {
+          error: jsonError(
+            "account_deleted",
+            "탈퇴한 계정입니다. 다시 이용하려면 새로 가입해 주세요.",
+            403
+          ),
+        };
+      }
+    }
+  }
+
   return { session };
 }
 

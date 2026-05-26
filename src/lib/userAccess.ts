@@ -33,7 +33,12 @@ export const DEFAULT_ADMIN_ALLOWED_ROLES: UserRole[] = ["admin", "super_admin"];
 export type MemberAccessResult =
   | { kind: "none" }
   | { kind: "no_profile" }
+  | { kind: "deleted" }
   | { kind: "active"; profile: UserProfileDoc };
+
+export function isAccountDeleted(profile: Pick<UserProfileDoc, "accountStatus">): boolean {
+  return profile.accountStatus === "deleted";
+}
 
 function parsePlatformPurpose(value: unknown): PlatformPurpose {
   if (value === "upload") return "upload";
@@ -115,6 +120,8 @@ export function parseUserProfileDoc(data: Record<string, unknown>): UserProfileD
       typeof data.followingCount === "number" && data.followingCount >= 0
         ? data.followingCount
         : 0,
+    accountStatus: data.accountStatus === "deleted" ? "deleted" : "active",
+    deletedAt: data.deletedAt,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
@@ -125,7 +132,9 @@ export function resolveMemberAccess(
   data: Record<string, unknown> | undefined
 ): MemberAccessResult {
   if (!exists || !data) return { kind: "no_profile" };
-  return { kind: "active", profile: parseUserProfileDoc(data) };
+  const profile = parseUserProfileDoc(data);
+  if (isAccountDeleted(profile)) return { kind: "deleted" };
+  return { kind: "active", profile };
 }
 
 export function canAccessAdminPanel(
