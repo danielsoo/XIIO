@@ -1,7 +1,7 @@
 import type { Locale } from "@/i18n";
 import type { ProfessionalField, ProfileRoleTag } from "@/types/portfolio";
 
-export type PlatformPurpose = "watch" | "upload" | "both";
+export type PlatformPurpose = "watch" | "upload" | "both" | "collaborate";
 
 /** 가입·프로필 성별 */
 export type UserGender = "male" | "female" | "undisclosed";

@@ -7,6 +7,7 @@ import type {
 export type OnboardingStatsPayload = {
   total: number;
   watch: number;
+  collaborate: number;
   upload: number;
   both: number;
   other: number;

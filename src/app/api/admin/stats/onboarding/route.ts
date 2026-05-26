@@ -27,6 +27,7 @@ export async function GET(request: Request) {
   }
 
   let watch = 0;
+  let collaborate = 0;
   let upload = 0;
   let both = 0;
   let other = 0;
@@ -37,6 +38,7 @@ export async function GET(request: Request) {
     const data = doc.data();
     const purpose = data.platformPurpose;
     if (purpose === "watch") watch += 1;
+    else if (purpose === "collaborate") collaborate += 1;
     else if (purpose === "upload") upload += 1;
     else if (purpose === "both") both += 1;
     else other += 1;
@@ -57,6 +59,7 @@ export async function GET(request: Request) {
   const payload: OnboardingStatsPayload = {
     total: snap.size,
     watch,
+    collaborate,
     upload,
     both,
     other,

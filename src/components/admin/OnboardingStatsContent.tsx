@@ -20,7 +20,7 @@ import {
 import type { OnboardingStatsPayload } from "@/types/admin";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
-const PIE_COLORS = ["#6366f1", "#a855f7", "#22d3ee", "#64748b"];
+const PIE_COLORS = ["#6366f1", "#22d3ee", "#a855f7", "#f59e0b", "#64748b"];
 
 export default function OnboardingStatsContent() {
   const { user } = useAuth();
@@ -63,6 +63,7 @@ export default function OnboardingStatsContent() {
     if (!data) return [];
     return [
       { name: t("admin.purposeWatch"), value: data.watch, key: "watch" },
+      { name: t("admin.purposeCollaborate"), value: data.collaborate, key: "collaborate" },
       { name: t("admin.purposeUploadSurvey"), value: data.upload, key: "upload" },
       { name: t("admin.purposeBoth"), value: data.both, key: "both" },
       { name: t("admin.purposeOther"), value: data.other, key: "other" },
@@ -151,10 +152,14 @@ export default function OnboardingStatsContent() {
               </ResponsiveContainer>
             </div>
           )}
-          <dl className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-sm">
+          <dl className="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-sm">
             <div>
               <dt className="text-xiio-muted">{t("admin.purposeWatch")}</dt>
               <dd className="text-white font-semibold">{data.watch}</dd>
+            </div>
+            <div>
+              <dt className="text-xiio-muted">{t("admin.purposeCollaborate")}</dt>
+              <dd className="text-white font-semibold">{data.collaborate}</dd>
             </div>
             <div>
               <dt className="text-xiio-muted">{t("admin.purposeUpload")}</dt>

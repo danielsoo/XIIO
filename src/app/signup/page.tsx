@@ -719,6 +719,12 @@ export default function SignupPage() {
                     description={t("auth.signup.purposeWatchDesc")}
                   />
                   <PurposeOption
+                    selected={platformPurpose === "collaborate"}
+                    onClick={() => setPlatformPurpose("collaborate")}
+                    title={t("auth.signup.purposeCollaborateTitle")}
+                    description={t("auth.signup.purposeCollaborateDesc")}
+                  />
+                  <PurposeOption
                     selected={platformPurpose === "upload"}
                     onClick={() => setPlatformPurpose("upload")}
                     title={t("auth.signup.purposeUploadTitle")}

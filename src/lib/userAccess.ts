@@ -41,6 +41,7 @@ export function isAccountDeleted(profile: Pick<UserProfileDoc, "accountStatus">)
 }
 
 function parsePlatformPurpose(value: unknown): PlatformPurpose {
+  if (value === "collaborate") return "collaborate";
   if (value === "upload") return "upload";
   if (value === "both") return "both";
   return "watch";

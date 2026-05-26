@@ -110,6 +110,7 @@ export default function AdminUsersList() {
           >
             <option value="">{t("admin.usersFilterPurposeAll")}</option>
             <option value="watch">{t("admin.userProfile.purpose.watch")}</option>
+            <option value="collaborate">{t("admin.userProfile.purpose.collaborate")}</option>
             <option value="upload">{t("admin.userProfile.purpose.upload")}</option>
             <option value="both">{t("admin.userProfile.purpose.both")}</option>
           </select>
