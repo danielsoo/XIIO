@@ -42,14 +42,13 @@ export default function PublicPortfolioPage() {
       ) : err || !data ? (
         <p className="text-red-400">{err}</p>
       ) : (
-        <div className="lg:grid lg:grid-cols-[minmax(280px,380px)_1fr] lg:gap-10 xl:gap-12 lg:items-start">
+        <div className="max-w-5xl mx-auto w-full space-y-8">
           <PublicProfileCard
-            className="lg:sticky lg:top-28"
             profile={data.profile}
             submissionBadge={t("portfolio.public.badge")}
             shareTitle={data.shareTitle}
           />
-          <div className="min-w-0 mt-8 lg:mt-0">
+          <div className="min-w-0 w-full">
             {data.works.length === 0 ? (
               <p className="text-xiio-muted">{t("portfolio.public.empty")}</p>
             ) : (

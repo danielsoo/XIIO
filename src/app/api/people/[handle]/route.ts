@@ -24,14 +24,14 @@ export async function GET(request: Request, { params }: Params) {
   const userSnap = await db.collection("users").doc(uid).get();
   if (!userSnap.exists) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const profile = parseUserProfileDoc(userSnap.data() as Record<string, unknown>);
-  if (profile.isDiscoverable === false) {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
-  }
-
   const session = await verifyBearerIdToken(request.headers.get("authorization"));
   const viewerUid = session?.uid ?? null;
   const isSelf = viewerUid === uid;
+
+  const profile = parseUserProfileDoc(userSnap.data() as Record<string, unknown>);
+  if (profile.isDiscoverable === false && !isSelf) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   let following = false;
   if (viewerUid && !isSelf) {
     following = await isFollowing(db, viewerUid, uid);
@@ -87,6 +87,15 @@ export async function GET(request: Request, { params }: Params) {
     viewer: viewerUid
       ? { uid: viewerUid, isSelf, isFollowing: following }
       : null,
+  ...(isSelf
+    ? {
+        identity: {
+          isDiscoverable: profile.isDiscoverable !== false,
+          displayNameChangeRequest: profile.displayNameChangeRequest ?? null,
+          handleChangeRequest: profile.handleChangeRequest ?? null,
+        },
+      }
+    : {}),
     directed,
     credited,
   });

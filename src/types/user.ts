@@ -19,6 +19,12 @@ export type DirectorNameChangeRequest = {
   adminNote?: string;
 };
 
+/** 표시 이름(displayName) 변경 신청 — 감독명과 동일 shape */
+export type DisplayNameChangeRequest = DirectorNameChangeRequest;
+
+/** @handle 변경 신청 */
+export type HandleChangeRequest = DirectorNameChangeRequest;
+
 export interface SignupProfile {
   displayName: string;
   locale: Locale;
@@ -45,6 +51,8 @@ export interface UserProfileDoc {
   /** 업로더 기본 감독 표시명 (닉네임·본명 등) — 최초 1회 설정 후 직접 변경 불가 */
   defaultDirectorName?: string;
   directorNameChangeRequest?: DirectorNameChangeRequest;
+  displayNameChangeRequest?: DisplayNameChangeRequest;
+  handleChangeRequest?: HandleChangeRequest;
   /** 전문 프로필 @handle — /people/{handle} */
   handle?: string;
   headline?: string;

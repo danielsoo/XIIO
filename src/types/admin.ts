@@ -167,6 +167,9 @@ export type AdminUserDetail = {
   role: UserRole;
   defaultDirectorName?: string;
   directorNameChangeRequest?: DirectorNameChangeRequest;
+  handle?: string;
+  displayNameChangeRequest?: DirectorNameChangeRequest;
+  handleChangeRequest?: DirectorNameChangeRequest;
   createdAt?: unknown;
   updatedAt?: unknown;
   visitCount: number;

@@ -7,6 +7,7 @@ import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useTranslations } from "@/context/LocaleContext";
 import type { AdminUserDetail } from "@/types/admin";
 import { genderLabelKey } from "@/lib/userGender";
+import AdminProfileChangeRequestPanel from "@/components/admin/AdminProfileChangeRequestPanel";
 import AdminUserActivityTimeline from "@/components/admin/AdminUserActivityTimeline";
 import { AdminWorkLink } from "@/components/admin/AdminEntityLinks";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
@@ -53,13 +54,17 @@ export default function AdminUserProfile({ uid }: Props) {
     void load();
   }, [load]);
 
-  const handleDirectorChange = async (action: "approve" | "reject") => {
+  const patchChangeRequest = async (
+    path: "director-name" | "display-name" | "handle",
+    action: "approve" | "reject",
+    failedKey: string
+  ) => {
     if (!user || !isSuperAdmin) return;
     setActionBusy(true);
     setActionErr(null);
     try {
       const token = await user.getIdToken();
-      const res = await fetch(`/api/admin/users/${uid}/director-name`, {
+      const res = await fetch(`/api/admin/users/${uid}/${path}`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -81,10 +86,14 @@ export default function AdminUserProfile({ uid }: Props) {
       setAdminNote("");
       await load();
     } catch (e) {
-      setActionErr(formatClientError(t, e, { titleKey: "admin.userProfile.directorNameChangeFailed" }));
+      setActionErr(formatClientError(t, e, { titleKey: failedKey }));
     } finally {
       setActionBusy(false);
     }
+  };
+
+  const handleDirectorChange = async (action: "approve" | "reject") => {
+    await patchChangeRequest("director-name", action, "admin.userProfile.directorNameChangeFailed");
   };
 
   if (loading) {
@@ -128,6 +137,9 @@ export default function AdminUserProfile({ uid }: Props) {
             value={t(`admin.userProfile.purpose.${data.platformPurpose}`)}
           />
           <Row label={t("admin.userProfile.role")} value={data.role} />
+          {data.handle && (
+            <Row label={t("admin.userProfile.handleLabel")} value={`@${data.handle}`} />
+          )}
           <Row
             label={t("admin.userProfile.deposit")}
             value={
@@ -186,6 +198,50 @@ export default function AdminUserProfile({ uid }: Props) {
         <section className="rounded-2xl border border-white/10 bg-xiio-surface p-5 mb-6 text-sm">
           <Row label={t("admin.userProfile.directorNameLabel")} value={data.defaultDirectorName} />
         </section>
+      )}
+
+      {data.displayNameChangeRequest?.status === "pending" && (
+        <AdminProfileChangeRequestPanel
+          title={t("admin.userProfile.displayNameChangeTitle")}
+          requestedLabel={t("admin.userProfile.directorNameChangeRequested")}
+          reasonLabel={t("admin.userProfile.directorNameChangeReason")}
+          noteLabel={t("admin.userProfile.directorNameChangeNoteLabel")}
+          approveLabel={t("admin.userProfile.directorNameChangeApprove")}
+          rejectLabel={t("admin.userProfile.directorNameChangeReject")}
+          processingLabel={t("admin.userProfile.directorNameChangeProcessing")}
+          superOnlyLabel={t("admin.userProfile.directorNameChangeSuperOnly")}
+          request={data.displayNameChangeRequest}
+          formatRequested={(n) => n}
+          isSuperAdmin={isSuperAdmin}
+          adminNote={adminNote}
+          onAdminNote={setAdminNote}
+          actionBusy={actionBusy}
+          actionErr={actionErr}
+          onApprove={() => void patchChangeRequest("display-name", "approve", "admin.userProfile.directorNameChangeFailed")}
+          onReject={() => void patchChangeRequest("display-name", "reject", "admin.userProfile.directorNameChangeFailed")}
+        />
+      )}
+
+      {data.handleChangeRequest?.status === "pending" && (
+        <AdminProfileChangeRequestPanel
+          title={t("admin.userProfile.handleChangeTitle")}
+          requestedLabel={t("admin.userProfile.directorNameChangeRequested")}
+          reasonLabel={t("admin.userProfile.directorNameChangeReason")}
+          noteLabel={t("admin.userProfile.directorNameChangeNoteLabel")}
+          approveLabel={t("admin.userProfile.directorNameChangeApprove")}
+          rejectLabel={t("admin.userProfile.directorNameChangeReject")}
+          processingLabel={t("admin.userProfile.directorNameChangeProcessing")}
+          superOnlyLabel={t("admin.userProfile.directorNameChangeSuperOnly")}
+          request={data.handleChangeRequest}
+          formatRequested={(n) => `@${n}`}
+          isSuperAdmin={isSuperAdmin}
+          adminNote={adminNote}
+          onAdminNote={setAdminNote}
+          actionBusy={actionBusy}
+          actionErr={actionErr}
+          onApprove={() => void patchChangeRequest("handle", "approve", "admin.userProfile.directorNameChangeFailed")}
+          onReject={() => void patchChangeRequest("handle", "reject", "admin.userProfile.directorNameChangeFailed")}
+        />
       )}
 
       {data.directorNameChangeRequest?.status === "pending" && (

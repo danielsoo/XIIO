@@ -45,10 +45,12 @@ function parseApiProfile(data: Record<string, unknown>): ProfessionalProfileFiel
 type Options = {
   /** PATCH 시 isDiscoverable 포함 (계정 편집기) */
   includeDiscoverable?: boolean;
+  /** handle이 이미 설정된 경우 PATCH에 handle 미포함 */
+  handleLocked?: boolean;
 };
 
 export function useProfessionalProfileSave(options: Options = {}) {
-  const { includeDiscoverable = false } = options;
+  const { includeDiscoverable = false, handleLocked = false } = options;
   const { user } = useAuth();
   const { t } = useTranslations();
   const [fields, setFields] = useState<ProfessionalProfileFields>(emptyFields);
@@ -79,7 +81,6 @@ export function useProfessionalProfileSave(options: Options = {}) {
     try {
       const token = await user.getIdToken();
       const body: Record<string, unknown> = {
-        handle: fields.handle.trim() || undefined,
         headline: fields.headline,
         bio: fields.bio,
         roleTags: [],
@@ -87,6 +88,9 @@ export function useProfessionalProfileSave(options: Options = {}) {
         openToCollaborate: fields.openToCollaborate,
         collaborationNote: fields.collaborationNote,
       };
+      if (!handleLocked && fields.handle.trim()) {
+        body.handle = fields.handle.trim();
+      }
       if (includeDiscoverable) {
         body.isDiscoverable = fields.isDiscoverable;
       }
@@ -123,7 +127,7 @@ export function useProfessionalProfileSave(options: Options = {}) {
     } finally {
       setBusy(false);
     }
-  }, [user, fields, includeDiscoverable, t]);
+  }, [user, fields, includeDiscoverable, handleLocked, t]);
 
   const clearMessages = useCallback(() => {
     setMsg(null);

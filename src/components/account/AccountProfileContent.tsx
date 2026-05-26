@@ -19,8 +19,6 @@ import AccountProfileNav, {
 import AccountUploadsList from "@/components/account/AccountUploadsList";
 import AccountWorkActivityList from "@/components/account/AccountWorkActivityList";
 import DiscoverBooth from "@/components/account/DiscoverBooth";
-import ProProfileEditor from "@/components/profile/ProProfileEditor";
-import PortfolioShareSection from "@/components/settings/PortfolioShareSection";
 
 function parseMainTab(raw: string | null): MainTabId {
   if (raw === "profile" || raw === "discover") return raw;
@@ -80,6 +78,11 @@ export default function AccountProfileContent() {
       cancelled = true;
     };
   }, [user, t]);
+
+  useEffect(() => {
+    if (mainTab !== "profile" || loading || !profile?.handle?.trim()) return;
+    router.replace(`/people/${encodeURIComponent(profile.handle.trim())}`);
+  }, [mainTab, loading, profile?.handle, router]);
 
   const loadActivity = useCallback(async () => {
     if (!user) return;
@@ -260,12 +263,11 @@ export default function AccountProfileContent() {
             )}
 
             {mainTab === "profile" && (
-              <div className="lg:grid lg:grid-cols-2 lg:gap-8 xl:gap-10 lg:items-start">
-                <ProProfileEditor />
-                <div className="mt-8 lg:mt-0 pt-8 lg:pt-0 border-t lg:border-t-0 border-white/10">
-                  <PortfolioShareSection />
-                </div>
-              </div>
+              <p className="text-sm text-xiio-muted py-6 text-center">
+                {profile?.handle?.trim()
+                  ? t("common.loading")
+                  : t("profile.edit.publicEditHint")}
+              </p>
             )}
 
             {mainTab === "discover" && <DiscoverBooth />}

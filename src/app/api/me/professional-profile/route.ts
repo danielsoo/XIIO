@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
+import { normalizeHandle } from "@/lib/server/credits";
 import { claimHandle } from "@/lib/server/handles";
 import { normalizeRoleTagsInput } from "@/lib/roleTags";
 import { getDbOrNull } from "@/lib/server/works";
@@ -28,6 +29,8 @@ export async function GET(request: Request) {
     collaborationNote: profile.collaborationNote ?? null,
     displayName: profile.displayName,
     defaultDirectorName: profile.defaultDirectorName ?? null,
+    displayNameChangeRequest: profile.displayNameChangeRequest ?? null,
+    handleChangeRequest: profile.handleChangeRequest ?? null,
     followerCount: profile.followerCount ?? 0,
     followingCount: profile.followingCount ?? 0,
   });
@@ -57,6 +60,11 @@ export async function PATCH(request: Request) {
   }
 
   const uid = auth.session.uid;
+  const existingSnap = await db.collection("users").doc(uid).get();
+  const existingProfile = existingSnap.exists
+    ? parseUserProfileDoc(existingSnap.data() as Record<string, unknown>)
+    : null;
+
   const updates: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
 
   if (body.headline !== undefined) {
@@ -90,13 +98,24 @@ export async function PATCH(request: Request) {
       : undefined;
 
   if (body.handle !== undefined && body.handle.trim()) {
-    const result = await claimHandle(db, uid, body.handle, profileMerge);
-    if (!result.ok) {
-      const msg =
-        result.code === "handle_taken"
-          ? "이미 사용 중인 handle입니다."
-          : "handle은 3~30자의 영문 소문자, 숫자, 밑줄만 사용할 수 있습니다.";
-      return jsonError(result.code, msg, result.code === "handle_taken" ? 409 : 400);
+    const nextHandle = normalizeHandle(body.handle);
+    const currentHandle = existingProfile?.handle?.trim() ?? "";
+    if (currentHandle && nextHandle && nextHandle !== currentHandle) {
+      return jsonError(
+        "handle_locked",
+        "아이디(@handle)는 설정 후 직접 변경할 수 없습니다. 변경 신청을 이용해 주세요.",
+        403
+      );
+    }
+    if (!currentHandle) {
+      const result = await claimHandle(db, uid, body.handle, profileMerge);
+      if (!result.ok) {
+        const msg =
+          result.code === "handle_taken"
+            ? "이미 사용 중인 handle입니다."
+            : "handle은 3~30자의 영문 소문자, 숫자, 밑줄만 사용할 수 있습니다.";
+        return jsonError(result.code, msg, result.code === "handle_taken" ? 409 : 400);
+      }
     }
   } else if (profileMerge && Object.keys(profileMerge).length > 0) {
     await db.collection("users").doc(uid).set(updates, { merge: true });

@@ -51,10 +51,13 @@ export async function saveUserProfile(
 
   try {
     const existing = await getDoc(ref);
+    const existingDisplayName = existing.exists()
+      ? String((existing.data() as Record<string, unknown>).displayName ?? "").trim()
+      : "";
     await setDoc(
       ref,
       {
-        displayName: profile.displayName,
+        ...(!existingDisplayName ? { displayName: profile.displayName } : {}),
         locale: profile.locale,
         birthDate: profile.birthDate,
         gender: profile.gender,
