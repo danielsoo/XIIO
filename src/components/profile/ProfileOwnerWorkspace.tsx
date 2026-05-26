@@ -1,0 +1,185 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import PublicProfileCard from "@/components/profile/PublicProfileCard";
+import ProfileEditPanel from "@/components/profile/ProfileEditPanel";
+import ProfileDiscoverSettings from "@/components/profile/ProfileDiscoverSettings";
+import ProfileWorksThumbnailGrid from "@/components/profile/ProfileWorksThumbnailGrid";
+import PortfolioShareSection from "@/components/settings/PortfolioShareSection";
+import type { PeopleProfilePayload } from "@/components/profile/PeopleProfileView";
+import { useTranslations } from "@/context/LocaleContext";
+import type { ProfessionalProfileSaved } from "@/hooks/useProfessionalProfileSave";
+import type { DirectorNameChangeRequest } from "@/types/user";
+
+export type OwnerTabId = "edit" | "preview";
+
+type WorkCard = PeopleProfilePayload["directed"][number];
+
+export type ProfileOwnerUrlMode = "people" | "account" | "none";
+
+type Props = {
+  data: PeopleProfilePayload;
+  handleLocked: boolean;
+  onProfileSaved: (saved: ProfessionalProfileSaved) => void;
+  onIdentityRequest: (
+    field: "displayNameChangeRequest" | "handleChangeRequest",
+    req: DirectorNameChangeRequest
+  ) => void;
+  urlMode?: ProfileOwnerUrlMode;
+  className?: string;
+  showPublicProfileLink?: boolean;
+};
+
+function parsePreviewFromPeopleUrl(tab: string | null): OwnerTabId {
+  return tab === "preview" ? "preview" : "edit";
+}
+
+function parsePreviewFromAccountUrl(view: string | null): OwnerTabId {
+  return view === "preview" ? "preview" : "edit";
+}
+
+function tabBtnClass(active: boolean) {
+  return active
+    ? "shrink-0 px-4 py-2 rounded-lg text-sm font-medium bg-xiio-accent text-white"
+    : "shrink-0 px-4 py-2 rounded-lg text-sm font-medium text-xiio-muted hover:text-white transition";
+}
+
+export default function ProfileOwnerWorkspace({
+  data,
+  handleLocked,
+  onProfileSaved,
+  onIdentityRequest,
+  urlMode = "none",
+  className = "",
+  showPublicProfileLink = false,
+}: Props) {
+  const { t } = useTranslations();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const tabFromUrl =
+    urlMode === "people"
+      ? parsePreviewFromPeopleUrl(searchParams.get("tab"))
+      : urlMode === "account"
+        ? parsePreviewFromAccountUrl(searchParams.get("view"))
+        : "edit";
+
+  const [activeTab, setActiveTab] = useState<OwnerTabId>(tabFromUrl);
+  const [savedBanner, setSavedBanner] = useState(false);
+
+  useEffect(() => {
+    if (urlMode !== "none") setActiveTab(tabFromUrl);
+  }, [tabFromUrl, urlMode]);
+
+  const setTab = useCallback(
+    (id: OwnerTabId) => {
+      setActiveTab(id);
+      setSavedBanner(false);
+
+      if (urlMode === "none") return;
+
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (urlMode === "people") {
+        if (id === "edit") params.delete("tab");
+        else params.set("tab", id);
+        const q = params.toString();
+        const base = `/people/${encodeURIComponent(data.profile.handle)}`;
+        router.replace(q ? `${base}?${q}` : base, { scroll: false });
+        return;
+      }
+
+      params.set("tab", "profile");
+      if (id === "preview") params.set("view", "preview");
+      else params.delete("view");
+      router.replace(`/account?${params.toString()}`, { scroll: false });
+    },
+    [data.profile.handle, router, searchParams, urlMode]
+  );
+
+  const handleSaved = useCallback(
+    (saved: ProfessionalProfileSaved) => {
+      onProfileSaved(saved);
+      setSavedBanner(true);
+      setTab("preview");
+    },
+    [onProfileSaved, setTab]
+  );
+
+  const renderWorks = (items: WorkCard[], title: string) => {
+    if (items.length === 0) return null;
+    return (
+      <section className="mb-10 w-full">
+        <h2 className="text-lg font-semibold text-white mb-4">{title}</h2>
+        <ProfileWorksThumbnailGrid items={items} linkToWatch />
+      </section>
+    );
+  };
+
+  const publicProfileHref = data.profile.handle
+    ? `/people/${encodeURIComponent(data.profile.handle)}`
+    : null;
+
+  return (
+    <div className={`w-full space-y-6 ${className}`.trim()}>
+      <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
+        <button type="button" onClick={() => setTab("edit")} className={tabBtnClass(activeTab === "edit")}>
+          {t("profile.tabs.edit")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("preview")}
+          className={tabBtnClass(activeTab === "preview")}
+        >
+          {t("profile.tabs.preview")}
+        </button>
+      </div>
+
+      {activeTab === "preview" ? (
+        <div className="space-y-8">
+          <p className="text-sm text-xiio-muted">{t("profile.tabs.previewHint")}</p>
+          {savedBanner && (
+            <p className="text-sm text-emerald-400 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2">
+              {t("profile.tabs.savedGoPreview")}
+            </p>
+          )}
+          <PublicProfileCard profile={data.profile} isSelf />
+          {renderWorks(data.directed, t("network.people.directed"))}
+          {renderWorks(data.credited, t("network.people.credited"))}
+          {showPublicProfileLink && publicProfileHref && (
+            <p className="text-sm">
+              <Link
+                href={publicProfileHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xiio-accent hover:underline"
+              >
+                {t("accountProfile.openPublicProfile")} →
+              </Link>
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <ProfileEditPanel
+            profile={data.profile}
+            handleLocked={handleLocked}
+            displayNameChangeRequest={data.identity?.displayNameChangeRequest ?? null}
+            handleChangeRequest={data.identity?.handleChangeRequest ?? null}
+            onSaved={handleSaved}
+            onDisplayNameChangeSubmitted={(req) =>
+              onIdentityRequest("displayNameChangeRequest", req)
+            }
+            onHandleChangeSubmitted={(req) => onIdentityRequest("handleChangeRequest", req)}
+          />
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+            <ProfileDiscoverSettings initialDiscoverable={data.identity?.isDiscoverable} />
+            <PortfolioShareSection />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

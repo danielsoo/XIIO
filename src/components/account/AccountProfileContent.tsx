@@ -16,6 +16,7 @@ import AccountProfileNav, {
   type ActivityTabId,
   type MainTabId,
 } from "@/components/account/AccountProfileNav";
+import AccountProfileSettingsPanel from "@/components/account/AccountProfileSettingsPanel";
 import AccountUploadsList from "@/components/account/AccountUploadsList";
 import AccountWorkActivityList from "@/components/account/AccountWorkActivityList";
 import DiscoverBooth from "@/components/account/DiscoverBooth";
@@ -51,10 +52,22 @@ export default function AccountProfileContent() {
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityErr, setActivityErr] = useState<string | null>(null);
 
+  const reloadProfile = useCallback(() => {
+    if (!user) return;
+    void getUserProfile(user.uid).then((p) => {
+      setProfile(p);
+    });
+  }, [user]);
+
   const setMainTab = (id: MainTabId) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (id === "activity") params.delete("tab");
-    else params.set("tab", id);
+    if (id === "activity") {
+      params.delete("tab");
+      params.delete("view");
+    } else {
+      params.set("tab", id);
+      if (id !== "profile") params.delete("view");
+    }
     const q = params.toString();
     router.replace(q ? `/account?${q}` : "/account", { scroll: false });
   };
@@ -78,11 +91,6 @@ export default function AccountProfileContent() {
       cancelled = true;
     };
   }, [user, t]);
-
-  useEffect(() => {
-    if (mainTab !== "profile" || loading || !profile?.handle?.trim()) return;
-    router.replace(`/people/${encodeURIComponent(profile.handle.trim())}`);
-  }, [mainTab, loading, profile?.handle, router]);
 
   const loadActivity = useCallback(async () => {
     if (!user) return;
@@ -164,6 +172,51 @@ export default function AccountProfileContent() {
         ? LOCALES.find((l) => l.code === "ko")?.label ?? "한국어"
         : null;
 
+  const renderMainContent = () => {
+    if (mainTab === "activity") {
+      return (
+        <>
+          {activityErr && activityTab !== "uploads" && (
+            <p className="text-sm text-red-400 mb-4">{activityErr}</p>
+          )}
+          {activityTab === "uploads" && <AccountUploadsList />}
+          {activityTab === "likes" &&
+            (activityLoading ? (
+              <p className="text-sm text-xiio-muted text-center py-8">{t("common.loading")}</p>
+            ) : (
+              <>
+                <p className="text-xs text-xiio-muted mb-3">{t("accountProfile.likesNote")}</p>
+                <AccountWorkActivityList
+                  items={likes}
+                  emptyMessage={t("accountProfile.likesEmpty")}
+                  emptyCtaLabel={t("accountProfile.emptyLikesCta")}
+                  emptyCtaHref="/"
+                />
+              </>
+            ))}
+          {activityTab === "watched" &&
+            (activityLoading ? (
+              <p className="text-sm text-xiio-muted text-center py-8">{t("common.loading")}</p>
+            ) : (
+              <AccountWorkActivityList
+                items={watched}
+                emptyMessage={t("accountProfile.watchedEmpty")}
+                emptyCtaLabel={t("accountProfile.emptyWatchedCta")}
+                emptyCtaHref="/movies"
+                showTarget
+              />
+            ))}
+        </>
+      );
+    }
+    if (mainTab === "profile") {
+      return (
+        <AccountProfileSettingsPanel accountProfile={profile} onHandleClaimed={reloadProfile} />
+      );
+    }
+    return <DiscoverBooth />;
+  };
+
   return (
     <div className="space-y-6">
       <AccountProfileHero profile={profile} email={user?.email ?? null} />
@@ -195,10 +248,23 @@ export default function AccountProfileContent() {
         </section>
       )}
 
-      <section className="bg-xiio-surface rounded-2xl border border-white/10 overflow-hidden">
-        <div className="lg:hidden p-4 border-b border-white/10">
+      <div className="lg:hidden">
+        <AccountProfileNav
+          variant="mobile"
+          mainTab={mainTab}
+          onMainTab={setMainTab}
+          mainTabLabels={mainTabLabels}
+          activityTab={activityTab}
+          onActivityTab={setActivityTab}
+          activityTabs={activityTabs}
+          activityLoading={activityLoading}
+        />
+      </div>
+
+      <div className="lg:grid lg:grid-cols-[minmax(200px,240px)_1fr] lg:gap-8 lg:items-start">
+        <aside className="hidden lg:block shrink-0">
           <AccountProfileNav
-            variant="mobile"
+            variant="sidebar"
             mainTab={mainTab}
             onMainTab={setMainTab}
             mainTabLabels={mainTabLabels}
@@ -207,73 +273,12 @@ export default function AccountProfileContent() {
             activityTabs={activityTabs}
             activityLoading={activityLoading}
           />
-        </div>
+        </aside>
 
-        <div className="lg:grid lg:grid-cols-[minmax(200px,240px)_1fr] lg:min-h-[420px]">
-          <aside className="hidden lg:block border-r border-white/10 px-3 py-2">
-            <AccountProfileNav
-              variant="sidebar"
-              mainTab={mainTab}
-              onMainTab={setMainTab}
-              mainTabLabels={mainTabLabels}
-              activityTab={activityTab}
-              onActivityTab={setActivityTab}
-              activityTabs={activityTabs}
-              activityLoading={activityLoading}
-            />
-          </aside>
-
-          <div className="min-w-0 p-5 lg:p-6">
-            {mainTab === "activity" && (
-              <>
-                {activityErr && activityTab !== "uploads" && (
-                  <p className="text-sm text-red-400 mb-4">{activityErr}</p>
-                )}
-
-                {activityTab === "uploads" && <AccountUploadsList />}
-
-                {activityTab === "likes" &&
-                  (activityLoading ? (
-                    <p className="text-sm text-xiio-muted text-center py-8">{t("common.loading")}</p>
-                  ) : (
-                    <>
-                      <p className="text-xs text-xiio-muted mb-3">{t("accountProfile.likesNote")}</p>
-                      <AccountWorkActivityList
-                        items={likes}
-                        emptyMessage={t("accountProfile.likesEmpty")}
-                        emptyCtaLabel={t("accountProfile.emptyLikesCta")}
-                        emptyCtaHref="/"
-                      />
-                    </>
-                  ))}
-
-                {activityTab === "watched" &&
-                  (activityLoading ? (
-                    <p className="text-sm text-xiio-muted text-center py-8">{t("common.loading")}</p>
-                  ) : (
-                    <AccountWorkActivityList
-                      items={watched}
-                      emptyMessage={t("accountProfile.watchedEmpty")}
-                      emptyCtaLabel={t("accountProfile.emptyWatchedCta")}
-                      emptyCtaHref="/movies"
-                      showTarget
-                    />
-                  ))}
-              </>
-            )}
-
-            {mainTab === "profile" && (
-              <p className="text-sm text-xiio-muted py-6 text-center">
-                {profile?.handle?.trim()
-                  ? t("common.loading")
-                  : t("profile.edit.publicEditHint")}
-              </p>
-            )}
-
-            {mainTab === "discover" && <DiscoverBooth />}
-          </div>
-        </div>
-      </section>
+        <section className="min-w-0 bg-xiio-surface rounded-2xl border border-white/10 p-5 lg:p-6 lg:min-h-[420px]">
+          {renderMainContent()}
+        </section>
+      </div>
     </div>
   );
 }

@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import PeopleProfileOwnerTabs from "@/components/profile/PeopleProfileOwnerTabs";
 import PublicProfileCard from "@/components/profile/PublicProfileCard";
-import ProfileDiscoverSettings from "@/components/profile/ProfileDiscoverSettings";
 import ProfileWorksThumbnailGrid from "@/components/profile/ProfileWorksThumbnailGrid";
-import PortfolioShareSection from "@/components/settings/PortfolioShareSection";
 import type { ProfessionalProfileSaved } from "@/hooks/useProfessionalProfileSave";
 import type { DirectorNameChangeRequest } from "@/types/user";
 
@@ -132,32 +131,28 @@ export default function PeopleProfileView({ handle }: Props) {
   const isSelf = !!data.viewer?.isSelf;
   const handleLocked = !!data.profile.handle?.trim();
 
+  if (isSelf) {
+    return (
+      <Suspense fallback={<p className="text-xiio-muted">{t("common.loading")}</p>}>
+        <PeopleProfileOwnerTabs
+          data={data}
+          handleLocked={handleLocked}
+          onProfileSaved={onProfileSaved}
+          onIdentityRequest={onIdentityRequest}
+        />
+      </Suspense>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto w-full space-y-8">
       <PublicProfileCard
         profile={data.profile}
-        editable={isSelf}
-        isSelf={isSelf}
+        isSelf={false}
         isFollowing={!!data.viewer?.isFollowing}
-        handleLocked={handleLocked}
-        displayNameChangeRequest={data.identity?.displayNameChangeRequest ?? null}
-        handleChangeRequest={data.identity?.handleChangeRequest ?? null}
-        onProfileSaved={onProfileSaved}
-        onDisplayNameChangeSubmitted={(req) =>
-          onIdentityRequest("displayNameChangeRequest", req)
-        }
-        onHandleChangeSubmitted={(req) => onIdentityRequest("handleChangeRequest", req)}
       />
-
       {renderWorks(data.directed, t("network.people.directed"))}
       {renderWorks(data.credited, t("network.people.credited"))}
-
-      {isSelf && (
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-start pt-2 border-t border-white/10">
-          <ProfileDiscoverSettings initialDiscoverable={data.identity?.isDiscoverable} />
-          <PortfolioShareSection />
-        </div>
-      )}
     </div>
   );
 }

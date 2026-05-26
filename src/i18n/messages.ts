@@ -225,6 +225,13 @@ export const messages = {
         reasonLabel: "사유 (선택)",
         reasonPlaceholder: "변경이 필요한 이유를 간단히 적어 주세요",
       },
+      tabs: {
+        edit: "수정",
+        preview: "공개 보기",
+        previewHint: "다른 사람에게 이렇게 보입니다.",
+        editHint: "저장 후 「공개 보기」 탭에서 확인할 수 있습니다.",
+        savedGoPreview: "저장했습니다. 아래에서 공개 프로필을 확인하세요.",
+      },
     },
     discover: {
       title: "창구 — 사람 찾기",
@@ -437,6 +444,9 @@ export const messages = {
       emptyUploadCta: "첫 작품 업로드하기",
       emptyLikesCta: "숏폼 둘러보기",
       emptyWatchedCta: "콘텐츠 둘러보기",
+      openPublicProfile: "공개 프로필 페이지에서 보기",
+      profileNoHandle:
+        "공개 아이디(@handle)를 먼저 설정해 주세요. 저장 후 프로필을 꾸밀 수 있습니다.",
     },
     profiles: {
       title: "시청할 프로필을 선택하세요",
@@ -1338,6 +1348,13 @@ export const messages = {
         reasonLabel: "Reason (optional)",
         reasonPlaceholder: "Briefly explain why you need a change",
       },
+      tabs: {
+        edit: "Edit",
+        preview: "Public view",
+        previewHint: "This is how others see your profile.",
+        editHint: "After saving, check the Public view tab to confirm.",
+        savedGoPreview: "Saved. Review your public profile below.",
+      },
     },
     discover: {
       title: "Discover",
@@ -1550,6 +1567,9 @@ export const messages = {
       emptyUploadCta: "Upload your first work",
       emptyLikesCta: "Browse shorts",
       emptyWatchedCta: "Browse content",
+      openPublicProfile: "View on public profile page",
+      profileNoHandle:
+        "Set your public handle (@id) first. You can customize your profile after saving.",
     },
     profiles: {
       title: "Who's watching?",
