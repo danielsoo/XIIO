@@ -4,19 +4,34 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useProfile } from "@/context/ProfileContext";
 import { useTranslations } from "@/context/LocaleContext";
-import ProfileAvatar from "@/components/ProfileAvatar";
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+import { getUserProfile } from "@/lib/userProfile";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
+import type { UserProfileDoc } from "@/types/user";
 
 export default function ProfileMenu() {
-  const { logout } = useAuth();
-  const { activeProfile, clearActiveProfile } = useProfile();
+  const { user, logout } = useAuth();
   const { isAdmin, checked: adminChecked } = useAdminAccess();
   const { t } = useTranslations();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [accountProfile, setAccountProfile] = useState<UserProfileDoc | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setAccountProfile(null);
+      return;
+    }
+    let cancelled = false;
+    void getUserProfile(user.uid).then((profile) => {
+      if (!cancelled) setAccountProfile(profile);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -26,17 +41,13 @@ export default function ProfileMenu() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open]);
 
-  if (!activeProfile) return null;
+  if (!user) return null;
+
+  const displayName = accountProfile?.displayName?.trim() || user.displayName || user.email || "—";
 
   const handleLogout = async () => {
     await logout();
     router.push("/");
-    setOpen(false);
-  };
-
-  const handleSwitchProfile = () => {
-    clearActiveProfile();
-    router.push("/profiles");
     setOpen(false);
   };
 
@@ -49,14 +60,21 @@ export default function ProfileMenu() {
         aria-label={t("profileMenu.ariaLabel")}
         aria-expanded={open}
       >
-        <ProfileAvatar profile={activeProfile} size="md" />
+        <ProfileAvatar
+          displayName={displayName}
+          avatarUrl={accountProfile?.avatarUrl}
+          className="w-10 h-10 rounded-full bg-xiio-accent/20 ring-2 ring-xiio-accent/40 flex items-center justify-center text-sm font-bold text-white overflow-hidden shrink-0"
+          imgClassName="w-full h-full object-cover"
+        />
       </button>
 
       {open && (
         <div className="absolute right-0 top-full mt-2 w-52 py-2 rounded-xl bg-xiio-surface border border-white/10 shadow-xl z-[60]">
           <div className="px-4 py-3 border-b border-white/10">
-            <p className="text-sm font-medium text-white truncate">{activeProfile.name}</p>
-            <p className="text-xs text-xiio-muted mt-0.5">{t("profileMenu.watchProfile")}</p>
+            <p className="text-sm font-medium text-white truncate">{displayName}</p>
+            {accountProfile?.handle && (
+              <p className="text-xs text-xiio-muted mt-0.5 truncate">@{accountProfile.handle}</p>
+            )}
           </div>
           <Link
             href="/account"
@@ -72,13 +90,6 @@ export default function ProfileMenu() {
           >
             {t("profileMenu.messages")}
           </Link>
-          <button
-            type="button"
-            onClick={handleSwitchProfile}
-            className="w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/5 transition"
-          >
-            {t("profileMenu.switchProfile")}
-          </button>
           <Link
             href="/settings"
             onClick={() => setOpen(false)}

@@ -1,36 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { useProfile } from "@/context/ProfileContext";
-
-const EXEMPT_PATHS = [
-  "/login",
-  "/signup",
-  "/profiles",
-  "/settings",
-  "/admin",
-  "/uploader",
-  "/account",
-  "/discover",
-  "/messages",
-  "/people",
-  "/p",
-];
-
+/** 시청 프로필 선택 가드 제거 — 계정 로그인만으로 서비스 이용 */
 export default function ProfileGuard() {
-  const { user, loading: authLoading } = useAuth();
-  const { activeProfile, loading: profileLoading } = useProfile();
-  const pathname = usePathname();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (authLoading || profileLoading) return;
-    if (!user) return;
-    if (EXEMPT_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return;
-    if (!activeProfile) router.replace("/profiles");
-  }, [user, activeProfile, authLoading, profileLoading, pathname, router]);
-
   return null;
 }

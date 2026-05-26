@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import AppPageShell from "@/components/layout/AppPageShell";
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
 
 type Message = { id: string; senderUid: string; text: string };
 
@@ -16,9 +17,11 @@ export default function MessageThreadPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [otherName, setOtherName] = useState("");
   const [otherHandle, setOtherHandle] = useState<string | null>(null);
+  const [otherAvatarUrl, setOtherAvatarUrl] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const sendingRef = useRef(false);
 
   const load = useCallback(async () => {
     if (!user || !threadId) return;
@@ -31,10 +34,12 @@ export default function MessageThreadPage() {
       messages?: Message[];
       otherDisplayName?: string;
       otherHandle?: string | null;
+      otherAvatarUrl?: string | null;
     };
     setMessages(data.messages ?? []);
     setOtherName(data.otherDisplayName ?? "");
     setOtherHandle(data.otherHandle ?? null);
+    setOtherAvatarUrl(data.otherAvatarUrl ?? null);
   }, [user, threadId]);
 
   useEffect(() => {
@@ -49,7 +54,10 @@ export default function MessageThreadPage() {
 
   const send = async () => {
     if (!user || !threadId || !text.trim()) return;
+    if (sendingRef.current || busy) return;
+    sendingRef.current = true;
     setBusy(true);
+    const payload = text.trim();
     try {
       const token = await user.getIdToken();
       const res = await fetch(`/api/me/dm/threads/${threadId}/messages`, {
@@ -58,15 +66,21 @@ export default function MessageThreadPage() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text: payload }),
       });
       if (res.ok) {
         setText("");
         await load();
       }
     } finally {
+      sendingRef.current = false;
       setBusy(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void send();
   };
 
   if (!user) {
@@ -78,6 +92,9 @@ export default function MessageThreadPage() {
       </main>
     );
   }
+
+  const hasIncoming = messages.some((m) => m.senderUid !== user.uid);
+  const hasOutgoing = messages.some((m) => m.senderUid === user.uid);
 
   return (
     <AppPageShell>
@@ -96,44 +113,63 @@ export default function MessageThreadPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
-          {messages.map((m) => {
-            const mine = m.senderUid === user.uid;
-            return (
-              <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
-                    mine
-                      ? "bg-xiio-accent text-white rounded-br-md"
-                      : "bg-white/10 text-white rounded-bl-md"
-                  }`}
-                >
-                  {m.text}
-                </div>
-              </div>
-            );
-          })}
+        <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-1 min-h-[200px]">
+          {messages.length === 0 ? (
+            <p className="text-center text-sm text-xiio-muted py-12">{t("dm.threadEmpty")}</p>
+          ) : (
+            <>
+              {messages.map((m) => {
+                const mine = m.senderUid === user.uid;
+                return (
+                  <div
+                    key={m.id}
+                    className={`flex gap-2 ${mine ? "justify-end" : "justify-start items-end"}`}
+                  >
+                    {!mine && (
+                      <ProfileAvatar
+                        displayName={otherName || "?"}
+                        avatarUrl={otherAvatarUrl}
+                        className="w-8 h-8 rounded-full bg-white/10 ring-1 ring-white/20 flex items-center justify-center text-xs font-bold text-white overflow-hidden shrink-0"
+                        imgClassName="w-full h-full object-cover"
+                      />
+                    )}
+                    <div
+                      className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
+                        mine
+                          ? "bg-xiio-accent text-white rounded-br-md"
+                          : "bg-white/10 text-white rounded-bl-md"
+                      }`}
+                    >
+                      {m.text}
+                    </div>
+                  </div>
+                );
+              })}
+              {hasOutgoing && !hasIncoming && (
+                <p className="text-xs text-xiio-muted text-left pl-10">{t("dm.waitingReply")}</p>
+              )}
+            </>
+          )}
           <div ref={bottomRef} />
         </div>
 
-        <div className="flex gap-2 border-t border-white/10 pt-4">
+        <form onSubmit={handleSubmit} className="flex gap-2 border-t border-white/10 pt-4">
           <input
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && void send()}
             placeholder={t("dm.placeholder")}
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            disabled={busy}
+            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white disabled:opacity-50"
           />
           <button
-            type="button"
+            type="submit"
             disabled={busy || !text.trim()}
-            onClick={() => void send()}
             className="px-4 py-2 rounded-lg bg-xiio-accent text-white text-sm disabled:opacity-40"
           >
             {t("dm.send")}
           </button>
-        </div>
+        </form>
       </div>
     </AppPageShell>
   );

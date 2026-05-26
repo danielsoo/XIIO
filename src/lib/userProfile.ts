@@ -116,8 +116,8 @@ export function isProfileComplete(profile: UserProfileDoc): boolean {
   return true;
 }
 
-export async function getPostAuthPath(uid: string): Promise<"/profiles" | "/signup"> {
+export async function getPostAuthPath(uid: string): Promise<"/" | "/signup"> {
   const profile = await getUserProfile(uid);
   if (!profile || !isProfileComplete(profile)) return "/signup";
-  return "/profiles";
+  return "/";
 }

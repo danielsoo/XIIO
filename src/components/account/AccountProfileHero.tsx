@@ -100,9 +100,6 @@ export default function AccountProfileHero({ profile, email, metaItems = [] }: P
             </div>
 
             <div className="flex flex-wrap gap-2 mt-4 justify-center sm:justify-start">
-              <Link href="/profiles" className={quickBtn}>
-                {t("accountProfile.linkWatchProfiles")}
-              </Link>
               <Link href="/settings" className={quickBtn}>
                 {t("accountProfile.linkSettings")}
               </Link>

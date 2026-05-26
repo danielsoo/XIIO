@@ -50,6 +50,7 @@ export async function GET(request: Request, { params }: Params) {
     otherUid,
     otherHandle: otherProfile?.handle ?? null,
     otherDisplayName: otherProfile?.displayName ?? "—",
+    otherAvatarUrl: otherProfile?.avatarUrl ?? null,
     messages,
   });
 }

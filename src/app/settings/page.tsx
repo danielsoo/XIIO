@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useProfile } from "@/context/ProfileContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { LOCALES, type Locale } from "@/i18n";
 import type { XiioTimezoneId } from "@/lib/timezone";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
-import ProfileAvatar from "@/components/ProfileAvatar";
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+import { getUserProfile } from "@/lib/userProfile";
+import type { UserProfileDoc } from "@/types/user";
 import AccountDeleteDialog from "@/components/settings/AccountDeleteDialog";
 import DirectorNameSettingsSection from "@/components/settings/DirectorNameSettingsSection";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
@@ -36,11 +37,25 @@ function CardHint({ children }: { children: React.ReactNode }) {
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
-  const { activeProfile } = useProfile();
   const { isAdmin, checked: adminChecked } = useAdminAccess();
   const { t, locale, setLocale, timezone, setTimezone } = useTranslations();
   const router = useRouter();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [accountProfile, setAccountProfile] = useState<UserProfileDoc | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setAccountProfile(null);
+      return;
+    }
+    let cancelled = false;
+    void getUserProfile(user.uid).then((profile) => {
+      if (!cancelled) setAccountProfile(profile);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -120,39 +135,30 @@ export default function SettingsPage() {
           </section>
         )}
 
-        {activeProfile && (
+        {accountProfile && (
           <section className={card}>
-            <CardTitle>{t("settings.watchProfileSection")}</CardTitle>
+            <CardTitle>{t("settings.accountSection")}</CardTitle>
             <div className="flex items-center gap-4 mt-4">
-              <ProfileAvatar profile={activeProfile} size="lg" />
+              <ProfileAvatar
+                displayName={accountProfile.displayName || "?"}
+                avatarUrl={accountProfile.avatarUrl}
+                className="w-16 h-16 rounded-full bg-xiio-accent/20 ring-2 ring-xiio-accent/40 flex items-center justify-center text-xl font-bold text-white overflow-hidden shrink-0"
+                imgClassName="w-full h-full object-cover"
+              />
               <div className="min-w-0">
-                <p className="text-lg font-medium text-white truncate">{activeProfile.name}</p>
+                <p className="text-lg font-medium text-white truncate">
+                  {accountProfile.displayName || "—"}
+                </p>
                 <Link
-                  href="/profiles"
+                  href="/account"
                   className="inline-block mt-2 text-sm font-medium text-xiio-accent hover:underline"
                 >
-                  {t("settings.changeProfile")}
+                  {t("settings.viewAccountProfile")}
                 </Link>
               </div>
             </div>
           </section>
         )}
-
-        <section className={card}>
-          <CardTitle>{t("settings.accountSection")}</CardTitle>
-          <Link
-            href="/account"
-            className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm font-medium text-white hover:border-xiio-accent/40 hover:bg-xiio-accent/10 transition group"
-          >
-            <span>{t("settings.viewAccountProfile")}</span>
-            <span
-              className="text-xiio-muted group-hover:text-xiio-accent transition shrink-0"
-              aria-hidden
-            >
-              →
-            </span>
-          </Link>
-        </section>
       </div>
 
       <div className="mt-8">

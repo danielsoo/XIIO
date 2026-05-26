@@ -38,12 +38,11 @@ export function hasStoredActiveWatchProfile(uid: string): boolean {
   return loadStoredActiveWatchProfile(uid) !== null;
 }
 
-/** 계정 프로필 완료 후: 저장된 시청 프로필이 있으면 홈, 없으면 선택 화면 */
+/** 계정 프로필 완료 후 홈, 미완료 시 가입·설정 흐름 */
 export function resolvePostLoginPath(
-  uid: string,
-  incompleteAccountPath: "/signup" | "/profiles"
-): "/" | "/signup" | "/profiles" {
+  _uid: string,
+  incompleteAccountPath: "/signup" | "/"
+): "/" | "/signup" {
   if (incompleteAccountPath === "/signup") return "/signup";
-  if (hasStoredActiveWatchProfile(uid)) return "/";
-  return "/profiles";
+  return "/";
 }

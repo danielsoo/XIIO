@@ -196,7 +196,7 @@ export default function SignupPage() {
       const profile = await getUserProfile(currentUser.uid);
       if (cancelled) return;
       if (profile && isProfileComplete(profile)) {
-        router.replace(resolvePostLoginPath(currentUser.uid, "/profiles"));
+        router.replace(resolvePostLoginPath(currentUser.uid, "/"));
         return;
       }
     })();
@@ -379,7 +379,7 @@ export default function SignupPage() {
         setLoading(false);
         return;
       }
-      router.push("/profiles");
+      router.push("/");
     } catch (err: unknown) {
       const { code, message } = formatAuthError(err);
       console.error("[signup] failed", { code, message, err });
@@ -401,7 +401,7 @@ export default function SignupPage() {
             setLoading(false);
             return;
           }
-          router.push(resolvePostLoginPath(auth!.currentUser!.uid, "/profiles"));
+          router.push(resolvePostLoginPath(auth!.currentUser!.uid, "/"));
           return;
         } catch (resumeErr) {
           console.error("[signup] resume failed", resumeErr);
@@ -458,7 +458,7 @@ export default function SignupPage() {
       const signedIn = await result;
       const existingProfile = await getUserProfile(signedIn.uid);
       if (existingProfile && isProfileComplete(existingProfile)) {
-        router.push(resolvePostLoginPath(signedIn.uid, "/profiles"));
+        router.push(resolvePostLoginPath(signedIn.uid, "/"));
         return;
       }
       if (signedIn.displayName) setName(signedIn.displayName);
