@@ -16,7 +16,7 @@ import type {
 } from "@/types/work";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 import { parseContentModeration } from "@/lib/server/moderation/parse-content-moderation";
-import { getStreamThumbnailUrl } from "@/lib/cloudflare/stream";
+import { getStreamThumbnailUrl, getStreamVideo } from "@/lib/cloudflare/stream";
 import { getAdminDb } from "@/lib/server/firebase-admin";
 import { isRejectReasonCode, isWorkSection } from "@/lib/works/constants";
 import { isVideoAspectRatio } from "@/lib/works/aspect-ratio";
@@ -175,7 +175,12 @@ export async function resolveWorkListThumbnailUrl(
     if (promo.thumbnailUrl) return promo.thumbnailUrl;
   }
   if (work.promoDraft?.thumbnailUrl) return work.promoDraft.thumbnailUrl;
-  if (work.streamUid) return getStreamThumbnailUrl(work.streamUid) ?? undefined;
+  if (work.streamUid) {
+    const fromSubdomain = getStreamThumbnailUrl(work.streamUid);
+    if (fromSubdomain) return fromSubdomain;
+    const info = await getStreamVideo(work.streamUid);
+    if (info?.thumbnail) return info.thumbnail;
+  }
   return undefined;
 }
 

@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface ContentCardProps {
   title: string;
@@ -16,16 +19,25 @@ export default function ContentCard({
   thumbnailUrl,
   href,
 }: ContentCardProps) {
+  const [thumbFailed, setThumbFailed] = useState(false);
+
+  useEffect(() => {
+    setThumbFailed(false);
+  }, [thumbnailUrl]);
+
+  const showThumbnail = Boolean(thumbnailUrl) && !thumbFailed;
+
   const inner = (
     <>
-      {thumbnailUrl ? (
+      {showThumbnail ? (
         <Image
-          src={thumbnailUrl}
+          src={thumbnailUrl!}
           alt=""
           fill
           className="object-cover"
           sizes="(max-width: 768px) 50vw, 25vw"
           unoptimized
+          onError={() => setThumbFailed(true)}
         />
       ) : (
         <div className={`absolute inset-0 ${gradient}`} />

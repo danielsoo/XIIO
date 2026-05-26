@@ -1,7 +1,7 @@
 "use client";
 
 import ContentCard from "@/components/ContentCard";
-import { useTranslations } from "@/context/LocaleContext";
+import CreditRolePill from "@/components/profile/CreditRolePill";
 import { gradientForTitle, watchHref } from "@/lib/works/catalog-ui";
 
 export type ProfileWorkGridItem = {
@@ -19,25 +19,13 @@ type Props = {
   linkToWatch?: boolean;
 };
 
-function roleLabel(
-  t: (key: string) => string,
-  role: string,
-  characterName?: string
-): string {
-  const base = t(`network.credits.role.${role}`);
-  return characterName ? `${base} · ${characterName}` : base;
-}
-
 export default function ProfileWorksThumbnailGrid({ items, linkToWatch = true }: Props) {
-  const { t } = useTranslations();
-
   if (items.length === 0) return null;
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-5">
       {items.map((w) => {
         const href = linkToWatch ? watchHref(w.ownerUid, w.workId) : undefined;
-        const caption = roleLabel(t, w.role, w.characterName);
         return (
           <div key={`${w.ownerUid}_${w.workId}`} className="min-w-0">
             <ContentCard
@@ -46,9 +34,9 @@ export default function ProfileWorksThumbnailGrid({ items, linkToWatch = true }:
               thumbnailUrl={w.thumbnailUrl ?? undefined}
               gradient={gradientForTitle(w.title)}
             />
-            <p className="mt-1.5 text-xs text-xiio-muted text-center truncate" title={caption}>
-              {caption}
-            </p>
+            <div className="mt-2 flex justify-center">
+              <CreditRolePill role={w.role} characterName={w.characterName} />
+            </div>
           </div>
         );
       })}
