@@ -25,6 +25,7 @@ export function parseDmThread(data: Record<string, unknown>): DmThreadDoc | null
     lastMessagePreview: data.lastMessagePreview
       ? String(data.lastMessagePreview).slice(0, 200)
       : undefined,
+    lastSenderUid: data.lastSenderUid ? String(data.lastSenderUid) : undefined,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
@@ -93,6 +94,7 @@ export async function sendDmMessage(
   batch.update(threadRef, {
     lastMessageAt: FieldValue.serverTimestamp(),
     lastMessagePreview: trimmed.slice(0, 120),
+    lastSenderUid: senderUid,
     updatedAt: FieldValue.serverTimestamp(),
   });
   await batch.commit();

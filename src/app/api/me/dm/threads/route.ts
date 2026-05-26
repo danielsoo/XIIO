@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
+import { adminTimestampToMillis } from "@/lib/admin/format-timestamp";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
 import { getOrCreateThread, listThreadsForUser } from "@/lib/server/dm";
 import { getUidByHandle } from "@/lib/server/handles";
 import { getDbOrNull } from "@/lib/server/works";
 import { parseUserProfileDoc } from "@/lib/userAccess";
+
+function timestampToIso(value: unknown): string | null {
+  const ms = adminTimestampToMillis(value);
+  return ms != null ? new Date(ms).toISOString() : null;
+}
 
 export async function GET(request: Request) {
   const auth = await requireUser(request);
@@ -25,8 +31,10 @@ export async function GET(request: Request) {
         otherUid: row.otherUid,
         otherHandle: profile?.handle ?? null,
         otherDisplayName: profile?.displayName ?? "—",
+        otherAvatarUrl: profile?.avatarUrl ?? null,
         lastMessagePreview: row.thread.lastMessagePreview ?? "",
-        lastMessageAt: row.thread.lastMessageAt ?? null,
+        lastMessageAt: timestampToIso(row.thread.lastMessageAt),
+        lastSenderUid: row.thread.lastSenderUid ?? null,
       };
     })
   );

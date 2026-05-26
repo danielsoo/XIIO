@@ -337,6 +337,31 @@ export const messages = {
       send: "보내기",
       threadEmpty: "대화를 시작해 보세요.",
       waitingReply: "상대방의 답장이 왼쪽에 표시됩니다.",
+      inbox: {
+        newMessage: "새 메시지",
+        searchPlaceholder: "검색",
+        emptyTitle: "내 메시지",
+        emptyLead: "메시지를 보내 대화를 시작해 보세요.",
+        sendMessageCta: "메시지 보내기",
+        youPrefix: "나: ",
+      },
+      tabs: {
+        primary: "주요",
+        general: "일반",
+        requests: "요청",
+        generalEmpty: "일반 메시지가 없습니다.",
+        requestsEmpty: "새 메시지 요청이 없습니다.",
+      },
+      shortcuts: {
+        label: "바로가기",
+      },
+      newMessage: {
+        title: "새 메시지",
+        searchPlaceholder: "이름 또는 @핸들 검색",
+        noResults: "검색 결과가 없습니다.",
+        start: "대화 시작",
+        starting: "시작 중…",
+      },
     },
     auth: {
       login: {
@@ -1548,6 +1573,31 @@ export const messages = {
       send: "Send",
       threadEmpty: "Start the conversation.",
       waitingReply: "Replies from the other person will appear on the left.",
+      inbox: {
+        newMessage: "New message",
+        searchPlaceholder: "Search",
+        emptyTitle: "Your messages",
+        emptyLead: "Send a message to start a chat.",
+        sendMessageCta: "Send message",
+        youPrefix: "You: ",
+      },
+      tabs: {
+        primary: "Primary",
+        general: "General",
+        requests: "Requests",
+        generalEmpty: "No general messages yet.",
+        requestsEmpty: "No message requests.",
+      },
+      shortcuts: {
+        label: "Shortcuts",
+      },
+      newMessage: {
+        title: "New message",
+        searchPlaceholder: "Search name or @handle",
+        noResults: "No results.",
+        start: "Start chat",
+        starting: "Starting…",
+      },
     },
     auth: {
       login: {

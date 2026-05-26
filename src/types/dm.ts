@@ -2,6 +2,7 @@ export type DmThreadDoc = {
   participantIds: [string, string];
   lastMessageAt?: unknown;
   lastMessagePreview?: string;
+  lastSenderUid?: string;
   createdAt?: unknown;
   updatedAt?: unknown;
 };
