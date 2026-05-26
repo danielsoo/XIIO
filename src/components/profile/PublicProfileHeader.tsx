@@ -3,6 +3,7 @@
 import { useTranslations } from "@/context/LocaleContext";
 
 export type PublicProfileHeaderProps = {
+  className?: string;
   handle: string;
   displayName: string;
   headline?: string;
@@ -18,6 +19,7 @@ export type PublicProfileHeaderProps = {
 };
 
 export default function PublicProfileHeader({
+  className = "",
   handle,
   displayName,
   headline,
@@ -33,7 +35,7 @@ export default function PublicProfileHeader({
   const { t } = useTranslations();
 
   return (
-    <header className="mb-8">
+    <header className={`mb-8 ${className}`.trim()}>
       {submissionBadge && (
         <p className="text-xs text-xiio-muted mb-4 uppercase tracking-wide">{submissionBadge}</p>
       )}

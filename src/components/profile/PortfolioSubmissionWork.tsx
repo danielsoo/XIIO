@@ -15,8 +15,8 @@ export default function PortfolioSubmissionWork({ work }: Props) {
   const { t } = useTranslations();
 
   return (
-    <li className="max-w-3xl">
-      <div className="max-w-md mx-auto sm:mx-0">
+    <li className="min-w-0 w-full">
+      <div className="min-w-0 w-full">
         <ContentCard
           title={work.title}
           thumbnailUrl={work.thumbnailUrl}

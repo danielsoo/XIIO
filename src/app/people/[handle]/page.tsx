@@ -86,8 +86,9 @@ export default function PeopleProfilePage() {
       ) : err || !data ? (
         <p className="text-red-400">{err ?? t("network.people.notFound")}</p>
       ) : (
-        <>
+        <div className="lg:grid lg:grid-cols-[minmax(260px,340px)_1fr] lg:gap-10 xl:gap-12 lg:items-start">
           <PublicProfileHeader
+            className="lg:mb-0 lg:sticky lg:top-28"
             handle={data.profile.handle}
             displayName={data.profile.displayName}
             headline={data.profile.headline}
@@ -105,9 +106,11 @@ export default function PeopleProfilePage() {
               />
             }
           />
-          {renderWorks(data.directed, t("network.people.directed"))}
-          {renderWorks(data.credited, t("network.people.credited"))}
-        </>
+          <div className="min-w-0 mt-8 lg:mt-0">
+            {renderWorks(data.directed, t("network.people.directed"))}
+            {renderWorks(data.credited, t("network.people.credited"))}
+          </div>
+        </div>
       )}
     </AppPageShell>
   );

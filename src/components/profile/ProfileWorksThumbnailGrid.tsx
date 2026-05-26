@@ -23,7 +23,7 @@ export default function ProfileWorksThumbnailGrid({ items, linkToWatch = true }:
   if (items.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-5">
+    <div className="grid gap-x-3 gap-y-5 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
       {items.map((w) => {
         const href = linkToWatch ? watchHref(w.ownerUid, w.workId) : undefined;
         return (

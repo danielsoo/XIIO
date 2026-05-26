@@ -92,32 +92,34 @@ export default function ProProfileEditor() {
         <h2 className="text-base font-semibold text-white mb-1">{t("profile.edit.aboutTitle")}</h2>
         <p className="text-sm text-xiio-muted mb-4">{t("profile.edit.aboutHint")}</p>
         <div className="space-y-3">
-          <div>
-            <label className="block text-xs text-xiio-muted mb-1">{t("profile.edit.handle")}</label>
-            <input
-              type="text"
-              value={handle}
-              onChange={(e) => setHandle(e.target.value.replace(/^@/, ""))}
-              placeholder="your_name"
-              className={inputClass}
-            />
-            {handle && (
-              <p className="text-xs text-xiio-muted mt-1">
-                <Link href={`/people/${handle}`} className="text-xiio-accent hover:underline">
-                  /people/{handle}
-                </Link>
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="block text-xs text-xiio-muted mb-1">{t("profile.edit.headline")}</label>
-            <input
-              type="text"
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
-              placeholder={t("profile.edit.headlinePlaceholder")}
-              className={inputClass}
-            />
+          <div className="sm:grid sm:grid-cols-2 sm:gap-3">
+            <div>
+              <label className="block text-xs text-xiio-muted mb-1">{t("profile.edit.handle")}</label>
+              <input
+                type="text"
+                value={handle}
+                onChange={(e) => setHandle(e.target.value.replace(/^@/, ""))}
+                placeholder="your_name"
+                className={inputClass}
+              />
+              {handle && (
+                <p className="text-xs text-xiio-muted mt-1">
+                  <Link href={`/people/${handle}`} className="text-xiio-accent hover:underline">
+                    /people/{handle}
+                  </Link>
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs text-xiio-muted mb-1">{t("profile.edit.headline")}</label>
+              <input
+                type="text"
+                value={headline}
+                onChange={(e) => setHeadline(e.target.value)}
+                placeholder={t("profile.edit.headlinePlaceholder")}
+                className={inputClass}
+              />
+            </div>
           </div>
           <div>
             <label className="block text-xs text-xiio-muted mb-1">{t("profile.edit.bio")}</label>
