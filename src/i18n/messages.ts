@@ -337,6 +337,7 @@ export const messages = {
       send: "보내기",
       threadEmpty: "대화를 시작해 보세요.",
       waitingReply: "상대방의 답장이 왼쪽에 표시됩니다.",
+      viewProfile: "프로필 보기",
       inbox: {
         newMessage: "새 메시지",
         searchPlaceholder: "검색",
@@ -1573,6 +1574,7 @@ export const messages = {
       send: "Send",
       threadEmpty: "Start the conversation.",
       waitingReply: "Replies from the other person will appear on the left.",
+      viewProfile: "View profile",
       inbox: {
         newMessage: "New message",
         searchPlaceholder: "Search",
