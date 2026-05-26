@@ -1,93 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-
-const inputClass =
-  "w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-xiio-muted/60 focus:outline-none focus:ring-2 focus:ring-xiio-accent/40";
+import { useProfessionalProfileSave } from "@/hooks/useProfessionalProfileSave";
+import { profileInputClass } from "@/lib/profileFormStyles";
 
 export default function ProProfileEditor() {
-  const { user } = useAuth();
   const { t } = useTranslations();
-  const [handle, setHandle] = useState("");
-  const [headline, setHeadline] = useState("");
-  const [bio, setBio] = useState("");
-  const [isDiscoverable, setIsDiscoverable] = useState(true);
-  const [openToCollaborate, setOpenToCollaborate] = useState(false);
-  const [collaborationNote, setCollaborationNote] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!user) return;
-    const token = await user.getIdToken();
-    const res = await fetch("/api/me/professional-profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return;
-    const data = (await res.json()) as {
-      handle?: string | null;
-      headline?: string | null;
-      bio?: string | null;
-      isDiscoverable?: boolean;
-      openToCollaborate?: boolean;
-      collaborationNote?: string | null;
-    };
-    setHandle(data.handle ?? "");
-    setHeadline(data.headline ?? "");
-    setBio(data.bio ?? "");
-    setIsDiscoverable(data.isDiscoverable !== false);
-    setOpenToCollaborate(!!data.openToCollaborate);
-    setCollaborationNote(data.collaborationNote ?? "");
-  }, [user]);
+  const { fields, applyFields, load, save, busy, msg, err } = useProfessionalProfileSave({
+    includeDiscoverable: true,
+  });
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const save = async () => {
-    if (!user) return;
-    setBusy(true);
-    setErr(null);
-    setMsg(null);
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/me/professional-profile", {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          handle: handle.trim() || undefined,
-          headline,
-          bio,
-          roleTags: [],
-          crewRoles: [],
-          isDiscoverable,
-          openToCollaborate,
-          collaborationNote,
-        }),
-      });
-      const data = (await res.json()) as { message?: string; error?: string };
-      if (!res.ok) {
-        setErr(data.message ?? data.error ?? t("profile.edit.saveError"));
-        return;
-      }
-      setMsg(t("profile.edit.saved"));
-      await load();
-    } catch {
-      setErr(t("profile.edit.saveError"));
-    } finally {
-      setBusy(false);
-    }
-  };
+  const handle = fields.handle;
 
   return (
     <div className="space-y-6">
+      {handle && (
+        <p className="text-sm text-xiio-muted">
+          {t("profile.edit.publicEditHint")}{" "}
+          <Link href={`/people/${handle}`} className="text-xiio-accent hover:underline">
+            /people/{handle}
+          </Link>
+        </p>
+      )}
+
       <div>
         <h2 className="text-base font-semibold text-white mb-1">{t("profile.edit.aboutTitle")}</h2>
         <p className="text-sm text-xiio-muted mb-4">{t("profile.edit.aboutHint")}</p>
@@ -97,10 +38,10 @@ export default function ProProfileEditor() {
               <label className="block text-xs text-xiio-muted mb-1">{t("profile.edit.handle")}</label>
               <input
                 type="text"
-                value={handle}
-                onChange={(e) => setHandle(e.target.value.replace(/^@/, ""))}
+                value={fields.handle}
+                onChange={(e) => applyFields({ handle: e.target.value.replace(/^@/, "") })}
                 placeholder="your_name"
-                className={inputClass}
+                className={profileInputClass}
               />
               {handle && (
                 <p className="text-xs text-xiio-muted mt-1">
@@ -114,21 +55,21 @@ export default function ProProfileEditor() {
               <label className="block text-xs text-xiio-muted mb-1">{t("profile.edit.headline")}</label>
               <input
                 type="text"
-                value={headline}
-                onChange={(e) => setHeadline(e.target.value)}
+                value={fields.headline}
+                onChange={(e) => applyFields({ headline: e.target.value })}
                 placeholder={t("profile.edit.headlinePlaceholder")}
-                className={inputClass}
+                className={profileInputClass}
               />
             </div>
           </div>
           <div>
             <label className="block text-xs text-xiio-muted mb-1">{t("profile.edit.bio")}</label>
             <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              value={fields.bio}
+              onChange={(e) => applyFields({ bio: e.target.value })}
               rows={8}
               placeholder={t("profile.edit.bioPlaceholder")}
-              className={inputClass}
+              className={profileInputClass}
             />
           </div>
         </div>
@@ -140,26 +81,26 @@ export default function ProProfileEditor() {
         <label className="flex items-center gap-2 text-sm text-white mb-3">
           <input
             type="checkbox"
-            checked={isDiscoverable}
-            onChange={(e) => setIsDiscoverable(e.target.checked)}
+            checked={fields.isDiscoverable}
+            onChange={(e) => applyFields({ isDiscoverable: e.target.checked })}
           />
           {t("profile.edit.discoverable")}
         </label>
         <label className="flex items-center gap-2 text-sm text-white mb-3">
           <input
             type="checkbox"
-            checked={openToCollaborate}
-            onChange={(e) => setOpenToCollaborate(e.target.checked)}
+            checked={fields.openToCollaborate}
+            onChange={(e) => applyFields({ openToCollaborate: e.target.checked })}
           />
           {t("profile.edit.openToCollaborate")}
         </label>
-        {openToCollaborate && (
+        {fields.openToCollaborate && (
           <input
             type="text"
-            value={collaborationNote}
-            onChange={(e) => setCollaborationNote(e.target.value)}
+            value={fields.collaborationNote}
+            onChange={(e) => applyFields({ collaborationNote: e.target.value })}
             placeholder={t("profile.edit.collaborationNotePlaceholder")}
-            className={inputClass}
+            className={profileInputClass}
           />
         )}
       </div>

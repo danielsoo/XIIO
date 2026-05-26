@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import AppPageShell from "@/components/layout/AppPageShell";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import PeopleProfileActions from "@/components/profile/PeopleProfileActions";
+import PublicProfileCard from "@/components/profile/PublicProfileCard";
 import ProfileWorksThumbnailGrid from "@/components/profile/ProfileWorksThumbnailGrid";
-import PublicProfileHeader from "@/components/profile/PublicProfileHeader";
+import type { ProfessionalProfileSaved } from "@/hooks/useProfessionalProfileSave";
+
 type WorkCard = {
   workId: string;
   ownerUid: string;
@@ -69,6 +70,23 @@ export default function PeopleProfilePage() {
     })();
   }, [handle, t, user]);
 
+  const onProfileSaved = useCallback((saved: ProfessionalProfileSaved) => {
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        profile: {
+          ...prev.profile,
+          handle: saved.handle?.trim() || prev.profile.handle,
+          headline: saved.headline ?? undefined,
+          bio: saved.bio ?? undefined,
+          openToCollaborate: saved.openToCollaborate,
+          collaborationNote: saved.collaborationNote ?? undefined,
+        },
+      };
+    });
+  }, []);
+
   const renderWorks = (items: WorkCard[], title: string) => {
     if (items.length === 0) return null;
     return (
@@ -79,6 +97,8 @@ export default function PeopleProfilePage() {
     );
   };
 
+  const isSelf = !!data?.viewer?.isSelf;
+
   return (
     <AppPageShell>
       {loading ? (
@@ -86,25 +106,14 @@ export default function PeopleProfilePage() {
       ) : err || !data ? (
         <p className="text-red-400">{err ?? t("network.people.notFound")}</p>
       ) : (
-        <div className="lg:grid lg:grid-cols-[minmax(260px,340px)_1fr] lg:gap-10 xl:gap-12 lg:items-start">
-          <PublicProfileHeader
-            className="lg:mb-0 lg:sticky lg:top-28"
-            handle={data.profile.handle}
-            displayName={data.profile.displayName}
-            headline={data.profile.headline}
-            bio={data.profile.bio}
-            openToCollaborate={data.profile.openToCollaborate}
-            collaborationNote={data.profile.collaborationNote}
-            followerCount={data.profile.followerCount}
-            followingCount={data.profile.followingCount}
-            actions={
-              <PeopleProfileActions
-                profileUid={data.profile.uid}
-                handle={data.profile.handle}
-                isSelf={!!data.viewer?.isSelf}
-                initialFollowing={!!data.viewer?.isFollowing}
-              />
-            }
+        <div className="lg:grid lg:grid-cols-[minmax(280px,380px)_1fr] lg:gap-10 xl:gap-12 lg:items-start">
+          <PublicProfileCard
+            className="lg:sticky lg:top-28"
+            profile={data.profile}
+            editable={isSelf}
+            isSelf={isSelf}
+            isFollowing={!!data.viewer?.isFollowing}
+            onProfileSaved={onProfileSaved}
           />
           <div className="min-w-0 mt-8 lg:mt-0">
             {renderWorks(data.directed, t("network.people.directed"))}

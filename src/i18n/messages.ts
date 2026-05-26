@@ -196,7 +196,10 @@ export const messages = {
         save: "저장",
         saved: "저장했습니다.",
         saveError: "저장에 실패했습니다.",
-        editProfile: "프로필 편집",
+        cancel: "취소",
+        editProfile: "프로필 수정",
+        publicEditHint: "공개 프로필은 아래 링크에서 바로 수정·미리보기할 수 있습니다.",
+        accountSettingsLink: "포트폴리오 제출 링크·사람 찾기 노출 설정",
       },
     },
     discover: {
@@ -1279,7 +1282,10 @@ export const messages = {
         save: "Save",
         saved: "Saved.",
         saveError: "Could not save.",
+        cancel: "Cancel",
         editProfile: "Edit profile",
+        publicEditHint: "Edit your public profile live at",
+        accountSettingsLink: "Portfolio links & Discover visibility",
       },
     },
     discover: {

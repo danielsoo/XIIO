@@ -26,14 +26,7 @@ export default function PeopleProfileActions({
   const [busy, setBusy] = useState(false);
 
   if (isSelf) {
-    return (
-      <Link
-        href="/account?tab=profile"
-        className="inline-flex px-4 py-2 rounded-lg bg-xiio-accent text-white text-sm font-medium"
-      >
-        {t("profile.edit.editProfile")}
-      </Link>
-    );
+    return null;
   }
 
   if (!user) {
@@ -84,7 +77,7 @@ export default function PeopleProfileActions({
     "px-4 py-2 rounded-lg text-sm font-medium border border-white/20 text-white hover:bg-white/5 disabled:opacity-40";
 
   return (
-    <div className="flex flex-wrap gap-2 mt-4">
+    <div className="flex flex-wrap gap-2">
       <button
         type="button"
         disabled={busy}

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import AppPageShell from "@/components/layout/AppPageShell";
 import PortfolioSubmissionWork from "@/components/profile/PortfolioSubmissionWork";
-import PublicProfileHeader from "@/components/profile/PublicProfileHeader";
+import PublicProfileCard from "@/components/profile/PublicProfileCard";
 import { useTranslations } from "@/context/LocaleContext";
 import type { PublicPortfolioPayload } from "@/types/portfolio";
 
@@ -42,21 +42,13 @@ export default function PublicPortfolioPage() {
       ) : err || !data ? (
         <p className="text-red-400">{err}</p>
       ) : (
-        <div className="lg:grid lg:grid-cols-[minmax(260px,340px)_1fr] lg:gap-10 xl:gap-12 lg:items-start">
-          <PublicProfileHeader
-            className="lg:mb-0 lg:sticky lg:top-28"
-            handle={data.profile.handle}
-            displayName={data.profile.displayName}
-            headline={data.profile.headline}
-            bio={data.profile.bio}
-            openToCollaborate={data.profile.openToCollaborate}
-            collaborationNote={data.profile.collaborationNote}
-            followerCount={data.profile.followerCount}
-            followingCount={data.profile.followingCount}
+        <div className="lg:grid lg:grid-cols-[minmax(280px,380px)_1fr] lg:gap-10 xl:gap-12 lg:items-start">
+          <PublicProfileCard
+            className="lg:sticky lg:top-28"
+            profile={data.profile}
             submissionBadge={t("portfolio.public.badge")}
             shareTitle={data.shareTitle}
           />
-
           <div className="min-w-0 mt-8 lg:mt-0">
             {data.works.length === 0 ? (
               <p className="text-xiio-muted">{t("portfolio.public.empty")}</p>
