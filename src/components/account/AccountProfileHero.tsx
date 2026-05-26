@@ -23,12 +23,13 @@ function Badge({ children, variant = "default" }: { children: React.ReactNode; v
 export type AccountProfileMetaItem = {
   label: string;
   value: string;
-  align?: "start" | "end";
+  /** 히어로 오른쪽에서 나이·가입일처럼 세로로 묶을 항목 */
+  stack?: boolean;
 };
 
-function MetaItem({ label, value, align = "start" }: AccountProfileMetaItem) {
+function MetaItem({ label, value, stack }: AccountProfileMetaItem) {
   return (
-    <div className={align === "end" ? "text-right" : "text-left"}>
+    <div className={stack ? "text-right" : "text-left"}>
       <p className="text-xs text-xiio-muted">{label}</p>
       <p className="text-sm text-white mt-0.5 font-medium tabular-nums">{value}</p>
     </div>
@@ -52,8 +53,8 @@ export default function AccountProfileHero({ profile, email, metaItems = [] }: P
     "inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium border border-white/20 text-white hover:bg-white/5 transition";
 
   const hasMeta = metaItems.length > 0;
-  const primaryMeta = metaItems.filter((m) => m.align !== "end");
-  const trailingMeta = metaItems.filter((m) => m.align === "end");
+  const stackedMeta = metaItems.filter((m) => m.stack);
+  const otherMeta = metaItems.filter((m) => !m.stack);
 
   return (
     <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10">
@@ -119,34 +120,34 @@ export default function AccountProfileHero({ profile, email, metaItems = [] }: P
 
         {hasMeta && (
           <aside className="lg:w-56 xl:w-64 shrink-0 flex flex-col justify-center gap-4 lg:border-l lg:border-white/10 lg:pl-8">
-            <div className="hidden lg:flex flex-col gap-4 justify-center min-h-full">
-              {(primaryMeta.length > 0 || trailingMeta.length > 0) && (
-                <div className="flex items-end justify-between gap-6 w-full">
-                  <div className="space-y-3">
-                    {primaryMeta.map((item) => (
-                      <MetaItem key={`${item.label}-${item.value}`} {...item} />
-                    ))}
-                  </div>
-                  {trailingMeta.length > 0 && (
-                    <div className="space-y-3">
-                      {trailingMeta.map((item) => (
-                        <MetaItem key={`${item.label}-${item.value}`} {...item} />
-                      ))}
-                    </div>
-                  )}
+            <div className="hidden lg:flex flex-col gap-4 justify-center min-h-full w-full">
+              {otherMeta.length > 0 && (
+                <div className="space-y-3">
+                  {otherMeta.map((item) => (
+                    <MetaItem key={`${item.label}-${item.value}`} {...item} />
+                  ))}
+                </div>
+              )}
+              {stackedMeta.length > 0 && (
+                <div className="space-y-3 ml-auto">
+                  {stackedMeta.map((item) => (
+                    <MetaItem key={`${item.label}-${item.value}`} {...item} />
+                  ))}
                 </div>
               )}
             </div>
 
-            <div className="lg:hidden rounded-xl bg-white/[0.03] border border-white/10 px-4 py-3 flex items-end justify-between gap-6">
-              <div className="flex flex-col gap-3 min-w-0">
-                {primaryMeta.map((item) => (
-                  <MetaItem key={`${item.label}-${item.value}`} {...item} />
-                ))}
-              </div>
-              {trailingMeta.length > 0 && (
-                <div className="flex flex-col gap-3 shrink-0">
-                  {trailingMeta.map((item) => (
+            <div className="lg:hidden rounded-xl bg-white/[0.03] border border-white/10 px-4 py-3 flex flex-col gap-4">
+              {otherMeta.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  {otherMeta.map((item) => (
+                    <MetaItem key={`${item.label}-${item.value}`} {...item} />
+                  ))}
+                </div>
+              )}
+              {stackedMeta.length > 0 && (
+                <div className="flex flex-col gap-3 items-end">
+                  {stackedMeta.map((item) => (
                     <MetaItem key={`${item.label}-${item.value}`} {...item} />
                   ))}
                 </div>

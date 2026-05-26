@@ -206,34 +206,32 @@ export default function AccountProfileContent() {
         ageNum != null
           ? t("accountProfile.birthDateWithAge", { date: dateStr, age: ageNum })
           : dateStr,
-      align: "start",
+      stack: true,
     });
   } else if (showAge) {
     heroMetaItems.push({
       label: t("accountProfile.age"),
       value: String(profile.age),
-      align: "start",
-    });
-  }
-  if (showGender && profile.gender) {
-    heroMetaItems.push({
-      label: t("accountProfile.gender"),
-      value: t(genderLabelKey(profile.gender)),
-      align: "start",
-    });
-  }
-  if (localeLabel) {
-    heroMetaItems.push({
-      label: t("settings.language"),
-      value: localeLabel,
-      align: "start",
+      stack: true,
     });
   }
   if (showJoined) {
     heroMetaItems.push({
       label: t("accountProfile.joinedAt"),
       value: formatDateTime(profile.createdAt),
-      align: "end",
+      stack: true,
+    });
+  }
+  if (showGender && profile.gender) {
+    heroMetaItems.push({
+      label: t("accountProfile.gender"),
+      value: t(genderLabelKey(profile.gender)),
+    });
+  }
+  if (localeLabel) {
+    heroMetaItems.push({
+      label: t("settings.language"),
+      value: localeLabel,
     });
   }
 
