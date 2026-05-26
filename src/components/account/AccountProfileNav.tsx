@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useTranslations } from "@/context/LocaleContext";
 import {
   PROFILE_SECTION_IDS,
@@ -35,6 +36,8 @@ const SECTION_LABEL_KEYS: Record<ProfileSectionId, string> = {
   preview: "accountProfile.sections.preview",
 };
 
+const SUB_LIST_CLASS = "ml-3 mt-0.5 pl-2 border-l border-white/10 flex flex-col gap-0.5";
+
 function mainBtnClass(active: boolean, sidebar: boolean) {
   if (sidebar) {
     return active
@@ -46,16 +49,22 @@ function mainBtnClass(active: boolean, sidebar: boolean) {
     : "shrink-0 px-4 py-2 rounded-lg text-sm font-medium text-xiio-muted hover:text-white transition";
 }
 
-function subBtnClass(active: boolean, sidebar: boolean, nested = false) {
+function subBtnClass(active: boolean, sidebar: boolean) {
   if (sidebar) {
-    const pad = nested ? "pl-6 pr-3" : "pl-3 pr-3";
     return active
-      ? `w-full text-left ${pad} py-2 rounded-lg text-sm font-medium bg-white/10 text-white border-l-2 border-white/30`
-      : `w-full text-left ${nested ? "pl-6 pr-3" : "px-3"} py-2 rounded-lg text-sm text-xiio-muted hover:text-white hover:bg-white/5 transition`;
+      ? "w-full text-left pl-5 pr-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white"
+      : "w-full text-left pl-5 pr-3 py-2 rounded-lg text-sm text-xiio-muted hover:text-white hover:bg-white/5 transition";
   }
   return active
     ? "shrink-0 px-3 py-2 rounded-lg text-sm font-medium bg-white/15 text-white"
     : "shrink-0 px-3 py-2 rounded-lg text-sm font-medium text-xiio-muted hover:text-white transition";
+}
+
+function SubList({ children, sidebar }: { children: ReactNode; sidebar: boolean }) {
+  if (sidebar) {
+    return <div className={SUB_LIST_CLASS}>{children}</div>;
+  }
+  return <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">{children}</div>;
 }
 
 export default function AccountProfileNav({
@@ -73,20 +82,41 @@ export default function AccountProfileNav({
   const { t } = useTranslations();
   const sidebar = variant === "sidebar";
 
+  const activitySubNav =
+    mainTab === "activity" ? (
+      <SubList sidebar={sidebar}>
+        {activityTabs.map(({ id, labelKey, count }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onActivityTab(id)}
+            className={`${subBtnClass(activityTab === id, sidebar)} ${sidebar ? "flex items-center justify-between gap-2" : "inline-flex items-center gap-1.5"}`}
+          >
+            <span>{t(labelKey)}</span>
+            {!activityLoading && count !== undefined && count > 0 && (
+              <span className="text-xs tabular-nums px-1.5 py-0.5 rounded-md bg-white/10 shrink-0">
+                {count}
+              </span>
+            )}
+          </button>
+        ))}
+      </SubList>
+    ) : null;
+
   const profileSubNav =
     mainTab === "profile" && onProfileSection ? (
-      <div className={sidebar ? "flex flex-col gap-0.5 ml-1" : "flex gap-2 overflow-x-auto pb-1 -mx-1 px-1"}>
+      <SubList sidebar={sidebar}>
         {PROFILE_SECTION_IDS.map((id) => (
           <button
             key={id}
             type="button"
             onClick={() => onProfileSection(id)}
-            className={subBtnClass(profileSection === id, sidebar, true)}
+            className={subBtnClass(profileSection === id, sidebar)}
           >
             {t(SECTION_LABEL_KEYS[id])}
           </button>
         ))}
-      </div>
+      </SubList>
     ) : null;
 
   if (sidebar) {
@@ -101,29 +131,10 @@ export default function AccountProfileNav({
             >
               {mainTabLabels[id]}
             </button>
-            {id === "profile" && mainTab === "profile" && profileSubNav}
+            {id === "activity" && activitySubNav}
+            {id === "profile" && profileSubNav}
           </div>
         ))}
-        {mainTab === "activity" && (
-          <>
-            <div className="my-2 border-t border-white/10" role="presentation" />
-            {activityTabs.map(({ id, labelKey, count }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => onActivityTab(id)}
-                className={`${subBtnClass(activityTab === id, true)} flex items-center justify-between gap-2`}
-              >
-                <span>{t(labelKey)}</span>
-                {!activityLoading && count !== undefined && count > 0 && (
-                  <span className="text-xs tabular-nums px-1.5 py-0.5 rounded-md bg-white/10 shrink-0">
-                    {count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </>
-        )}
       </nav>
     );
   }
@@ -142,26 +153,8 @@ export default function AccountProfileNav({
           </button>
         ))}
       </div>
-      {mainTab === "profile" && profileSubNav}
-      {mainTab === "activity" && (
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-          {activityTabs.map(({ id, labelKey, count }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onActivityTab(id)}
-              className={`${subBtnClass(activityTab === id, false)} inline-flex items-center gap-1.5`}
-            >
-              <span>{t(labelKey)}</span>
-              {!activityLoading && count !== undefined && count > 0 && (
-                <span className="text-xs tabular-nums px-1.5 py-0.5 rounded-md bg-white/10">
-                  {count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      {activitySubNav}
+      {profileSubNav}
     </div>
   );
 }
