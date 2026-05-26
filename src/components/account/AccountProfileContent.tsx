@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { formatBirthDateForDisplay } from "@/lib/userBirthDate";
+import {
+  computeAgeFromBirthDate,
+  formatBirthDateShort,
+} from "@/lib/userBirthDate";
 import { genderLabelKey } from "@/lib/userGender";
 import { getUserProfile } from "@/lib/userProfile";
 import { parseProfileSection, type ProfileSectionId } from "@/lib/profileSections";
@@ -12,7 +15,7 @@ import { LOCALES } from "@/i18n";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import type { AccountActivityItem } from "@/types/account-activity";
 import type { UserProfileDoc } from "@/types/user";
-import AccountProfileHero from "@/components/account/AccountProfileHero";
+import AccountProfileHero, { type AccountProfileMetaItem } from "@/components/account/AccountProfileHero";
 import AccountProfileNav, {
   type ActivityTabId,
   type MainTabId,
@@ -25,15 +28,6 @@ import DiscoverBooth from "@/components/account/DiscoverBooth";
 function parseMainTab(raw: string | null): MainTabId {
   if (raw === "profile" || raw === "discover") return raw;
   return "activity";
-}
-
-function MetaField({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-xs text-xiio-muted">{label}</dt>
-      <dd className="text-sm text-white mt-0.5">{value}</dd>
-    </div>
-  );
 }
 
 export default function AccountProfileContent() {
@@ -201,6 +195,48 @@ export default function AccountProfileContent() {
         ? LOCALES.find((l) => l.code === "ko")?.label ?? "한국어"
         : null;
 
+  const heroMetaItems: AccountProfileMetaItem[] = [];
+  if (showBirthDate && profile.birthDate) {
+    const ageFromBirth = computeAgeFromBirthDate(profile.birthDate);
+    const ageNum = ageFromBirth ?? (profile.age != null && profile.age >= 1 ? profile.age : null);
+    const dateStr = formatBirthDateShort(profile.birthDate, dateLocale);
+    heroMetaItems.push({
+      label: t("accountProfile.age"),
+      value:
+        ageNum != null
+          ? t("accountProfile.birthDateWithAge", { date: dateStr, age: ageNum })
+          : dateStr,
+      align: "start",
+    });
+  } else if (showAge) {
+    heroMetaItems.push({
+      label: t("accountProfile.age"),
+      value: String(profile.age),
+      align: "start",
+    });
+  }
+  if (showGender && profile.gender) {
+    heroMetaItems.push({
+      label: t("accountProfile.gender"),
+      value: t(genderLabelKey(profile.gender)),
+      align: "start",
+    });
+  }
+  if (localeLabel) {
+    heroMetaItems.push({
+      label: t("settings.language"),
+      value: localeLabel,
+      align: "start",
+    });
+  }
+  if (showJoined) {
+    heroMetaItems.push({
+      label: t("accountProfile.joinedAt"),
+      value: formatDateTime(profile.createdAt),
+      align: "end",
+    });
+  }
+
   const navProps = {
     mainTab,
     onMainTab: setMainTab,
@@ -277,34 +313,11 @@ export default function AccountProfileContent() {
           <AccountProfileNav variant="mobile" {...navProps} />
         </div>
 
-        <AccountProfileHero profile={profile} email={user?.email ?? null} />
-
-        {(showBirthDate || showAge || showGender || showJoined || localeLabel) && (
-          <section className="bg-xiio-surface rounded-2xl p-5 border border-white/10">
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-              {showBirthDate && profile.birthDate && (
-                <MetaField
-                  label={t("accountProfile.birthDate")}
-                  value={formatBirthDateForDisplay(profile.birthDate, dateLocale)}
-                />
-              )}
-              {showAge && <MetaField label={t("accountProfile.age")} value={String(profile.age)} />}
-              {showGender && profile.gender && (
-                <MetaField
-                  label={t("accountProfile.gender")}
-                  value={t(genderLabelKey(profile.gender))}
-                />
-              )}
-              {localeLabel && <MetaField label={t("settings.language")} value={localeLabel} />}
-              {showJoined && (
-                <MetaField
-                  label={t("accountProfile.joinedAt")}
-                  value={formatDateTime(profile.createdAt)}
-                />
-              )}
-            </dl>
-          </section>
-        )}
+        <AccountProfileHero
+          profile={profile}
+          email={user?.email ?? null}
+          metaItems={heroMetaItems}
+        />
 
         <section className="bg-xiio-surface rounded-2xl border border-white/10 p-5 lg:p-6 min-h-[320px]">
           {renderMainContent()}
