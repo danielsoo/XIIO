@@ -64,8 +64,9 @@ const CAROUSEL_FRONT_LAYER_CLASS = "absolute inset-0 z-[10]";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
 const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
 const CAROUSEL_BACK_SCALE_RATIO = 0.52;
-const SLIDE_MS = 520;
-const SLIDE_EXIT_MULTIPLIER = 1.38;
+const SLIDE_MS = 480;
+const SLIDE_EXIT_MULTIPLIER = 1.22;
+const SLIDE_EDGE_FADE = 0.18;
 
 function peekScaleRatio(): number {
   if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
@@ -234,7 +235,7 @@ function slideSlotTransform(
     if (role === "left") {
       return {
         transform: `translateX(${-exitX}px) scale(${peekScale})`,
-        opacity: 0.08,
+        opacity: SLIDE_EDGE_FADE,
         zIndex: 12,
       };
     }
@@ -251,7 +252,7 @@ function slideSlotTransform(
   if (role === "right") {
     return {
       transform: `translateX(${exitX}px) scale(${peekScale})`,
-      opacity: 0.08,
+      opacity: SLIDE_EDGE_FADE,
       zIndex: 12,
     };
   }
@@ -279,7 +280,7 @@ function incomingSlotTransform(
     if (atEnter) {
       return {
         transform: `translateX(${enterX}px) scale(${peekScale})`,
-        opacity: transitionMode === "slide" ? 0.01 : 1,
+        opacity: transitionMode === "slide" ? SLIDE_EDGE_FADE : 1,
         zIndex: transitionMode === "slide" ? 12 : 4,
       };
     }
@@ -293,7 +294,7 @@ function incomingSlotTransform(
   if (atEnter) {
     return {
       transform: `translateX(${-enterX}px) scale(${peekScale})`,
-      opacity: transitionMode === "slide" ? 0.01 : 1,
+      opacity: transitionMode === "slide" ? SLIDE_EDGE_FADE : 1,
       zIndex: transitionMode === "slide" ? 12 : 4,
     };
   }
@@ -739,7 +740,7 @@ export default function PromoShortCarouselStage({
         transitionMode === "slide" ? `duration-[${SLIDE_MS}ms]` : revolveDurationClass
       } ${
         transitionMode === "slide"
-          ? "ease-[cubic-bezier(0.16,1,0.3,1)]"
+          ? "ease-[cubic-bezier(0.22,1,0.36,1)]"
           : "ease-in-out"
       } motion-reduce:transition-none`
     : "motion-reduce:transition-none";
@@ -836,7 +837,11 @@ export default function PromoShortCarouselStage({
               const showAsCenter =
                 !animatingRevolve &&
                 ((placement.isCenter && !isOutgoingCenter) ||
-                  (warmCenter && !placement.visible));
+                  (warmCenter && !placement.visible) ||
+                  (transitionMode === "slide" &&
+                    snapshot !== null &&
+                    placement.visible &&
+                    placement.role === "center"));
               const preserveCenterFrame = Boolean(
                 showAsCenter && isLiveCenter && snapshot && item.id === liveCenterId
               );
