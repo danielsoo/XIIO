@@ -119,6 +119,9 @@ export const HOME_HERO_PEEK_VIEWPORT_CLASS =
 /** 확대 뷰어 triptych — 중앙 카드 측정·슬롯 (히어로 teaser 프레임보다 큼) */
 export const EXPANDED_VIEWER_CENTER_FRAME_CLASS =
   "w-full max-w-lg aspect-[9/16] shrink-0 rounded-[14px] overflow-hidden";
+/** 확대 뷰어 — 좌·우 피크 슬롯 (중앙과 동일 9:16, 너비만 작게) */
+export const EXPANDED_VIEWER_PEEK_FRAME_CLASS =
+  "w-full max-w-[14rem] sm:max-w-[16rem] aspect-[9/16] shrink-0 rounded-[14px] overflow-hidden";
 
 function PromoDescriptionBlock({
   description,

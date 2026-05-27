@@ -22,6 +22,7 @@ import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
   EXPANDED_VIEWER_CENTER_FRAME_CLASS,
+  EXPANDED_VIEWER_PEEK_FRAME_CLASS,
   HOME_HERO_PEEK_VIEWPORT_CLASS,
   HOME_HERO_TEASER_FRAME_CLASS,
 } from "@/components/shorts/PromoShortPlayer";
@@ -36,10 +37,22 @@ type SlotRole = "left" | "center" | "right" | "incoming";
 
 const ENTER_GAP_PX = 100;
 const STAGE_GAP_PX = 16;
-/** 확대 뷰어 — 중앙–피크 사이 여백 (히어로보다 넓게, 양옆이 중앙에 가려지지 않도록) */
-const EXPANDED_STAGE_GAP_PX = 80;
-/** 확대 뷰어 — 좌·우 피크 scale (중앙보다 작되, 과도하게 축소하지 않음) */
-const EXPANDED_PEEK_SCALE = 0.72;
+/** tailwind max-w-lg — 확대 중앙 측정·초기 metrics */
+const EXPANDED_CENTER_MEASURE_WIDTH_PX = 512;
+/** 확대 뷰어 — 중앙–피크 사이 여백 */
+const EXPANDED_STAGE_GAP_PX = 60;
+/** 확대 피크 전용 프레임 사용 시 transform scale (프레임 너비가 크기 담당) */
+const EXPANDED_PEEK_SCALE = 1;
+/** sm:max-w-[16rem] — 초기 peek 측정 fallback */
+const EXPANDED_PEEK_MEASURE_WIDTH_PX = 256;
+
+function expandedLayoutMetricsOptions(peekVisualWidthPx: number): LayoutMetricsOptions {
+  return {
+    stageGapPx: EXPANDED_STAGE_GAP_PX,
+    peekScale: EXPANDED_PEEK_SCALE,
+    peekVisualWidthPx: peekVisualWidthPx,
+  };
+}
 /** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
 const PEEK_SCALE_SM = 180 / 236;
 const PEEK_SCALE_DEFAULT = 160 / 200;
@@ -62,6 +75,8 @@ const NAV_ARROW_INSET_PX = 8;
 type LayoutMetricsOptions = {
   stageGapPx?: number;
   peekScale?: number;
+  /** 확대 피크 전용 프레임 실측 너비 — 있으면 centerW * peekScale 대신 사용 */
+  peekVisualWidthPx?: number;
 };
 
 function layoutMetricsFromCenterWidth(
@@ -70,10 +85,12 @@ function layoutMetricsFromCenterWidth(
 ): LayoutMetrics {
   const peekScale = options.peekScale ?? peekScaleRatio();
   const stageGapPx = options.stageGapPx ?? STAGE_GAP_PX;
-  const peekVisualW = centerW * peekScale;
+  const peekVisualW = options.peekVisualWidthPx ?? centerW * peekScale;
   const offsetX = centerW / 2 + stageGapPx + peekVisualW / 2;
-  /** 슬롯 scale 적용 후 피크 안쪽 가장자리(화살표 앵커) — 이전 in-peek right-2/left-2 와 동일 */
-  const peekInnerArrowAnchorPx = (centerW / 2 - NAV_ARROW_INSET_PX) * peekScale;
+  /** 슬롯 scale 적용 후 피크 안쪽 가장자리(화살표 앵커) */
+  const peekInnerArrowAnchorPx = options.peekVisualWidthPx
+    ? peekVisualW / 2 - NAV_ARROW_INSET_PX
+    : (centerW / 2 - NAV_ARROW_INSET_PX) * peekScale;
   return {
     centerW,
     offsetX,
@@ -323,6 +340,7 @@ export default function PromoShortCarouselStage({
   const carouselWrapFrameClass = isExpandedCenter
     ? EXPANDED_VIEWER_CENTER_FRAME_CLASS
     : HERO_CAROUSEL_WRAP_FRAME_CLASS;
+  const expandedPeekFrameClass = `${EXPANDED_VIEWER_PEEK_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
   const { t } = useTranslations();
   const count = items.length;
   const current = items[index];
@@ -334,9 +352,15 @@ export default function PromoShortCarouselStage({
   const pendingFadeTargetRef = useRef<number | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const centerMeasureRef = useRef<HTMLDivElement>(null);
+  const peekMeasureRef = useRef<HTMLDivElement>(null);
 
   const [metrics, setMetrics] = useState<LayoutMetrics>(() =>
-    layoutMetricsFromCenterWidth(200)
+    isExpandedCenter
+      ? layoutMetricsFromCenterWidth(
+          EXPANDED_CENTER_MEASURE_WIDTH_PX,
+          expandedLayoutMetricsOptions(EXPANDED_PEEK_MEASURE_WIDTH_PX)
+        )
+      : layoutMetricsFromCenterWidth(200)
   );
   const [revolvePhase, setRevolvePhase] = useState<RevolvePhase>("idle");
   const [revolveEpoch, setRevolveEpoch] = useState(0);
@@ -440,16 +464,26 @@ export default function PromoShortCarouselStage({
       if (!centerEl) return;
       const centerW = centerEl.offsetWidth;
       if (centerW <= 0) return;
-      setMetrics(
-        layoutMetricsFromCenterWidth(centerW, {
-          stageGapPx: isExpandedCenter ? EXPANDED_STAGE_GAP_PX : STAGE_GAP_PX,
-          peekScale: isExpandedCenter ? EXPANDED_PEEK_SCALE : undefined,
-        })
-      );
+      if (isExpandedCenter) {
+        const peekW =
+          peekMeasureRef.current?.offsetWidth || EXPANDED_PEEK_MEASURE_WIDTH_PX;
+        setMetrics(
+          layoutMetricsFromCenterWidth(centerW, expandedLayoutMetricsOptions(peekW))
+        );
+      } else {
+        setMetrics(
+          layoutMetricsFromCenterWidth(centerW, {
+            stageGapPx: STAGE_GAP_PX,
+          })
+        );
+      }
     };
     measure();
     const ro = new ResizeObserver(measure);
     if (centerMeasureRef.current) ro.observe(centerMeasureRef.current);
+    if (isExpandedCenter && peekMeasureRef.current) {
+      ro.observe(peekMeasureRef.current);
+    }
     const mq = window.matchMedia("(min-width: 640px)");
     const onMq = () => measure();
     mq.addEventListener("change", onMq);
@@ -654,6 +688,9 @@ export default function PromoShortCarouselStage({
       {/* layout measure — teaser 프레임 하나만 */}
       <div className="pointer-events-none absolute opacity-0 -z-50" aria-hidden>
         <div ref={centerMeasureRef} className={carouselFrameClass} />
+        {isExpandedCenter ? (
+          <div ref={peekMeasureRef} className={EXPANDED_VIEWER_PEEK_FRAME_CLASS} />
+        ) : null}
       </div>
 
       <div
@@ -716,7 +753,9 @@ export default function PromoShortCarouselStage({
               const slotFrameClass = placement.visible
                 ? isWrapArc
                   ? carouselWrapFrameClass
-                  : placement.frameClass
+                  : isExpandedCenter && !showAsCenter
+                    ? expandedPeekFrameClass
+                    : placement.frameClass
                 : carouselFrameClass;
 
               const slotEl = (

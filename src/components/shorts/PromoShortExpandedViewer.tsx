@@ -69,7 +69,7 @@ export default function PromoShortExpandedViewer({
       }}
     >
       <div
-        className="relative w-[min(100vw,96rem)] max-w-none max-h-[min(92vh,960px)] min-h-0 flex flex-col items-center overflow-visible"
+        className="relative w-screen max-w-none flex flex-col items-center overflow-x-visible overflow-y-visible"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -87,7 +87,7 @@ export default function PromoShortExpandedViewer({
           onIndexChange={onIndexChange}
           centerMode="expanded"
           layout="stacked"
-          viewportClassName="relative w-full min-h-0 overflow-visible flex items-center justify-center outline-none touch-pan-y select-none"
+          viewportClassName="relative w-screen max-w-none min-h-0 overflow-visible flex items-center justify-center outline-none touch-pan-y select-none"
         />
       </div>
     </div>,

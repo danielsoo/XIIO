@@ -10,7 +10,7 @@ export type PromoShortPeekDimLevel = "default" | "strong" | "expandedSide";
 const DIM_CLASS: Record<PromoShortPeekDimLevel, string> = {
   default: "bg-black/35",
   strong: "bg-black/55",
-  expandedSide: "bg-black/60",
+  expandedSide: "bg-black/50",
 };
 
 type Props = {
