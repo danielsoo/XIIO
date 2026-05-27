@@ -1152,6 +1152,10 @@ export const messages = {
       adminDirectPlayerHint:
         "위 영상은 Cloudflare Stream 임베드입니다. 여기서는 같은 영상 원본(HLS)을 브라우저 기본 플레이어로 재생합니다. 임베드가 안 되거나 재생·비율을 확인할 때 사용하세요.",
       report: "신고",
+      guestPreviewTitle: "계속 보려면 로그인",
+      guestPreviewLead: "미리보기는 영상의 25%까지 무료로 시청할 수 있습니다.",
+      guestPreviewLogin: "로그인",
+      guestPreviewSignup: "회원가입",
     },
     report: {
       title: "콘텐츠 신고",
@@ -2388,6 +2392,10 @@ export const messages = {
       adminDirectPlayerHint:
         "The player above is the Cloudflare Stream embed. Here the same source (HLS) plays in the browser’s native video element. Use this when the embed fails or you need to check playback or aspect ratio.",
       report: "Report",
+      guestPreviewTitle: "Sign in to keep watching",
+      guestPreviewLead: "You can watch the first 25% of this video for free.",
+      guestPreviewLogin: "Sign in",
+      guestPreviewSignup: "Sign up",
     },
     report: {
       title: "Report content",

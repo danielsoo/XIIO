@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import ReportContentModal from "@/components/report/ReportContentModal";
+import GuestLimitedPlayer from "@/components/watch/GuestLimitedPlayer";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useAuth } from "@/context/AuthContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
@@ -27,7 +28,7 @@ const SECTION_TITLE_KEYS: Record<PublicWorkWatch["section"], string> = {
 };
 
 export default function WatchPageContent({ ownerUid, workId }: Props) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { isAdmin, checked: adminChecked } = useAdminAccess();
   const { t } = useTranslations();
   const [data, setData] = useState<PublicWorkWatch | null>(null);
@@ -87,6 +88,8 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
   const ratioId: VideoAspectRatio = data.approvedAspectRatio ?? "16:9";
   const numericRatio = aspectRatioNumeric(ratioId);
   const tagLine = data.approvedTags.length > 0 ? data.approvedTags.join(" · ") : null;
+  const isGuest = !authLoading && !user;
+  const useGuestPlayer = isGuest && Boolean(data.playbackUrl);
 
   return (
     <AppPageShell>
@@ -129,13 +132,20 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
           style={{ maxWidth: numericRatio >= 1 ? "100%" : "min(420px, 100%)" }}
         >
           <div className="relative w-full" style={{ aspectRatio: numericRatio }}>
-            <iframe
-              src={data.embedUrl}
-              title={data.title}
-              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full border-0"
-            />
+            {useGuestPlayer ? (
+              <GuestLimitedPlayer
+                src={data.playbackUrl!}
+                durationSec={data.durationSec}
+              />
+            ) : (
+              <iframe
+                src={data.embedUrl}
+                title={data.title}
+                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full border-0"
+              />
+            )}
           </div>
         </div>
 

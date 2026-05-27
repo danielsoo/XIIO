@@ -47,6 +47,7 @@ export async function GET(_request: Request, { params }: Params) {
     playbackUrl,
     embedUrl: getStreamEmbedUrl(work.streamUid),
     thumbnailUrl: info?.thumbnail,
+    durationSec: info?.duration,
   };
 
   return NextResponse.json(payload);

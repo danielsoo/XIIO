@@ -30,6 +30,11 @@ type Props = {
   onEnded?: () => void;
   onReady?: () => void;
   onError?: () => void;
+  controls?: boolean;
+  onLoadedMetadata?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
+  onTimeUpdate?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
+  onSeeking?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
+  onSeeked?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
 };
 
 const HLS_BUFFER_OPTS: Partial<Hls["config"]> = {
@@ -74,6 +79,11 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
     onEnded,
     onReady,
     onError,
+    controls = false,
+    onLoadedMetadata,
+    onTimeUpdate,
+    onSeeking,
+    onSeeked,
   }: Props,
   ref: Ref<StreamHlsVideoHandle>
 ) {
@@ -234,6 +244,12 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
       muted={muted}
       loop={loop}
       preload={preload}
+      controls={controls}
+      controlsList={controls ? "nodownload" : undefined}
+      onLoadedMetadata={onLoadedMetadata}
+      onTimeUpdate={onTimeUpdate}
+      onSeeking={onSeeking}
+      onSeeked={onSeeked}
     />
   );
 });
