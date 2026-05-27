@@ -434,13 +434,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
+    // Block implicit Enter submit inside step inputs.
     e.preventDefault();
-    if (busy) return;
-    if (!isLastStep) {
-      handleNext();
-      return;
-    }
-    void handleUpload();
   };
 
   return (
@@ -510,7 +505,15 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
                 </button>
               )}
               <button
-                type="submit"
+                type="button"
+                onClick={() => {
+                  if (busy) return;
+                  if (isLastStep) {
+                    void handleUpload();
+                    return;
+                  }
+                  handleNext();
+                }}
                 disabled={busy}
                 className={`py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover disabled:opacity-40 text-white font-semibold transition ${
                   stepIndex === 0 ? "w-full" : "flex-1"

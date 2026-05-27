@@ -191,6 +191,10 @@ export const messages = {
         searchPlaceholder: "handle 2자 이상",
         roleLabel: "역할",
         character: "배역명 (배우)",
+        add: "태그 추가",
+        clearDraft: "입력 지우기",
+        addHint: "Enter 또는 +로 검색 결과의 회원을 추가합니다.",
+        addNoResults: "검색 결과에서 회원을 선택하세요.",
         remove: "제거",
         searching: "검색 중…",
         role: {
@@ -1451,6 +1455,10 @@ export const messages = {
         searchPlaceholder: "At least 2 characters",
         roleLabel: "Role",
         character: "Character (actor)",
+        add: "Add tag",
+        clearDraft: "Clear inputs",
+        addHint: "Press Enter or + to add a member from search results.",
+        addNoResults: "Select a member from search results.",
         remove: "Remove",
         searching: "Searching…",
         role: {

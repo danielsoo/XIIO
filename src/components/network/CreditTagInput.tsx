@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { uploaderInputClass } from "@/components/uploader/uploaderFormStyles";
@@ -25,11 +25,17 @@ const TAGGABLE_ROLES: WorkCreditRole[] = WORK_CREDIT_ROLES.filter((r) => r !== "
 export default function CreditTagInput({ value, onChange, disabled }: Props) {
   const { t } = useTranslations();
   const { user } = useAuth();
+  const composingRef = useRef(false);
+  const compositionEndAtRef = useRef(0);
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [role, setRole] = useState<WorkCreditRole>("actor");
   const [characterName, setCharacterName] = useState("");
   const [searching, setSearching] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const [showNoResultsHint, setShowNoResultsHint] = useState(false);
+
+  const ENTER_DEBOUNCE_MS = 50;
 
   const search = useCallback(async () => {
     if (!user || query.trim().length < 2) {
@@ -58,6 +64,12 @@ export default function CreditTagInput({ value, onChange, disabled }: Props) {
     return () => clearTimeout(tmr);
   }, [search]);
 
+  useEffect(() => {
+    if (hits.length > 0 && highlight > hits.length - 1) {
+      setHighlight(0);
+    }
+  }, [hits, highlight]);
+
   const addHit = (hit: SearchHit) => {
     if (value.some((v) => v.userId === hit.uid && v.role === role)) return;
     onChange([
@@ -74,10 +86,69 @@ export default function CreditTagInput({ value, onChange, disabled }: Props) {
     setQuery("");
     setHits([]);
     setCharacterName("");
+    setHighlight(0);
+    setShowNoResultsHint(false);
   };
 
   const remove = (userId: string, creditRole: WorkCreditRole) => {
     onChange(value.filter((v) => !(v.userId === userId && v.role === creditRole)));
+  };
+
+  const tryAdd = () => {
+    if (searching || hits.length === 0) {
+      setShowNoResultsHint(true);
+      return;
+    }
+    const target = hits[highlight] ?? hits[0];
+    if (!target) {
+      setShowNoResultsHint(true);
+      return;
+    }
+    addHit(target);
+  };
+
+  const clearDraft = () => {
+    setQuery("");
+    setCharacterName("");
+    setHits([]);
+    setHighlight(0);
+    setShowNoResultsHint(false);
+  };
+
+  const isImeComposing = (e: React.KeyboardEvent<HTMLInputElement>) =>
+    e.nativeEvent.isComposing || composingRef.current || e.keyCode === 229;
+
+  const shouldIgnoreEnterAfterComposition = () =>
+    Date.now() - compositionEndAtRef.current < ENTER_DEBOUNCE_MS;
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (hits.length > 0) {
+        setHighlight((h) => (h + 1) % hits.length);
+      }
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (hits.length > 0) {
+        setHighlight((h) => (h - 1 + hits.length) % hits.length);
+      }
+      return;
+    }
+    if (e.key !== "Enter") return;
+    if (isImeComposing(e) || shouldIgnoreEnterAfterComposition()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    tryAdd();
+  };
+
+  const handleCharacterKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    if (isImeComposing(e) || shouldIgnoreEnterAfterComposition()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    tryAdd();
   };
 
   return (
@@ -117,7 +188,19 @@ export default function CreditTagInput({ value, onChange, disabled }: Props) {
             <input
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setHighlight(0);
+                setShowNoResultsHint(false);
+              }}
+              onKeyDown={handleSearchKeyDown}
+              onCompositionStart={() => {
+                composingRef.current = true;
+              }}
+              onCompositionEnd={() => {
+                composingRef.current = false;
+                compositionEndAtRef.current = Date.now();
+              }}
               placeholder={t("network.credits.searchPlaceholder")}
               className={uploaderInputClass}
             />
@@ -145,22 +228,56 @@ export default function CreditTagInput({ value, onChange, disabled }: Props) {
                 type="text"
                 value={characterName}
                 onChange={(e) => setCharacterName(e.target.value)}
+                onKeyDown={handleCharacterKeyDown}
+                onCompositionStart={() => {
+                  composingRef.current = true;
+                }}
+                onCompositionEnd={() => {
+                  composingRef.current = false;
+                  compositionEndAtRef.current = Date.now();
+                }}
                 className={uploaderInputClass}
               />
             </div>
           )}
+          <button
+            type="button"
+            onClick={tryAdd}
+            disabled={searching || hits.length === 0}
+            className="h-10 w-10 rounded-xl border border-white/15 text-white hover:bg-white/5 disabled:opacity-40 disabled:hover:bg-transparent transition"
+            aria-label={t("network.credits.add")}
+          >
+            +
+          </button>
+          <button
+            type="button"
+            onClick={clearDraft}
+            className="h-10 w-10 rounded-xl border border-white/15 text-white hover:bg-white/5 transition"
+            aria-label={t("network.credits.clearDraft")}
+          >
+            ×
+          </button>
         </div>
       )}
 
+      {!disabled && (
+        <p className="text-xs text-xiio-muted">{t("network.credits.addHint")}</p>
+      )}
       {searching && <p className="text-xs text-xiio-muted">{t("network.credits.searching")}</p>}
+      {!searching && showNoResultsHint && (
+        <p className="text-xs text-amber-400/90">{t("network.credits.addNoResults")}</p>
+      )}
       {hits.length > 0 && (
         <ul className="rounded-lg border border-white/10 bg-black/30 divide-y divide-white/5">
-          {hits.map((h) => (
+          {hits.map((h, i) => (
             <li key={h.uid}>
               <button
                 type="button"
                 onClick={() => addHit(h)}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-white/5"
+                onMouseEnter={() => setHighlight(i)}
+                className={`w-full text-left px-3 py-2 text-sm transition ${
+                  i === highlight ? "bg-xiio-accent/20 text-white" : "hover:bg-white/5"
+                }`}
               >
                 <span className="text-white">@{h.handle}</span>
                 <span className="text-xiio-muted ml-2">{h.displayName}</span>
