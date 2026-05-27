@@ -17,6 +17,7 @@ import {
   getTransitionMode,
 } from "@/components/shorts/promoCarouselTransition";
 import { circularDistance } from "@/components/shorts/promoCarouselUtils";
+import PromoShortExpandedViewer from "@/components/shorts/PromoShortExpandedViewer";
 import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
 import PromoShortPlayer, {
   type PromoShortLayout,
@@ -312,7 +313,7 @@ export default function PromoShortTriptychStage({
   const [transitionMode, setTransitionMode] = useState<"revolve" | "fade">("revolve");
   const [animPrevIndex, setAnimPrevIndex] = useState(0);
   const [incomingAtEnter, setIncomingAtEnter] = useState(true);
-  const [carouselFullscreenOpen, setCarouselFullscreenOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   indexRef.current = index;
 
@@ -489,13 +490,13 @@ export default function PromoShortTriptychStage({
   const swipeEnabled = count > 1;
 
   useHorizontalSwipe(viewportRef, {
-    enabled: swipeEnabled && !carouselFullscreenOpen,
+    enabled: swipeEnabled && !viewerOpen,
     onSwipeLeft: () => go(1),
     onSwipeRight: () => go(-1),
   });
 
   const onViewportKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (!swipeEnabled || carouselFullscreenOpen) return;
+    if (!swipeEnabled || viewerOpen) return;
     if (e.key === "ArrowLeft") {
       e.preventDefault();
       go(-1);
@@ -510,31 +511,41 @@ export default function PromoShortTriptychStage({
   if (count === 1) {
     const only = items[0]!;
     return (
-      <div
-        ref={viewportRef}
-        role="region"
-        aria-roledescription="carousel"
-        aria-label={t("home.promoSectionTitle")}
-        className={`${viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS} touch-pan-y select-none outline-none`}
-      >
-        <div className={`relative mx-auto ${HOME_HERO_TEASER_FRAME_CLASS}`}>
-          <PromoShortPlayer
-            item={only}
-            isActive
-            playbackEnabled={!isTransitioning}
-            variant="teaser"
-            playerSize={playerSize}
-            peekSide={false}
-            layout={layout}
-            compact={compact}
-            scrollExpand={false}
-            loop={false}
-            teaserCenterAction="expand"
-            onFullscreenChange={setCarouselFullscreenOpen}
-            className="mx-auto h-full w-full"
-          />
+      <>
+        <div
+          ref={viewportRef}
+          role="region"
+          aria-roledescription="carousel"
+          aria-label={t("home.promoSectionTitle")}
+          className={`${viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS} touch-pan-y select-none outline-none`}
+        >
+          <div className={`relative mx-auto ${HOME_HERO_TEASER_FRAME_CLASS}`}>
+            <PromoShortPlayer
+              item={only}
+              isActive
+              playbackEnabled={!isTransitioning}
+              variant="teaser"
+              playerSize={playerSize}
+              peekSide={false}
+              layout={layout}
+              compact={compact}
+              scrollExpand={false}
+              loop={false}
+              teaserCenterAction="expand"
+              onTeaserExpandRequest={() => setViewerOpen(true)}
+              className="mx-auto h-full w-full"
+            />
+          </div>
         </div>
-      </div>
+        {viewerOpen ? (
+          <PromoShortExpandedViewer
+            items={items}
+            index={0}
+            onIndexChange={onIndexChange}
+            onClose={() => setViewerOpen(false)}
+          />
+        ) : null}
+      </>
     );
   }
 
@@ -688,7 +699,7 @@ export default function PromoShortTriptychStage({
                       scrollExpand={false}
                       loop={false}
                       teaserCenterAction="expand"
-                      onFullscreenChange={setCarouselFullscreenOpen}
+                      onTeaserExpandRequest={() => setViewerOpen(true)}
                       onPlaybackEnded={
                         isLiveCenter && count > 1 ? handlePlaybackEnded : undefined
                       }
@@ -790,6 +801,14 @@ export default function PromoShortTriptychStage({
           </div>
         )}
       </div>
+      {viewerOpen ? (
+        <PromoShortExpandedViewer
+          items={items}
+          index={index}
+          onIndexChange={onIndexChange}
+          onClose={() => setViewerOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

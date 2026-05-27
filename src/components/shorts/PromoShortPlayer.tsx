@@ -224,6 +224,8 @@ function PlayerChrome({
   videoPreload,
   heroCarouselEmbed = false,
   teaserCenterAction = "watch-overlay",
+  expandedChrome = false,
+  onTeaserExpandRequest,
   onToggleFullscreen,
   onExitFullscreen,
 }: {
@@ -237,6 +239,8 @@ function PlayerChrome({
   /** 홈 히어로 triptych — 부모 프레임에 맞춰 모서리 클리핑 */
   heroCarouselEmbed?: boolean;
   teaserCenterAction?: TeaserCenterAction;
+  expandedChrome?: boolean;
+  onTeaserExpandRequest?: () => void;
   isFullscreen: boolean;
   layout: PromoShortLayout;
   compact?: boolean;
@@ -251,8 +255,9 @@ function PlayerChrome({
   onToggleFullscreen: () => void;
   onExitFullscreen: () => void;
 }) {
-  const isTeaser = variant === "teaser" && !isFullscreen;
-  const hideHeroChrome = heroCarouselEmbed && !isFullscreen;
+  const effectiveFullscreen = isFullscreen || expandedChrome;
+  const isTeaser = variant === "teaser" && !effectiveFullscreen;
+  const hideHeroChrome = heroCarouselEmbed && !effectiveFullscreen;
   const { t } = useTranslations();
   const { user } = useAuth();
   const videoRef = useRef<StreamHlsVideoHandle>(null);
@@ -262,9 +267,9 @@ function PlayerChrome({
   const persisted = Boolean(item.ownerUid && item.workId);
   const description = item.description?.trim() ?? "";
   const expandable = isLongDescription(description);
-  const scrollListenerRef = isFullscreen || !scrollRootRef ? cardRef : scrollRootRef;
+  const scrollListenerRef = effectiveFullscreen || !scrollRootRef ? cardRef : scrollRootRef;
   const { progress, toggle } = usePromoDescriptionExpand({
-    enabled: isActive && expandable && (Boolean(scrollExpand) || isFullscreen),
+    enabled: isActive && expandable && (Boolean(scrollExpand) || effectiveFullscreen),
     itemId: item.id,
     compact,
     scrollRootRef: scrollListenerRef,
@@ -372,7 +377,7 @@ function PlayerChrome({
     }
   }, [item.description, item.title, shareUrl]);
 
-  const tallMeta = layout === "stacked" || isFullscreen;
+  const tallMeta = layout === "stacked" || effectiveFullscreen;
 
   const [cardH, setCardH] = useState(480);
   const [metaContentPx, setMetaContentPx] = useState(120);
@@ -385,7 +390,7 @@ function PlayerChrome({
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [isFullscreen, compact, progress]);
+  }, [effectiveFullscreen, compact, progress]);
 
   useEffect(() => {
     const el = metaMeasureRef.current;
@@ -419,14 +424,14 @@ function PlayerChrome({
   const maxWidthClass =
     fixedPortraitFrame || playerSize === "homeHeroSmall" ? "" : "max-w-lg";
 
-  const cardShellClass = isFullscreen
+  const cardShellClass = effectiveFullscreen
     ? "relative w-full h-full max-w-lg mx-auto rounded-[14px] overflow-hidden bg-black"
     : heroCarouselEmbed
       ? "relative h-full w-full overflow-hidden rounded-[14px] bg-black"
       : `relative mx-auto ${fixedPortraitFrame ? "" : "w-full "} ${maxWidthClass} rounded-[14px] overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
 
   const cardAspectStyle =
-    isFullscreen || fixedPortraitFrame ? undefined : { aspectRatio: item.aspectRatio };
+    effectiveFullscreen || fixedPortraitFrame ? undefined : { aspectRatio: item.aspectRatio };
 
   const videoObjectClass = fixedPortraitFrame ? "object-cover" : "object-contain";
 
@@ -519,7 +524,7 @@ function PlayerChrome({
       <div className="relative min-w-0 text-left shrink-0">
         <h3 className={titleClass}>{item.title}</h3>
         <p className={directorClass}>{t("home.promoDirector", { name: item.director })}</p>
-        {isFullscreen && teaserWatchHref ? (
+        {effectiveFullscreen && teaserWatchHref ? (
           <Link
             href={teaserWatchHref}
             className="inline-block mt-2 text-sm font-semibold text-xiio-accent hover:text-white underline underline-offset-2"
@@ -545,9 +550,9 @@ function PlayerChrome({
     </>
   );
 
-  const fullscreenControls = (
+  const fullscreenControls = !expandedChrome ? (
     <div className="absolute top-3 right-3 z-20">
-      {isFullscreen ? (
+      {effectiveFullscreen ? (
         <button
           type="button"
           onClick={onExitFullscreen}
@@ -567,7 +572,7 @@ function PlayerChrome({
         </button>
       )}
     </div>
-  );
+  ) : null;
 
   const bottomOverlay = isTeaser || hideHeroChrome ? null : (
     <div
@@ -596,7 +601,10 @@ function PlayerChrome({
     isTeaser && !peekSide && teaserCenterAction === "expand" ? (
       <button
         type="button"
-        onClick={() => onToggleFullscreen()}
+        onClick={() => {
+          if (onTeaserExpandRequest) onTeaserExpandRequest();
+          else onToggleFullscreen();
+        }}
         className="absolute inset-0 z-[15] rounded-[14px] cursor-pointer bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         aria-label={t("shorts.fullscreen")}
       />
@@ -611,20 +619,6 @@ function PlayerChrome({
         className="absolute inset-0 z-[15] rounded-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         aria-label={t("home.promoWatch", { title: item.title })}
       />
-    ) : null;
-
-  const teaserWatchButton =
-    isTeaser && !peekSide && teaserCenterAction === "expand" && teaserWatchHref ? (
-      <Link
-        href={teaserWatchHref}
-        draggable={false}
-        onDragStart={(e) => e.preventDefault()}
-        onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-3 left-1/2 z-[16] -translate-x-1/2 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm hover:bg-black/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent"
-        aria-label={t("home.promoWatch", { title: item.title })}
-      >
-        {t("home.promoWatch", { title: item.title })}
-      </Link>
     ) : null;
 
   return (
@@ -683,7 +677,6 @@ function PlayerChrome({
 
         {teaserExpandTap}
         {teaserWatchOverlay}
-        {teaserWatchButton}
         {!isTeaser && fullscreenControls}
         {bottomOverlay}
       </div>
@@ -709,6 +702,8 @@ export default function PromoShortPlayer({
   videoPreload,
   heroCarouselEmbed = false,
   teaserCenterAction = "watch-overlay",
+  expandedChrome = false,
+  onTeaserExpandRequest,
   onFullscreenChange,
   className = "",
 }: {
@@ -719,6 +714,8 @@ export default function PromoShortPlayer({
   videoPreload?: "auto" | "metadata" | "none";
   heroCarouselEmbed?: boolean;
   teaserCenterAction?: TeaserCenterAction;
+  expandedChrome?: boolean;
+  onTeaserExpandRequest?: () => void;
   onFullscreenChange?: (active: boolean) => void;
   embedded?: boolean;
   layout?: PromoShortLayout;
@@ -741,14 +738,15 @@ export default function PromoShortPlayer({
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    onFullscreenChange?.(active);
-  }, [active, onFullscreenChange]);
+    if (!expandedChrome) onFullscreenChange?.(active);
+  }, [active, expandedChrome, onFullscreenChange]);
 
   const chrome = (
     <PlayerChrome
       item={item}
       isActive={isActive}
-      isFullscreen={active}
+      isFullscreen={expandedChrome ? false : active}
+      expandedChrome={expandedChrome}
       layout={resolvedLayout}
       variant={variant}
       playerSize={playerSize}
@@ -763,10 +761,15 @@ export default function PromoShortPlayer({
       videoPreload={videoPreload}
       heroCarouselEmbed={heroCarouselEmbed}
       teaserCenterAction={teaserCenterAction}
+      onTeaserExpandRequest={onTeaserExpandRequest}
       onToggleFullscreen={() => void toggle()}
       onExitFullscreen={() => void exit()}
     />
   );
+
+  if (expandedChrome) {
+    return <div className={className}>{chrome}</div>;
+  }
 
   const shellClass = active
     ? fallbackActive
