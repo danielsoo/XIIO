@@ -64,7 +64,8 @@ const CAROUSEL_FRONT_LAYER_CLASS = "absolute inset-0 z-[10]";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
 const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
 const CAROUSEL_BACK_SCALE_RATIO = 0.52;
-const SLIDE_MS = 420;
+const SLIDE_MS = 520;
+const SLIDE_EXIT_MULTIPLIER = 1.38;
 
 function peekScaleRatio(): number {
   if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
@@ -209,7 +210,7 @@ function slideSlotTransform(
   metrics: LayoutMetrics
 ): { transform: string; opacity: number; zIndex: number } {
   const { offsetX, peekScale } = metrics;
-  const exitX = Math.round(offsetX * 1.2);
+  const exitX = Math.round(offsetX * SLIDE_EXIT_MULTIPLIER);
 
   if (phase === "idle") {
     if (role === "left") {
@@ -233,7 +234,7 @@ function slideSlotTransform(
     if (role === "left") {
       return {
         transform: `translateX(${-exitX}px) scale(${peekScale})`,
-        opacity: 0.35,
+        opacity: 0.08,
         zIndex: 12,
       };
     }
@@ -250,7 +251,7 @@ function slideSlotTransform(
   if (role === "right") {
     return {
       transform: `translateX(${exitX}px) scale(${peekScale})`,
-      opacity: 0.35,
+      opacity: 0.08,
       zIndex: 12,
     };
   }
@@ -272,13 +273,13 @@ function incomingSlotTransform(
 ): { transform: string; opacity: number; zIndex: number } {
   const { offsetX, peekScale } = metrics;
   const enterX =
-    transitionMode === "slide" ? Math.round(offsetX * 1.2) : offsetX + ENTER_GAP_PX;
+    transitionMode === "slide" ? Math.round(offsetX * SLIDE_EXIT_MULTIPLIER) : offsetX + ENTER_GAP_PX;
 
   if (phase === "toNext") {
     if (atEnter) {
       return {
         transform: `translateX(${enterX}px) scale(${peekScale})`,
-        opacity: transitionMode === "slide" ? 0.4 : 1,
+        opacity: transitionMode === "slide" ? 0.02 : 1,
         zIndex: transitionMode === "slide" ? 12 : 4,
       };
     }
@@ -292,7 +293,7 @@ function incomingSlotTransform(
   if (atEnter) {
     return {
       transform: `translateX(${-enterX}px) scale(${peekScale})`,
-      opacity: transitionMode === "slide" ? 0.4 : 1,
+      opacity: transitionMode === "slide" ? 0.02 : 1,
       zIndex: transitionMode === "slide" ? 12 : 4,
     };
   }
@@ -736,7 +737,11 @@ export default function PromoShortCarouselStage({
   const transitionClass = animatingShift
     ? `transition-[transform,opacity] ${
         transitionMode === "slide" ? `duration-[${SLIDE_MS}ms]` : revolveDurationClass
-      } ${transitionMode === "slide" ? "ease-out" : "ease-in-out"} motion-reduce:transition-none`
+      } ${
+        transitionMode === "slide"
+          ? "ease-[cubic-bezier(0.22,0.61,0.36,1)]"
+          : "ease-in-out"
+      } motion-reduce:transition-none`
     : "motion-reduce:transition-none";
 
   const stageOpacityClass =
