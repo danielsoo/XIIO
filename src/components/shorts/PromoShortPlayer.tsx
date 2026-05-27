@@ -260,6 +260,7 @@ function PlayerChrome({
   onExitFullscreen: () => void;
 }) {
   const effectiveFullscreen = isFullscreen || expandedChrome;
+  const isCarouselCenterEmbed = heroCarouselEmbed || expandedChrome;
   const isTeaser = variant === "teaser" && !effectiveFullscreen;
   const hideHeroChrome = heroCarouselEmbed && !effectiveFullscreen;
   const { t } = useTranslations();
@@ -415,7 +416,7 @@ function PlayerChrome({
 
   const fixedTeaserFrame = isTeaser && playerSize === "homeHeroSmall" && !peekSide;
   const peekSideFrame = isTeaser && peekSide;
-  const fixedPortraitFrame = fixedTeaserFrame || peekSideFrame;
+  const fixedPortraitFrame = fixedTeaserFrame || peekSideFrame || expandedChrome;
   const smallShell = peekSideFrame
     ? HOME_HERO_PEEK_SIDE_FRAME_CLASS
     : fixedTeaserFrame
@@ -428,16 +429,19 @@ function PlayerChrome({
   const maxWidthClass =
     fixedPortraitFrame || playerSize === "homeHeroSmall" ? "" : "max-w-lg";
 
-  const cardShellClass = effectiveFullscreen
-    ? "relative w-full h-full max-w-lg mx-auto rounded-[14px] overflow-hidden bg-black"
-    : heroCarouselEmbed
-      ? "relative h-full w-full overflow-hidden rounded-[14px] bg-black"
+  const cardShellClass = isCarouselCenterEmbed
+    ? "relative h-full w-full overflow-hidden rounded-[14px] bg-black"
+    : effectiveFullscreen
+      ? "relative w-full h-full max-w-lg mx-auto rounded-[14px] overflow-hidden bg-black"
       : `relative mx-auto ${fixedPortraitFrame ? "" : "w-full "} ${maxWidthClass} rounded-[14px] overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
 
   const cardAspectStyle =
-    effectiveFullscreen || fixedPortraitFrame ? undefined : { aspectRatio: item.aspectRatio };
+    isCarouselCenterEmbed || fixedPortraitFrame
+      ? undefined
+      : { aspectRatio: item.aspectRatio };
 
-  const videoObjectClass = fixedPortraitFrame ? "object-cover" : "object-contain";
+  const videoObjectClass =
+    fixedPortraitFrame || isCarouselCenterEmbed ? "object-cover" : "object-contain";
 
   const overlayBandClass = compact
     ? "h-auto min-h-[5rem] max-h-[min(38%,12rem)]"
