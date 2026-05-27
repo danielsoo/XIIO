@@ -624,12 +624,16 @@ export default function PromoShortTriptychStage({
                 animatingRevolve &&
                 ((revolvePhase === "toNext" && item.id === displayTriplet.right.id) ||
                   (revolvePhase === "toPrev" && item.id === displayTriplet.left.id));
+              const isOutgoingCenter = Boolean(
+                snapshot && outgoingCenterId && item.id === outgoingCenterId
+              );
               const preserveCenterFrame = Boolean(
-                snapshot &&
-                  (item.id === outgoingCenterId || item.id === liveCenterId || isPromoting)
+                snapshot && (item.id === liveCenterId || isPromoting)
               );
               const showAsCenter =
-                placement.isCenter || isPromoting || (warmCenter && !placement.visible);
+                (placement.isCenter && !isOutgoingCenter) ||
+                isPromoting ||
+                (warmCenter && !placement.visible);
               const ariaLiveCenter = isLiveCenter || isPromoting;
               const isWrapArc =
                 animatingRevolve &&
