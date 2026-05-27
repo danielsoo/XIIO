@@ -836,7 +836,6 @@ export default function PromoShortCarouselStage({
               const showAsCenter =
                 !animatingRevolve &&
                 ((placement.isCenter && !isOutgoingCenter) ||
-                  (transitionMode === "slide" && isPromoting) ||
                   (warmCenter && !placement.visible) ||
                   (transitionMode === "slide" &&
                     snapshot !== null &&
@@ -862,7 +861,7 @@ export default function PromoShortCarouselStage({
               const slotFrameClass = placement.visible
                 ? isWrapArc
                   ? carouselWrapFrameClass
-                  : transitionMode === "slide" && (placement.role === "center" || isPromoting)
+                  : transitionMode === "slide" && placement.role === "center"
                     ? carouselFrameClass
                   : isExpandedCenter && !showAsCenter
                     ? expandedPeekFrameClass
