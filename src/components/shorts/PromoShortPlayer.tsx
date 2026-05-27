@@ -104,6 +104,8 @@ function CollapseIcon() {
 export type PromoShortLayout = "overlay" | "stacked";
 export type PromoShortVariant = "default" | "teaser";
 export type PromoShortPlayerSize = "default" | "homeHeroSmall";
+/** 홈 캐러셀 중앙 티저 — 탭 시 전체화면 vs 카드 전체 시청 링크 */
+export type TeaserCenterAction = "expand" | "watch-overlay";
 
 /** 홈 히어로 teaser — 영상 원본 비율과 무관한 고정 프레임 */
 export const HOME_HERO_TEASER_FRAME_CLASS =
@@ -221,6 +223,7 @@ function PlayerChrome({
   preserveFrame = false,
   videoPreload,
   heroCarouselEmbed = false,
+  teaserCenterAction = "watch-overlay",
   onToggleFullscreen,
   onExitFullscreen,
 }: {
@@ -233,6 +236,7 @@ function PlayerChrome({
   videoPreload?: "auto" | "metadata" | "none";
   /** 홈 히어로 triptych — 부모 프레임에 맞춰 모서리 클리핑 */
   heroCarouselEmbed?: boolean;
+  teaserCenterAction?: TeaserCenterAction;
   isFullscreen: boolean;
   layout: PromoShortLayout;
   compact?: boolean;
@@ -260,7 +264,7 @@ function PlayerChrome({
   const expandable = isLongDescription(description);
   const scrollListenerRef = isFullscreen || !scrollRootRef ? cardRef : scrollRootRef;
   const { progress, toggle } = usePromoDescriptionExpand({
-    enabled: isActive && expandable && Boolean(scrollExpand),
+    enabled: isActive && expandable && (Boolean(scrollExpand) || isFullscreen),
     itemId: item.id,
     compact,
     scrollRootRef: scrollListenerRef,
@@ -496,6 +500,9 @@ function PlayerChrome({
     ? "mt-2 text-sm md:text-base text-white/85 leading-relaxed whitespace-pre-wrap break-words"
     : "text-xs md:text-sm text-white/65 mt-1.5 leading-snug whitespace-pre-wrap break-words";
 
+  const teaserWatchHref =
+    item.ownerUid && item.workId ? workWatchHref(item.ownerUid, item.workId) : null;
+
   const metaBlock = (
     <>
       {expandable && (
@@ -512,6 +519,14 @@ function PlayerChrome({
       <div className="relative min-w-0 text-left shrink-0">
         <h3 className={titleClass}>{item.title}</h3>
         <p className={directorClass}>{t("home.promoDirector", { name: item.director })}</p>
+        {isFullscreen && teaserWatchHref ? (
+          <Link
+            href={teaserWatchHref}
+            className="inline-block mt-2 text-sm font-semibold text-xiio-accent hover:text-white underline underline-offset-2"
+          >
+            {t("home.promoWatch", { title: item.title })}
+          </Link>
+        ) : null}
       </div>
       <div
         ref={metaScrollRef}
@@ -577,17 +592,40 @@ function PlayerChrome({
     </div>
   );
 
-  const teaserWatchHref =
-    item.ownerUid && item.workId ? workWatchHref(item.ownerUid, item.workId) : null;
-  const teaserLink = isTeaser && !peekSide && teaserWatchHref ? (
-    <Link
-      href={teaserWatchHref}
-      draggable={false}
-      onDragStart={(e) => e.preventDefault()}
-      className="absolute inset-0 z-[15] rounded-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-      aria-label={t("home.promoWatch", { title: item.title })}
-    />
-  ) : null;
+  const teaserExpandTap =
+    isTeaser && !peekSide && teaserCenterAction === "expand" ? (
+      <button
+        type="button"
+        onClick={() => onToggleFullscreen()}
+        className="absolute inset-0 z-[15] rounded-[14px] cursor-pointer bg-transparent border-0 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        aria-label={t("shorts.fullscreen")}
+      />
+    ) : null;
+
+  const teaserWatchOverlay =
+    isTeaser && !peekSide && teaserCenterAction === "watch-overlay" && teaserWatchHref ? (
+      <Link
+        href={teaserWatchHref}
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
+        className="absolute inset-0 z-[15] rounded-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        aria-label={t("home.promoWatch", { title: item.title })}
+      />
+    ) : null;
+
+  const teaserWatchButton =
+    isTeaser && !peekSide && teaserCenterAction === "expand" && teaserWatchHref ? (
+      <Link
+        href={teaserWatchHref}
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
+        onClick={(e) => e.stopPropagation()}
+        className="absolute bottom-3 left-1/2 z-[16] -translate-x-1/2 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm hover:bg-black/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent"
+        aria-label={t("home.promoWatch", { title: item.title })}
+      >
+        {t("home.promoWatch", { title: item.title })}
+      </Link>
+    ) : null;
 
   return (
     <>
@@ -643,7 +681,9 @@ function PlayerChrome({
           />
         )}
 
-        {teaserLink}
+        {teaserExpandTap}
+        {teaserWatchOverlay}
+        {teaserWatchButton}
         {!isTeaser && fullscreenControls}
         {bottomOverlay}
       </div>
@@ -668,6 +708,8 @@ export default function PromoShortPlayer({
   preserveFrame = false,
   videoPreload,
   heroCarouselEmbed = false,
+  teaserCenterAction = "watch-overlay",
+  onFullscreenChange,
   className = "",
 }: {
   item: PromoShort;
@@ -676,6 +718,8 @@ export default function PromoShortPlayer({
   preserveFrame?: boolean;
   videoPreload?: "auto" | "metadata" | "none";
   heroCarouselEmbed?: boolean;
+  teaserCenterAction?: TeaserCenterAction;
+  onFullscreenChange?: (active: boolean) => void;
   embedded?: boolean;
   layout?: PromoShortLayout;
   variant?: PromoShortVariant;
@@ -696,6 +740,10 @@ export default function PromoShortPlayer({
 
   useEffect(() => setMounted(true), []);
 
+  useEffect(() => {
+    onFullscreenChange?.(active);
+  }, [active, onFullscreenChange]);
+
   const chrome = (
     <PlayerChrome
       item={item}
@@ -714,6 +762,7 @@ export default function PromoShortPlayer({
       preserveFrame={preserveFrame}
       videoPreload={videoPreload}
       heroCarouselEmbed={heroCarouselEmbed}
+      teaserCenterAction={teaserCenterAction}
       onToggleFullscreen={() => void toggle()}
       onExitFullscreen={() => void exit()}
     />

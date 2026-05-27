@@ -312,6 +312,7 @@ export default function PromoShortTriptychStage({
   const [transitionMode, setTransitionMode] = useState<"revolve" | "fade">("revolve");
   const [animPrevIndex, setAnimPrevIndex] = useState(0);
   const [incomingAtEnter, setIncomingAtEnter] = useState(true);
+  const [carouselFullscreenOpen, setCarouselFullscreenOpen] = useState(false);
 
   indexRef.current = index;
 
@@ -488,13 +489,13 @@ export default function PromoShortTriptychStage({
   const swipeEnabled = count > 1;
 
   useHorizontalSwipe(viewportRef, {
-    enabled: swipeEnabled,
+    enabled: swipeEnabled && !carouselFullscreenOpen,
     onSwipeLeft: () => go(1),
     onSwipeRight: () => go(-1),
   });
 
   const onViewportKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (!swipeEnabled) return;
+    if (!swipeEnabled || carouselFullscreenOpen) return;
     if (e.key === "ArrowLeft") {
       e.preventDefault();
       go(-1);
@@ -528,6 +529,8 @@ export default function PromoShortTriptychStage({
             compact={compact}
             scrollExpand={false}
             loop={false}
+            teaserCenterAction="expand"
+            onFullscreenChange={setCarouselFullscreenOpen}
             className="mx-auto h-full w-full"
           />
         </div>
@@ -684,6 +687,8 @@ export default function PromoShortTriptychStage({
                       compact={compact}
                       scrollExpand={false}
                       loop={false}
+                      teaserCenterAction="expand"
+                      onFullscreenChange={setCarouselFullscreenOpen}
                       onPlaybackEnded={
                         isLiveCenter && count > 1 ? handlePlaybackEnded : undefined
                       }
