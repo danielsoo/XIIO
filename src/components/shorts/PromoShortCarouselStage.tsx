@@ -279,7 +279,7 @@ function incomingSlotTransform(
     if (atEnter) {
       return {
         transform: `translateX(${enterX}px) scale(${peekScale})`,
-        opacity: transitionMode === "slide" ? 0.02 : 1,
+        opacity: transitionMode === "slide" ? 0.01 : 1,
         zIndex: transitionMode === "slide" ? 12 : 4,
       };
     }
@@ -293,7 +293,7 @@ function incomingSlotTransform(
   if (atEnter) {
     return {
       transform: `translateX(${-enterX}px) scale(${peekScale})`,
-      opacity: transitionMode === "slide" ? 0.02 : 1,
+      opacity: transitionMode === "slide" ? 0.01 : 1,
       zIndex: transitionMode === "slide" ? 12 : 4,
     };
   }
@@ -739,7 +739,7 @@ export default function PromoShortCarouselStage({
         transitionMode === "slide" ? `duration-[${SLIDE_MS}ms]` : revolveDurationClass
       } ${
         transitionMode === "slide"
-          ? "ease-[cubic-bezier(0.22,0.61,0.36,1)]"
+          ? "ease-[cubic-bezier(0.16,1,0.3,1)]"
           : "ease-in-out"
       } motion-reduce:transition-none`
     : "motion-reduce:transition-none";
@@ -884,6 +884,7 @@ export default function PromoShortCarouselStage({
                         item={item}
                         isActive={isLiveCenter}
                         playbackEnabled={isLiveCenter && !isTransitioning}
+                        videoPreload={isLiveCenter ? "auto" : "metadata"}
                         preserveFrame={preserveCenterFrame}
                         expandedChrome
                         layout={layout}

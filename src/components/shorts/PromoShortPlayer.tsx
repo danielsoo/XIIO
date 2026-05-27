@@ -633,6 +633,10 @@ function PlayerChrome({
       />
     ) : null;
 
+  const showThumbnailBackdrop = Boolean(item.thumbnailUrl) && (
+    isTeaser || expandedChrome || !videoReady || videoFailed
+  );
+
   return (
     <>
       {persisted && item.ownerUid && item.workId && (
@@ -649,11 +653,13 @@ function PlayerChrome({
         className={cardShellClass}
         style={cardAspectStyle}
       >
-        {isTeaser && item.thumbnailUrl && (
+        {showThumbnailBackdrop && item.thumbnailUrl && (
           <img
             src={item.thumbnailUrl}
             alt=""
-            className={`absolute inset-0 w-full h-full object-cover ${videoObjectClass}`}
+            className={`absolute inset-0 w-full h-full object-cover ${videoObjectClass} transition-opacity duration-300 ${
+              videoReady && !videoFailed ? "opacity-0" : "opacity-100"
+            }`}
             loading="eager"
             decoding="async"
           />
@@ -669,9 +675,11 @@ function PlayerChrome({
             ref={videoRef}
             src={item.videoUrl}
             className={`absolute inset-0 w-full h-full bg-black ${videoObjectClass} ${
-              isTeaser
-                ? `transition-opacity duration-200 ${videoReady ? "opacity-100" : "opacity-0"}`
-                : ""
+              showThumbnailBackdrop
+                ? `transition-opacity duration-300 ${videoReady ? "opacity-100" : "opacity-0"}`
+                : isTeaser
+                  ? `transition-opacity duration-200 ${videoReady ? "opacity-100" : "opacity-0"}`
+                  : ""
             }`}
             playsInline
             muted
