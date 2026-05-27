@@ -36,10 +36,10 @@ type SlotRole = "left" | "center" | "right" | "incoming";
 
 const ENTER_GAP_PX = 100;
 const STAGE_GAP_PX = 16;
-/** 확대 뷰어 — 중앙–피크 사이 여백 (히어로보다 넓게) */
-const EXPANDED_STAGE_GAP_PX = 48;
-/** 확대 뷰어 — 좌·우 피크 scale (중앙 대비 작게) */
-const EXPANDED_PEEK_SCALE = 0.58;
+/** 확대 뷰어 — 중앙–피크 사이 여백 (히어로보다 넓게, 양옆이 중앙에 가려지지 않도록) */
+const EXPANDED_STAGE_GAP_PX = 80;
+/** 확대 뷰어 — 좌·우 피크 scale (중앙보다 작되, 과도하게 축소하지 않음) */
+const EXPANDED_PEEK_SCALE = 0.72;
 /** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
 const PEEK_SCALE_SM = 180 / 236;
 const PEEK_SCALE_DEFAULT = 160 / 200;
@@ -657,13 +657,13 @@ export default function PromoShortCarouselStage({
       </div>
 
       <div
-        className={`relative mx-auto ${stageMinHeight} ${stageOpacityClass}`}
+        className={`relative mx-auto ${isExpandedCenter ? "overflow-visible" : ""} ${stageMinHeight} ${stageOpacityClass}`}
         style={{ opacity: viewportOpacity }}
         aria-live="polite"
       >
         <div
           ref={stageRef}
-          className={`relative mx-auto overflow-visible px-2 flex items-center justify-center ${stageMinHeight}`}
+          className={`relative mx-auto overflow-visible ${isExpandedCenter ? "px-0" : "px-2"} flex items-center justify-center ${stageMinHeight}`}
           style={stageMetricsStyle}
         >
           {(() => {

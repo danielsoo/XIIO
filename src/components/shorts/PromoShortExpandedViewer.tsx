@@ -60,7 +60,7 @@ export default function PromoShortExpandedViewer({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4 sm:p-6 touch-pan-y select-none outline-none"
+      className="fixed inset-0 z-[200] flex items-center justify-center overflow-visible bg-black/80 px-2 py-4 sm:px-4 sm:py-6 touch-pan-y select-none outline-none"
       role="dialog"
       aria-modal="true"
       aria-label={t("home.promoSectionTitle")}
@@ -69,7 +69,7 @@ export default function PromoShortExpandedViewer({
       }}
     >
       <div
-        className="relative w-full max-w-[min(100%,72rem)] max-h-[min(92vh,960px)] min-h-0 flex flex-col overflow-visible"
+        className="relative w-[min(100vw,96rem)] max-w-none max-h-[min(92vh,960px)] min-h-0 flex flex-col items-center overflow-visible"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -87,7 +87,7 @@ export default function PromoShortExpandedViewer({
           onIndexChange={onIndexChange}
           centerMode="expanded"
           layout="stacked"
-          viewportClassName="relative w-full min-h-0 flex items-center justify-center outline-none touch-pan-y select-none"
+          viewportClassName="relative w-full min-h-0 overflow-visible flex items-center justify-center outline-none touch-pan-y select-none"
         />
       </div>
     </div>,
