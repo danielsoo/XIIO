@@ -64,9 +64,10 @@ const CAROUSEL_FRONT_LAYER_CLASS = "absolute inset-0 z-[10]";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
 const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
 const CAROUSEL_BACK_SCALE_RATIO = 0.52;
-const SLIDE_MS = 480;
-const SLIDE_EXIT_MULTIPLIER = 1.22;
-const SLIDE_EDGE_FADE = 0.18;
+const SLIDE_MS = 500;
+const SLIDE_EXIT_MULTIPLIER = 1.16;
+const SLIDE_ENTER_MULTIPLIER = 1.06;
+const SLIDE_EDGE_FADE = 0.22;
 
 function peekScaleRatio(): number {
   if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
@@ -274,14 +275,14 @@ function incomingSlotTransform(
 ): { transform: string; opacity: number; zIndex: number } {
   const { offsetX, peekScale } = metrics;
   const enterX =
-    transitionMode === "slide" ? Math.round(offsetX * SLIDE_EXIT_MULTIPLIER) : offsetX + ENTER_GAP_PX;
+    transitionMode === "slide" ? Math.round(offsetX * SLIDE_ENTER_MULTIPLIER) : offsetX + ENTER_GAP_PX;
 
   if (phase === "toNext") {
     if (atEnter) {
       return {
         transform: `translateX(${enterX}px) scale(${peekScale})`,
         opacity: transitionMode === "slide" ? SLIDE_EDGE_FADE : 1,
-        zIndex: transitionMode === "slide" ? 12 : 4,
+        zIndex: transitionMode === "slide" ? 16 : 4,
       };
     }
     return {
@@ -295,7 +296,7 @@ function incomingSlotTransform(
     return {
       transform: `translateX(${-enterX}px) scale(${peekScale})`,
       opacity: transitionMode === "slide" ? SLIDE_EDGE_FADE : 1,
-      zIndex: transitionMode === "slide" ? 12 : 4,
+      zIndex: transitionMode === "slide" ? 16 : 4,
     };
   }
   return {
@@ -837,6 +838,7 @@ export default function PromoShortCarouselStage({
               const showAsCenter =
                 !animatingRevolve &&
                 ((placement.isCenter && !isOutgoingCenter) ||
+                  (transitionMode === "slide" && isPromoting) ||
                   (warmCenter && !placement.visible) ||
                   (transitionMode === "slide" &&
                     snapshot !== null &&
@@ -862,6 +864,8 @@ export default function PromoShortCarouselStage({
               const slotFrameClass = placement.visible
                 ? isWrapArc
                   ? carouselWrapFrameClass
+                  : transitionMode === "slide" && (placement.role === "center" || isPromoting)
+                    ? carouselFrameClass
                   : isExpandedCenter && !showAsCenter
                     ? expandedPeekFrameClass
                     : placement.frameClass
