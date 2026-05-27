@@ -122,6 +122,9 @@ export const EXPANDED_VIEWER_CENTER_FRAME_CLASS =
 /** 확대 뷰어 — 좌·우 피크 슬롯 (중앙과 동일 9:16, 너비만 작게) */
 export const EXPANDED_VIEWER_PEEK_FRAME_CLASS =
   "w-full max-w-[14rem] sm:max-w-[16rem] aspect-[9/16] shrink-0 rounded-[14px] overflow-hidden";
+/** 확대 뷰어 — ±2 외곽 피크 (인스타 스트립 바깥 카드) */
+export const EXPANDED_VIEWER_OUTER_PEEK_FRAME_CLASS =
+  "w-full max-w-[10rem] sm:max-w-[12rem] aspect-[9/16] shrink-0 rounded-[14px] overflow-hidden";
 
 function PromoDescriptionBlock({
   description,

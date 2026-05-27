@@ -16,12 +16,16 @@ import {
   getRevolveDirection,
   getTransitionMode,
 } from "@/components/shorts/promoCarouselTransition";
-import { circularDistance } from "@/components/shorts/promoCarouselUtils";
+import {
+  circularDistance,
+  shouldWarmExpandedStripItem,
+} from "@/components/shorts/promoCarouselUtils";
 import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
 import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
   EXPANDED_VIEWER_CENTER_FRAME_CLASS,
+  EXPANDED_VIEWER_OUTER_PEEK_FRAME_CLASS,
   EXPANDED_VIEWER_PEEK_FRAME_CLASS,
   HOME_HERO_PEEK_VIEWPORT_CLASS,
   HOME_HERO_TEASER_FRAME_CLASS,
@@ -31,28 +35,42 @@ import type { PromoShort } from "@/types/promoShort";
 
 type Triplet = { left: PromoShort; center: PromoShort; right: PromoShort };
 
+type Quintet = {
+  farLeft: PromoShort;
+  left: PromoShort;
+  center: PromoShort;
+  right: PromoShort;
+  farRight: PromoShort;
+};
+
+type CarouselSnapshot = Triplet | Quintet;
+
 type RevolvePhase = "idle" | "toNext" | "toPrev";
 type ActiveTransitionMode = "revolve" | "fade" | "slide";
 
 type SlotRole = "left" | "center" | "right" | "incoming";
+type ExpandedStripRole = "farLeft" | "left" | "center" | "right" | "farRight" | "incoming";
+type PlacementRole = SlotRole | ExpandedStripRole;
 
 const ENTER_GAP_PX = 100;
 const STAGE_GAP_PX = 16;
 /** tailwind max-w-lg — 확대 중앙 측정·초기 metrics */
 const EXPANDED_CENTER_MEASURE_WIDTH_PX = 512;
-/** 확대 뷰어 — 중앙–피크 사이 여백 */
-const EXPANDED_STAGE_GAP_PX = 60;
+/** 확대 인접(±1)–중앙 사이 여백 */
+const EXPANDED_ADJACENT_GAP = 84;
+/** 확대 인접–외곽(±2) 사이 여백 */
+const EXPANDED_OUTER_GAP = 28;
 /** 확대 피크 전용 프레임 사용 시 transform scale (프레임 너비가 크기 담당) */
 const EXPANDED_PEEK_SCALE = 1;
-/** sm:max-w-[16rem] — 초기 peek 측정 fallback */
+/** 외곽 피크 미세 축소 */
+const EXPANDED_OUTER_PEEK_SCALE = 0.93;
+/** sm:max-w-[16rem] — 초기 adjacent peek 측정 fallback */
 const EXPANDED_PEEK_MEASURE_WIDTH_PX = 256;
+/** sm:max-w-[12rem] — 초기 outer peek 측정 fallback */
+const EXPANDED_OUTER_MEASURE_WIDTH_PX = 192;
 
-function expandedLayoutMetricsOptions(peekVisualWidthPx: number): LayoutMetricsOptions {
-  return {
-    stageGapPx: EXPANDED_STAGE_GAP_PX,
-    peekScale: EXPANDED_PEEK_SCALE,
-    peekVisualWidthPx: peekVisualWidthPx,
-  };
+function isQuintetSnapshot(s: CarouselSnapshot): s is Quintet {
+  return "farLeft" in s;
 }
 /** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
 const PEEK_SCALE_SM = 180 / 236;
@@ -111,6 +129,35 @@ type LayoutMetrics = {
   peekInnerArrowAnchorPx: number;
 };
 
+type ExpandedStripMetrics = LayoutMetrics & {
+  offsetAdjacent: number;
+  offsetOuter: number;
+  peekAdjacentW: number;
+  peekOuterW: number;
+};
+
+function expandedStripMetricsFromCenterWidth(
+  centerW: number,
+  peekAdjacentW: number,
+  peekOuterW: number
+): ExpandedStripMetrics {
+  const peekScale = EXPANDED_PEEK_SCALE;
+  const offsetAdjacent = centerW / 2 + EXPANDED_ADJACENT_GAP + peekAdjacentW / 2;
+  const offsetOuter =
+    offsetAdjacent + peekAdjacentW / 2 + EXPANDED_OUTER_GAP + peekOuterW / 2;
+  const peekInnerArrowAnchorPx = peekAdjacentW / 2 - NAV_ARROW_INSET_PX;
+  return {
+    centerW,
+    offsetX: offsetAdjacent,
+    offsetAdjacent,
+    offsetOuter,
+    peekScale,
+    peekAdjacentW,
+    peekOuterW,
+    peekInnerArrowAnchorPx,
+  };
+}
+
 export type PromoShortCarouselCenterMode = "teaser" | "expanded";
 
 type Props = {
@@ -144,6 +191,196 @@ function tripletAt(items: PromoShort[], centerIndex: number): Triplet {
     center: items[centerIndex]!,
     right: items[(centerIndex + 1) % n]!,
   };
+}
+
+function quintetAt(items: PromoShort[], centerIndex: number): Quintet {
+  const n = items.length;
+  return {
+    farLeft: items[(centerIndex - 2 + n) % n]!,
+    left: items[(centerIndex - 1 + n) % n]!,
+    center: items[centerIndex]!,
+    right: items[(centerIndex + 1) % n]!,
+    farRight: items[(centerIndex + 2) % n]!,
+  };
+}
+
+function getVisibleExpandedRoles(quintet: Quintet, count: number): Set<ExpandedStripRole> {
+  const visible = new Set<ExpandedStripRole>(["center"]);
+  if (count >= 2) {
+    if (quintet.left.id !== quintet.center.id) visible.add("left");
+    if (quintet.right.id !== quintet.center.id) visible.add("right");
+  }
+  if (count >= 5) {
+    if (quintet.farLeft.id !== quintet.left.id) visible.add("farLeft");
+    if (quintet.farRight.id !== quintet.right.id) visible.add("farRight");
+  } else if (count === 4) {
+    if (quintet.farLeft.id !== quintet.left.id && quintet.farLeft.id !== quintet.center.id) {
+      visible.add("farLeft");
+    }
+    if (quintet.farRight.id !== quintet.right.id && quintet.farRight.id !== quintet.center.id) {
+      visible.add("farRight");
+    }
+  }
+  return visible;
+}
+
+function expandedStripSlotTransform(
+  role: ExpandedStripRole,
+  phase: RevolvePhase,
+  metrics: ExpandedStripMetrics
+): { transform: string; opacity: number; zIndex: number } {
+  const { offsetAdjacent, offsetOuter, peekScale } = metrics;
+  const outerScale = EXPANDED_OUTER_PEEK_SCALE;
+  const adjacentScale = peekScale;
+
+  if (phase === "idle") {
+    switch (role) {
+      case "farLeft":
+        return {
+          transform: `translateX(${-offsetOuter}px) scale(${outerScale})`,
+          opacity: 1,
+          zIndex: 18,
+        };
+      case "left":
+        return {
+          transform: `translateX(${-offsetAdjacent}px) scale(${adjacentScale})`,
+          opacity: 1,
+          zIndex: 20,
+        };
+      case "center":
+        return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
+      case "right":
+        return {
+          transform: `translateX(${offsetAdjacent}px) scale(${adjacentScale})`,
+          opacity: 1,
+          zIndex: 20,
+        };
+      case "farRight":
+        return {
+          transform: `translateX(${offsetOuter}px) scale(${outerScale})`,
+          opacity: 1,
+          zIndex: 18,
+        };
+      default:
+        return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 18 };
+    }
+  }
+
+  if (phase === "toNext") {
+    switch (role) {
+      case "farLeft":
+        return {
+          transform: `translateX(${-offsetOuter - SLIDE_ENTER_EXTRA_PX}px) scale(${outerScale})`,
+          opacity: SLIDE_EDGE_FADE,
+          zIndex: 1,
+        };
+      case "left":
+        return {
+          transform: `translateX(${-offsetOuter}px) scale(${outerScale})`,
+          opacity: 1,
+          zIndex: 18,
+        };
+      case "center":
+        return {
+          transform: `translateX(${-offsetAdjacent}px) scale(${adjacentScale})`,
+          opacity: 1,
+          zIndex: 20,
+        };
+      case "right":
+        return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
+      case "farRight":
+        return {
+          transform: `translateX(${offsetAdjacent}px) scale(${adjacentScale})`,
+          opacity: 1,
+          zIndex: 20,
+        };
+      default:
+        return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 18 };
+    }
+  }
+
+  if (phase === "toPrev") {
+    switch (role) {
+      case "farRight":
+        return {
+          transform: `translateX(${offsetOuter + SLIDE_ENTER_EXTRA_PX}px) scale(${outerScale})`,
+          opacity: SLIDE_EDGE_FADE,
+          zIndex: 1,
+        };
+      case "right":
+        return {
+          transform: `translateX(${offsetOuter}px) scale(${outerScale})`,
+          opacity: 1,
+          zIndex: 18,
+        };
+      case "center":
+        return {
+          transform: `translateX(${offsetAdjacent}px) scale(${adjacentScale})`,
+          opacity: 1,
+          zIndex: 20,
+        };
+      case "left":
+        return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
+      case "farLeft":
+        return {
+          transform: `translateX(${-offsetAdjacent}px) scale(${adjacentScale})`,
+          opacity: 1,
+          zIndex: 20,
+        };
+      default:
+        return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 18 };
+    }
+  }
+
+  return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 18 };
+}
+
+function expandedIncomingSlotTransform(
+  phase: "toNext" | "toPrev",
+  atEnter: boolean,
+  metrics: ExpandedStripMetrics
+): { transform: string; opacity: number; zIndex: number } {
+  const { offsetOuter } = metrics;
+  const outerScale = EXPANDED_OUTER_PEEK_SCALE;
+  const enterX = offsetOuter + SLIDE_ENTER_EXTRA_PX;
+
+  if (phase === "toNext") {
+    if (atEnter) {
+      return {
+        transform: `translateX(${enterX}px) scale(${outerScale})`,
+        opacity: SLIDE_EDGE_FADE,
+        zIndex: 18,
+      };
+    }
+    return {
+      transform: `translateX(${offsetOuter}px) scale(${outerScale})`,
+      opacity: 1,
+      zIndex: 18,
+    };
+  }
+
+  if (atEnter) {
+    return {
+      transform: `translateX(${-enterX}px) scale(${outerScale})`,
+      opacity: SLIDE_EDGE_FADE,
+      zIndex: 18,
+    };
+  }
+  return {
+    transform: `translateX(${-offsetOuter}px) scale(${outerScale})`,
+    opacity: 1,
+    zIndex: 18,
+  };
+}
+
+function expandedIncomingItemAt(
+  items: PromoShort[],
+  centerIndex: number,
+  phase: "toNext" | "toPrev"
+): PromoShort {
+  const n = items.length;
+  if (phase === "toNext") return items[(centerIndex + 3) % n]!;
+  return items[(centerIndex - 3 + n) % n]!;
 }
 
 function slotTransform(
@@ -312,7 +549,7 @@ function incomingItemAt(items: PromoShort[], centerIndex: number, phase: "toNext
 
 type ItemPlacement = {
   visible: boolean;
-  role?: SlotRole;
+  role?: PlacementRole;
   transform: string;
   opacity: number;
   zIndex: number;
@@ -387,6 +624,62 @@ function placementForItem(
   };
 }
 
+function placementForExpandedItem(
+  itemId: string,
+  displayQuintet: Quintet,
+  count: number,
+  incomingItem: PromoShort | null,
+  incomingStyle: { transform: string; opacity: number; zIndex: number } | null,
+  revolvePhase: RevolvePhase,
+  metrics: ExpandedStripMetrics,
+  slotFrameClass: string
+): ItemPlacement {
+  const visibleRoles = getVisibleExpandedRoles(displayQuintet, count);
+
+  if (count >= 5 && incomingItem && incomingStyle && incomingItem.id === itemId) {
+    return {
+      visible: true,
+      role: "incoming",
+      transform: incomingStyle.transform,
+      opacity: incomingStyle.opacity,
+      zIndex: incomingStyle.zIndex,
+      frameClass: slotFrameClass,
+      isCenter: false,
+    };
+  }
+
+  const roleEntries: { role: ExpandedStripRole; item: PromoShort }[] = [
+    { role: "farLeft", item: displayQuintet.farLeft },
+    { role: "left", item: displayQuintet.left },
+    { role: "center", item: displayQuintet.center },
+    { role: "right", item: displayQuintet.right },
+    { role: "farRight", item: displayQuintet.farRight },
+  ];
+
+  for (const { role, item } of roleEntries) {
+    if (item.id !== itemId || !visibleRoles.has(role)) continue;
+    const s = expandedStripSlotTransform(role, revolvePhase, metrics);
+    return {
+      visible: true,
+      role,
+      transform: s.transform,
+      opacity: s.opacity,
+      zIndex: s.zIndex,
+      frameClass: slotFrameClass,
+      isCenter: role === "center",
+    };
+  }
+
+  return {
+    visible: false,
+    transform: "translateX(0) scale(1)",
+    opacity: 0,
+    zIndex: 0,
+    frameClass: slotFrameClass,
+    isCenter: false,
+  };
+}
+
 export default function PromoShortCarouselStage({
   items,
   index,
@@ -408,6 +701,7 @@ export default function PromoShortCarouselStage({
     ? EXPANDED_VIEWER_CENTER_FRAME_CLASS
     : HERO_CAROUSEL_WRAP_FRAME_CLASS;
   const expandedPeekFrameClass = `${EXPANDED_VIEWER_PEEK_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
+  const expandedOuterPeekFrameClass = `${EXPANDED_VIEWER_OUTER_PEEK_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
   const { t } = useTranslations();
   const count = items.length;
   const current = items[index];
@@ -421,18 +715,20 @@ export default function PromoShortCarouselStage({
   const stageRef = useRef<HTMLDivElement>(null);
   const centerMeasureRef = useRef<HTMLDivElement>(null);
   const peekMeasureRef = useRef<HTMLDivElement>(null);
+  const outerPeekMeasureRef = useRef<HTMLDivElement>(null);
 
-  const [metrics, setMetrics] = useState<LayoutMetrics>(() =>
+  const [metrics, setMetrics] = useState<LayoutMetrics | ExpandedStripMetrics>(() =>
     isExpandedCenter
-      ? layoutMetricsFromCenterWidth(
+      ? expandedStripMetricsFromCenterWidth(
           EXPANDED_CENTER_MEASURE_WIDTH_PX,
-          expandedLayoutMetricsOptions(EXPANDED_PEEK_MEASURE_WIDTH_PX)
+          EXPANDED_PEEK_MEASURE_WIDTH_PX,
+          EXPANDED_OUTER_MEASURE_WIDTH_PX
         )
       : layoutMetricsFromCenterWidth(200)
   );
   const [revolvePhase, setRevolvePhase] = useState<RevolvePhase>("idle");
   const [revolveEpoch, setRevolveEpoch] = useState(0);
-  const [snapshot, setSnapshot] = useState<Triplet | null>(null);
+  const [snapshot, setSnapshot] = useState<CarouselSnapshot | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [outgoingCenterId, setOutgoingCenterId] = useState<string | null>(null);
   const [viewportOpacity, setViewportOpacity] = useState(1);
@@ -538,11 +834,11 @@ export default function PromoShortCarouselStage({
       const centerW = centerEl.offsetWidth;
       if (centerW <= 0) return;
       if (isExpandedCenter) {
-        const peekW =
+        const peekAdjacentW =
           peekMeasureRef.current?.offsetWidth || EXPANDED_PEEK_MEASURE_WIDTH_PX;
-        setMetrics(
-          layoutMetricsFromCenterWidth(centerW, expandedLayoutMetricsOptions(peekW))
-        );
+        const peekOuterW =
+          outerPeekMeasureRef.current?.offsetWidth || EXPANDED_OUTER_MEASURE_WIDTH_PX;
+        setMetrics(expandedStripMetricsFromCenterWidth(centerW, peekAdjacentW, peekOuterW));
       } else {
         setMetrics(
           layoutMetricsFromCenterWidth(centerW, {
@@ -556,6 +852,9 @@ export default function PromoShortCarouselStage({
     if (centerMeasureRef.current) ro.observe(centerMeasureRef.current);
     if (isExpandedCenter && peekMeasureRef.current) {
       ro.observe(peekMeasureRef.current);
+    }
+    if (isExpandedCenter && outerPeekMeasureRef.current) {
+      ro.observe(outerPeekMeasureRef.current);
     }
     const mq = window.matchMedia("(min-width: 640px)");
     const onMq = () => measure();
@@ -591,7 +890,7 @@ export default function PromoShortCarouselStage({
       : getRevolveDirection(prev, index, count);
     const targetPhase = direction === 1 ? "toNext" : "toPrev";
     setAnimPrevIndex(prev);
-    setSnapshot(tripletAt(items, prev));
+    setSnapshot(isExpandedCenter ? quintetAt(items, prev) : tripletAt(items, prev));
     setIncomingAtEnter(true);
     setRevolvePhase("idle");
     const raf = requestAnimationFrame(() => {
@@ -718,18 +1017,33 @@ export default function PromoShortCarouselStage({
   }
 
   const liveTriplet = tripletAt(items, index);
-  const displayTriplet = snapshot ?? liveTriplet;
+  const liveQuintet = quintetAt(items, index);
+  const displayTriplet =
+    snapshot && !isQuintetSnapshot(snapshot) ? snapshot : liveTriplet;
+  const displayQuintet =
+    snapshot && isQuintetSnapshot(snapshot) ? snapshot : liveQuintet;
+  const stripMetrics =
+    isExpandedCenter && "offsetOuter" in metrics ? metrics : null;
   const animatingShift =
     revolvePhase !== "idle" &&
     (transitionMode === "revolve" || transitionMode === "slide");
   const animatingRevolve = transitionMode === "revolve" && revolvePhase !== "idle";
   const transitionClass = animatingShift
-    ? `transition-[transform,opacity] duration-500 ${
-        transitionMode === "slide"
-          ? "ease-[cubic-bezier(0.22,1,0.36,1)]"
-          : "ease-in-out"
-      } motion-reduce:transition-none`
+    ? isExpandedCenter && transitionMode === "slide"
+      ? "transition-[transform,opacity] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+      : `transition-[transform,opacity] duration-500 ${
+          transitionMode === "slide"
+            ? "ease-[cubic-bezier(0.22,1,0.36,1)]"
+            : "ease-in-out"
+        } motion-reduce:transition-none`
     : "motion-reduce:transition-none";
+  const expandedSlideTransitionStyle =
+    animatingShift && isExpandedCenter && transitionMode === "slide"
+      ? {
+          transitionDuration: `${SLIDE_MS}ms`,
+          transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+        }
+      : undefined;
 
   const stageOpacityClass =
     transitionMode === "fade"
@@ -739,30 +1053,50 @@ export default function PromoShortCarouselStage({
   const showIncoming =
     (transitionMode === "revolve" || transitionMode === "slide") &&
     (revolvePhase === "toNext" || revolvePhase === "toPrev");
+  const incomingMinCount = isExpandedCenter ? 5 : 3;
   const wrapCandidate =
-    showIncoming && count >= 3 ? incomingItemAt(items, animPrevIndex, revolvePhase) : null;
+    showIncoming && count >= incomingMinCount
+      ? isExpandedCenter
+        ? expandedIncomingItemAt(items, animPrevIndex, revolvePhase)
+        : incomingItemAt(items, animPrevIndex, revolvePhase)
+      : null;
   const incomingItem =
     wrapCandidate &&
     !(
-      (revolvePhase === "toNext" && wrapCandidate.id === displayTriplet.left.id) ||
-      (revolvePhase === "toPrev" && wrapCandidate.id === displayTriplet.right.id)
+      isExpandedCenter
+        ? (revolvePhase === "toNext" && wrapCandidate.id === displayQuintet.farRight.id) ||
+          (revolvePhase === "toPrev" && wrapCandidate.id === displayQuintet.farLeft.id)
+        : (revolvePhase === "toNext" && wrapCandidate.id === displayTriplet.left.id) ||
+          (revolvePhase === "toPrev" && wrapCandidate.id === displayTriplet.right.id)
     )
       ? wrapCandidate
       : null;
   const incomingStyle =
     incomingItem && showIncoming
-      ? incomingSlotTransform(revolvePhase, incomingAtEnter, metrics, transitionMode)
+      ? stripMetrics
+        ? expandedIncomingSlotTransform(revolvePhase, incomingAtEnter, stripMetrics)
+        : incomingSlotTransform(revolvePhase, incomingAtEnter, metrics, transitionMode)
       : null;
 
   const liveCenterId = items[index]!.id;
-  const stageMetricsStyle = {
-    minWidth: `${Math.round(metrics.offsetX * 2 + ENTER_GAP_PX + 48)}px`,
-    perspective: "1000px",
-    transformStyle: "preserve-3d" as const,
-    ["--carousel-offset-x" as string]: `${metrics.offsetX}px`,
-    ["--carousel-peek-scale" as string]: String(metrics.peekScale),
-    ["--carousel-back-scale" as string]: String(metrics.peekScale * CAROUSEL_BACK_SCALE_RATIO),
-  };
+  const navOffsetX = stripMetrics?.offsetAdjacent ?? metrics.offsetX;
+  const stageMetricsStyle = stripMetrics
+    ? {
+        minWidth: `${Math.round(stripMetrics.offsetOuter * 2 + 48)}px`,
+        ["--carousel-offset-x" as string]: `${stripMetrics.offsetAdjacent}px`,
+        ["--carousel-peek-scale" as string]: String(stripMetrics.peekScale),
+        ["--carousel-back-scale" as string]: String(
+          stripMetrics.peekScale * CAROUSEL_BACK_SCALE_RATIO
+        ),
+      }
+    : {
+        minWidth: `${Math.round(metrics.offsetX * 2 + ENTER_GAP_PX + 48)}px`,
+        perspective: "1000px",
+        transformStyle: "preserve-3d" as const,
+        ["--carousel-offset-x" as string]: `${metrics.offsetX}px`,
+        ["--carousel-peek-scale" as string]: String(metrics.peekScale),
+        ["--carousel-back-scale" as string]: String(metrics.peekScale * CAROUSEL_BACK_SCALE_RATIO),
+      };
 
   return (
     <div
@@ -778,7 +1112,10 @@ export default function PromoShortCarouselStage({
       <div className="pointer-events-none absolute opacity-0 -z-50" aria-hidden>
         <div ref={centerMeasureRef} className={carouselFrameClass} />
         {isExpandedCenter ? (
-          <div ref={peekMeasureRef} className={EXPANDED_VIEWER_PEEK_FRAME_CLASS} />
+          <>
+            <div ref={peekMeasureRef} className={EXPANDED_VIEWER_PEEK_FRAME_CLASS} />
+            <div ref={outerPeekMeasureRef} className={EXPANDED_VIEWER_OUTER_PEEK_FRAME_CLASS} />
+          </>
         ) : null}
       </div>
 
@@ -797,26 +1134,44 @@ export default function PromoShortCarouselStage({
             const frontSlots: ReactNode[] = [];
 
             items.forEach((item, itemIdx) => {
-              const placement = placementForItem(
-                item.id,
-                displayTriplet,
-                incomingItem,
-                incomingStyle,
-                revolvePhase,
-                transitionMode,
-                metrics,
-                carouselFrameClass
-              );
+              const placement =
+                stripMetrics
+                  ? placementForExpandedItem(
+                      item.id,
+                      displayQuintet,
+                      count,
+                      incomingItem,
+                      incomingStyle,
+                      revolvePhase,
+                      stripMetrics,
+                      carouselFrameClass
+                    )
+                  : placementForItem(
+                      item.id,
+                      displayTriplet,
+                      incomingItem,
+                      incomingStyle,
+                      revolvePhase,
+                      transitionMode,
+                      metrics,
+                      carouselFrameClass
+                    );
               const warmCenter =
-                !snapshot && circularDistance(itemIdx, index, count) <= 1;
+                !snapshot &&
+                (isExpandedCenter
+                  ? shouldWarmExpandedStripItem(itemIdx, index, count)
+                  : circularDistance(itemIdx, index, count) <= 1);
               if (!placement.visible && !warmCenter) return;
 
               const isTargetCenter = item.id === liveCenterId;
               const isLiveCenter = !snapshot && isTargetCenter;
               const isPromoting =
                 animatingShift &&
-                ((revolvePhase === "toNext" && item.id === displayTriplet.right.id) ||
-                  (revolvePhase === "toPrev" && item.id === displayTriplet.left.id));
+                (isExpandedCenter
+                  ? (revolvePhase === "toNext" && item.id === displayQuintet.right.id) ||
+                    (revolvePhase === "toPrev" && item.id === displayQuintet.left.id)
+                  : (revolvePhase === "toNext" && item.id === displayTriplet.right.id) ||
+                    (revolvePhase === "toPrev" && item.id === displayTriplet.left.id));
               const isOutgoingCenter = Boolean(
                 snapshot && outgoingCenterId && item.id === outgoingCenterId
               );
@@ -846,6 +1201,12 @@ export default function PromoShortCarouselStage({
                 : "";
               const slotMotionClass = isWrapArc ? wrapArcClass : transitionClass;
               const slotCenteringClass = isWrapArc ? "" : "-translate-y-1/2";
+              const isOuterStripRole =
+                placement.role === "farLeft" ||
+                placement.role === "farRight" ||
+                placement.role === "incoming";
+              const isAdjacentStripRole =
+                placement.role === "left" || placement.role === "right";
               const slotFrameClass = placement.visible
                 ? isWrapArc
                   ? carouselWrapFrameClass
@@ -855,6 +1216,10 @@ export default function PromoShortCarouselStage({
                       isExpandedCenter &&
                       placement.role === "center" &&
                       animatingShift
+                    ? expandedPeekFrameClass
+                  : isExpandedCenter && isOuterStripRole
+                    ? expandedOuterPeekFrameClass
+                  : isExpandedCenter && (isAdjacentStripRole || !showAsCenter)
                     ? expandedPeekFrameClass
                   : isExpandedCenter && !showAsCenter
                     ? expandedPeekFrameClass
@@ -874,6 +1239,7 @@ export default function PromoShortCarouselStage({
                     opacity: placement.visible ? (isWrapArc ? 1 : placement.opacity) : 0,
                     zIndex: placement.visible ? placement.zIndex : 0,
                     pointerEvents: placement.visible ? undefined : "none",
+                    ...expandedSlideTransitionStyle,
                   }}
                   aria-hidden={placement.visible ? !ariaLiveCenter : true}
                 >
@@ -928,7 +1294,9 @@ export default function PromoShortCarouselStage({
                         isWrapArc
                           ? "strong"
                           : isExpandedCenter
-                            ? "expandedSide"
+                            ? isOuterStripRole
+                              ? "expandedOuter"
+                              : "expandedSide"
                             : "default"
                       }
                     />
@@ -974,7 +1342,7 @@ export default function PromoShortCarouselStage({
                 data-carousel-nav
                 className={FIXED_CAROUSEL_ARROW_CLASS}
                 style={{
-                  left: `calc(50% - ${metrics.offsetX}px + ${metrics.peekInnerArrowAnchorPx}px)`,
+                  left: `calc(50% - ${navOffsetX}px + ${metrics.peekInnerArrowAnchorPx}px)`,
                   transform: "translate(-100%, -50%)",
                 }}
                 onMouseDown={(e) => e.preventDefault()}
@@ -988,7 +1356,7 @@ export default function PromoShortCarouselStage({
                 data-carousel-nav
                 className={FIXED_CAROUSEL_ARROW_CLASS}
                 style={{
-                  left: `calc(50% + ${metrics.offsetX}px - ${metrics.peekInnerArrowAnchorPx}px)`,
+                  left: `calc(50% + ${navOffsetX}px - ${metrics.peekInnerArrowAnchorPx}px)`,
                   transform: "translate(0, -50%)",
                 }}
                 onMouseDown={(e) => e.preventDefault()}

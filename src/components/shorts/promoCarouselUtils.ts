@@ -9,6 +9,11 @@ export function shouldMountCenterPlayer(i: number, center: number, count: number
   return circularDistance(i, center, count) <= 1;
 }
 
+/** 확대 5장 스트립 — ±2 썸네일 warm mount */
+export function shouldWarmExpandedStripItem(i: number, center: number, count: number): boolean {
+  return circularDistance(i, center, count) <= 2;
+}
+
 export function centerVideoPreload(
   i: number,
   center: number,
