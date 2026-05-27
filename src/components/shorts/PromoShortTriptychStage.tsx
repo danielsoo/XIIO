@@ -627,13 +627,13 @@ export default function PromoShortTriptychStage({
               const isOutgoingCenter = Boolean(
                 snapshot && outgoingCenterId && item.id === outgoingCenterId
               );
-              const preserveCenterFrame = Boolean(
-                snapshot && (item.id === liveCenterId || isPromoting)
-              );
               const showAsCenter =
-                (placement.isCenter && !isOutgoingCenter) ||
-                isPromoting ||
-                (warmCenter && !placement.visible);
+                !animatingRevolve &&
+                ((placement.isCenter && !isOutgoingCenter) ||
+                  (warmCenter && !placement.visible));
+              const preserveCenterFrame = Boolean(
+                showAsCenter && isLiveCenter && snapshot && item.id === liveCenterId
+              );
               const ariaLiveCenter = isLiveCenter || isPromoting;
               const isWrapArc =
                 animatingRevolve &&
@@ -690,7 +690,12 @@ export default function PromoShortTriptychStage({
                       className="h-full w-full"
                     />
                   ) : (
-                    <PromoShortPeekPreview item={item} compactShell dimOverlay={!isWrapArc} />
+                    <PromoShortPeekPreview
+                      item={item}
+                      compactShell
+                      dimOverlay
+                      dimStrong={isWrapArc}
+                    />
                   )}
                   {swipeEnabled && placement.visible && placement.role === "left" && !isWrapArc && (
                     <div
