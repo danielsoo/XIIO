@@ -36,6 +36,10 @@ type SlotRole = "left" | "center" | "right" | "incoming";
 
 const ENTER_GAP_PX = 100;
 const STAGE_GAP_PX = 16;
+/** 확대 뷰어 — 중앙–피크 사이 여백 (히어로보다 넓게) */
+const EXPANDED_STAGE_GAP_PX = 48;
+/** 확대 뷰어 — 좌·우 피크 scale (중앙 대비 작게) */
+const EXPANDED_PEEK_SCALE = 0.58;
 /** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
 const PEEK_SCALE_SM = 180 / 236;
 const PEEK_SCALE_DEFAULT = 160 / 200;
@@ -55,10 +59,19 @@ function peekScaleRatio(): number {
 /** 피크 카드 안 화살표가 쓰이던 inset (right-2 / left-2) */
 const NAV_ARROW_INSET_PX = 8;
 
-function layoutMetricsFromCenterWidth(centerW: number): LayoutMetrics {
-  const peekScale = peekScaleRatio();
+type LayoutMetricsOptions = {
+  stageGapPx?: number;
+  peekScale?: number;
+};
+
+function layoutMetricsFromCenterWidth(
+  centerW: number,
+  options: LayoutMetricsOptions = {}
+): LayoutMetrics {
+  const peekScale = options.peekScale ?? peekScaleRatio();
+  const stageGapPx = options.stageGapPx ?? STAGE_GAP_PX;
   const peekVisualW = centerW * peekScale;
-  const offsetX = centerW / 2 + STAGE_GAP_PX + peekVisualW / 2;
+  const offsetX = centerW / 2 + stageGapPx + peekVisualW / 2;
   /** 슬롯 scale 적용 후 피크 안쪽 가장자리(화살표 앵커) — 이전 in-peek right-2/left-2 와 동일 */
   const peekInnerArrowAnchorPx = (centerW / 2 - NAV_ARROW_INSET_PX) * peekScale;
   return {
@@ -427,7 +440,12 @@ export default function PromoShortCarouselStage({
       if (!centerEl) return;
       const centerW = centerEl.offsetWidth;
       if (centerW <= 0) return;
-      setMetrics(layoutMetricsFromCenterWidth(centerW));
+      setMetrics(
+        layoutMetricsFromCenterWidth(centerW, {
+          stageGapPx: isExpandedCenter ? EXPANDED_STAGE_GAP_PX : STAGE_GAP_PX,
+          peekScale: isExpandedCenter ? EXPANDED_PEEK_SCALE : undefined,
+        })
+      );
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -439,7 +457,7 @@ export default function PromoShortCarouselStage({
       ro.disconnect();
       mq.removeEventListener("change", onMq);
     };
-  }, []);
+  }, [isExpandedCenter]);
 
   useLayoutEffect(() => {
     const prev = prevIndexRef.current;
@@ -763,7 +781,13 @@ export default function PromoShortCarouselStage({
                       item={item}
                       compactShell
                       dimOverlay
-                      dimStrong={isWrapArc}
+                      dimLevel={
+                        isWrapArc
+                          ? "strong"
+                          : isExpandedCenter
+                            ? "expandedSide"
+                            : "default"
+                      }
                     />
                   )}
                   {carouselSwipeEnabled && placement.visible && placement.role === "left" && !isWrapArc && (

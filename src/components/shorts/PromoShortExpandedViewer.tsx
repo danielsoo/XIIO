@@ -69,7 +69,7 @@ export default function PromoShortExpandedViewer({
       }}
     >
       <div
-        className="relative w-full max-w-[min(100%,56rem)] max-h-[min(92vh,960px)] min-h-0 flex flex-col"
+        className="relative w-full max-w-[min(100%,72rem)] max-h-[min(92vh,960px)] min-h-0 flex flex-col overflow-visible"
         onClick={(e) => e.stopPropagation()}
       >
         <button
