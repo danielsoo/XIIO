@@ -142,7 +142,7 @@ function tripletAt(items: PromoShort[], centerIndex: number): Triplet {
   };
 }
 
-function slotTransform(
+function revolveSlotTransform(
   role: SlotRole,
   phase: RevolvePhase,
   metrics: LayoutMetrics
@@ -190,6 +190,67 @@ function slotTransform(
       transform: `translateX(${-offsetX}px) scale(${peekScale})`,
       opacity: 1,
       zIndex: 1,
+    };
+  }
+  if (role === "center") {
+    return {
+      transform: `translateX(${offsetX}px) scale(${peekScale})`,
+      opacity: 1,
+      zIndex: 20,
+    };
+  }
+  return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
+}
+
+function slideSlotTransform(
+  role: SlotRole,
+  phase: RevolvePhase,
+  metrics: LayoutMetrics
+): { transform: string; opacity: number; zIndex: number } {
+  const { offsetX, peekScale } = metrics;
+  const exitX = offsetX + ENTER_GAP_PX;
+
+  if (phase === "idle") {
+    if (role === "left") {
+      return {
+        transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+        opacity: 1,
+        zIndex: 15,
+      };
+    }
+    if (role === "right") {
+      return {
+        transform: `translateX(${offsetX}px) scale(${peekScale})`,
+        opacity: 1,
+        zIndex: 15,
+      };
+    }
+    return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
+  }
+
+  if (phase === "toNext") {
+    if (role === "left") {
+      return {
+        transform: `translateX(${-exitX}px) scale(${peekScale})`,
+        opacity: 1,
+        zIndex: 12,
+      };
+    }
+    if (role === "center") {
+      return {
+        transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+        opacity: 1,
+        zIndex: 20,
+      };
+    }
+    return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
+  }
+
+  if (role === "right") {
+    return {
+      transform: `translateX(${exitX}px) scale(${peekScale})`,
+      opacity: 1,
+      zIndex: 12,
     };
   }
   if (role === "center") {
@@ -261,6 +322,7 @@ function placementForItem(
   incomingItem: PromoShort | null,
   incomingStyle: { transform: string; opacity: number; zIndex: number } | null,
   revolvePhase: RevolvePhase,
+  transitionMode: ActiveTransitionMode,
   metrics: LayoutMetrics,
   slotFrameClass: string
 ): ItemPlacement {
@@ -276,7 +338,10 @@ function placementForItem(
     };
   }
   if (displayTriplet.left.id === itemId) {
-    const s = slotTransform("left", revolvePhase, metrics);
+    const s =
+      transitionMode === "slide"
+        ? slideSlotTransform("left", revolvePhase, metrics)
+        : revolveSlotTransform("left", revolvePhase, metrics);
     return {
       visible: true,
       role: "left",
@@ -288,7 +353,10 @@ function placementForItem(
     };
   }
   if (displayTriplet.center.id === itemId) {
-    const s = slotTransform("center", revolvePhase, metrics);
+    const s =
+      transitionMode === "slide"
+        ? slideSlotTransform("center", revolvePhase, metrics)
+        : revolveSlotTransform("center", revolvePhase, metrics);
     return {
       visible: true,
       role: "center",
@@ -300,7 +368,10 @@ function placementForItem(
     };
   }
   if (displayTriplet.right.id === itemId) {
-    const s = slotTransform("right", revolvePhase, metrics);
+    const s =
+      transitionMode === "slide"
+        ? slideSlotTransform("right", revolvePhase, metrics)
+        : revolveSlotTransform("right", revolvePhase, metrics);
     return {
       visible: true,
       role: "right",
@@ -348,6 +419,7 @@ export default function PromoShortCarouselStage({
 
   const prevIndexRef = useRef(index);
   const indexRef = useRef(index);
+  const requestedDirectionRef = useRef<1 | -1>(1);
   const isTransitioningRef = useRef(false);
   const pendingStepRef = useRef(0);
   const pendingFadeTargetRef = useRef<number | null>(null);
@@ -428,6 +500,7 @@ export default function PromoShortCarouselStage({
         if (step > count / 2) step -= count;
         if (step < -count / 2) step += count;
         if (step === 1 || step === -1) {
+          requestedDirectionRef.current = step === 1 ? 1 : -1;
           pendingStepRef.current += step;
           pendingFadeTargetRef.current = null;
         } else {
@@ -437,6 +510,8 @@ export default function PromoShortCarouselStage({
         return;
       }
 
+      const forward = (indexRef.current + 1) % count;
+      requestedDirectionRef.current = next === forward ? 1 : -1;
       onIndexChange(next);
     },
     [count, onIndexChange]
@@ -446,10 +521,12 @@ export default function PromoShortCarouselStage({
     (delta: number) => {
       if (count === 0) return;
       if (isTransitioningRef.current) {
+        requestedDirectionRef.current = delta > 0 ? 1 : -1;
         pendingStepRef.current += delta;
         pendingFadeTargetRef.current = null;
         return;
       }
+      requestedDirectionRef.current = delta > 0 ? 1 : -1;
       onIndexChange((indexRef.current + delta + count) % count);
     },
     [count, onIndexChange]
@@ -514,7 +591,9 @@ export default function PromoShortCarouselStage({
       return;
     }
 
-    const direction = getRevolveDirection(prev, index, count);
+    const direction = isExpandedCenter
+      ? requestedDirectionRef.current
+      : getRevolveDirection(prev, index, count);
     const targetPhase = direction === 1 ? "toNext" : "toPrev";
     setAnimPrevIndex(prev);
     setSnapshot(tripletAt(items, prev));
@@ -660,7 +739,7 @@ export default function PromoShortCarouselStage({
       : "";
 
   const showIncoming =
-    transitionMode === "revolve" &&
+    (transitionMode === "revolve" || transitionMode === "slide") &&
     (revolvePhase === "toNext" || revolvePhase === "toPrev");
   const wrapCandidate =
     showIncoming && count >= 3 ? incomingItemAt(items, animPrevIndex, revolvePhase) : null;
@@ -726,6 +805,7 @@ export default function PromoShortCarouselStage({
                 incomingItem,
                 incomingStyle,
                 revolvePhase,
+                transitionMode,
                 metrics,
                 carouselFrameClass
               );
