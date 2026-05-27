@@ -23,7 +23,6 @@ import {
 } from "@/lib/server/credits";
 import { parseUploadLength } from "@/lib/server/parse-upload-length";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
-import { validatePromoClipRange } from "@/lib/works/promo-clip";
 import type { WorkCreditInput } from "@/types/credits";
 import type { PromoDraft, VideoAspectRatio } from "@/types/work";
 
@@ -60,8 +59,6 @@ export async function POST(request: Request) {
     promoDraft?: {
       title?: string;
       description?: string;
-      clipStartSec?: number;
-      clipEndSec?: number;
     };
     credits?: WorkCreditInput[];
   };
@@ -114,21 +111,7 @@ export async function POST(request: Request) {
   if (!promoTitle) {
     return jsonError("promo_required", "쇼츠 제목을 입력해 주세요.", 400);
   }
-  const clipStart = Number(promoRaw.clipStartSec);
-  const clipEnd = Number(promoRaw.clipEndSec);
-  const clipErr = validatePromoClipRange(clipStart, clipEnd);
-  if (clipErr === "clip_too_short") {
-    return jsonError("invalid_clip", "클립 구간은 3초 이상이어야 합니다.", 400);
-  }
-  if (clipErr === "clip_too_long") {
-    return jsonError("invalid_clip", "홍보 쇼츠는 최대 120초입니다.", 400);
-  }
-  if (clipErr) {
-    return jsonError("invalid_clip", "클립 구간이 올바르지 않습니다.", 400);
-  }
   const promoDraft: PromoDraft = {
-    clipStartSec: clipStart,
-    clipEndSec: clipEnd,
     title: promoTitle,
     description: promoRaw.description?.trim() || null,
   };

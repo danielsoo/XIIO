@@ -196,6 +196,7 @@ export type AdminWorkDetail = {
     streamStatus?: StreamStatus;
     clipStartSec: number;
     clipEndSec: number;
+    durationSec?: number;
     title?: string;
     playbackUrl?: string;
     deletionRequest?: WorkDoc["deletionRequest"];

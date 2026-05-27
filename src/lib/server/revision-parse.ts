@@ -54,6 +54,7 @@ export function parsePromoPendingRevision(data: Record<string, unknown>): PromoP
     streamStatus: r.streamStatus as StreamStatus | undefined,
     clipStartSec: typeof r.clipStartSec === "number" ? r.clipStartSec : 0,
     clipEndSec: typeof r.clipEndSec === "number" ? r.clipEndSec : 0,
+    durationSec: typeof r.durationSec === "number" ? r.durationSec : undefined,
     title: r.title ? String(r.title) : undefined,
     description: r.description ? String(r.description) : undefined,
     rejectReason: r.rejectReason ? String(r.rejectReason) : undefined,

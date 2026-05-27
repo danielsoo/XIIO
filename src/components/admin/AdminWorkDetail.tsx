@@ -201,7 +201,13 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
           <h2 className="text-white font-semibold text-base mb-2">{t("admin.workDetail.promoSection")}</h2>
           <p className="text-xs text-xiio-muted mb-3">
             {promo.title ?? work.title} · {t(`myWorks.promoStatus.${promo.platformStatus}`)} ·{" "}
-            {promo.clipStartSec}s–{promo.clipEndSec}s
+            {promo.durationSec != null
+              ? t("promoEditor.videoDuration", { sec: promo.durationSec.toFixed(1) })
+              : (promo.clipStartSec ?? 0) > 0.5
+                ? `${promo.clipStartSec}s–${promo.clipEndSec}s`
+                : t("promoEditor.videoDuration", {
+                    sec: ((promo.clipEndSec ?? 0) - (promo.clipStartSec ?? 0)).toFixed(1),
+                  })}
           </p>
           {promo.deletionRequest && (
             <p className="text-orange-400 text-sm font-medium mb-3">

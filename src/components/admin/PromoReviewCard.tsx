@@ -36,6 +36,7 @@ export type PromoReviewItem = {
     description?: string;
     clipStartSec: number;
     clipEndSec: number;
+    durationSec?: number;
     contentModeration?: ContentModeration;
     pendingRevision?: { contentModeration?: ContentModeration };
   };
@@ -119,6 +120,7 @@ function PromoMetaFields({
   description,
   clipStartSec,
   clipEndSec,
+  durationSec,
   streamStatus,
   clampDescription = false,
   t,
@@ -127,11 +129,21 @@ function PromoMetaFields({
   description?: string;
   clipStartSec: number;
   clipEndSec: number;
+  durationSec?: number;
   streamStatus?: StreamStatus;
   clampDescription?: boolean;
   t: TranslateFn;
 }) {
-  const clipSec = (clipEndSec - clipStartSec).toFixed(1);
+  const legacyClip = clipStartSec > 0.5;
+  const durationLabel = legacyClip
+    ? t("admin.contentReview.promoClipRange", {
+        start: clipStartSec.toFixed(1),
+        end: clipEndSec.toFixed(1),
+        sec: (clipEndSec - clipStartSec).toFixed(1),
+      })
+    : t("promoEditor.videoDuration", {
+        sec: (durationSec ?? clipEndSec - clipStartSec).toFixed(1),
+      });
   return (
     <div className="space-y-2">
       <MetaRow label={t("admin.contentReview.promoTitle")} value={title ?? "—"} />
@@ -142,12 +154,10 @@ function PromoMetaFields({
         t={t}
       />
       <p className="text-sm text-white/90">
-        <span className="text-white/70">{t("admin.contentReview.promoClip")}: </span>
-        {t("admin.contentReview.promoClipRange", {
-          start: clipStartSec.toFixed(1),
-          end: clipEndSec.toFixed(1),
-          sec: clipSec,
-        })}
+        <span className="text-white/70">
+          {legacyClip ? t("admin.contentReview.promoClip") : t("admin.contentReview.promoDuration")}:{" "}
+        </span>
+        {durationLabel}
       </p>
       {streamStatus && (
         <p className="text-xs text-xiio-muted">
@@ -164,6 +174,7 @@ function PromoMetaBlock({
   description,
   clipStartSec,
   clipEndSec,
+  durationSec,
   streamStatus,
   t,
 }: {
@@ -172,6 +183,7 @@ function PromoMetaBlock({
   description?: string;
   clipStartSec: number;
   clipEndSec: number;
+  durationSec?: number;
   streamStatus?: StreamStatus;
   t: TranslateFn;
 }) {
@@ -185,6 +197,7 @@ function PromoMetaBlock({
         description={description}
         clipStartSec={clipStartSec}
         clipEndSec={clipEndSec}
+        durationSec={durationSec}
         streamStatus={streamStatus}
         t={t}
       />
@@ -266,6 +279,7 @@ function RevisionCompareSection({
             description={promo.description}
             clipStartSec={promo.clipStartSec}
             clipEndSec={promo.clipEndSec}
+            durationSec={promo.durationSec}
             streamStatus={promo.streamStatus}
             clampDescription
             t={t}
@@ -393,6 +407,7 @@ export default function PromoReviewCard({
               description={promo.description}
               clipStartSec={promo.clipStartSec}
               clipEndSec={promo.clipEndSec}
+              durationSec={promo.durationSec}
               streamStatus={promo.streamStatus}
               t={t}
             />

@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
-import {
-  aspectRatioFromVideo,
-  createClip,
-  deleteStreamVideo,
-  getStreamVideo,
-  resolvePlaybackUrl,
-} from "@/lib/cloudflare/stream";
+import { deleteStreamVideo, getStreamVideo, resolvePlaybackUrl } from "@/lib/cloudflare/stream";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
 import { parseRevisionReviewStatus } from "@/lib/server/revision-parse";
-import { materializePromoFromDraft } from "@/lib/server/materialize-promo-draft";
 import {
   syncPromoRevisionStreamStatusIfNeeded,
   syncPromoStreamStatusIfNeeded,
@@ -49,13 +42,6 @@ export async function GET(request: Request, { params }: Params) {
       work.streamStatus
     );
     work = { ...work, streamStatus: synced };
-  }
-  if (work.streamStatus === "ready" && work.promoDraft) {
-    await materializePromoFromDraft(db, session.uid, workId);
-    const refreshed = await worksCol(db, session.uid).doc(workId).get();
-    if (refreshed.exists) {
-      work = parseWorkDoc(workId, refreshed.data() as Record<string, unknown>);
-    }
   }
   const fullPlayback = work.streamUid ? await resolvePlaybackUrl(work.streamUid) : null;
   const fullInfo = work.streamUid ? await getStreamVideo(work.streamUid) : null;
@@ -129,20 +115,11 @@ export async function PUT(request: Request, { params }: Params) {
   const { session } = auth;
   const { workId } = await params;
 
-  let body: { clipStartSec?: number; clipEndSec?: number; title?: string; description?: string };
+  let body: { title?: string; description?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     return jsonError("invalid_json", "요청 형식이 올바르지 않습니다.", 400);
-  }
-
-  const start = Number(body.clipStartSec);
-  const end = Number(body.clipEndSec);
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end - start < 3) {
-    return jsonError("invalid_clip", "클립 구간은 3초 이상이어야 합니다.", 400);
-  }
-  if (end - start > 120) {
-    return jsonError("invalid_clip", "홍보 쇼츠는 최대 120초입니다.", 400);
   }
 
   const db = await getDbOrNull();
@@ -152,15 +129,6 @@ export async function PUT(request: Request, { params }: Params) {
   if (!workSnap.exists) return jsonError("not_found", "작품을 찾을 수 없습니다.", 404);
 
   const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
-  if (work.streamStatus !== "ready" || !work.streamUid) {
-    return jsonError("not_ready", "풀 영상 인코딩이 끝난 후 쇼츠를 만들 수 있습니다.", 400);
-  }
-
-  const fullInfo = await getStreamVideo(work.streamUid);
-  const duration = fullInfo?.duration ?? 600;
-  if (end > duration + 0.5) {
-    return jsonError("invalid_clip", "클립 끝이 영상 길이를 넘습니다.", 400);
-  }
 
   const promoDocRef = promoRef(db, session.uid, workId);
   const existing = await promoDocRef.get();
@@ -175,105 +143,58 @@ export async function PUT(request: Request, { params }: Params) {
     return jsonError("revision_pending", "수정본 심사가 끝난 후 다시 편집할 수 있습니다.", 403);
   }
 
-  const isPublishedRevision = existingData?.platformStatus === "published";
-
-  if (!isPublishedRevision && existingData?.streamUid) {
-    try {
-      await deleteStreamVideo(existingData.streamUid);
-    } catch {
-      /* ignore */
-    }
-  }
-
-  if (isPublishedRevision && existingData.pendingRevision?.streamUid) {
-    try {
-      await deleteStreamVideo(existingData.pendingRevision.streamUid);
-    } catch {
-      /* ignore */
-    }
-  }
-
-  let clipUid: string;
-  const streamKind = isPublishedRevision ? "promo_revision" : "promo";
-  try {
-    const clip = await createClip({
-      clippedFromVideoUID: work.streamUid,
-      startTimeSeconds: start,
-      endTimeSeconds: end,
-      meta: {
-        xiio_uid: session.uid,
-        xiio_work_id: workId,
-        xiio_kind: streamKind,
-      },
-    });
-    clipUid = clip.uid;
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return jsonError("stream_api_failed", msg, 502);
-  }
-
-  const clipTitle = body.title?.trim().slice(0, 200) || existingData?.title || work.title;
-  const clipDescription =
+  const metaTitle = body.title?.trim().slice(0, 200) || existingData?.title || work.promoDraft?.title || work.title;
+  const metaDescription =
     body.description?.trim() ||
     existingData?.description ||
+    work.promoDraft?.description ||
     work.description ||
     null;
-  const clipThumbnailUrl =
-    existingData?.thumbnailUrl ?? work.promoDraft?.thumbnailUrl ?? null;
 
-  if (isPublishedRevision) {
+  if (!existing.exists) {
     await promoDocRef.set(
       {
-        pendingRevision: {
-          platformStatus: "draft",
-          streamStatus: "processing",
-          streamUid: clipUid,
-          clipStartSec: start,
-          clipEndSec: end,
-          title: clipTitle,
-          description: clipDescription,
-          thumbnailUrl: clipThumbnailUrl,
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        revisionReviewStatus: FieldValue.delete(),
+        platformStatus: "draft",
+        title: metaTitle,
+        description: metaDescription,
+        thumbnailUrl: work.promoDraft?.thumbnailUrl ?? null,
         updatedAt: FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       },
       { merge: true }
     );
-    return NextResponse.json({
-      ok: true,
-      revisionMode: true,
-      streamUid: clipUid,
-      streamStatus: "processing",
-      clipStartSec: start,
-      clipEndSec: end,
+  } else {
+    const isPublishedRevision = existingData?.platformStatus === "published";
+    if (isPublishedRevision && existingData?.pendingRevision) {
+      await promoDocRef.set(
+        {
+          "pendingRevision.title": metaTitle,
+          "pendingRevision.description": metaDescription,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } else {
+      await promoDocRef.set(
+        {
+          title: metaTitle,
+          description: metaDescription,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+  }
+
+  if (work.promoDraft) {
+    await worksCol(db, session.uid).doc(workId).update({
+      "promoDraft.title": metaTitle,
+      "promoDraft.description": metaDescription,
+      updatedAt: FieldValue.serverTimestamp(),
     });
   }
 
-  await promoDocRef.set(
-    {
-      platformStatus: "draft",
-      streamStatus: "processing",
-      streamUid: clipUid,
-      clipStartSec: start,
-      clipEndSec: end,
-      title: clipTitle,
-      description: clipDescription,
-      thumbnailUrl: clipThumbnailUrl,
-      updatedAt: FieldValue.serverTimestamp(),
-      ...(existing.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
-    },
-    { merge: true }
-  );
-
-  return NextResponse.json({
-    ok: true,
-    streamUid: clipUid,
-    platformStatus: "draft",
-    streamStatus: "processing",
-    clipStartSec: start,
-    clipEndSec: end,
-  });
+  return NextResponse.json({ ok: true, title: metaTitle, description: metaDescription });
 }
 
 export async function DELETE(request: Request, { params }: Params) {

@@ -14,7 +14,7 @@ import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
 import WorkTagInput from "@/components/uploader/WorkTagInput";
 import CreditTagInput, { type TaggedCredit } from "@/components/network/CreditTagInput";
 import { useTranslations } from "@/context/LocaleContext";
-import { useVideoFileDuration } from "@/hooks/useVideoFileDuration";
+import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
 import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
 import {
   formatApiError,
@@ -28,7 +28,10 @@ import {
   uploadPromoThumbnail,
   validatePromoThumbnailFile,
 } from "@/lib/works/promoThumbnailUpload";
-import { defaultPromoClipEnd, validatePromoClipRange } from "@/lib/works/promo-clip";
+import {
+  isPromoAspectRatio,
+  validatePromoVideoDuration,
+} from "@/lib/works/promo-video";
 import { normalizeTags } from "@/lib/works/label-utils";
 import { WORK_SECTIONS, type VideoAspectRatio, type WorkSection } from "@/types/work";
 import type { User } from "firebase/auth";
@@ -70,7 +73,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [thumbnailFieldError, setThumbnailFieldError] = useState<string | null>(null);
-  const fileDuration = useVideoFileDuration(file);
+  const [promoFile, setPromoFile] = useState<File | null>(null);
+  const promoMeta = useVideoFileMetadata(promoFile);
   const [title, setTitle] = useState("");
   const [section, setSection] = useState<WorkSection>("movies");
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("16:9");
@@ -83,8 +87,6 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [description, setDescription] = useState("");
   const [promoTitle, setPromoTitle] = useState("");
   const [promoDescription, setPromoDescription] = useState("");
-  const [clipStart, setClipStart] = useState(0);
-  const [clipEnd, setClipEnd] = useState(30);
   const [busy, setBusy] = useState(false);
   const [uploadPercent, setUploadPercent] = useState<number | null>(null);
 
@@ -121,20 +123,21 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   }, [initialDirector]);
 
   useEffect(() => {
-    if (fileDuration != null && fileDuration > 0) {
-      setClipEnd(defaultPromoClipEnd(fileDuration));
-      setClipStart(0);
-    }
-  }, [fileDuration]);
-
-  useEffect(() => {
     if (title.trim() && !promoTitle.trim()) {
       setPromoTitle(title.trim());
     }
   }, [title, promoTitle]);
 
-  const durationForClip = fileDuration ?? 120;
-  const clipInvalid = validatePromoClipRange(clipStart, clipEnd, fileDuration ?? undefined) != null;
+  const promoFileError = (() => {
+    if (!promoFile) return null;
+    if (!promoMeta) return "loading";
+    if (!isPromoAspectRatio(promoMeta.width, promoMeta.height)) {
+      return "aspect";
+    }
+    const durErr = validatePromoVideoDuration(promoMeta.duration);
+    if (durErr) return durErr;
+    return null;
+  })();
 
   const scrollWizardTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -155,20 +158,36 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       case "catalog":
         return true;
       case "promo":
+        if (!promoFile) {
+          setFormError(t("uploader.errorPromoVideoRequired"));
+          return false;
+        }
+        if (promoFileError === "loading") {
+          setFormError(t("uploader.errorPromoVideoLoading"));
+          return false;
+        }
+        if (promoFileError === "aspect") {
+          setFormError(t("uploader.errorPromoNotPortrait"));
+          return false;
+        }
+        if (promoFileError === "too_short") {
+          setFormError(t("uploader.errorPromoTooShort"));
+          return false;
+        }
+        if (promoFileError === "too_long") {
+          setFormError(t("uploader.errorPromoTooLong"));
+          return false;
+        }
+        if (promoFileError) {
+          setFormError(t("uploader.errorPromoVideoInvalid"));
+          return false;
+        }
         if (!thumbnailFile) {
           setFormError(t("uploader.errorThumbnailRequired"));
           return false;
         }
         if (!promoTitle.trim()) {
           setFormError(t("uploader.errorPromoTitleRequired"));
-          return false;
-        }
-        if (fileDuration == null) {
-          setFormError(t("uploader.errorNoFile"));
-          return false;
-        }
-        if (clipInvalid) {
-          setFormError(t("uploader.errorPromoClipInvalid"));
           return false;
         }
         return true;
@@ -245,8 +264,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       onError(t("uploader.errorPromoTitleRequired"));
       return;
     }
-    if (clipInvalid) {
-      onError(t("uploader.errorPromoClipInvalid"));
+    if (!promoFile) {
+      onError(t("uploader.errorPromoVideoRequired"));
       return;
     }
 
@@ -285,8 +304,6 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             promoDraft: {
               title: promoTitle.trim(),
               description: promoDescription.trim() || undefined,
-              clipStartSec: clipStart,
-              clipEndSec: clipEnd,
             },
             credits: credits.map(({ userId, role, characterName, sortOrder }) => ({
               userId,
@@ -347,10 +364,50 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
 
       try {
         await uploadFileViaTus(file, tusEndpoint, {
-          onProgress: (percent) => setUploadPercent(percent),
+          onProgress: (percent) => setUploadPercent(Math.round(percent * 0.5)),
         });
       } catch (streamErr) {
         onError(formatClientError(t, streamErr, { titleKey: "uploader.errorStreamFailed" }));
+        return;
+      }
+
+      let promoSessionRes: Response;
+      try {
+        promoSessionRes = await fetch(`/api/me/works/${workId}/promo/upload-url`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ uploadLength: promoFile.size }),
+        });
+      } catch (fetchErr) {
+        onError(formatClientError(t, fetchErr, { titleKey: "uploader.errorPromoUploadFailed" }));
+        return;
+      }
+
+      const { data: promoSession, raw: promoRaw } = await readResponseJson<{
+        tusEndpoint?: string;
+        message?: string;
+        error?: string;
+      }>(promoSessionRes);
+
+      if (!promoSessionRes.ok || !promoSession.tusEndpoint) {
+        onError(
+          formatApiError(t, promoSessionRes.status, {
+            ...promoSession,
+            message: promoSession.message ?? promoRaw.slice(0, 500),
+          })
+        );
+        return;
+      }
+
+      try {
+        await uploadFileViaTus(promoFile, promoSession.tusEndpoint, {
+          onProgress: (percent) => setUploadPercent(50 + Math.round(percent * 0.5)),
+        });
+      } catch (streamErr) {
+        onError(formatClientError(t, streamErr, { titleKey: "uploader.errorPromoStreamFailed" }));
         return;
       }
 
@@ -365,10 +422,9 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       setTags([]);
       setDirector(lockedDirectorName);
       setDescription("");
+      setPromoFile(null);
       setPromoTitle("");
       setPromoDescription("");
-      setClipStart(0);
-      setClipEnd(30);
     } catch (unexpected) {
       onError(formatClientError(t, unexpected, { titleKey: "uploader.errorUploadFailed" }));
     } finally {
@@ -613,6 +669,21 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             title={t("uploader.uploadZonePromoTitle")}
             hint={t("uploader.uploadZonePromoHint")}
           >
+            <p className="text-xs text-xiio-muted leading-relaxed">{t("uploader.promoVideoFileHint")}</p>
+            <VideoUploadDropzone
+              file={promoFile}
+              onFileChange={setPromoFile}
+              disabled={busy}
+            />
+            {promoFile && promoFileError === "aspect" && (
+              <p className="text-xs text-red-400">{t("uploader.errorPromoNotPortrait")}</p>
+            )}
+            {promoFile && promoMeta && promoFileError === "too_short" && (
+              <p className="text-xs text-red-400">{t("uploader.errorPromoTooShort")}</p>
+            )}
+            {promoFile && promoMeta && promoFileError === "too_long" && (
+              <p className="text-xs text-red-400">{t("uploader.errorPromoTooLong")}</p>
+            )}
             <ThumbnailUploadField
               file={thumbnailFile}
               previewUrl={thumbnailPreview}
@@ -621,18 +692,11 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               error={thumbnailFieldError}
             />
             <PromoShortFields
-              duration={durationForClip}
-              clipStart={clipStart}
-              clipEnd={clipEnd}
-              onClipStartChange={setClipStart}
-              onClipEndChange={setClipEnd}
               title={promoTitle}
               onTitleChange={setPromoTitle}
               description={promoDescription}
               onDescriptionChange={setPromoDescription}
-              disabled={busy || fileDuration == null}
-              showRequiredHeader={false}
-              hideClipSliders={fileDuration == null}
+              disabled={busy}
             />
           </UploaderFormSection>
         )}

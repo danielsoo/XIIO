@@ -46,17 +46,13 @@ export function parsePromoDraft(data: Record<string, unknown>): PromoDraft | und
   const raw = data.promoDraft;
   if (!raw || typeof raw !== "object") return undefined;
   const d = raw as Record<string, unknown>;
-  const start = Number(d.clipStartSec);
-  const end = Number(d.clipEndSec);
   const title = typeof d.title === "string" ? d.title.trim() : "";
-  if (!title || !Number.isFinite(start) || !Number.isFinite(end)) return undefined;
+  if (!title) return undefined;
   const thumbnailUrl =
     typeof d.thumbnailUrl === "string" && d.thumbnailUrl.trim()
       ? d.thumbnailUrl.trim()
       : null;
   return {
-    clipStartSec: start,
-    clipEndSec: end,
     title: title.slice(0, 200),
     description:
       typeof d.description === "string" && d.description.trim()
@@ -121,6 +117,11 @@ export function parsePromoDoc(data: Record<string, unknown>): PromoShortDoc {
     streamUid: data.streamUid ? String(data.streamUid) : undefined,
     clipStartSec: typeof data.clipStartSec === "number" ? data.clipStartSec : 0,
     clipEndSec: typeof data.clipEndSec === "number" ? data.clipEndSec : 0,
+    durationSec: typeof data.durationSec === "number" ? data.durationSec : undefined,
+    streamError:
+      typeof data.streamError === "string" && data.streamError.trim()
+        ? data.streamError.trim()
+        : null,
     title: data.title ? String(data.title) : undefined,
     description: data.description ? String(data.description) : undefined,
     thumbnailUrl:

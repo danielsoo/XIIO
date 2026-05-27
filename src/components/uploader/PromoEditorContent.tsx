@@ -7,11 +7,19 @@ import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
+import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import PlaybackVideo from "@/components/PlaybackVideo";
+import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
+import { uploadFileViaTus } from "@/lib/streamTusUpload";
+import {
+  isLegacyClipPromo,
+  isPromoAspectRatio,
+  validatePromoVideoDuration,
+} from "@/lib/works/promo-video";
 import {
   patchPromoThumbnailUrl,
   uploadPromoThumbnail,
@@ -51,10 +59,10 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [justSavedClip, setJustSavedClip] = useState(false);
+  const [justSavedVideo, setJustSavedVideo] = useState(false);
+  const [promoFile, setPromoFile] = useState<File | null>(null);
+  const promoMeta = useVideoFileMetadata(promoFile);
 
-  const [clipStart, setClipStart] = useState(0);
-  const [clipEnd, setClipEnd] = useState(30);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -84,17 +92,10 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       setRevisionMode(Boolean(json.revisionMode));
       setRevisionReviewStatus(json.revisionReviewStatus);
       setPendingRevisionPlayback(json.pendingRevisionPlayback);
-      const dur = json.work.durationSec ?? 120;
       const promo = json.promo;
       const rev = json.pendingRevision;
       const source = json.revisionMode && rev ? rev : promo;
       const draft = json.work.promoDraft;
-      setClipStart(
-        source?.clipStartSec ?? promo?.clipStartSec ?? draft?.clipStartSec ?? 0
-      );
-      setClipEnd(
-        source?.clipEndSec ?? promo?.clipEndSec ?? draft?.clipEndSec ?? Math.min(30, dur)
-      );
       setTitle(source?.title ?? promo?.title ?? draft?.title ?? json.work.title);
       setDescription(
         source?.description ?? promo?.description ?? draft?.description ?? json.work.description ?? ""
@@ -107,7 +108,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       setThumbnailFieldError(null);
       const encStatus = json.revisionMode ? rev?.streamStatus : promo?.streamStatus;
       if (encStatus && !isPromoEncoding(encStatus) && encStatus === "ready") {
-        setJustSavedClip(false);
+        setJustSavedVideo(false);
         if (opts?.silent) {
           setMsg(t("promoEditor.statusReadyBody"));
         }
@@ -134,7 +135,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     const enc = revisionMode ? pendingRevision?.streamStatus : promo?.streamStatus;
     const needsPoll =
       work.streamStatus !== "ready" ||
-      (!promo && work.promoDraft) ||
+      (!promo?.streamUid && Boolean(work.promoDraft)) ||
       (enc ? isPromoEncoding(enc) : false);
     if (!needsPoll) return;
     const id = window.setInterval(() => void load({ silent: true }), 5000);
@@ -199,30 +200,78 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     }
   };
 
-  const saveClip = async () => {
+  const savePromoMeta = async () => {
     setBusy(true);
     setErr(null);
     setMsg(null);
     try {
       const res = await authFetch(`/api/me/works/${workId}/promo`, {
         method: "PUT",
-        body: JSON.stringify({
-          clipStartSec: clipStart,
-          clipEndSec: clipEnd,
-          title,
-          description,
-        }),
+        body: JSON.stringify({ title, description }),
       });
       const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
       if (!res.ok) {
         setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         return;
       }
-      setJustSavedClip(true);
-      setMsg(t("promoEditor.savedEncoding"));
+      setMsg(t("promoEditor.metaSaved"));
       await load({ silent: true });
     } catch (e) {
       setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const uploadPromoVideo = async () => {
+    if (!promoFile || !user) return;
+    if (!promoMeta) {
+      setErr(t("uploader.errorPromoVideoLoading"));
+      return;
+    }
+    if (!isPromoAspectRatio(promoMeta.width, promoMeta.height)) {
+      setErr(t("uploader.errorPromoNotPortrait"));
+      return;
+    }
+    const durErr = validatePromoVideoDuration(promoMeta.duration);
+    if (durErr === "too_short") {
+      setErr(t("uploader.errorPromoTooShort"));
+      return;
+    }
+    if (durErr === "too_long") {
+      setErr(t("uploader.errorPromoTooLong"));
+      return;
+    }
+    if (durErr) {
+      setErr(t("uploader.errorPromoVideoInvalid"));
+      return;
+    }
+
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await authFetch(`/api/me/works/${workId}/promo/upload-url`, {
+        method: "POST",
+        body: JSON.stringify({
+          uploadLength: promoFile.size,
+          revision: revisionMode,
+        }),
+      });
+      const { data: body, raw } = await readResponseJson<{ tusEndpoint?: string; message?: string; error?: string }>(
+        res
+      );
+      if (!res.ok || !body.tusEndpoint) {
+        setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
+        return;
+      }
+      await uploadFileViaTus(promoFile, body.tusEndpoint);
+      setPromoFile(null);
+      setJustSavedVideo(true);
+      setMsg(t("promoEditor.savedEncoding"));
+      await load({ silent: true });
+    } catch (e) {
+      setErr(formatClientError(t, e, { titleKey: "uploader.errorPromoStreamFailed" }));
     } finally {
       setBusy(false);
     }
@@ -239,7 +288,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         return;
       }
       setMsg(t("promoEditor.submitted"));
-      setJustSavedClip(false);
+      setJustSavedVideo(false);
       await load();
     } catch (e) {
       setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
@@ -258,7 +307,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         setErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         return;
       }
-      setJustSavedClip(false);
+      setJustSavedVideo(false);
       setMsg(null);
       await load();
     } catch (e) {
@@ -299,7 +348,6 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   }
 
   const { work } = data;
-  const duration = work.durationSec ?? 600;
   const locked = revisionMode
     ? revisionReviewStatus === "pending"
     : promo?.platformStatus === "pending" || promo?.platformStatus === "published";
@@ -315,25 +363,45 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           (promo.platformStatus === "draft" || promo.platformStatus === "rejected") &&
           promo.streamStatus === "ready"
       );
-  const awaitingAutoPromo = !promo && Boolean(work.promoDraft);
+  const awaitingPromoUpload =
+    fullReady && !promo?.streamUid && Boolean(work.promoDraft) && !promoEncoding;
   const showEditor =
-    fullReady && !locked && !promoEncoding && !awaitingAutoPromo &&
-    (revisionMode || !promo || promo.platformStatus === "draft" || promo.platformStatus === "rejected");
-  const savedClip = revisionMode
+    fullReady &&
+    !locked &&
+    !promoEncoding &&
+    (revisionMode ||
+      awaitingPromoUpload ||
+      !promo ||
+      promo.platformStatus === "draft" ||
+      promo.platformStatus === "rejected");
+  const savedPromoStatus = revisionMode
     ? Boolean(
         pendingRevision &&
           (promoEncoding ||
-            justSavedClip ||
+            justSavedVideo ||
             pendingRevision.platformStatus === "draft" ||
             pendingRevision.platformStatus === "rejected")
       )
     : Boolean(
         promo &&
           (promoEncoding ||
-            justSavedClip ||
+            justSavedVideo ||
             promo.platformStatus === "draft" ||
             promo.platformStatus === "rejected")
       );
+
+  const activePromo = revisionMode && pendingRevision ? pendingRevision : promo;
+  const promoDurationSec =
+    activePromo && "durationSec" in activePromo && activePromo.durationSec
+      ? activePromo.durationSec
+      : activePromo && activePromo.clipEndSec && activePromo.clipStartSec != null
+        ? activePromo.clipEndSec - activePromo.clipStartSec
+        : promo?.durationSec;
+  const legacyClip =
+    activePromo &&
+    isLegacyClipPromo(
+      revisionMode && pendingRevision ? pendingRevision.clipStartSec : promo?.clipStartSec
+    );
 
   const leftColumn = (
     <>
@@ -362,13 +430,13 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
 
   const rightColumn = (
     <>
-      {awaitingAutoPromo && (
+      {awaitingPromoUpload && (
         <div className="rounded-xl border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3 text-sm text-white/90">
-          {t("promoEditor.awaitingAutoPromo")}
+          {t("promoEditor.awaitingPromoUpload")}
         </div>
       )}
 
-      {savedClip && (revisionMode ? pendingRevision : promo) && (
+      {savedPromoStatus && (revisionMode ? pendingRevision : promo) && (
         <section className="rounded-2xl border border-xiio-accent/30 bg-xiio-accent/10 p-5">
           <div className="flex items-start gap-3">
             {promoEncoding && (
@@ -388,23 +456,19 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
                   : t("promoEditor.savedClipReady")}
               </h2>
               <ul className="text-sm text-white/80 space-y-1">
-                <li>
-                  {t("promoEditor.clipRange", {
-                    start: (revisionMode && pendingRevision
-                      ? pendingRevision.clipStartSec
-                      : promo!.clipStartSec
-                    ).toFixed(1),
-                    end: (revisionMode && pendingRevision
-                      ? pendingRevision.clipEndSec
-                      : promo!.clipEndSec
-                    ).toFixed(1),
-                    sec: (
-                      revisionMode && pendingRevision
-                        ? pendingRevision.clipEndSec - pendingRevision.clipStartSec
-                        : promo!.clipEndSec - promo!.clipStartSec
-                    ).toFixed(1),
-                  })}
-                </li>
+                {legacyClip && activePromo ? (
+                  <li>
+                    {t("promoEditor.clipRange", {
+                      start: (activePromo.clipStartSec ?? 0).toFixed(1),
+                      end: (activePromo.clipEndSec ?? 0).toFixed(1),
+                      sec: (
+                        (activePromo.clipEndSec ?? 0) - (activePromo.clipStartSec ?? 0)
+                      ).toFixed(1),
+                    })}
+                  </li>
+                ) : promoDurationSec ? (
+                  <li>{t("promoEditor.videoDuration", { sec: promoDurationSec.toFixed(1) })}</li>
+                ) : null}
                 <li>{revisionMode && pendingRevision ? pendingRevision.title : promo!.title}</li>
               </ul>
             </div>
@@ -414,6 +478,21 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
 
       {showEditor && (
         <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6 space-y-6">
+          <section>
+            <h2 className="text-sm font-semibold text-white mb-2">{t("promoEditor.promoVideoSection")}</h2>
+            <p className="text-xs text-xiio-muted mb-3 leading-relaxed">{t("uploader.promoVideoFileHint")}</p>
+            <VideoUploadDropzone file={promoFile} onFileChange={setPromoFile} disabled={busy} />
+            {promoFile ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void uploadPromoVideo()}
+                className="mt-3 px-4 py-2.5 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-medium disabled:opacity-40"
+              >
+                {busy ? t("common.processing") : t("promoEditor.uploadPromoVideo")}
+              </button>
+            ) : null}
+          </section>
           <section>
             <h2 className="text-sm font-semibold text-white mb-3">{t("promoEditor.thumbnailSection")}</h2>
             <ThumbnailUploadField
@@ -435,26 +514,20 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
             ) : null}
           </section>
           <PromoShortFields
-            duration={duration}
-            clipStart={clipStart}
-            clipEnd={clipEnd}
-            onClipStartChange={setClipStart}
-            onClipEndChange={setClipEnd}
             title={title}
             onTitleChange={setTitle}
             description={description}
             onDescriptionChange={setDescription}
             disabled={busy}
-            hideClipSliders={!fullReady}
           />
           <div className="flex flex-wrap gap-2 pt-4 mt-4 border-t border-white/10">
             <button
               type="button"
               disabled={busy}
-              onClick={() => void saveClip()}
+              onClick={() => void savePromoMeta()}
               className="px-4 py-2.5 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-medium disabled:opacity-40"
             >
-              {busy ? t("common.processing") : t("promoEditor.saveClip")}
+              {busy ? t("common.processing") : t("promoEditor.saveMeta")}
             </button>
             {promo && (promo.platformStatus === "draft" || promo.platformStatus === "rejected") && (
               <button
@@ -529,11 +602,11 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
                   {t("promoEditor.waitEncoding")}
                 </div>
               )}
-              {awaitingAutoPromo && fullReady && (
+              {awaitingPromoUpload && (
                 <PromoStatusBanner
                   variant="encoding"
-                  title={t("promoEditor.creatingPromoTitle")}
-                  body={t("promoEditor.creatingPromoBody")}
+                  title={t("promoEditor.awaitingPromoUploadTitle")}
+                  body={t("promoEditor.awaitingPromoUploadBody")}
                 />
               )}
               {promoEncoding && (

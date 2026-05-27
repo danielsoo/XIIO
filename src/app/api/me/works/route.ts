@@ -8,7 +8,6 @@ import {
   promoRef,
   worksCol,
 } from "@/lib/server/works";
-import { materializePromoFromDraft } from "@/lib/server/materialize-promo-draft";
 import { syncPromoStreamStatusIfNeeded, syncWorkStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 
@@ -35,13 +34,6 @@ export async function GET(request: Request) {
           work.streamStatus
         );
         work = { ...work, streamStatus: synced };
-      }
-      if (work.streamStatus === "ready" && work.promoDraft) {
-        await materializePromoFromDraft(db, session.uid, doc.id);
-        const refreshed = await worksCol(db, session.uid).doc(doc.id).get();
-        if (refreshed.exists) {
-          work = parseWorkDoc(doc.id, refreshed.data() as Record<string, unknown>);
-        }
       }
       const promoSnap = await promoRef(db, session.uid, doc.id).get();
       let promo = null;

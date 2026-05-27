@@ -109,8 +109,8 @@ export async function mapPromoWorkQueueItem(
     livePromo = {
       title: parsed.title,
       description: parsed.description,
-      clipStartSec: parsed.clipStartSec,
-      clipEndSec: parsed.clipEndSec,
+      clipStartSec: parsed.clipStartSec ?? 0,
+      clipEndSec: parsed.clipEndSec ?? 0,
       playbackUrl: livePlayback ?? undefined,
     };
   }

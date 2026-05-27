@@ -3,7 +3,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import { verifyStreamWebhookSignature } from "@/lib/cloudflare/verify-stream-webhook";
 import { getAdminDb } from "@/lib/server/firebase-admin";
 import { mapWebhookStreamStatus } from "@/lib/works/constants";
-import { materializePromoFromDraft } from "@/lib/server/materialize-promo-draft";
+import { finalizePromoStreamIfReady } from "@/lib/server/promo-stream-ready";
 import {
   isModerationKind,
   scheduleContentModerationByStreamUid,
@@ -44,6 +44,9 @@ async function applyStreamStatus(
       },
       { merge: true }
     );
+    if (streamStatus === "ready") {
+      await finalizePromoStreamIfReady(db, xiioUid, workId, streamUid, "promo_revision");
+    }
     return;
   }
   if (kind === "promo") {
@@ -51,6 +54,9 @@ async function applyStreamStatus(
       { streamUid, streamStatus, updatedAt: FieldValue.serverTimestamp() },
       { merge: true }
     );
+    if (streamStatus === "ready") {
+      await finalizePromoStreamIfReady(db, xiioUid, workId, streamUid, "promo");
+    }
     return;
   }
   if (kind === "full_revision") {
@@ -69,9 +75,6 @@ async function applyStreamStatus(
     { streamUid, streamStatus, updatedAt: FieldValue.serverTimestamp() },
     { merge: true }
   );
-  if (streamStatus === "ready") {
-    await materializePromoFromDraft(db, xiioUid, workId);
-  }
 }
 
 async function applyByStreamUidLookup(
@@ -84,9 +87,6 @@ async function applyByStreamUidLookup(
     await Promise.all(
       workSnap.docs.map(async (doc) => {
         await doc.ref.update({ streamStatus, updatedAt: FieldValue.serverTimestamp() });
-        if (streamStatus === "ready") {
-          await materializePromoFromDraft(db, doc.ref.parent.parent!.id, doc.id);
-        }
       })
     );
     return true;
@@ -99,9 +99,16 @@ async function applyByStreamUidLookup(
 
   if (!promoSnap.empty) {
     await Promise.all(
-      promoSnap.docs.map((doc) =>
-        doc.ref.update({ streamStatus, updatedAt: FieldValue.serverTimestamp() })
-      )
+      promoSnap.docs.map(async (doc) => {
+        await doc.ref.update({ streamStatus, updatedAt: FieldValue.serverTimestamp() });
+        if (streamStatus === "ready") {
+          const workId = doc.ref.parent.parent?.id;
+          const ownerUid = doc.ref.parent.parent?.parent?.parent?.id;
+          if (ownerUid && workId) {
+            await finalizePromoStreamIfReady(db, ownerUid, workId, streamUid, "promo");
+          }
+        }
+      })
     );
     return true;
   }
@@ -131,13 +138,20 @@ async function applyByStreamUidLookup(
     .get();
   if (!promoRevSnap.empty) {
     await Promise.all(
-      promoRevSnap.docs.map((doc) =>
-        doc.ref.update({
+      promoRevSnap.docs.map(async (doc) => {
+        await doc.ref.update({
           "pendingRevision.streamStatus": streamStatus,
           "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
-        })
-      )
+        });
+        if (streamStatus === "ready") {
+          const workId = doc.ref.parent.parent?.id;
+          const ownerUid = doc.ref.parent.parent?.parent?.parent?.id;
+          if (ownerUid && workId) {
+            await finalizePromoStreamIfReady(db, ownerUid, workId, streamUid, "promo_revision");
+          }
+        }
+      })
     );
     return true;
   }

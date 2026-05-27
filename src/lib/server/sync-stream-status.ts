@@ -2,7 +2,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import { getStreamVideo } from "@/lib/cloudflare/stream";
 import { mapWebhookStreamStatus } from "@/lib/works/constants";
 import type { StreamStatus } from "@/types/work";
-import { materializePromoFromDraft } from "@/lib/server/materialize-promo-draft";
+import { finalizePromoStreamIfReady } from "@/lib/server/promo-stream-ready";
 import { FieldValue, promoRef, worksCol } from "@/lib/server/works";
 
 /** Firestore streamStatus가 uploading/processing일 때 Cloudflare API로 실제 상태 반영 */
@@ -25,9 +25,6 @@ export async function syncWorkStreamStatusIfNeeded(
     streamStatus: next,
     updatedAt: FieldValue.serverTimestamp(),
   });
-  if (next === "ready") {
-    await materializePromoFromDraft(db, ownerUid, workId);
-  }
   return next;
 }
 
@@ -50,6 +47,9 @@ export async function syncPromoStreamStatusIfNeeded(
     streamStatus: next,
     updatedAt: FieldValue.serverTimestamp(),
   });
+  if (next === "ready") {
+    await finalizePromoStreamIfReady(db, ownerUid, workId, streamUid, "promo");
+  }
   return next;
 }
 
@@ -73,6 +73,9 @@ export async function syncPromoRevisionStreamStatusIfNeeded(
     "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
+  if (next === "ready") {
+    await finalizePromoStreamIfReady(db, ownerUid, workId, streamUid, "promo_revision");
+  }
   return next;
 }
 

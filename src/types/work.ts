@@ -55,10 +55,8 @@ export type WorkPendingRevision = {
   contentModeration?: ContentModeration;
 };
 
-/** 업로드 시 저장 — 본편 ready 후 자동 클립 생성 */
+/** 업로드 시 저장 — 쇼츠 메타(영상은 promo 문서에 별도 TUS) */
 export type PromoDraft = {
-  clipStartSec: number;
-  clipEndSec: number;
   title: string;
   description?: string | null;
   thumbnailUrl?: string | null;
@@ -68,8 +66,11 @@ export type PromoPendingRevision = {
   platformStatus: "draft" | "pending" | "rejected";
   streamUid?: string;
   streamStatus?: StreamStatus;
-  clipStartSec: number;
-  clipEndSec: number;
+  /** @deprecated legacy clip promos */
+  clipStartSec?: number;
+  /** @deprecated legacy clip promos */
+  clipEndSec?: number;
+  durationSec?: number;
   title?: string;
   description?: string;
   thumbnailUrl?: string | null;
@@ -122,8 +123,12 @@ export type PromoShortDoc = {
   platformStatus: PromoPlatformStatus;
   streamStatus?: StreamStatus;
   streamUid?: string;
-  clipStartSec: number;
-  clipEndSec: number;
+  /** @deprecated legacy clip from full work; file-upload promos use 0..durationSec */
+  clipStartSec?: number;
+  /** @deprecated legacy clip from full work */
+  clipEndSec?: number;
+  durationSec?: number;
+  streamError?: string | null;
   title?: string;
   description?: string;
   thumbnailUrl?: string | null;
