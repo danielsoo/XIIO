@@ -64,7 +64,7 @@ const CAROUSEL_FRONT_LAYER_CLASS = "absolute inset-0 z-[10]";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
 const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
 const CAROUSEL_BACK_SCALE_RATIO = 0.52;
-const SLIDE_MS = 1000;
+const SLIDE_MS = 500;
 const SLIDE_ENTER_EXTRA_PX = 40;
 const SLIDE_EDGE_FADE = 0.7;
 
@@ -733,7 +733,7 @@ export default function PromoShortCarouselStage({
     (transitionMode === "revolve" || transitionMode === "slide");
   const animatingRevolve = transitionMode === "revolve" && revolvePhase !== "idle";
   const transitionClass = animatingShift
-    ? `transition-[transform,opacity] ${
+    ? `transition-[transform,opacity] duration-500 ${
         transitionMode === "slide"
           ? "ease-[cubic-bezier(0.22,1,0.36,1)]"
           : "ease-in-out"
@@ -875,16 +875,6 @@ export default function PromoShortCarouselStage({
                   key={isWrapArc ? `${item.id}-rev-${revolveEpoch}` : item.id}
                   className={`absolute top-1/2 left-1/2 ${slotCenteringClass} will-change-transform ${slotMotionClass} ${slotFrameClass}`}
                   style={{
-                    transitionDuration:
-                      !isWrapArc && animatingShift
-                        ? `${transitionMode === "slide" ? SLIDE_MS : REVOLVE_MS}ms`
-                        : undefined,
-                    transitionTimingFunction:
-                      !isWrapArc && animatingShift
-                        ? transitionMode === "slide"
-                          ? "cubic-bezier(0.22,1,0.36,1)"
-                          : "ease-in-out"
-                        : undefined,
                     transform: placement.visible
                       ? isWrapArc
                         ? undefined
