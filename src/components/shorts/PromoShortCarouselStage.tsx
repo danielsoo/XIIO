@@ -64,9 +64,10 @@ const CAROUSEL_FRONT_LAYER_CLASS = "absolute inset-0 z-[10]";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
 const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
 const CAROUSEL_BACK_SCALE_RATIO = 0.52;
-const SLIDE_MS = 500;
-const SLIDE_ENTER_EXTRA_PX = 40;
-const SLIDE_EDGE_FADE = 0.7;
+const SLIDE_MS = 280;
+const SLIDE_OFFSET_RATIO = 0.55;
+const SLIDE_ENTER_EXTRA_PX = 20;
+const SLIDE_EDGE_FADE = 0.08;
 
 function peekScaleRatio(): number {
   if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
@@ -154,17 +155,18 @@ function slotTransform(
   const { offsetX, peekScale } = metrics;
 
   if (transitionMode === "slide") {
+    const slideOffset = Math.round(offsetX * SLIDE_OFFSET_RATIO);
     if (phase === "idle") {
       if (role === "left") {
         return {
-          transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+          transform: `translateX(${-slideOffset}px) scale(${peekScale})`,
           opacity: 1,
           zIndex: 15,
         };
       }
       if (role === "right") {
         return {
-          transform: `translateX(${offsetX}px) scale(${peekScale})`,
+          transform: `translateX(${slideOffset}px) scale(${peekScale})`,
           opacity: 1,
           zIndex: 15,
         };
@@ -175,14 +177,14 @@ function slotTransform(
     if (phase === "toNext") {
       if (role === "left") {
         return {
-          transform: `translateX(${-offsetX}px) scale(${peekScale})`,
-          opacity: 1,
+          transform: `translateX(${-slideOffset}px) scale(${peekScale})`,
+          opacity: SLIDE_EDGE_FADE,
           zIndex: 1,
         };
       }
       if (role === "center") {
         return {
-          transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+          transform: `translateX(${-slideOffset}px) scale(${peekScale})`,
           opacity: 1,
           zIndex: 20,
         };
@@ -192,14 +194,14 @@ function slotTransform(
 
     if (role === "right") {
       return {
-        transform: `translateX(${offsetX}px) scale(${peekScale})`,
-        opacity: 1,
+        transform: `translateX(${slideOffset}px) scale(${peekScale})`,
+        opacity: SLIDE_EDGE_FADE,
         zIndex: 1,
       };
     }
     if (role === "center") {
       return {
-        transform: `translateX(${offsetX}px) scale(${peekScale})`,
+        transform: `translateX(${slideOffset}px) scale(${peekScale})`,
         opacity: 1,
         zIndex: 20,
       };
@@ -267,8 +269,11 @@ function incomingSlotTransform(
   transitionMode: ActiveTransitionMode
 ): { transform: string; opacity: number; zIndex: number } {
   const { offsetX, peekScale } = metrics;
+  const slideOffset = Math.round(offsetX * SLIDE_OFFSET_RATIO);
   const enterX =
-    transitionMode === "slide" ? offsetX + SLIDE_ENTER_EXTRA_PX : offsetX + ENTER_GAP_PX;
+    transitionMode === "slide"
+      ? slideOffset + SLIDE_ENTER_EXTRA_PX
+      : offsetX + ENTER_GAP_PX;
 
   if (phase === "toNext") {
     if (atEnter) {
