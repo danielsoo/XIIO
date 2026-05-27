@@ -145,12 +145,67 @@ function tripletAt(items: PromoShort[], centerIndex: number): Triplet {
   };
 }
 
-function revolveSlotTransform(
+function slotTransform(
   role: SlotRole,
   phase: RevolvePhase,
-  metrics: LayoutMetrics
+  metrics: LayoutMetrics,
+  transitionMode: ActiveTransitionMode
 ): { transform: string; opacity: number; zIndex: number } {
   const { offsetX, peekScale } = metrics;
+
+  if (transitionMode === "slide") {
+    if (phase === "idle") {
+      if (role === "left") {
+        return {
+          transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+          opacity: 1,
+          zIndex: 15,
+        };
+      }
+      if (role === "right") {
+        return {
+          transform: `translateX(${offsetX}px) scale(${peekScale})`,
+          opacity: 1,
+          zIndex: 15,
+        };
+      }
+      return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
+    }
+
+    if (phase === "toNext") {
+      if (role === "left") {
+        return {
+          transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+          opacity: 1,
+          zIndex: 1,
+        };
+      }
+      if (role === "center") {
+        return {
+          transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+          opacity: 1,
+          zIndex: 20,
+        };
+      }
+      return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
+    }
+
+    if (role === "right") {
+      return {
+        transform: `translateX(${offsetX}px) scale(${peekScale})`,
+        opacity: 1,
+        zIndex: 1,
+      };
+    }
+    if (role === "center") {
+      return {
+        transform: `translateX(${offsetX}px) scale(${peekScale})`,
+        opacity: 1,
+        zIndex: 20,
+      };
+    }
+    return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
+  }
 
   if (phase === "idle") {
     if (role === "left") {
@@ -191,66 +246,6 @@ function revolveSlotTransform(
   if (role === "right") {
     return {
       transform: `translateX(${-offsetX}px) scale(${peekScale})`,
-      opacity: 1,
-      zIndex: 1,
-    };
-  }
-  if (role === "center") {
-    return {
-      transform: `translateX(${offsetX}px) scale(${peekScale})`,
-      opacity: 1,
-      zIndex: 20,
-    };
-  }
-  return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
-}
-
-function slideSlotTransform(
-  role: SlotRole,
-  phase: RevolvePhase,
-  metrics: LayoutMetrics
-): { transform: string; opacity: number; zIndex: number } {
-  const { offsetX, peekScale } = metrics;
-
-  if (phase === "idle") {
-    if (role === "left") {
-      return {
-        transform: `translateX(${-offsetX}px) scale(${peekScale})`,
-        opacity: 1,
-        zIndex: 15,
-      };
-    }
-    if (role === "right") {
-      return {
-        transform: `translateX(${offsetX}px) scale(${peekScale})`,
-        opacity: 1,
-        zIndex: 15,
-      };
-    }
-    return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
-  }
-
-  if (phase === "toNext") {
-    if (role === "left") {
-      return {
-        transform: `translateX(${-offsetX}px) scale(${peekScale})`,
-        opacity: 1,
-        zIndex: 1,
-      };
-    }
-    if (role === "center") {
-      return {
-        transform: `translateX(${-offsetX}px) scale(${peekScale})`,
-        opacity: 1,
-        zIndex: 20,
-      };
-    }
-    return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
-  }
-
-  if (role === "right") {
-    return {
-      transform: `translateX(${offsetX}px) scale(${peekScale})`,
       opacity: 1,
       zIndex: 1,
     };
@@ -342,10 +337,7 @@ function placementForItem(
     };
   }
   if (displayTriplet.left.id === itemId) {
-    const s =
-      transitionMode === "slide"
-        ? slideSlotTransform("left", revolvePhase, metrics)
-        : revolveSlotTransform("left", revolvePhase, metrics);
+    const s = slotTransform("left", revolvePhase, metrics, transitionMode);
     return {
       visible: true,
       role: "left",
@@ -357,10 +349,7 @@ function placementForItem(
     };
   }
   if (displayTriplet.center.id === itemId) {
-    const s =
-      transitionMode === "slide"
-        ? slideSlotTransform("center", revolvePhase, metrics)
-        : revolveSlotTransform("center", revolvePhase, metrics);
+    const s = slotTransform("center", revolvePhase, metrics, transitionMode);
     return {
       visible: true,
       role: "center",
@@ -372,10 +361,7 @@ function placementForItem(
     };
   }
   if (displayTriplet.right.id === itemId) {
-    const s =
-      transitionMode === "slide"
-        ? slideSlotTransform("right", revolvePhase, metrics)
-        : revolveSlotTransform("right", revolvePhase, metrics);
+    const s = slotTransform("right", revolvePhase, metrics, transitionMode);
     return {
       visible: true,
       role: "right",
