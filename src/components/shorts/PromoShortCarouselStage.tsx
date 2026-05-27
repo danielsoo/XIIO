@@ -64,6 +64,7 @@ const CAROUSEL_FRONT_LAYER_CLASS = "absolute inset-0 z-[10]";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
 const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
 const CAROUSEL_BACK_SCALE_RATIO = 0.52;
+const SLIDE_MS = 420;
 
 function peekScaleRatio(): number {
   if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
@@ -208,7 +209,7 @@ function slideSlotTransform(
   metrics: LayoutMetrics
 ): { transform: string; opacity: number; zIndex: number } {
   const { offsetX, peekScale } = metrics;
-  const exitX = offsetX + ENTER_GAP_PX;
+  const exitX = Math.round(offsetX * 1.2);
 
   if (phase === "idle") {
     if (role === "left") {
@@ -232,7 +233,7 @@ function slideSlotTransform(
     if (role === "left") {
       return {
         transform: `translateX(${-exitX}px) scale(${peekScale})`,
-        opacity: 1,
+        opacity: 0.35,
         zIndex: 12,
       };
     }
@@ -249,7 +250,7 @@ function slideSlotTransform(
   if (role === "right") {
     return {
       transform: `translateX(${exitX}px) scale(${peekScale})`,
-      opacity: 1,
+      opacity: 0.35,
       zIndex: 12,
     };
   }
@@ -266,17 +267,19 @@ function slideSlotTransform(
 function incomingSlotTransform(
   phase: "toNext" | "toPrev",
   atEnter: boolean,
-  metrics: LayoutMetrics
+  metrics: LayoutMetrics,
+  transitionMode: ActiveTransitionMode
 ): { transform: string; opacity: number; zIndex: number } {
   const { offsetX, peekScale } = metrics;
-  const enterX = offsetX + ENTER_GAP_PX;
+  const enterX =
+    transitionMode === "slide" ? Math.round(offsetX * 1.2) : offsetX + ENTER_GAP_PX;
 
   if (phase === "toNext") {
     if (atEnter) {
       return {
         transform: `translateX(${enterX}px) scale(${peekScale})`,
-        opacity: 1,
-        zIndex: 4,
+        opacity: transitionMode === "slide" ? 0.4 : 1,
+        zIndex: transitionMode === "slide" ? 12 : 4,
       };
     }
     return {
@@ -289,8 +292,8 @@ function incomingSlotTransform(
   if (atEnter) {
     return {
       transform: `translateX(${-enterX}px) scale(${peekScale})`,
-      opacity: 1,
-      zIndex: 4,
+      opacity: transitionMode === "slide" ? 0.4 : 1,
+      zIndex: transitionMode === "slide" ? 12 : 4,
     };
   }
   return {
@@ -621,7 +624,8 @@ export default function PromoShortCarouselStage({
     }
 
     if (revolvePhase === "toNext" || revolvePhase === "toPrev") {
-      const timer = window.setTimeout(() => endTransition(), REVOLVE_MS + 80);
+      const durationMs = transitionMode === "slide" ? SLIDE_MS : REVOLVE_MS;
+      const timer = window.setTimeout(() => endTransition(), durationMs + 80);
       return () => window.clearTimeout(timer);
     }
   }, [index, isTransitioning, transitionMode, revolvePhase, endTransition]);
@@ -730,7 +734,9 @@ export default function PromoShortCarouselStage({
   const revolveDurationClass =
     REVOLVE_MS === 500 ? "duration-500" : `duration-[${REVOLVE_MS}ms]`;
   const transitionClass = animatingShift
-    ? `transition-[transform,opacity] ${revolveDurationClass} ease-in-out motion-reduce:transition-none`
+    ? `transition-[transform,opacity] ${
+        transitionMode === "slide" ? `duration-[${SLIDE_MS}ms]` : revolveDurationClass
+      } ${transitionMode === "slide" ? "ease-out" : "ease-in-out"} motion-reduce:transition-none`
     : "motion-reduce:transition-none";
 
   const stageOpacityClass =
@@ -753,7 +759,7 @@ export default function PromoShortCarouselStage({
       : null;
   const incomingStyle =
     incomingItem && showIncoming
-      ? incomingSlotTransform(revolvePhase, incomingAtEnter, metrics)
+      ? incomingSlotTransform(revolvePhase, incomingAtEnter, metrics, transitionMode)
       : null;
 
   const liveCenterId = items[index]!.id;
