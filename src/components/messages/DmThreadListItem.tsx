@@ -26,13 +26,19 @@ export default function DmThreadListItem({ thread }: Props) {
 
   const openThread = () => router.push(`/messages/${thread.threadId}`);
 
+  const onRowClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("a")) return;
+    openThread();
+  };
+
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={openThread}
+      onClick={onRowClick}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
+          if ((e.target as HTMLElement).closest("a")) return;
           e.preventDefault();
           openThread();
         }
@@ -41,7 +47,12 @@ export default function DmThreadListItem({ thread }: Props) {
         active ? "bg-white/10" : ""
       }`}
     >
-      <DmProfileLink handle={thread.otherHandle} stopPropagation className="shrink-0">
+      <DmProfileLink
+        handle={thread.otherHandle}
+        uid={thread.otherUid}
+        stopPropagation
+        className="shrink-0"
+      >
         <ProfileAvatar
           displayName={thread.otherDisplayName}
           avatarUrl={thread.otherAvatarUrl}
@@ -51,8 +62,13 @@ export default function DmThreadListItem({ thread }: Props) {
       </DmProfileLink>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
-          <DmProfileLink handle={thread.otherHandle} stopPropagation className="min-w-0">
-            <p className="font-semibold text-sm text-white truncate hover:underline">
+          <DmProfileLink
+            handle={thread.otherHandle}
+            uid={thread.otherUid}
+            stopPropagation
+            className="min-w-0"
+          >
+            <p className="font-semibold text-sm text-white truncate">
               {thread.otherDisplayName}
             </p>
           </DmProfileLink>

@@ -20,7 +20,7 @@ export default function DmShortcutsRow() {
             key={th.threadId}
             className="flex flex-col items-center gap-1 shrink-0 w-16"
           >
-            <DmProfileLink handle={th.otherHandle} className="group">
+            <DmProfileLink handle={th.otherHandle} uid={th.otherUid} className="group">
               <div className="p-[2px] rounded-full ring-2 ring-xiio-accent/70 group-hover:ring-xiio-accent transition">
                 <ProfileAvatar
                   displayName={th.otherDisplayName}
@@ -30,7 +30,7 @@ export default function DmShortcutsRow() {
                 />
               </div>
             </DmProfileLink>
-            <DmProfileLink handle={th.otherHandle} className="w-full">
+            <DmProfileLink handle={th.otherHandle} uid={th.otherUid} className="w-full">
               <span className="text-[10px] text-xiio-muted truncate w-full text-center block hover:text-white transition">
                 {th.otherDisplayName.split(" ")[0]}
               </span>

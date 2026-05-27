@@ -20,6 +20,7 @@ export default function DmConversationPane({ threadId }: Props) {
   const { refresh: refreshThreads } = useDmInbox();
   const [messages, setMessages] = useState<Message[]>([]);
   const [otherName, setOtherName] = useState("");
+  const [otherUid, setOtherUid] = useState("");
   const [otherHandle, setOtherHandle] = useState<string | null>(null);
   const [otherAvatarUrl, setOtherAvatarUrl] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -36,11 +37,13 @@ export default function DmConversationPane({ threadId }: Props) {
     if (!res.ok) return;
     const data = (await res.json()) as {
       messages?: Message[];
+      otherUid?: string;
       otherDisplayName?: string;
       otherHandle?: string | null;
       otherAvatarUrl?: string | null;
     };
     setMessages(data.messages ?? []);
+    setOtherUid(data.otherUid ?? "");
     setOtherName(data.otherDisplayName ?? "");
     setOtherHandle(data.otherHandle ?? null);
     setOtherAvatarUrl(data.otherAvatarUrl ?? null);
@@ -103,7 +106,7 @@ export default function DmConversationPane({ threadId }: Props) {
         >
           ←
         </Link>
-        <DmProfileLink handle={otherHandle} className="shrink-0">
+        <DmProfileLink handle={otherHandle} uid={otherUid} className="shrink-0">
           <ProfileAvatar
             displayName={otherName || "?"}
             avatarUrl={otherAvatarUrl}
@@ -111,8 +114,8 @@ export default function DmConversationPane({ threadId }: Props) {
             imgClassName="w-full h-full object-cover"
           />
         </DmProfileLink>
-        <DmProfileLink handle={otherHandle} className="min-w-0 block">
-          <p className="font-semibold text-white truncate hover:underline">{otherName}</p>
+        <DmProfileLink handle={otherHandle} uid={otherUid} className="min-w-0 block">
+          <p className="font-semibold text-white truncate">{otherName}</p>
           {otherHandle && (
             <p className="text-xs text-xiio-accent truncate">@{otherHandle}</p>
           )}
@@ -132,7 +135,7 @@ export default function DmConversationPane({ threadId }: Props) {
                   className={`flex gap-2 ${mine ? "justify-end" : "justify-start items-end"}`}
                 >
                   {!mine && (
-                    <DmProfileLink handle={otherHandle} className="shrink-0">
+                    <DmProfileLink handle={otherHandle} uid={otherUid} className="shrink-0">
                       <ProfileAvatar
                         displayName={otherName || "?"}
                         avatarUrl={otherAvatarUrl}
