@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import PromoShortPlayer from "@/components/shorts/PromoShortPlayer";
-import { useHorizontalSwipe } from "@/hooks/useHorizontalSwipe";
+import PromoShortCarouselStage from "@/components/shorts/PromoShortCarouselStage";
 import { useTranslations } from "@/context/LocaleContext";
 import type { PromoShort } from "@/types/promoShort";
 
@@ -40,10 +39,7 @@ export default function PromoShortExpandedViewer({
   onClose,
 }: Props) {
   const { t } = useTranslations();
-  const viewportRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
-  const count = items.length;
-  const current = items[index];
 
   useEffect(() => setMounted(true), []);
 
@@ -52,50 +48,22 @@ export default function PromoShortExpandedViewer({
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (count > 1 && e.key === "ArrowLeft") {
-        e.preventDefault();
-        onIndexChange((index - 1 + count) % count);
-      }
-      if (count > 1 && e.key === "ArrowRight") {
-        e.preventDefault();
-        onIndexChange((index + 1) % count);
-      }
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
-  }, [count, index, onClose, onIndexChange]);
+  }, [onClose]);
 
-  const go = useCallback(
-    (delta: number) => {
-      if (count === 0) return;
-      onIndexChange((index + delta + count) % count);
-    },
-    [count, index, onIndexChange]
-  );
-
-  useHorizontalSwipe(viewportRef, {
-    enabled: count > 1,
-    onSwipeLeft: () => go(1),
-    onSwipeRight: () => go(-1),
-  });
-
-  const handlePlaybackEnded = useCallback(() => {
-    if (count > 1) go(1);
-  }, [count, go]);
-
-  if (!mounted || !current) return null;
+  if (!mounted) return null;
 
   return createPortal(
     <div
-      ref={viewportRef}
       className="fixed inset-0 z-[200] flex flex-col bg-black touch-pan-y select-none outline-none"
       role="dialog"
       aria-modal="true"
       aria-label={t("home.promoSectionTitle")}
-      tabIndex={-1}
     >
       <button
         type="button"
@@ -106,40 +74,15 @@ export default function PromoShortExpandedViewer({
         <CloseIcon />
       </button>
 
-      {count > 1 ? (
-        <div
-          className="absolute top-4 left-1/2 z-[210] flex -translate-x-1/2 items-center gap-1.5 pointer-events-auto"
-          aria-label={`${current.title} ${index + 1}/${count}`}
-        >
-          {items.map((item, i) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onIndexChange(i)}
-              className={`h-1.5 rounded-full transition-all ${
-                i === index ? "w-8 bg-xiio-accent" : "w-1.5 bg-white/25 hover:bg-white/40"
-              }`}
-              aria-label={`${item.title} ${i + 1}/${count}`}
-              aria-current={i === index ? "true" : undefined}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      <div className="flex min-h-0 flex-1 w-full items-center justify-center px-4 pb-6 pt-14">
-        <PromoShortPlayer
-          key={current.id}
-          item={current}
-          isActive
-          expandedChrome
-          layout="stacked"
-          scrollExpand
-          scrollRootRef={viewportRef}
-          loop={false}
-          onPlaybackEnded={count > 1 ? handlePlaybackEnded : undefined}
-          className="flex h-full w-full max-h-[min(88vh,900px)] max-w-lg items-center justify-center"
-        />
-      </div>
+      <PromoShortCarouselStage
+        items={items}
+        index={index}
+        onIndexChange={onIndexChange}
+        centerMode="expanded"
+        layout="stacked"
+        viewportClassName="relative flex h-full w-full min-h-0 flex-1 items-center justify-center pt-14 pb-6 outline-none"
+        stageMinHeight="min-h-[min(88vh,900px)]"
+      />
     </div>,
     document.body
   );
