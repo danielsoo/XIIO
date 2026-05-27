@@ -65,9 +65,8 @@ const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUS
 const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
 const CAROUSEL_BACK_SCALE_RATIO = 0.52;
 const SLIDE_MS = 500;
-const SLIDE_EXIT_MULTIPLIER = 1.16;
-const SLIDE_ENTER_MULTIPLIER = 1.06;
-const SLIDE_EDGE_FADE = 0.22;
+const SLIDE_ENTER_EXTRA_PX = 40;
+const SLIDE_EDGE_FADE = 0.7;
 
 function peekScaleRatio(): number {
   if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
@@ -212,7 +211,6 @@ function slideSlotTransform(
   metrics: LayoutMetrics
 ): { transform: string; opacity: number; zIndex: number } {
   const { offsetX, peekScale } = metrics;
-  const exitX = Math.round(offsetX * SLIDE_EXIT_MULTIPLIER);
 
   if (phase === "idle") {
     if (role === "left") {
@@ -235,9 +233,9 @@ function slideSlotTransform(
   if (phase === "toNext") {
     if (role === "left") {
       return {
-        transform: `translateX(${-exitX}px) scale(${peekScale})`,
-        opacity: SLIDE_EDGE_FADE,
-        zIndex: 12,
+        transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+        opacity: 1,
+        zIndex: 1,
       };
     }
     if (role === "center") {
@@ -252,9 +250,9 @@ function slideSlotTransform(
 
   if (role === "right") {
     return {
-      transform: `translateX(${exitX}px) scale(${peekScale})`,
-      opacity: SLIDE_EDGE_FADE,
-      zIndex: 12,
+      transform: `translateX(${offsetX}px) scale(${peekScale})`,
+      opacity: 1,
+      zIndex: 1,
     };
   }
   if (role === "center") {
@@ -275,14 +273,14 @@ function incomingSlotTransform(
 ): { transform: string; opacity: number; zIndex: number } {
   const { offsetX, peekScale } = metrics;
   const enterX =
-    transitionMode === "slide" ? Math.round(offsetX * SLIDE_ENTER_MULTIPLIER) : offsetX + ENTER_GAP_PX;
+    transitionMode === "slide" ? offsetX + SLIDE_ENTER_EXTRA_PX : offsetX + ENTER_GAP_PX;
 
   if (phase === "toNext") {
     if (atEnter) {
       return {
         transform: `translateX(${enterX}px) scale(${peekScale})`,
         opacity: transitionMode === "slide" ? SLIDE_EDGE_FADE : 1,
-        zIndex: transitionMode === "slide" ? 16 : 4,
+        zIndex: transitionMode === "slide" ? 15 : 4,
       };
     }
     return {
@@ -296,7 +294,7 @@ function incomingSlotTransform(
     return {
       transform: `translateX(${-enterX}px) scale(${peekScale})`,
       opacity: transitionMode === "slide" ? SLIDE_EDGE_FADE : 1,
-      zIndex: transitionMode === "slide" ? 16 : 4,
+      zIndex: transitionMode === "slide" ? 15 : 4,
     };
   }
   return {
