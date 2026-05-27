@@ -116,6 +116,10 @@ export const HOME_HERO_PEEK_SIDE_FRAME_CLASS =
 export const HOME_HERO_PEEK_VIEWPORT_CLASS =
   "relative w-full max-w-[480px] mx-auto flex items-center justify-center gap-0 sm:gap-0.5";
 
+/** 확대 뷰어 triptych — 중앙 카드 측정·슬롯 (히어로 teaser 프레임보다 큼) */
+export const EXPANDED_VIEWER_CENTER_FRAME_CLASS =
+  "w-full max-w-lg aspect-[9/16] shrink-0 rounded-[14px] overflow-hidden";
+
 function PromoDescriptionBlock({
   description,
   tall,

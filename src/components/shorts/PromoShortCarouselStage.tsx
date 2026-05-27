@@ -21,6 +21,7 @@ import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
 import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
+  EXPANDED_VIEWER_CENTER_FRAME_CLASS,
   HOME_HERO_PEEK_VIEWPORT_CLASS,
   HOME_HERO_TEASER_FRAME_CLASS,
 } from "@/components/shorts/PromoShortPlayer";
@@ -229,7 +230,8 @@ function placementForItem(
   incomingItem: PromoShort | null,
   incomingStyle: { transform: string; opacity: number; zIndex: number } | null,
   revolvePhase: RevolvePhase,
-  metrics: LayoutMetrics
+  metrics: LayoutMetrics,
+  slotFrameClass: string
 ): ItemPlacement {
   if (incomingItem && incomingStyle && incomingItem.id === itemId) {
     return {
@@ -238,7 +240,7 @@ function placementForItem(
       transform: incomingStyle.transform,
       opacity: incomingStyle.opacity,
       zIndex: incomingStyle.zIndex,
-      frameClass: HERO_CAROUSEL_FRAME_CLASS,
+      frameClass: slotFrameClass,
       isCenter: false,
     };
   }
@@ -250,7 +252,7 @@ function placementForItem(
       transform: s.transform,
       opacity: s.opacity,
       zIndex: s.zIndex,
-      frameClass: HERO_CAROUSEL_FRAME_CLASS,
+      frameClass: slotFrameClass,
       isCenter: false,
     };
   }
@@ -262,7 +264,7 @@ function placementForItem(
       transform: s.transform,
       opacity: s.opacity,
       zIndex: s.zIndex,
-      frameClass: HERO_CAROUSEL_FRAME_CLASS,
+      frameClass: slotFrameClass,
       isCenter: true,
     };
   }
@@ -274,7 +276,7 @@ function placementForItem(
       transform: s.transform,
       opacity: s.opacity,
       zIndex: s.zIndex,
-      frameClass: HERO_CAROUSEL_FRAME_CLASS,
+      frameClass: slotFrameClass,
       isCenter: false,
     };
   }
@@ -283,7 +285,7 @@ function placementForItem(
     transform: "translateX(0) scale(1)",
     opacity: 0,
     zIndex: 0,
-    frameClass: HERO_CAROUSEL_FRAME_CLASS,
+    frameClass: slotFrameClass,
     isCenter: false,
   };
 }
@@ -302,6 +304,12 @@ export default function PromoShortCarouselStage({
   swipeEnabled: swipeEnabledProp = true,
 }: Props) {
   const isExpandedCenter = centerMode === "expanded";
+  const carouselFrameClass = isExpandedCenter
+    ? EXPANDED_VIEWER_CENTER_FRAME_CLASS
+    : HERO_CAROUSEL_FRAME_CLASS;
+  const carouselWrapFrameClass = isExpandedCenter
+    ? EXPANDED_VIEWER_CENTER_FRAME_CLASS
+    : HERO_CAROUSEL_WRAP_FRAME_CLASS;
   const { t } = useTranslations();
   const count = items.length;
   const current = items[index];
@@ -520,7 +528,9 @@ export default function PromoShortCarouselStage({
 
   if (count === 0) return null;
 
-  const defaultStageMinHeight = "min-h-[min(42vh,400px)]";
+  const defaultStageMinHeight = isExpandedCenter
+    ? "min-h-[min(88vh,900px)]"
+    : "min-h-[min(42vh,400px)]";
   const stageMinHeight = stageMinHeightProp ?? defaultStageMinHeight;
 
   if (count === 1) {
@@ -533,7 +543,11 @@ export default function PromoShortCarouselStage({
         aria-label={t("home.promoSectionTitle")}
         className={`${viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS} touch-pan-y select-none outline-none`}
       >
-        <div className={`relative mx-auto ${HOME_HERO_TEASER_FRAME_CLASS}`}>
+        <div
+          className={`relative mx-auto ${
+            isExpandedCenter ? EXPANDED_VIEWER_CENTER_FRAME_CLASS : HOME_HERO_TEASER_FRAME_CLASS
+          }`}
+        >
           {isExpandedCenter ? (
             <PromoShortPlayer
               item={only}
@@ -621,7 +635,7 @@ export default function PromoShortCarouselStage({
     >
       {/* layout measure — teaser 프레임 하나만 */}
       <div className="pointer-events-none absolute opacity-0 -z-50" aria-hidden>
-        <div ref={centerMeasureRef} className={HERO_CAROUSEL_FRAME_CLASS} />
+        <div ref={centerMeasureRef} className={carouselFrameClass} />
       </div>
 
       <div
@@ -645,7 +659,8 @@ export default function PromoShortCarouselStage({
                 incomingItem,
                 incomingStyle,
                 revolvePhase,
-                metrics
+                metrics,
+                carouselFrameClass
               );
               const warmCenter =
                 !snapshot && circularDistance(itemIdx, index, count) <= 1;
@@ -682,9 +697,9 @@ export default function PromoShortCarouselStage({
               const slotCenteringClass = isWrapArc ? "" : "-translate-y-1/2";
               const slotFrameClass = placement.visible
                 ? isWrapArc
-                  ? HERO_CAROUSEL_WRAP_FRAME_CLASS
+                  ? carouselWrapFrameClass
                   : placement.frameClass
-                : HERO_CAROUSEL_FRAME_CLASS;
+                : carouselFrameClass;
 
               const slotEl = (
                 <div

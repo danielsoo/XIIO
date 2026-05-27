@@ -60,29 +60,36 @@ export default function PromoShortExpandedViewer({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex flex-col bg-black touch-pan-y select-none outline-none"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4 sm:p-6 touch-pan-y select-none outline-none"
       role="dialog"
       aria-modal="true"
       aria-label={t("home.promoSectionTitle")}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute top-4 right-4 z-[210] p-1 hover:opacity-80 transition-opacity"
-        aria-label={t("shorts.exitFullscreen")}
+      <div
+        className="relative w-full max-w-[min(100%,56rem)] max-h-[min(92vh,960px)] min-h-0 flex flex-col"
+        onClick={(e) => e.stopPropagation()}
       >
-        <CloseIcon />
-      </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-2 right-2 z-[210] p-1 hover:opacity-80 transition-opacity"
+          aria-label={t("shorts.exitFullscreen")}
+        >
+          <CloseIcon />
+        </button>
 
-      <PromoShortCarouselStage
-        items={items}
-        index={index}
-        onIndexChange={onIndexChange}
-        centerMode="expanded"
-        layout="stacked"
-        viewportClassName="relative flex h-full w-full min-h-0 flex-1 items-center justify-center pt-14 pb-6 outline-none"
-        stageMinHeight="min-h-[min(88vh,900px)]"
-      />
+        <PromoShortCarouselStage
+          items={items}
+          index={index}
+          onIndexChange={onIndexChange}
+          centerMode="expanded"
+          layout="stacked"
+          viewportClassName="relative w-full min-h-0 flex items-center justify-center outline-none touch-pan-y select-none"
+        />
+      </div>
     </div>,
     document.body
   );
