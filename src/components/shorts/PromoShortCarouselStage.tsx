@@ -732,12 +732,8 @@ export default function PromoShortCarouselStage({
     revolvePhase !== "idle" &&
     (transitionMode === "revolve" || transitionMode === "slide");
   const animatingRevolve = transitionMode === "revolve" && revolvePhase !== "idle";
-  const revolveDurationClass =
-    REVOLVE_MS === 500 ? "duration-500" : `duration-[${REVOLVE_MS}ms]`;
   const transitionClass = animatingShift
     ? `transition-[transform,opacity] ${
-        transitionMode === "slide" ? `duration-[${SLIDE_MS}ms]` : revolveDurationClass
-      } ${
         transitionMode === "slide"
           ? "ease-[cubic-bezier(0.22,1,0.36,1)]"
           : "ease-in-out"
@@ -879,6 +875,16 @@ export default function PromoShortCarouselStage({
                   key={isWrapArc ? `${item.id}-rev-${revolveEpoch}` : item.id}
                   className={`absolute top-1/2 left-1/2 ${slotCenteringClass} will-change-transform ${slotMotionClass} ${slotFrameClass}`}
                   style={{
+                    transitionDuration:
+                      !isWrapArc && animatingShift
+                        ? `${transitionMode === "slide" ? SLIDE_MS : REVOLVE_MS}ms`
+                        : undefined,
+                    transitionTimingFunction:
+                      !isWrapArc && animatingShift
+                        ? transitionMode === "slide"
+                          ? "cubic-bezier(0.22,1,0.36,1)"
+                          : "ease-in-out"
+                        : undefined,
                     transform: placement.visible
                       ? isWrapArc
                         ? undefined
