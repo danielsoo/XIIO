@@ -106,7 +106,12 @@ export function useHorizontalSwipe(
       if (!el.contains(e.target as Node)) return;
 
       const target = e.target;
-      if (target instanceof Element && target.closest("[data-carousel-nav]")) return;
+      if (
+        target instanceof Element &&
+        (target.closest("[data-carousel-nav]") || target.closest("[data-promo-expand]"))
+      ) {
+        return;
+      }
 
       active = true;
       activePointerId = e.pointerId;
@@ -127,6 +132,8 @@ export function useHorizontalSwipe(
 
     const onClickCapture = (e: MouseEvent) => {
       if (Date.now() < blockClickUntilRef.current) {
+        const target = e.target;
+        if (target instanceof Element && target.closest("[data-promo-expand]")) return;
         e.preventDefault();
         e.stopPropagation();
       }

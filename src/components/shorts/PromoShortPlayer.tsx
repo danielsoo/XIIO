@@ -601,6 +601,7 @@ function PlayerChrome({
     isTeaser && !peekSide && teaserCenterAction === "expand" ? (
       <button
         type="button"
+        data-promo-expand
         onClick={() => {
           if (onTeaserExpandRequest) onTeaserExpandRequest();
           else onToggleFullscreen();

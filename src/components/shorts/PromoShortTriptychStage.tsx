@@ -90,8 +90,10 @@ const PEEK_CAROUSEL_ARROW_BASE =
   "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-white hover:text-white/80 transition pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] [text-shadow:0_1px_3px_rgba(0,0,0,0.95),0_0_10px_rgba(0,0,0,0.85),0_0_20px_rgba(0,0,0,0.55)] [-webkit-text-stroke:0.5px_rgba(0,0,0,0.35)]";
 /** top-1/2 + translate Y만 공통 — X는 피크 right-2/left-2 와 동일 앵커 */
 const FIXED_CAROUSEL_ARROW_CLASS = `absolute top-1/2 ${PEEK_CAROUSEL_ARROW_BASE}`;
-const PEEK_TAP_LAYER =
-  "absolute inset-0 z-40 cursor-pointer rounded-[14px] bg-transparent";
+const PEEK_TAP_LAYER_BASE =
+  "absolute inset-y-0 z-40 w-[40%] cursor-pointer rounded-[14px] bg-transparent";
+const PEEK_TAP_LAYER_LEFT = `${PEEK_TAP_LAYER_BASE} left-0`;
+const PEEK_TAP_LAYER_RIGHT = `${PEEK_TAP_LAYER_BASE} right-0`;
 
 function tripletAt(items: PromoShort[], centerIndex: number): Triplet {
   const n = items.length;
@@ -124,7 +126,7 @@ function slotTransform(
         zIndex: 15,
       };
     }
-    return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 10 };
+    return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
   }
 
   if (phase === "toNext") {
@@ -717,7 +719,7 @@ export default function PromoShortTriptychStage({
                     <div
                       role="presentation"
                       data-carousel-nav
-                      className={PEEK_TAP_LAYER}
+                      className={PEEK_TAP_LAYER_LEFT}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => go(-1)}
                     />
@@ -726,7 +728,7 @@ export default function PromoShortTriptychStage({
                     <div
                       role="presentation"
                       data-carousel-nav
-                      className={PEEK_TAP_LAYER}
+                      className={PEEK_TAP_LAYER_RIGHT}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => go(1)}
                     />
