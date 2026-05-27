@@ -416,10 +416,10 @@ function PlayerChrome({
     fixedPortraitFrame || playerSize === "homeHeroSmall" ? "" : "max-w-lg";
 
   const cardShellClass = isFullscreen
-    ? "relative w-full h-full max-w-lg mx-auto rounded-2xl overflow-hidden bg-black"
+    ? "relative w-full h-full max-w-lg mx-auto rounded-[14px] overflow-hidden bg-black"
     : heroCarouselEmbed
-      ? "relative h-full w-full overflow-hidden rounded-2xl bg-black"
-      : `relative mx-auto ${fixedPortraitFrame ? "" : "w-full "} ${maxWidthClass} rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
+      ? "relative h-full w-full overflow-hidden rounded-[14px] bg-black"
+      : `relative mx-auto ${fixedPortraitFrame ? "" : "w-full "} ${maxWidthClass} rounded-[14px] overflow-hidden bg-black border border-white/10 shadow-2xl shadow-black/50 ${smallShell}`;
 
   const cardAspectStyle =
     isFullscreen || fixedPortraitFrame ? undefined : { aspectRatio: item.aspectRatio };
@@ -584,7 +584,7 @@ function PlayerChrome({
       href={teaserWatchHref}
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
-      className="absolute inset-0 z-[15] rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+      className="absolute inset-0 z-[15] rounded-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       aria-label={t("home.promoWatch", { title: item.title })}
     />
   ) : null;

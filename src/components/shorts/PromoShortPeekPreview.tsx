@@ -3,7 +3,7 @@
 import type { PromoShort } from "@/types/promoShort";
 
 const PEEK_SHELL_BASE =
-  "relative h-full w-full origin-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-gray-900 via-[#1a0533]/90 to-gray-900 shadow-lg shadow-black/40";
+  "relative h-full w-full origin-center overflow-hidden rounded-[14px] border border-white/10 bg-gradient-to-br from-gray-900 via-[#1a0533]/90 to-gray-900 shadow-lg shadow-black/40";
 
 type Props = {
   item: PromoShort;

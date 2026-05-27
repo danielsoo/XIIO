@@ -38,8 +38,8 @@ const STAGE_GAP_PX = 16;
 /** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
 const PEEK_SCALE_SM = 180 / 236;
 const PEEK_SCALE_DEFAULT = 160 / 200;
-const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-2xl overflow-hidden";
-const HERO_CAROUSEL_WRAP_ROUNDED_CLASS = "rounded-2xl overflow-hidden";
+const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-[14px] overflow-hidden";
+const HERO_CAROUSEL_WRAP_ROUNDED_CLASS = "rounded-[14px] overflow-hidden";
 const CAROUSEL_BACK_LAYER_CLASS = "absolute inset-0 z-[1] pointer-events-none [&>*]:pointer-events-auto";
 const CAROUSEL_FRONT_LAYER_CLASS = "absolute inset-0 z-[10]";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
@@ -90,7 +90,7 @@ const PEEK_CAROUSEL_ARROW_BASE =
 /** top-1/2 + translate Y만 공통 — X는 피크 right-2/left-2 와 동일 앵커 */
 const FIXED_CAROUSEL_ARROW_CLASS = `absolute top-1/2 ${PEEK_CAROUSEL_ARROW_BASE}`;
 const PEEK_TAP_LAYER =
-  "absolute inset-0 z-40 cursor-pointer rounded-2xl bg-transparent";
+  "absolute inset-0 z-40 cursor-pointer rounded-[14px] bg-transparent";
 
 function tripletAt(items: PromoShort[], centerIndex: number): Triplet {
   const n = items.length;
