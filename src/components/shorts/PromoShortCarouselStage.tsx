@@ -32,6 +32,7 @@ import type { PromoShort } from "@/types/promoShort";
 type Triplet = { left: PromoShort; center: PromoShort; right: PromoShort };
 
 type RevolvePhase = "idle" | "toNext" | "toPrev";
+type ActiveTransitionMode = "revolve" | "fade" | "slide";
 
 type SlotRole = "left" | "center" | "right" | "incoming";
 
@@ -368,7 +369,7 @@ export default function PromoShortCarouselStage({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [outgoingCenterId, setOutgoingCenterId] = useState<string | null>(null);
   const [viewportOpacity, setViewportOpacity] = useState(1);
-  const [transitionMode, setTransitionMode] = useState<"revolve" | "fade">("revolve");
+  const [transitionMode, setTransitionMode] = useState<ActiveTransitionMode>("revolve");
   const [animPrevIndex, setAnimPrevIndex] = useState(0);
   const [incomingAtEnter, setIncomingAtEnter] = useState(true);
 
@@ -497,7 +498,9 @@ export default function PromoShortCarouselStage({
     const prev = prevIndexRef.current;
     if (prev === index) return;
 
-    const mode = getTransitionMode(prev, index, count);
+    const rawMode = getTransitionMode(prev, index, count);
+    const mode: ActiveTransitionMode =
+      isExpandedCenter && rawMode === "revolve" ? "slide" : rawMode;
     setTransitionMode(mode);
     isTransitioningRef.current = true;
     setIsTransitioning(true);
@@ -522,7 +525,7 @@ export default function PromoShortCarouselStage({
       setRevolveEpoch((e) => e + 1);
     });
     return () => cancelAnimationFrame(raf);
-  }, [index, count, items]);
+  }, [index, count, items, isExpandedCenter]);
 
   useEffect(() => {
     if (!isTransitioning) return;
@@ -545,6 +548,10 @@ export default function PromoShortCarouselStage({
   }, [index, isTransitioning, transitionMode, revolvePhase, endTransition]);
 
   useEffect(() => {
+    if (transitionMode !== "revolve") {
+      setIncomingAtEnter(true);
+      return;
+    }
     if (revolvePhase === "idle") {
       setIncomingAtEnter(true);
       return;
@@ -556,7 +563,7 @@ export default function PromoShortCarouselStage({
       });
       return () => cancelAnimationFrame(raf);
     }
-  }, [revolvePhase]);
+  }, [revolvePhase, transitionMode]);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const carouselSwipeEnabled = count > 1 && swipeEnabledProp;
@@ -637,10 +644,13 @@ export default function PromoShortCarouselStage({
 
   const liveTriplet = tripletAt(items, index);
   const displayTriplet = snapshot ?? liveTriplet;
-  const animatingRevolve = revolvePhase !== "idle";
+  const animatingShift =
+    revolvePhase !== "idle" &&
+    (transitionMode === "revolve" || transitionMode === "slide");
+  const animatingRevolve = transitionMode === "revolve" && revolvePhase !== "idle";
   const revolveDurationClass =
     REVOLVE_MS === 500 ? "duration-500" : `duration-[${REVOLVE_MS}ms]`;
-  const transitionClass = animatingRevolve
+  const transitionClass = animatingShift
     ? `transition-[transform,opacity] ${revolveDurationClass} ease-in-out motion-reduce:transition-none`
     : "motion-reduce:transition-none";
 
@@ -649,7 +659,9 @@ export default function PromoShortCarouselStage({
       ? "transition-opacity duration-300 ease-in-out motion-reduce:transition-none"
       : "";
 
-  const showIncoming = revolvePhase === "toNext" || revolvePhase === "toPrev";
+  const showIncoming =
+    transitionMode === "revolve" &&
+    (revolvePhase === "toNext" || revolvePhase === "toPrev");
   const wrapCandidate =
     showIncoming && count >= 3 ? incomingItemAt(items, animPrevIndex, revolvePhase) : null;
   const incomingItem =
@@ -724,7 +736,7 @@ export default function PromoShortCarouselStage({
               const isTargetCenter = item.id === liveCenterId;
               const isLiveCenter = !snapshot && isTargetCenter;
               const isPromoting =
-                animatingRevolve &&
+                animatingShift &&
                 ((revolvePhase === "toNext" && item.id === displayTriplet.right.id) ||
                   (revolvePhase === "toPrev" && item.id === displayTriplet.left.id));
               const isOutgoingCenter = Boolean(
@@ -739,6 +751,7 @@ export default function PromoShortCarouselStage({
               );
               const ariaLiveCenter = isLiveCenter || isPromoting;
               const isWrapArc =
+                transitionMode === "revolve" &&
                 animatingRevolve &&
                 placement.visible &&
                 ((revolvePhase === "toNext" && placement.role === "left") ||
