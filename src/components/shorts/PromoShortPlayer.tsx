@@ -236,6 +236,7 @@ function PlayerChrome({
   heroCarouselEmbed = false,
   carouselAdjacentEmbed = false,
   carouselAdjacentDimLevel = "default",
+  transitionDimLevel = null,
   teaserCenterAction = "watch-overlay",
   expandedChrome = false,
   onTeaserExpandRequest,
@@ -254,6 +255,8 @@ function PlayerChrome({
   /** ±1 인접 슬롯 — HLS 선로딩, 피크 딤 오버레이 */
   carouselAdjacentEmbed?: boolean;
   carouselAdjacentDimLevel?: PromoShortPeekDimLevel;
+  /** center -> side 전환 시작 즉시 딤 오버레이 */
+  transitionDimLevel?: PromoShortPeekDimLevel | null;
   teaserCenterAction?: TeaserCenterAction;
   expandedChrome?: boolean;
   onTeaserExpandRequest?: () => void;
@@ -669,6 +672,7 @@ function PlayerChrome({
   );
 
   const useVideoOpacityFade = showThumbnailBackdrop || isTeaser;
+  const overlayDimLevel = transitionDimLevel ?? (carouselAdjacentEmbed ? carouselAdjacentDimLevel : null);
 
   return (
     <>
@@ -726,9 +730,9 @@ function PlayerChrome({
           />
         )}
 
-        {carouselAdjacentEmbed ? (
+        {overlayDimLevel ? (
           <div
-            className={`absolute inset-0 z-[5] pointer-events-none ${adjacentDimClass[carouselAdjacentDimLevel]}`}
+            className={`absolute inset-0 z-[5] pointer-events-none ${adjacentDimClass[overlayDimLevel]}`}
             aria-hidden
           />
         ) : null}
@@ -761,6 +765,7 @@ export default function PromoShortPlayer({
   heroCarouselEmbed = false,
   carouselAdjacentEmbed = false,
   carouselAdjacentDimLevel = "default",
+  transitionDimLevel = null,
   teaserCenterAction = "watch-overlay",
   expandedChrome = false,
   onTeaserExpandRequest,
@@ -775,6 +780,7 @@ export default function PromoShortPlayer({
   heroCarouselEmbed?: boolean;
   carouselAdjacentEmbed?: boolean;
   carouselAdjacentDimLevel?: PromoShortPeekDimLevel;
+  transitionDimLevel?: PromoShortPeekDimLevel | null;
   teaserCenterAction?: TeaserCenterAction;
   expandedChrome?: boolean;
   onTeaserExpandRequest?: () => void;
@@ -824,6 +830,7 @@ export default function PromoShortPlayer({
       heroCarouselEmbed={heroCarouselEmbed}
       carouselAdjacentEmbed={carouselAdjacentEmbed}
       carouselAdjacentDimLevel={carouselAdjacentDimLevel}
+      transitionDimLevel={transitionDimLevel}
       teaserCenterAction={teaserCenterAction}
       onTeaserExpandRequest={onTeaserExpandRequest}
       onToggleFullscreen={() => void toggle()}

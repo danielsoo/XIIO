@@ -1196,6 +1196,12 @@ export default function PromoShortCarouselStage({
                   ? "auto"
                   : "metadata"
                 : "metadata";
+              const outgoingImmediateDim =
+                isOutgoingCenter && animatingShift
+                  ? isExpandedCenter
+                    ? "expandedSide"
+                    : "default"
+                  : null;
               const ariaLiveCenter = isLiveCenter || isPromoting;
               const isWrapArc =
                 transitionMode === "revolve" &&
@@ -1268,6 +1274,7 @@ export default function PromoShortCarouselStage({
                         expandedChrome={showAsCenter}
                         carouselAdjacentEmbed={isAdjacentPreload}
                         carouselAdjacentDimLevel="expandedSide"
+                        transitionDimLevel={outgoingImmediateDim}
                         layout={layout}
                         compact={compact}
                         scrollExpand={showAsCenter}
@@ -1286,6 +1293,7 @@ export default function PromoShortCarouselStage({
                         preserveFrame={preserveCenterFrame}
                         heroCarouselEmbed
                         carouselAdjacentEmbed={isAdjacentPreload}
+                        transitionDimLevel={outgoingImmediateDim}
                         videoPreload={slotVideoPreload}
                         variant="teaser"
                         playerSize={playerSize}
