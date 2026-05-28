@@ -74,6 +74,7 @@ export async function GET(request: Request) {
         streamUid: promo.streamUid,
         thumbnailUrl,
         aspectRatio: aspectRatioFromVideo(info),
+        frameCrop: promo.frameCrop,
         likeCount: promo.likeCount ?? 0,
         viewCount: promo.viewCount ?? 0,
         likedByMe,

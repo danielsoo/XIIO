@@ -481,6 +481,14 @@ function PlayerChrome({
 
   const videoObjectClass =
     fixedPortraitFrame || isCarouselCenterEmbed ? "object-cover" : "object-contain";
+  const videoFrameStyle =
+    item.frameCrop && (fixedPortraitFrame || isCarouselCenterEmbed)
+      ? {
+          objectPosition: `${item.frameCrop.focalX}% ${item.frameCrop.focalY}%`,
+          transform: `scale(${item.frameCrop.zoom})`,
+          transformOrigin: `${item.frameCrop.focalX}% ${item.frameCrop.focalY}%`,
+        }
+      : undefined;
 
   const overlayBandClass = compact
     ? "h-auto min-h-[5rem] max-h-[min(38%,12rem)]"
@@ -714,6 +722,7 @@ function PlayerChrome({
                 ? `transition-opacity duration-300 ${videoReady ? "opacity-100" : "opacity-0"}`
                 : ""
             }`}
+            style={videoFrameStyle}
             playsInline
             muted
             loop={loop}

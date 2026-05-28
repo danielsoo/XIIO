@@ -6,6 +6,7 @@ import {
 } from "@/lib/server/revision-parse";
 import type {
   PlatformStatus,
+  PromoFrameCrop,
   PromoPlatformStatus,
   PromoShortDoc,
   RejectReasonCode,
@@ -68,6 +69,16 @@ function parseStringArray(data: Record<string, unknown>, key: string): string[] 
   return v.map((x) => String(x)).filter(Boolean);
 }
 
+function parsePromoFrameCrop(value: unknown): PromoFrameCrop | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const row = value as Record<string, unknown>;
+  const focalX = typeof row.focalX === "number" ? row.focalX : NaN;
+  const focalY = typeof row.focalY === "number" ? row.focalY : NaN;
+  const zoom = typeof row.zoom === "number" ? row.zoom : NaN;
+  if (!Number.isFinite(focalX) || !Number.isFinite(focalY) || !Number.isFinite(zoom)) return undefined;
+  return { focalX, focalY, zoom };
+}
+
 export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc & { id: string } {
   const rejectCode = data.rejectReasonCode;
   return {
@@ -128,6 +139,7 @@ export function parsePromoDoc(data: Record<string, unknown>): PromoShortDoc {
       typeof data.thumbnailUrl === "string" && data.thumbnailUrl.trim()
         ? data.thumbnailUrl.trim()
         : null,
+    frameCrop: parsePromoFrameCrop(data.frameCrop),
     rejectReason: data.rejectReason ? String(data.rejectReason) : undefined,
     deletionRequest: data.deletionRequest as PromoShortDoc["deletionRequest"],
     submittedAt: data.submittedAt,

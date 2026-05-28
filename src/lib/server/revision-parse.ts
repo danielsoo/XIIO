@@ -2,6 +2,7 @@ import { parseContentModeration } from "@/lib/server/moderation/parse-content-mo
 import { isRejectReasonCode, isWorkSection } from "@/lib/works/constants";
 import { isVideoAspectRatio } from "@/lib/works/aspect-ratio";
 import type {
+  PromoFrameCrop,
   PromoPendingRevision,
   RevisionReviewStatus,
   StreamStatus,
@@ -11,6 +12,16 @@ import type {
 function parseRevisionStatus(raw: unknown): "draft" | "pending" | "rejected" {
   if (raw === "pending" || raw === "rejected") return raw;
   return "draft";
+}
+
+function parsePromoFrameCrop(value: unknown): PromoFrameCrop | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const row = value as Record<string, unknown>;
+  const focalX = typeof row.focalX === "number" ? row.focalX : NaN;
+  const focalY = typeof row.focalY === "number" ? row.focalY : NaN;
+  const zoom = typeof row.zoom === "number" ? row.zoom : NaN;
+  if (!Number.isFinite(focalX) || !Number.isFinite(focalY) || !Number.isFinite(zoom)) return undefined;
+  return { focalX, focalY, zoom };
 }
 
 export function parseWorkPendingRevision(data: Record<string, unknown>): WorkPendingRevision | undefined {
@@ -57,6 +68,7 @@ export function parsePromoPendingRevision(data: Record<string, unknown>): PromoP
     durationSec: typeof r.durationSec === "number" ? r.durationSec : undefined,
     title: r.title ? String(r.title) : undefined,
     description: r.description ? String(r.description) : undefined,
+    frameCrop: parsePromoFrameCrop(r.frameCrop),
     rejectReason: r.rejectReason ? String(r.rejectReason) : undefined,
     submittedAt: r.submittedAt,
     updatedAt: r.updatedAt,

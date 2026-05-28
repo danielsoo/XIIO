@@ -9,6 +9,7 @@ import { hasDepositVerifiedClaim } from "@/lib/server/deposit-verification";
 import { isUploaderDepositEnabled } from "@/lib/payments/config";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
 import { parseUploadLength } from "@/lib/server/parse-upload-length";
+import { normalizePromoFrameCrop } from "@/lib/works/promo-crop";
 import {
   FieldValue,
   getDbOrNull,
@@ -30,7 +31,7 @@ export async function POST(request: Request, { params }: Params) {
   const { session } = auth;
   const { workId } = await params;
 
-  let body: { uploadLength?: number | string; revision?: boolean };
+  let body: { uploadLength?: number | string; revision?: boolean; frameCrop?: unknown };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -38,6 +39,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const uploadLength = parseUploadLength(body.uploadLength);
+  const frameCrop = normalizePromoFrameCrop(body.frameCrop);
   if (uploadLength == null || uploadLength <= 0) {
     return jsonError("invalid_body", "파일 크기(uploadLength)가 필요합니다.", 400);
   }
@@ -120,6 +122,7 @@ export async function POST(request: Request, { params }: Params) {
           title: existing?.title,
           description: existing?.description,
           thumbnailUrl: existing?.thumbnailUrl ?? work.promoDraft?.thumbnailUrl ?? null,
+          frameCrop,
           clipStartSec: 0,
           clipEndSec: 0,
           updatedAt: FieldValue.serverTimestamp(),
@@ -140,6 +143,7 @@ export async function POST(request: Request, { params }: Params) {
         description: draft?.description ?? existing?.description ?? work.description ?? null,
         thumbnailUrl:
           draft?.thumbnailUrl ?? existing?.thumbnailUrl ?? null,
+        frameCrop,
         clipStartSec: 0,
         clipEndSec: 0,
         streamError: FieldValue.delete(),

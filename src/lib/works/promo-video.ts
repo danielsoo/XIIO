@@ -1,16 +1,12 @@
-/** Target portrait ratio 9:16 */
-export const PROMO_ASPECT_RATIO_MIN = 9 / 16;
-/** Allow up to 4:5 portrait (w/h = 0.8) */
-export const PROMO_ASPECT_RATIO_MAX = 4 / 5;
-
 export const PROMO_MIN_DURATION_SEC = 3;
 export const PROMO_MAX_DURATION_SEC = 120;
 
 export type PromoVideoDurationError = "invalid_duration" | "too_short" | "too_long";
 export type PromoVideoAspectError =
   | "invalid_dimensions"
-  | "not_portrait"
-  | "aspect_ratio_out_of_range";
+  | "too_small";
+
+export const PROMO_MIN_DIMENSION_PX = 360;
 
 export function isPortraitVideo(width: number, height: number): boolean {
   return (
@@ -23,9 +19,7 @@ export function isPortraitVideo(width: number, height: number): boolean {
 }
 
 export function isPromoAspectRatio(width: number, height: number): boolean {
-  if (!isPortraitVideo(width, height)) return false;
-  const ratio = width / height;
-  return ratio >= PROMO_ASPECT_RATIO_MIN && ratio <= PROMO_ASPECT_RATIO_MAX;
+  return isPortraitVideo(width, height);
 }
 
 export function validatePromoVideoDuration(sec: number): PromoVideoDurationError | null {
@@ -42,8 +36,7 @@ export function validatePromoVideoDimensions(
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
     return "invalid_dimensions";
   }
-  if (!isPortraitVideo(width, height)) return "not_portrait";
-  if (!isPromoAspectRatio(width, height)) return "aspect_ratio_out_of_range";
+  if (Math.min(width, height) < PROMO_MIN_DIMENSION_PX) return "too_small";
   return null;
 }
 

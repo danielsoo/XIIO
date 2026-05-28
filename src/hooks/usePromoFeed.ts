@@ -11,6 +11,7 @@ function toPromoShort(item: PromoFeedItem): PromoShort {
     id: item.id,
     videoUrl: item.videoUrl,
     aspectRatio: item.aspectRatio,
+    frameCrop: item.frameCrop,
     title: item.title,
     director: item.director,
     description: item.description,

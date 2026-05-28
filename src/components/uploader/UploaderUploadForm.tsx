@@ -23,17 +23,20 @@ import {
   type ApiErrorBody,
 } from "@/lib/clientErrors";
 import { uploadFileViaTus } from "@/lib/streamTusUpload";
+import { defaultPromoFrameCrop, normalizePromoFrameCrop } from "@/lib/works/promo-crop";
 import {
   patchPromoThumbnailUrl,
   uploadPromoThumbnail,
   validatePromoThumbnailFile,
 } from "@/lib/works/promoThumbnailUpload";
-import {
-  isPromoAspectRatio,
-  validatePromoVideoDuration,
-} from "@/lib/works/promo-video";
+import { validatePromoVideoDimensions, validatePromoVideoDuration } from "@/lib/works/promo-video";
 import { normalizeTags } from "@/lib/works/label-utils";
-import { WORK_SECTIONS, type VideoAspectRatio, type WorkSection } from "@/types/work";
+import {
+  WORK_SECTIONS,
+  type PromoFrameCrop,
+  type VideoAspectRatio,
+  type WorkSection,
+} from "@/types/work";
 import type { User } from "firebase/auth";
 
 type UploadStepId = "fullWork" | "catalog" | "promo";
@@ -75,6 +78,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [thumbnailFieldError, setThumbnailFieldError] = useState<string | null>(null);
   const [promoFile, setPromoFile] = useState<File | null>(null);
   const promoMeta = useVideoFileMetadata(promoFile);
+  const [promoCrop, setPromoCrop] = useState<PromoFrameCrop>(defaultPromoFrameCrop());
   const [title, setTitle] = useState("");
   const [section, setSection] = useState<WorkSection>("movies");
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("16:9");
@@ -131,13 +135,22 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const promoFileError = (() => {
     if (!promoFile) return null;
     if (!promoMeta) return "loading";
-    if (!isPromoAspectRatio(promoMeta.width, promoMeta.height)) {
-      return "aspect";
+    const dimErr = validatePromoVideoDimensions(promoMeta.width, promoMeta.height);
+    if (dimErr) {
+      return dimErr;
     }
     const durErr = validatePromoVideoDuration(promoMeta.duration);
     if (durErr) return durErr;
     return null;
   })();
+
+  useEffect(() => {
+    if (!promoFile) {
+      setPromoCrop(defaultPromoFrameCrop());
+      return;
+    }
+    setPromoCrop((prev) => normalizePromoFrameCrop(prev));
+  }, [promoFile, promoMeta]);
 
   const scrollWizardTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -166,8 +179,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
           setFormError(t("uploader.errorPromoVideoLoading"));
           return false;
         }
-        if (promoFileError === "aspect") {
-          setFormError(t("uploader.errorPromoNotPortrait"));
+        if (promoFileError === "too_small") {
+          setFormError(t("uploader.errorPromoTooSmall"));
           return false;
         }
         if (promoFileError === "too_short") {
@@ -382,7 +395,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ uploadLength: promoFile.size }),
+          body: JSON.stringify({ uploadLength: promoFile.size, frameCrop: promoCrop }),
         });
       } catch (fetchErr) {
         onError(formatClientError(t, fetchErr, { titleKey: "uploader.errorPromoUploadFailed" }));
@@ -426,6 +439,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       setDirector(lockedDirectorName);
       setDescription("");
       setPromoFile(null);
+      setPromoCrop(defaultPromoFrameCrop());
       setPromoTitle("");
       setPromoDescription("");
     } catch (unexpected) {
@@ -679,10 +693,17 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             <VideoUploadDropzone
               file={promoFile}
               onFileChange={setPromoFile}
+              crop={promoCrop}
+              onCropChange={(next) => setPromoCrop(normalizePromoFrameCrop(next))}
+              meta={promoMeta}
+              showPortraitPreview
               disabled={busy}
             />
-            {promoFile && promoFileError === "aspect" && (
-              <p className="text-xs text-red-400">{t("uploader.errorPromoNotPortrait")}</p>
+            {promoFile && promoFileError === "too_small" && (
+              <p className="text-xs text-red-400">{t("uploader.errorPromoTooSmall")}</p>
+            )}
+            {promoFile && promoFileError === "invalid_dimensions" && (
+              <p className="text-xs text-red-400">{t("uploader.errorPromoVideoInvalid")}</p>
             )}
             {promoFile && promoMeta && promoFileError === "too_short" && (
               <p className="text-xs text-red-400">{t("uploader.errorPromoTooShort")}</p>
@@ -697,6 +718,22 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               disabled={busy}
               error={thumbnailFieldError}
             />
+            {thumbnailPreview && (
+              <div className="grid gap-3 md:grid-cols-2">
+                <ThumbnailStage
+                  title={t("uploader.fullThumbnailPreviewTitle")}
+                  hint={t("uploader.fullThumbnailPreviewHint")}
+                  src={thumbnailPreview}
+                  aspectRatio="16 / 9"
+                />
+                <ThumbnailStage
+                  title={t("uploader.shortsThumbnailPreviewTitle")}
+                  hint={t("uploader.shortsThumbnailPreviewHint")}
+                  src={thumbnailPreview}
+                  aspectRatio="9 / 16"
+                />
+              </div>
+            )}
             <PromoShortFields
               title={promoTitle}
               onTitleChange={setPromoTitle}
@@ -710,5 +747,27 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         </div>
       </div>
     </form>
+  );
+}
+
+function ThumbnailStage({
+  title,
+  hint,
+  src,
+  aspectRatio,
+}: {
+  title: string;
+  hint: string;
+  src: string;
+  aspectRatio: string;
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+      <p className="text-xs text-white/90">{title}</p>
+      <p className="text-[11px] text-xiio-muted mb-2">{hint}</p>
+      <div className="relative overflow-hidden rounded-lg border border-white/10 bg-black" style={{ aspectRatio }}>
+        <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      </div>
+    </div>
   );
 }

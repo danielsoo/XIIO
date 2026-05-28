@@ -17,9 +17,10 @@ import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import { uploadFileViaTus } from "@/lib/streamTusUpload";
 import { resolveDisplayTitle } from "@/lib/works/display-title";
+import { defaultPromoFrameCrop, normalizePromoFrameCrop } from "@/lib/works/promo-crop";
 import {
   isLegacyClipPromo,
-  isPromoAspectRatio,
+  validatePromoVideoDimensions,
   validatePromoVideoDuration,
 } from "@/lib/works/promo-video";
 import {
@@ -31,6 +32,7 @@ import type {
   PromoPendingRevision,
   PromoShortDoc,
   RevisionReviewStatus,
+  PromoFrameCrop,
   StreamStatus,
   WorkDoc,
 } from "@/types/work";
@@ -64,6 +66,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const [justSavedVideo, setJustSavedVideo] = useState(false);
   const [promoFile, setPromoFile] = useState<File | null>(null);
   const promoMeta = useVideoFileMetadata(promoFile);
+  const [promoCrop, setPromoCrop] = useState<PromoFrameCrop>(defaultPromoFrameCrop());
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -110,6 +113,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       setDescription(
         source?.description ?? promo?.description ?? draft?.description ?? json.work.description ?? ""
       );
+      setPromoCrop(normalizePromoFrameCrop(source?.frameCrop ?? promo?.frameCrop));
       const thumb =
         promo?.thumbnailUrl ?? draft?.thumbnailUrl ?? null;
       setSavedThumbnailUrl(thumb);
@@ -240,8 +244,13 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       setErr(t("uploader.errorPromoVideoLoading"));
       return;
     }
-    if (!isPromoAspectRatio(promoMeta.width, promoMeta.height)) {
-      setErr(t("uploader.errorPromoNotPortrait"));
+    const dimErr = validatePromoVideoDimensions(promoMeta.width, promoMeta.height);
+    if (dimErr === "too_small") {
+      setErr(t("uploader.errorPromoTooSmall"));
+      return;
+    }
+    if (dimErr) {
+      setErr(t("uploader.errorPromoVideoInvalid"));
       return;
     }
     const durErr = validatePromoVideoDuration(promoMeta.duration);
@@ -267,6 +276,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         body: JSON.stringify({
           uploadLength: promoFile.size,
           revision: revisionMode,
+          frameCrop: promoCrop,
         }),
       });
       const { data: body, raw } = await readResponseJson<{ tusEndpoint?: string; message?: string; error?: string }>(
@@ -278,6 +288,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       }
       await uploadFileViaTus(promoFile, body.tusEndpoint);
       setPromoFile(null);
+      setPromoCrop(defaultPromoFrameCrop());
       setJustSavedVideo(true);
       setMsg(t("promoEditor.savedEncoding"));
       await load({ silent: true });
@@ -499,7 +510,15 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
             title={t("promoEditor.promoVideoSection")}
             hint={t("uploader.promoVideoFileHint")}
           >
-            <VideoUploadDropzone file={promoFile} onFileChange={setPromoFile} disabled={busy} />
+            <VideoUploadDropzone
+              file={promoFile}
+              onFileChange={setPromoFile}
+              crop={promoCrop}
+              onCropChange={(next) => setPromoCrop(normalizePromoFrameCrop(next))}
+              meta={promoMeta}
+              showPortraitPreview
+              disabled={busy}
+            />
             {promoFile ? (
               <button
                 type="button"

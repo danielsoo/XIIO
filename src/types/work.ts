@@ -74,6 +74,7 @@ export type PromoPendingRevision = {
   title?: string;
   description?: string;
   thumbnailUrl?: string | null;
+  frameCrop?: PromoFrameCrop;
   rejectReason?: string;
   submittedAt?: unknown;
   updatedAt?: unknown;
@@ -132,6 +133,7 @@ export type PromoShortDoc = {
   title?: string;
   description?: string;
   thumbnailUrl?: string | null;
+  frameCrop?: PromoFrameCrop;
   rejectReason?: string;
   deletionRequest?: DeletionRequest;
   submittedAt?: unknown;
@@ -145,6 +147,15 @@ export type PromoShortDoc = {
   pendingRevision?: PromoPendingRevision;
   revisionReviewStatus?: RevisionReviewStatus;
   contentModeration?: ContentModeration;
+};
+
+export type PromoFrameCrop = {
+  /** horizontal focus percentage in portrait frame */
+  focalX: number;
+  /** vertical focus percentage in portrait frame */
+  focalY: number;
+  /** zoom multiplier for portrait framing */
+  zoom: number;
 };
 
 export const PROMO_SHORT_DOC_ID = "promo";
@@ -164,6 +175,7 @@ export type PromoFeedItem = {
   description: string;
   videoUrl: string;
   aspectRatio: number;
+  frameCrop?: PromoFrameCrop;
   streamUid?: string;
   thumbnailUrl?: string;
   likeCount?: number;

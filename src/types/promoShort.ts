@@ -1,3 +1,5 @@
+import type { PromoFrameCrop } from "@/types/work";
+
 /** 홈·홍보용 숏폼 (업로더가 지정한 비율 그대로 게시) */
 export type PromoShort = {
   id: string;
@@ -7,6 +9,7 @@ export type PromoShort = {
   thumbnailUrl?: string;
   /** width / height — 예: 16/9, 9/16, 1/1 */
   aspectRatio: number;
+  frameCrop?: PromoFrameCrop;
   title: string;
   director: string;
   description: string;

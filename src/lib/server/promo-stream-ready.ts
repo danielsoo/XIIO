@@ -6,7 +6,7 @@ import {
 } from "@/lib/works/promo-video";
 import { FieldValue, promoRef } from "@/lib/server/works";
 
-/** After promo stream is ready, validate portrait + duration and update promo doc */
+/** After promo stream is ready, validate source dimensions + duration and update promo doc */
 export async function finalizePromoStreamIfReady(
   db: Firestore,
   ownerUid: string,
@@ -32,10 +32,10 @@ export async function finalizePromoStreamIfReady(
       {
         [`${prefix}streamStatus`]: "error",
         [`${prefix}streamError`]:
-          aspectErr === "not_portrait"
-            ? "promo_not_portrait"
-            : aspectErr === "aspect_ratio_out_of_range"
-              ? "promo_aspect_out_of_range"
+          aspectErr === "too_small"
+            ? "promo_too_small"
+            : aspectErr === "invalid_dimensions"
+              ? "promo_invalid_dimensions"
               : durationErr === "too_short"
                 ? "promo_too_short"
                 : durationErr === "too_long"
