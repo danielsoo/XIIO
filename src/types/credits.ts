@@ -41,7 +41,7 @@ export type CreditIndexDoc = {
   ownerUid: string;
   workId: string;
   role: WorkCreditRole;
-  characterName?: string;
+  characterName?: string | null;
   workTitle: string;
   workSection?: string;
   platformStatus: string;

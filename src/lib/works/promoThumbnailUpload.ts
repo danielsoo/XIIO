@@ -1,11 +1,12 @@
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 
-const MAX_THUMBNAIL_BYTES = 2 * 1024 * 1024;
+/** 홍보 썸네일 최대 용량 — storage.rules 와 동일하게 유지 */
+export const MAX_PROMO_THUMBNAIL_BYTES = 10 * 1024 * 1024;
 
 export function validatePromoThumbnailFile(file: File): "type" | "size" | null {
   if (!file.type.startsWith("image/")) return "type";
-  if (file.size > MAX_THUMBNAIL_BYTES) return "size";
+  if (file.size > MAX_PROMO_THUMBNAIL_BYTES) return "size";
   return null;
 }
 

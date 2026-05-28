@@ -12,6 +12,31 @@ import type { WorkDoc } from "@/types/work";
 import { parseWorkDoc, worksCol } from "@/lib/server/works";
 
 const HANDLE_REGEX = /^[a-z0-9_]{3,30}$/;
+const CREDIT_CHARACTER_NAME_MAX = 120;
+
+/** Firestore 문서용 — undefined 금지, 빈 값은 null */
+export function normalizeCreditCharacterNameForFirestore(
+  characterName?: string
+): string | null {
+  const trimmed = characterName?.trim().slice(0, CREDIT_CHARACTER_NAME_MAX);
+  return trimmed ? trimmed : null;
+}
+
+/** API/메모리용 — 빈 값은 undefined (필드 생략) */
+export function normalizeCreditCharacterName(characterName?: string): string | undefined {
+  const trimmed = characterName?.trim().slice(0, CREDIT_CHARACTER_NAME_MAX);
+  return trimmed || undefined;
+}
+
+export function normalizeWorkCreditInput(input: WorkCreditInput): WorkCreditInput {
+  const base: WorkCreditInput = {
+    userId: input.userId,
+    role: input.role,
+    sortOrder: input.sortOrder,
+  };
+  const characterName = normalizeCreditCharacterName(input.characterName);
+  return characterName ? { ...base, characterName } : base;
+}
 
 export function normalizeHandle(raw: string): string | null {
   const h = raw.trim().toLowerCase().replace(/^@/, "");
@@ -80,7 +105,7 @@ export function validateCreditInputs(
     if (seen.has(key)) return { ok: false, message: "credit_duplicate" };
     seen.add(key);
   }
-  return { ok: true, credits: inputs };
+  return { ok: true, credits: inputs.map(normalizeWorkCreditInput) };
 }
 
 export async function writeWorkCredits(
@@ -115,7 +140,7 @@ export async function writeWorkCredits(
       userId: input.userId,
       role: input.role,
       displayName: displayName ?? null,
-      characterName: input.characterName?.trim().slice(0, 120) ?? null,
+      characterName: normalizeCreditCharacterNameForFirestore(input.characterName),
       sortOrder: input.sortOrder ?? order++,
       status: "accepted",
       createdAt: FieldValue.serverTimestamp(),
@@ -127,7 +152,7 @@ export async function writeWorkCredits(
       userId: input.userId,
       role: input.role,
       displayName,
-      characterName: input.characterName?.trim(),
+      characterName: normalizeCreditCharacterName(input.characterName),
       sortOrder: data.sortOrder as number,
       status: "accepted",
     });
@@ -180,7 +205,7 @@ export async function syncCreditIndexForWork(
       ownerUid,
       workId,
       role: c.role,
-      characterName: c.characterName,
+      characterName: normalizeCreditCharacterNameForFirestore(c.characterName),
       workTitle: work.title,
       workSection: work.section,
       platformStatus: work.platformStatus,
@@ -218,12 +243,14 @@ export async function ensureOwnerDirectorCredit(
     { userId: ownerUid, role: "director", sortOrder: 0 },
     ...existing
       .filter((c) => !(c.userId === ownerUid && c.role === "director"))
-      .map((c, i) => ({
-        userId: c.userId,
-        role: c.role,
-        characterName: c.characterName,
-        sortOrder: i + 1,
-      })),
+      .map((c, i) =>
+        normalizeWorkCreditInput({
+          userId: c.userId,
+          role: c.role,
+          characterName: c.characterName,
+          sortOrder: i + 1,
+        })
+      ),
   ];
   const names = new Map<string, string>([[ownerUid, displayName || work.director || ""]]);
   for (const c of existing) {

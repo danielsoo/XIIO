@@ -309,8 +309,10 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             credits: credits.map(({ userId, role, characterName, sortOrder }) => ({
               userId,
               role,
-              characterName,
               sortOrder,
+              ...(characterName?.trim()
+                ? { characterName: characterName.trim() }
+                : {}),
             })),
           }),
         });
