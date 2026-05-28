@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
+import ThumbnailPreviewStages from "@/components/uploader/ThumbnailPreviewStages";
 import UploaderFormSection from "@/components/uploader/UploaderFormSection";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
 import UploadWizardStepper, {
@@ -32,7 +33,7 @@ import {
   uploadPromoThumbnail,
   validatePromoThumbnailFile,
 } from "@/lib/works/promoThumbnailUpload";
-import { validatePromoVideoDimensions, validatePromoVideoDuration } from "@/lib/works/promo-video";
+import { getPromoFileValidationError } from "@/lib/works/promo-file-validation";
 import { normalizeTags } from "@/lib/works/label-utils";
 import {
   WORK_SECTIONS,
@@ -136,17 +137,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     }
   }, [title, promoTitle]);
 
-  const promoFileError = (() => {
-    if (!promoFile) return null;
-    if (!promoMeta) return "loading";
-    const dimErr = validatePromoVideoDimensions(promoMeta.width, promoMeta.height);
-    if (dimErr) {
-      return dimErr;
-    }
-    const durErr = validatePromoVideoDuration(promoMeta.duration);
-    if (durErr) return durErr;
-    return null;
-  })();
+  const promoFileError = getPromoFileValidationError(Boolean(promoFile), promoMeta);
 
   useEffect(() => {
     if (!promoFile) {
@@ -748,20 +739,13 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               error={thumbnailFieldError}
             />
             {thumbnailPreview && (
-              <div className="grid gap-3 md:grid-cols-2">
-                <ThumbnailStage
-                  title={t("uploader.fullThumbnailPreviewTitle")}
-                  hint={t("uploader.fullThumbnailPreviewHint")}
-                  src={thumbnailPreview}
-                  aspectRatio="16 / 9"
-                />
-                <ThumbnailStage
-                  title={t("uploader.shortsThumbnailPreviewTitle")}
-                  hint={t("uploader.shortsThumbnailPreviewHint")}
-                  src={thumbnailPreview}
-                  aspectRatio="9 / 16"
-                />
-              </div>
+              <ThumbnailPreviewStages
+                src={thumbnailPreview}
+                fullTitle={t("uploader.fullThumbnailPreviewTitle")}
+                fullHint={t("uploader.fullThumbnailPreviewHint")}
+                shortsTitle={t("uploader.shortsThumbnailPreviewTitle")}
+                shortsHint={t("uploader.shortsThumbnailPreviewHint")}
+              />
             )}
             <PromoShortFields
               title={promoTitle}
@@ -776,27 +760,5 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         </div>
       </div>
     </form>
-  );
-}
-
-function ThumbnailStage({
-  title,
-  hint,
-  src,
-  aspectRatio,
-}: {
-  title: string;
-  hint: string;
-  src: string;
-  aspectRatio: string;
-}) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-      <p className="text-xs text-white/90">{title}</p>
-      <p className="text-[11px] text-xiio-muted mb-2">{hint}</p>
-      <div className="relative overflow-hidden rounded-lg border border-white/10 bg-black" style={{ aspectRatio }}>
-        <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />
-      </div>
-    </div>
   );
 }

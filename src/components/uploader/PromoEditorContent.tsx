@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
+import ThumbnailPreviewStages from "@/components/uploader/ThumbnailPreviewStages";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
 import UploaderFormSection from "@/components/uploader/UploaderFormSection";
@@ -18,11 +19,8 @@ import { formatApiError, formatClientError, readResponseJson } from "@/lib/clien
 import { uploadFileViaTus } from "@/lib/streamTusUpload";
 import { resolveDisplayTitle } from "@/lib/works/display-title";
 import { defaultPromoFrameCrop, normalizePromoFrameCrop } from "@/lib/works/promo-crop";
-import {
-  isLegacyClipPromo,
-  validatePromoVideoDimensions,
-  validatePromoVideoDuration,
-} from "@/lib/works/promo-video";
+import { getPromoFileValidationError } from "@/lib/works/promo-file-validation";
+import { isLegacyClipPromo } from "@/lib/works/promo-video";
 import {
   patchPromoThumbnailUrl,
   uploadPromoThumbnail,
@@ -240,29 +238,24 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
 
   const uploadPromoVideo = async () => {
     if (!promoFile || !user) return;
-    if (!promoMeta) {
+    const fileErr = getPromoFileValidationError(true, promoMeta);
+    if (fileErr === "loading") {
       setErr(t("uploader.errorPromoVideoLoading"));
       return;
     }
-    const dimErr = validatePromoVideoDimensions(promoMeta.width, promoMeta.height);
-    if (dimErr === "too_small") {
+    if (fileErr === "too_small") {
       setErr(t("uploader.errorPromoTooSmall"));
       return;
     }
-    if (dimErr) {
-      setErr(t("uploader.errorPromoVideoInvalid"));
-      return;
-    }
-    const durErr = validatePromoVideoDuration(promoMeta.duration);
-    if (durErr === "too_short") {
+    if (fileErr === "too_short") {
       setErr(t("uploader.errorPromoTooShort"));
       return;
     }
-    if (durErr === "too_long") {
+    if (fileErr === "too_long") {
       setErr(t("uploader.errorPromoTooLong"));
       return;
     }
-    if (durErr) {
+    if (fileErr) {
       setErr(t("uploader.errorPromoVideoInvalid"));
       return;
     }
@@ -433,37 +426,44 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       revisionMode && pendingRevision ? pendingRevision.clipStartSec : promo?.clipStartSec
     );
 
-  const leftColumn = (
-    <>
-      {work.playbackUrl ? (
-        <section className="rounded-2xl border border-white/10 bg-xiio-surface p-5 md:p-6">
-          <p className="text-xs text-xiio-muted mb-2">{t("promoEditor.fullVideoLabel")}</p>
-          <PlaybackVideo src={work.playbackUrl} maxHeightClass="max-h-[min(52vh,520px)]" />
-        </section>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] min-h-[280px] lg:min-h-[360px] flex items-center justify-center p-6 text-center">
-          <p className="text-sm text-xiio-muted">{t("promoEditor.waitEncoding")}</p>
-        </div>
-      )}
-      {((revisionMode && pendingRevisionPlayback) ||
-        (!revisionMode && promo?.playbackUrl && promo.streamStatus === "ready")) && (
-        <section className="rounded-2xl border border-white/10 bg-xiio-surface p-5 md:p-6">
-          <p className="text-sm text-xiio-muted mb-2">{t("promoEditor.preview")}</p>
-          <PlaybackVideo
-            src={
-              revisionMode
-                ? (pendingRevisionPlayback ?? "")
-                : (promo?.playbackUrl ?? "")
-            }
-            maxHeightClass="max-h-[min(52vh,520px)]"
-          />
-        </section>
-      )}
-    </>
-  );
+  const promoFileError = getPromoFileValidationError(Boolean(promoFile), promoMeta);
+  const promoPlaybackUrl =
+    revisionMode && pendingRevisionPlayback
+      ? pendingRevisionPlayback
+      : !revisionMode && promo?.playbackUrl && promo.streamStatus === "ready"
+        ? promo.playbackUrl
+        : null;
+  const showPlaybackSection = Boolean(work.playbackUrl || promoPlaybackUrl);
 
-  const rightColumn = (
+  const editorBody = (
     <>
+      {showPlaybackSection && (
+        <UploaderFormSection title={t("promoEditor.playbackSectionTitle")}>
+          <div className="grid gap-4 md:grid-cols-2">
+            {work.playbackUrl ? (
+              <div>
+                <p className="text-xs text-xiio-muted mb-2">{t("promoEditor.fullVideoLabel")}</p>
+                <PlaybackVideo src={work.playbackUrl} maxHeightClass="max-h-[min(40vh,400px)]" />
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.03] min-h-[200px] flex items-center justify-center p-4 text-center">
+                <p className="text-sm text-xiio-muted">{t("promoEditor.waitEncoding")}</p>
+              </div>
+            )}
+            {promoPlaybackUrl ? (
+              <div>
+                <p className="text-xs text-xiio-muted mb-2">{t("promoEditor.preview")}</p>
+                <PlaybackVideo src={promoPlaybackUrl} maxHeightClass="max-h-[min(40vh,400px)]" />
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.03] min-h-[200px] flex items-center justify-center p-4 text-center">
+                <p className="text-sm text-xiio-muted">{t("promoEditor.previewEmpty")}</p>
+              </div>
+            )}
+          </div>
+        </UploaderFormSection>
+      )}
+
       {savedPromoStatus && (revisionMode ? pendingRevision : promo) && (
         <section className="rounded-2xl border border-xiio-accent/30 bg-xiio-accent/10 p-5 md:p-6">
           <div className="flex items-start gap-3">
@@ -505,103 +505,116 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       )}
 
       {showEditor && (
-        <div className="space-y-6">
-          <UploaderFormSection
-            title={t("promoEditor.promoVideoSection")}
-            hint={t("uploader.promoVideoFileHint")}
-          >
-            <VideoUploadDropzone
-              file={promoFile}
-              onFileChange={setPromoFile}
-              crop={promoCrop}
-              onCropChange={(next) => setPromoCrop(normalizePromoFrameCrop(next))}
-              meta={promoMeta}
-              showPortraitPreview
-              disabled={busy}
+        <UploaderFormSection
+          title={t("uploader.uploadZonePromoTitle")}
+          hint={t("uploader.uploadZonePromoHint")}
+        >
+          <p className="text-xs text-xiio-muted leading-relaxed">{t("uploader.promoVideoFileHint")}</p>
+          <VideoUploadDropzone
+            file={promoFile}
+            onFileChange={setPromoFile}
+            crop={promoCrop}
+            onCropChange={(next) => setPromoCrop(normalizePromoFrameCrop(next ?? defaultPromoFrameCrop()))}
+            meta={promoMeta}
+            showPortraitPreview
+            disabled={busy}
+          />
+          {promoFile && promoFileError === "too_small" && (
+            <p className="text-xs text-red-400">{t("uploader.errorPromoTooSmall")}</p>
+          )}
+          {promoFile && promoFileError === "invalid_dimensions" && (
+            <p className="text-xs text-red-400">{t("uploader.errorPromoVideoInvalid")}</p>
+          )}
+          {promoFile && promoMeta && promoFileError === "too_short" && (
+            <p className="text-xs text-red-400">{t("uploader.errorPromoTooShort")}</p>
+          )}
+          {promoFile && promoMeta && promoFileError === "too_long" && (
+            <p className="text-xs text-red-400">{t("uploader.errorPromoTooLong")}</p>
+          )}
+          {promoFile ? (
+            <button
+              type="button"
+              disabled={busy || promoFileError === "loading" || Boolean(promoFileError)}
+              onClick={() => void uploadPromoVideo()}
+              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-semibold disabled:opacity-40"
+            >
+              {busy ? t("common.processing") : t("promoEditor.uploadPromoVideo")}
+            </button>
+          ) : null}
+          <ThumbnailUploadField
+            file={thumbnailFile}
+            previewUrl={thumbnailPreview}
+            onFileChange={handleThumbnailChange}
+            disabled={busy}
+            error={thumbnailFieldError}
+          />
+          {thumbnailPreview && (
+            <ThumbnailPreviewStages
+              src={thumbnailPreview}
+              fullTitle={t("uploader.fullThumbnailPreviewTitle")}
+              fullHint={t("uploader.fullThumbnailPreviewHint")}
+              shortsTitle={t("uploader.shortsThumbnailPreviewTitle")}
+              shortsHint={t("uploader.shortsThumbnailPreviewHint")}
             />
-            {promoFile ? (
+          )}
+          {thumbnailFile ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void saveThumbnail()}
+              className="w-full sm:w-auto px-5 py-3 rounded-xl border border-white/20 text-white text-sm font-medium hover:bg-white/5 disabled:opacity-40"
+            >
+              {busy ? t("common.processing") : t("promoEditor.saveThumbnail")}
+            </button>
+          ) : null}
+          <PromoShortFields
+            title={title}
+            onTitleChange={setTitle}
+            description={description}
+            onDescriptionChange={setDescription}
+            disabled={busy}
+          />
+          <div className="flex flex-wrap gap-3 pt-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void savePromoMeta()}
+              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-semibold disabled:opacity-40"
+            >
+              {busy ? t("common.processing") : t("promoEditor.saveMeta")}
+            </button>
+            {promo && (promo.platformStatus === "draft" || promo.platformStatus === "rejected") && (
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => void uploadPromoVideo()}
-                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-semibold disabled:opacity-40"
+                onClick={() => void deletePromo()}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-500/10 disabled:opacity-40"
               >
-                {busy ? t("common.processing") : t("promoEditor.uploadPromoVideo")}
+                {t("promoEditor.deletePromo")}
               </button>
-            ) : null}
-          </UploaderFormSection>
-          <UploaderFormSection
-            title={t("promoEditor.thumbnailSection")}
-            hint={t("uploader.uploadThumbnailHint")}
-          >
-            <ThumbnailUploadField
-              file={thumbnailFile}
-              previewUrl={thumbnailPreview}
-              onFileChange={handleThumbnailChange}
-              disabled={busy}
-              error={thumbnailFieldError}
-            />
-            {thumbnailFile ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void saveThumbnail()}
-                className="w-full sm:w-auto px-5 py-3 rounded-xl border border-white/20 text-white text-sm font-medium hover:bg-white/5 disabled:opacity-40"
-              >
-                {busy ? t("common.processing") : t("promoEditor.saveThumbnail")}
-              </button>
-            ) : null}
-          </UploaderFormSection>
-          <UploaderFormSection title={t("uploader.uploadPromoInfoTitle")}>
-            <PromoShortFields
-              title={title}
-              onTitleChange={setTitle}
-              description={description}
-              onDescriptionChange={setDescription}
-              disabled={busy}
-            />
-            <div className="flex flex-wrap gap-3 pt-2">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void savePromoMeta()}
-                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-semibold disabled:opacity-40"
-              >
-                {busy ? t("common.processing") : t("promoEditor.saveMeta")}
-              </button>
-              {promo && (promo.platformStatus === "draft" || promo.platformStatus === "rejected") && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void deletePromo()}
-                  className="w-full sm:w-auto px-5 py-3 rounded-xl border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-500/10 disabled:opacity-40"
-                >
-                  {t("promoEditor.deletePromo")}
-                </button>
-              )}
-            </div>
-          </UploaderFormSection>
-        </div>
+            )}
+          </div>
+        </UploaderFormSection>
       )}
 
       {promoEncoding && (
         <div className="rounded-2xl border border-white/10 bg-xiio-surface p-5 md:p-6">
           <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            disabled
-            className="px-5 py-3 rounded-xl bg-white/10 text-xiio-muted text-sm font-medium cursor-not-allowed"
-          >
-            {t("promoEditor.encodingButton")}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void load({ silent: true })}
-            className="px-5 py-3 rounded-xl border border-white/20 text-white text-sm font-medium hover:bg-white/5 disabled:opacity-40"
-          >
-            {t("promoEditor.refreshStatus")}
-          </button>
+            <button
+              type="button"
+              disabled
+              className="px-5 py-3 rounded-xl bg-white/10 text-xiio-muted text-sm font-medium cursor-not-allowed"
+            >
+              {t("promoEditor.encodingButton")}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void load({ silent: true })}
+              className="px-5 py-3 rounded-xl border border-white/20 text-white text-sm font-medium hover:bg-white/5 disabled:opacity-40"
+            >
+              {t("promoEditor.refreshStatus")}
+            </button>
           </div>
         </div>
       )}
@@ -620,7 +633,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         <p className="text-xiio-muted text-sm mb-6 -mt-2">{workDisplayTitle}</p>
 
         <UploaderFormShell
-          layout="split"
+          layout="stacked"
           banners={
             <>
               {justUploaded && (
@@ -685,8 +698,6 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
               )}
             </>
           }
-          left={leftColumn}
-          right={rightColumn}
           footer={
             canSubmit ? (
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
@@ -702,7 +713,9 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
               </div>
             ) : null
           }
-        />
+        >
+          {editorBody}
+        </UploaderFormShell>
     </AppPageShell>
   );
 }

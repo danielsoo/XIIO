@@ -1285,6 +1285,8 @@ export const messages = {
       revisionPendingTitle: "수정본 심사 대기",
       revisionPendingBody: "승인되기 전까지 기존 쇼츠가 계속 노출됩니다.",
       fullVideoLabel: "풀 영상",
+      playbackSectionTitle: "미리보기",
+      previewEmpty: "쇼츠 영상 인코딩 후 여기에서 재생할 수 있습니다.",
       statusEncodingTitle: "쇼츠 인코딩 중",
       statusEncodingBody:
         "클립 저장이 완료되었습니다. 인코딩이 끝나면 아래 「상태 새로고침」을 눌러 확인하세요.",
@@ -2611,6 +2613,8 @@ export const messages = {
       revisionPendingTitle: "Revision pending review",
       revisionPendingBody: "The current promo remains live until approval.",
       fullVideoLabel: "Full video",
+      playbackSectionTitle: "Preview",
+      previewEmpty: "The promo video will play here after encoding finishes.",
       statusEncodingTitle: "Encoding promo short",
       statusEncodingBody:
         "Your clip was saved. When encoding finishes, tap “Refresh status” below to continue.",
