@@ -172,6 +172,16 @@ export default function AccountProfileSettingsPanel({
     case "about":
       return (
         <div className="space-y-8">
+          <ProfileIdentityChangePanel
+            kind="displayName"
+            currentValue={data.profile.displayName}
+            pendingRequest={
+              data.identity?.displayNameChangeRequest?.status === "pending"
+                ? data.identity.displayNameChangeRequest
+                : null
+            }
+            onSubmitted={(req) => onIdentityRequest("displayNameChangeRequest", req)}
+          />
           <ProfilePhotoEditor
             displayName={data.profile.displayName}
             avatarUrl={data.profile.avatarUrl ?? accountProfile.avatarUrl}
@@ -185,19 +195,6 @@ export default function AccountProfileSettingsPanel({
             />
           </div>
         </div>
-      );
-    case "displayName":
-      return (
-        <ProfileIdentityChangePanel
-          kind="displayName"
-          currentValue={data.profile.displayName}
-          pendingRequest={
-            data.identity?.displayNameChangeRequest?.status === "pending"
-              ? data.identity.displayNameChangeRequest
-              : null
-          }
-          onSubmitted={(req) => onIdentityRequest("displayNameChangeRequest", req)}
-        />
       );
     case "handle":
       return handleLocked ? (

@@ -29,7 +29,6 @@ const MAIN_IDS: MainTabId[] = ["activity", "profile", "discover"];
 
 const SECTION_LABEL_KEYS: Record<ProfileSectionId, string> = {
   about: "accountProfile.sections.about",
-  displayName: "accountProfile.sections.displayName",
   handle: "accountProfile.sections.handle",
   discover: "accountProfile.sections.discover",
   portfolio: "accountProfile.sections.portfolio",

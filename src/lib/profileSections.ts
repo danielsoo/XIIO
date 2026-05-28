@@ -1,6 +1,5 @@
 export const PROFILE_SECTION_IDS = [
   "about",
-  "displayName",
   "handle",
   "discover",
   "portfolio",
@@ -10,6 +9,9 @@ export const PROFILE_SECTION_IDS = [
 export type ProfileSectionId = (typeof PROFILE_SECTION_IDS)[number];
 
 export function parseProfileSection(raw: string | null): ProfileSectionId {
+  if (raw === "displayName") {
+    return "about";
+  }
   if (raw && PROFILE_SECTION_IDS.includes(raw as ProfileSectionId)) {
     return raw as ProfileSectionId;
   }
