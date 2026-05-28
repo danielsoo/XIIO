@@ -114,11 +114,11 @@ export default function DirectorNameSettingsSection() {
           <p className="mt-1.5 text-sm text-xiio-muted leading-relaxed">{t("settings.directorNameLockedHint")}</p>
         </div>
 
-        <div className="mb-5 rounded-xl border border-white/8 bg-black/20 px-4 py-3">
-          <p className="text-xs font-medium tracking-wide text-xiio-muted/90 mb-1">
+        <div className="mb-5 pb-3 border-b border-white/8">
+          <p className="text-xs font-medium tracking-wide text-xiio-muted/75 mb-1">
             {t("settings.directorNameCurrent")}
           </p>
-          <p className="text-base font-semibold text-white">{currentName}</p>
+          <p className="text-base font-semibold text-white/95">{currentName}</p>
         </div>
 
         {isPending && (
@@ -143,9 +143,9 @@ export default function DirectorNameSettingsSection() {
           </div>
         )}
 
-        <form onSubmit={(e) => void submit(e)} className="space-y-4">
+        <form onSubmit={(e) => void submit(e)} className="space-y-4 pt-1">
           <div className="max-w-xl">
-            <label className="block text-xs font-medium text-xiio-muted mb-1.5" htmlFor="director-change-name">
+            <label className="block text-xs font-medium text-xiio-muted/90 mb-1.5" htmlFor="director-change-name">
               {t("settings.directorNameRequestLabel")}
             </label>
             <input
@@ -159,7 +159,7 @@ export default function DirectorNameSettingsSection() {
             />
           </div>
           <div className="max-w-3xl">
-            <label className="block text-xs font-medium text-xiio-muted mb-1.5" htmlFor="director-change-reason">
+            <label className="block text-xs font-medium text-xiio-muted/90 mb-1.5" htmlFor="director-change-reason">
               {t("settings.directorNameReasonLabel")}
             </label>
             <textarea
@@ -172,7 +172,7 @@ export default function DirectorNameSettingsSection() {
               maxLength={500}
             />
           </div>
-          <div className="max-w-3xl pt-1">
+          <div className="max-w-3xl pt-2">
             <button
               type="submit"
               disabled={busy || isPending || !requestedName.trim()}
