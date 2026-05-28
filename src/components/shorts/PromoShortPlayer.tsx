@@ -13,6 +13,7 @@ import {
 import { createPortal } from "react-dom";
 import ReportContentModal from "@/components/report/ReportContentModal";
 import StreamHlsVideo, { type StreamHlsVideoHandle } from "@/components/shorts/StreamHlsVideo";
+import type { PromoShortPeekDimLevel } from "@/components/shorts/PromoShortPeekPreview";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useElementFullscreen } from "@/hooks/useElementFullscreen";
@@ -233,6 +234,8 @@ function PlayerChrome({
   preserveFrame = false,
   videoPreload,
   heroCarouselEmbed = false,
+  carouselAdjacentEmbed = false,
+  carouselAdjacentDimLevel = "default",
   teaserCenterAction = "watch-overlay",
   expandedChrome = false,
   onTeaserExpandRequest,
@@ -248,6 +251,9 @@ function PlayerChrome({
   videoPreload?: "auto" | "metadata" | "none";
   /** 홈 히어로 triptych — 부모 프레임에 맞춰 모서리 클리핑 */
   heroCarouselEmbed?: boolean;
+  /** ±1 인접 슬롯 — HLS 선로딩, 피크 딤 오버레이 */
+  carouselAdjacentEmbed?: boolean;
+  carouselAdjacentDimLevel?: PromoShortPeekDimLevel;
   teaserCenterAction?: TeaserCenterAction;
   expandedChrome?: boolean;
   onTeaserExpandRequest?: () => void;
@@ -266,9 +272,11 @@ function PlayerChrome({
   onExitFullscreen: () => void;
 }) {
   const effectiveFullscreen = isFullscreen || expandedChrome;
-  const isCarouselCenterEmbed = heroCarouselEmbed || expandedChrome;
-  const isTeaser = variant === "teaser" && !effectiveFullscreen;
-  const hideHeroChrome = heroCarouselEmbed && !effectiveFullscreen;
+  const isCarouselCenterEmbed =
+    heroCarouselEmbed || expandedChrome || carouselAdjacentEmbed;
+  const isTeaser = variant === "teaser" && !effectiveFullscreen && !carouselAdjacentEmbed;
+  const hideHeroChrome =
+    (heroCarouselEmbed && !effectiveFullscreen) || carouselAdjacentEmbed;
   const { t } = useTranslations();
   const { user } = useAuth();
   const videoRef = useRef<StreamHlsVideoHandle>(null);
@@ -294,6 +302,8 @@ function PlayerChrome({
   const [reportOpen, setReportOpen] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const hasBeenReadyRef = useRef(false);
+  const readyItemIdRef = useRef<string | null>(null);
 
   useRecordEngagementView(item.ownerUid, item.workId, "promo", isActive && persisted);
 
@@ -303,9 +313,20 @@ function PlayerChrome({
   }, [item.id, item.likedByMe, item.likeCount]);
 
   useEffect(() => {
+    if (readyItemIdRef.current !== item.id) {
+      readyItemIdRef.current = item.id;
+      hasBeenReadyRef.current = false;
+    }
     setVideoFailed(false);
-    setVideoReady(false);
+    if (!hasBeenReadyRef.current) {
+      setVideoReady(false);
+    }
   }, [item.videoUrl, item.id]);
+
+  const handleVideoReady = useCallback(() => {
+    hasBeenReadyRef.current = true;
+    setVideoReady(true);
+  }, []);
 
   const shouldPlay = playbackEnabled ?? isActive;
 
@@ -636,9 +657,18 @@ function PlayerChrome({
       />
     ) : null;
 
+  const adjacentDimClass: Record<PromoShortPeekDimLevel, string> = {
+    default: "bg-black/35",
+    strong: "bg-black/55",
+    expandedSide: "bg-black/50",
+    expandedOuter: "bg-black/65",
+  };
+
   const showThumbnailBackdrop = Boolean(item.thumbnailUrl) && (
-    isTeaser || expandedChrome || !videoReady || videoFailed
+    isTeaser || !videoReady || videoFailed
   );
+
+  const useVideoOpacityFade = showThumbnailBackdrop || isTeaser;
 
   return (
     <>
@@ -678,11 +708,9 @@ function PlayerChrome({
             ref={videoRef}
             src={item.videoUrl}
             className={`absolute inset-0 w-full h-full bg-black ${videoObjectClass} ${
-              showThumbnailBackdrop
+              useVideoOpacityFade
                 ? `transition-opacity duration-300 ${videoReady ? "opacity-100" : "opacity-0"}`
-                : isTeaser
-                  ? `transition-opacity duration-200 ${videoReady ? "opacity-100" : "opacity-0"}`
-                  : ""
+                : ""
             }`}
             playsInline
             muted
@@ -690,13 +718,20 @@ function PlayerChrome({
             preload={videoPreload ?? (isActive ? "auto" : "none")}
             preferHighStart={isTeaser}
             autoPlay={shouldPlay}
-            onReady={() => setVideoReady(true)}
+            onReady={handleVideoReady}
             onEnded={
               onPlaybackEnded && isActive ? () => onPlaybackEnded() : undefined
             }
             onError={() => setVideoFailed(true)}
           />
         )}
+
+        {carouselAdjacentEmbed ? (
+          <div
+            className={`absolute inset-0 z-[5] pointer-events-none ${adjacentDimClass[carouselAdjacentDimLevel]}`}
+            aria-hidden
+          />
+        ) : null}
 
         {teaserExpandTap}
         {teaserWatchOverlay}
@@ -724,6 +759,8 @@ export default function PromoShortPlayer({
   preserveFrame = false,
   videoPreload,
   heroCarouselEmbed = false,
+  carouselAdjacentEmbed = false,
+  carouselAdjacentDimLevel = "default",
   teaserCenterAction = "watch-overlay",
   expandedChrome = false,
   onTeaserExpandRequest,
@@ -736,6 +773,8 @@ export default function PromoShortPlayer({
   preserveFrame?: boolean;
   videoPreload?: "auto" | "metadata" | "none";
   heroCarouselEmbed?: boolean;
+  carouselAdjacentEmbed?: boolean;
+  carouselAdjacentDimLevel?: PromoShortPeekDimLevel;
   teaserCenterAction?: TeaserCenterAction;
   expandedChrome?: boolean;
   onTeaserExpandRequest?: () => void;
@@ -783,6 +822,8 @@ export default function PromoShortPlayer({
       preserveFrame={preserveFrame}
       videoPreload={videoPreload}
       heroCarouselEmbed={heroCarouselEmbed}
+      carouselAdjacentEmbed={carouselAdjacentEmbed}
+      carouselAdjacentDimLevel={carouselAdjacentDimLevel}
       teaserCenterAction={teaserCenterAction}
       onTeaserExpandRequest={onTeaserExpandRequest}
       onToggleFullscreen={() => void toggle()}

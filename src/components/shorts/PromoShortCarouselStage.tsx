@@ -1175,18 +1175,27 @@ export default function PromoShortCarouselStage({
               const isOutgoingCenter = Boolean(
                 snapshot && outgoingCenterId && item.id === outgoingCenterId
               );
+              const keepsVideoDuringShift =
+                animatingShift &&
+                (placement.isCenter || isPromoting || isOutgoingCenter);
               const showAsCenter =
-                !animatingRevolve &&
-                ((placement.isCenter && !isOutgoingCenter) ||
-                  (transitionMode === "slide" && isPromoting) ||
-                  (warmCenter && !placement.visible) ||
-                  (transitionMode === "slide" &&
-                    snapshot !== null &&
-                    placement.visible &&
-                    placement.role === "center"));
+                keepsVideoDuringShift ||
+                (placement.isCenter && !isOutgoingCenter && !animatingShift) ||
+                (warmCenter && !placement.visible) ||
+                (isLiveCenter && !snapshot);
               const preserveCenterFrame = Boolean(
-                showAsCenter && isLiveCenter && snapshot && item.id === liveCenterId
+                showAsCenter &&
+                snapshot &&
+                (item.id === liveCenterId || item.id === outgoingCenterId)
               );
+              const slotPlaybackEnabled = showAsCenter
+                ? (isLiveCenter || isPromoting) && !isTransitioning
+                : false;
+              const slotVideoPreload = showAsCenter
+                ? isLiveCenter || isPromoting
+                  ? "auto"
+                  : "metadata"
+                : "metadata";
               const ariaLiveCenter = isLiveCenter || isPromoting;
               const isWrapArc =
                 transitionMode === "revolve" &&
@@ -1194,6 +1203,11 @@ export default function PromoShortCarouselStage({
                 placement.visible &&
                 ((revolvePhase === "toNext" && placement.role === "left") ||
                   (revolvePhase === "toPrev" && placement.role === "right"));
+              const isAdjacentPreload =
+                placement.visible &&
+                (placement.role === "left" || placement.role === "right") &&
+                !showAsCenter &&
+                !isWrapArc;
               const wrapArcClass = isWrapArc
                 ? revolvePhase === "toNext"
                   ? "animate-carousel-wrap-to-next"
@@ -1243,19 +1257,21 @@ export default function PromoShortCarouselStage({
                   }}
                   aria-hidden={placement.visible ? !ariaLiveCenter : true}
                 >
-                  {showAsCenter ? (
+                  {showAsCenter || isAdjacentPreload ? (
                     isExpandedCenter ? (
                       <PromoShortPlayer
                         item={item}
                         isActive={isLiveCenter}
-                        playbackEnabled={isLiveCenter && !isTransitioning}
-                        videoPreload={isLiveCenter ? "auto" : "metadata"}
+                        playbackEnabled={slotPlaybackEnabled}
+                        videoPreload={slotVideoPreload}
                         preserveFrame={preserveCenterFrame}
-                        expandedChrome
+                        expandedChrome={showAsCenter}
+                        carouselAdjacentEmbed={isAdjacentPreload}
+                        carouselAdjacentDimLevel="expandedSide"
                         layout={layout}
                         compact={compact}
-                        scrollExpand
-                        scrollRootRef={viewportRef}
+                        scrollExpand={showAsCenter}
+                        scrollRootRef={showAsCenter ? viewportRef : undefined}
                         loop={false}
                         onPlaybackEnded={
                           isLiveCenter && count > 1 ? handlePlaybackEnded : undefined
@@ -1266,10 +1282,11 @@ export default function PromoShortCarouselStage({
                       <PromoShortPlayer
                         item={item}
                         isActive={isLiveCenter}
-                        playbackEnabled={isLiveCenter && !isTransitioning}
+                        playbackEnabled={slotPlaybackEnabled}
                         preserveFrame={preserveCenterFrame}
                         heroCarouselEmbed
-                        videoPreload="auto"
+                        carouselAdjacentEmbed={isAdjacentPreload}
+                        videoPreload={slotVideoPreload}
                         variant="teaser"
                         playerSize={playerSize}
                         peekSide={false}
