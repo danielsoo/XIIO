@@ -230,9 +230,10 @@ function expandedStripSlotTransform(
   phase: RevolvePhase,
   metrics: ExpandedStripMetrics
 ): { transform: string; opacity: number; zIndex: number } {
-  const { offsetAdjacent, offsetOuter, peekScale } = metrics;
-  const outerScale = EXPANDED_OUTER_PEEK_SCALE;
-  const adjacentScale = peekScale;
+  const { offsetAdjacent, offsetOuter, centerW, peekAdjacentW, peekOuterW } = metrics;
+  const adjacentScale = Math.min(1, Math.max(0.7, peekAdjacentW / Math.max(centerW, 1)));
+  const outerScaleBase = Math.min(1, Math.max(0.55, peekOuterW / Math.max(centerW, 1)));
+  const outerScale = outerScaleBase * EXPANDED_OUTER_PEEK_SCALE;
 
   if (phase === "idle") {
     switch (role) {
@@ -341,8 +342,9 @@ function expandedIncomingSlotTransform(
   atEnter: boolean,
   metrics: ExpandedStripMetrics
 ): { transform: string; opacity: number; zIndex: number } {
-  const { offsetOuter } = metrics;
-  const outerScale = EXPANDED_OUTER_PEEK_SCALE;
+  const { offsetOuter, centerW, peekOuterW } = metrics;
+  const outerScaleBase = Math.min(1, Math.max(0.55, peekOuterW / Math.max(centerW, 1)));
+  const outerScale = outerScaleBase * EXPANDED_OUTER_PEEK_SCALE;
   const enterX = offsetOuter + SLIDE_ENTER_EXTRA_PX;
 
   if (phase === "toNext") {
