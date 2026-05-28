@@ -739,6 +739,8 @@ export default function PromoShortCarouselStage({
   const [transitionMode, setTransitionMode] = useState<ActiveTransitionMode>("revolve");
   const [animPrevIndex, setAnimPrevIndex] = useState(0);
   const [incomingAtEnter, setIncomingAtEnter] = useState(true);
+  const wasAnimatingShiftRef = useRef(false);
+  const [frameClassCommitReady, setFrameClassCommitReady] = useState(true);
 
   indexRef.current = index;
 
@@ -1032,6 +1034,31 @@ export default function PromoShortCarouselStage({
     revolvePhase !== "idle" &&
     (transitionMode === "revolve" || transitionMode === "slide");
   const animatingRevolve = transitionMode === "revolve" && revolvePhase !== "idle";
+  useEffect(() => {
+    if (!isExpandedCenter || transitionMode !== "slide") {
+      wasAnimatingShiftRef.current = false;
+      setFrameClassCommitReady(true);
+      return;
+    }
+    if (animatingShift) {
+      wasAnimatingShiftRef.current = true;
+      setFrameClassCommitReady(false);
+      return;
+    }
+    if (!wasAnimatingShiftRef.current) {
+      setFrameClassCommitReady(true);
+      return;
+    }
+    let cancelled = false;
+    const raf = requestAnimationFrame(() => {
+      if (!cancelled) setFrameClassCommitReady(true);
+    });
+    wasAnimatingShiftRef.current = false;
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [animatingShift, isExpandedCenter, transitionMode]);
   const transitionClass = animatingShift
     ? isExpandedCenter && transitionMode === "slide"
       ? "transition-[transform,opacity] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
@@ -1239,8 +1266,12 @@ export default function PromoShortCarouselStage({
                   : isExpandedCenter && (isAdjacentStripRole || !showAsCenter)
                     ? expandedPeekFrameClass
                     : placement.frameClass;
+              const holdFrameCommit =
+                isExpandedCenter &&
+                transitionMode === "slide" &&
+                (animatingShift || !frameClassCommitReady);
               const freezeCenterFrameDuringShift =
-                isExpandedCenter && animatingShift && (showAsCenter || isOutgoingCenter);
+                holdFrameCommit && (showAsCenter || isOutgoingCenter || isPromoting);
               const slotFrameClass = placement.visible
                 ? isWrapArc
                   ? carouselWrapFrameClass
