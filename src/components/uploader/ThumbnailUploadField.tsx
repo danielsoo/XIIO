@@ -1,7 +1,7 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { useTranslations } from "@/context/LocaleContext";
-import { validatePromoThumbnailFile } from "@/lib/works/promoThumbnailUpload";
 
 type Props = {
   file: File | null;
@@ -19,20 +19,20 @@ export default function ThumbnailUploadField({
   error,
 }: Props) {
   const { t } = useTranslations();
+  const [dragOver, setDragOver] = useState(false);
+
+  const pickFile = useCallback(
+    (next: File | null) => {
+      if (disabled) return;
+      if (!next) return;
+      onFileChange(next, URL.createObjectURL(next));
+    },
+    [disabled, onFileChange]
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = e.target.files?.[0];
-    if (!next) return;
-    const validation = validatePromoThumbnailFile(next);
-    if (validation === "type") {
-      onFileChange(null, null);
-      return;
-    }
-    if (validation === "size") {
-      onFileChange(null, null);
-      return;
-    }
-    onFileChange(next, URL.createObjectURL(next));
+    const next = e.target.files?.[0] ?? null;
+    pickFile(next);
   };
 
   return (
@@ -51,9 +51,25 @@ export default function ThumbnailUploadField({
       ) : null}
       <label
         htmlFor="upload-promo-thumbnail"
-        className={`flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/[0.03] px-4 py-6 cursor-pointer transition hover:border-xiio-accent/50 ${
+        className={`flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-white/[0.03] px-4 py-6 cursor-pointer transition ${
+          dragOver
+            ? "border-xiio-accent/70 bg-xiio-accent/10"
+            : "border-white/20 hover:border-xiio-accent/50"
+        } ${
           disabled ? "opacity-40 pointer-events-none" : ""
         }`}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (disabled) return;
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          if (disabled) return;
+          pickFile(e.dataTransfer.files?.[0] ?? null);
+        }}
       >
         {previewUrl ? (
           <img

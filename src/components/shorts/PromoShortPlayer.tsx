@@ -588,27 +588,16 @@ function PlayerChrome({
     </>
   );
 
-  const fullscreenControls = !expandedChrome ? (
+  const fullscreenControls = !expandedChrome && effectiveFullscreen ? (
     <div className="absolute top-3 right-3 z-20">
-      {effectiveFullscreen ? (
-        <button
-          type="button"
-          onClick={onExitFullscreen}
-          className="hover:opacity-80 transition-opacity"
-          aria-label={t("shorts.exitFullscreen")}
-        >
-          <CollapseIcon />
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={onToggleFullscreen}
-          className="hover:opacity-80 transition-opacity"
-          aria-label={t("shorts.fullscreen")}
-        >
-          <ExpandIcon />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={onExitFullscreen}
+        className="hover:opacity-80 transition-opacity"
+        aria-label={t("shorts.exitFullscreen")}
+      >
+        <CollapseIcon />
+      </button>
     </div>
   ) : null;
 

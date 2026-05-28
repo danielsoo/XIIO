@@ -157,6 +157,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
 
   const handleThumbnailChange = (next: File | null, preview: string | null) => {
     if (!next) {
+      setThumbnailFieldError(null);
       setThumbnailFile(null);
       setThumbnailPreview(preview ?? savedThumbnailUrl);
       return;

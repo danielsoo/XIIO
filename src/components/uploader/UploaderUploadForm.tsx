@@ -218,6 +218,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
 
   const handleThumbnailChange = (next: File | null, preview: string | null) => {
     if (!next) {
+      setThumbnailFieldError(null);
       setThumbnailFile(null);
       setThumbnailPreview(preview);
       return;
