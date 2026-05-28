@@ -33,6 +33,7 @@ export const messages = {
       errorDetail: "상세",
       errorHttpStatus: "HTTP {status}",
       errorNetwork: "네트워크 연결을 확인해 주세요. (인터넷·VPN·방화벽)",
+      untitled: "제목 없음",
     },
     errors: {
       invalidSection: "유효하지 않은 노출 섹션입니다.",
@@ -1299,6 +1300,7 @@ export const messages = {
       errorDetail: "Details",
       errorHttpStatus: "HTTP {status}",
       errorNetwork: "Check your network connection (internet, VPN, firewall).",
+      untitled: "Untitled",
     },
     errors: {
       invalidSection: "Invalid section.",

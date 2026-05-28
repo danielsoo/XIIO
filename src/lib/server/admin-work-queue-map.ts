@@ -6,6 +6,7 @@ import {
   syncWorkRevisionStreamStatusIfNeeded,
   syncWorkStreamStatusIfNeeded,
 } from "@/lib/server/sync-stream-status";
+import { FALLBACK_WORK_TITLE, resolveDisplayTitle } from "@/lib/works/display-title";
 import { parsePromoDoc, parseWorkDoc, worksCol } from "@/lib/server/works";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 
@@ -38,7 +39,7 @@ export async function mapFullWorkQueueItem(
     contentModeration: isRevision ? rev?.contentModeration : work.contentModeration,
     ...(isRevision && rev
       ? {
-          title: rev.title ?? work.title,
+          title: resolveDisplayTitle(FALLBACK_WORK_TITLE, rev.title, work.title),
           section: rev.section ?? work.section,
           description: rev.description ?? work.description,
           director: rev.director ?? work.director,
@@ -88,6 +89,8 @@ export async function mapPromoWorkQueueItem(
   const workSnap = await worksCol(db, ownerUid).doc(workId).get();
   if (!workSnap.exists) return null;
   const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
+  const workTitle = resolveDisplayTitle(FALLBACK_WORK_TITLE, work.title);
+  const promoTitle = resolveDisplayTitle(FALLBACK_WORK_TITLE, promo.title, work.title);
   const userSnap = await db.collection("users").doc(ownerUid).get();
   const playbackUrl =
     streamUid && streamStatus === "ready" ? await resolvePlaybackUrl(streamUid) : undefined;
@@ -107,7 +110,7 @@ export async function mapPromoWorkQueueItem(
         ? await resolvePlaybackUrl(parsed.streamUid)
         : undefined;
     livePromo = {
-      title: parsed.title,
+      title: resolveDisplayTitle(FALLBACK_WORK_TITLE, parsed.title, work.title),
       description: parsed.description,
       clipStartSec: parsed.clipStartSec ?? 0,
       clipEndSec: parsed.clipEndSec ?? 0,
@@ -121,13 +124,14 @@ export async function mapPromoWorkQueueItem(
     promo: {
       id: PROMO_SHORT_DOC_ID,
       ...promo,
+      title: promoTitle,
       playbackUrl,
       description: promoDescription ?? promo.description,
       contentModeration: promoModeration,
       pendingRevision: isRevision && rev ? { contentModeration: rev.contentModeration } : undefined,
     },
     livePromo,
-    work: { ...work, id: workId },
+    work: { ...work, id: workId, title: workTitle },
     workId,
     ownerUid,
     ownerEmail: userSnap.data()?.email ?? null,

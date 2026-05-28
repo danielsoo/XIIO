@@ -10,6 +10,7 @@ import FullWorkReviewCard, { type FullQueueItem } from "@/components/admin/FullW
 import PromoReviewCard, { type PromoReviewItem } from "@/components/admin/PromoReviewCard";
 import { useAdminWorkStats, type AdminWorkStats } from "@/hooks/useAdminWorkStats";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
+import { resolveDisplayTitle } from "@/lib/works/display-title";
 import type { StreamStatus, WorkSection } from "@/types/work";
 
 type Tab = "full_pending" | "promo_pending" | "ai_flagged" | "removal";
@@ -39,6 +40,7 @@ type RemovalItem = {
 export default function AdminContentReview() {
   const { user } = useAuth();
   const { t } = useTranslations();
+  const untitledLabel = t("common.untitled");
   const { stats, refresh: refreshStats } = useAdminWorkStats(!!user);
   const [tab, setTab] = useState<Tab>("full_pending");
   const [items, setItems] = useState<unknown[]>([]);
@@ -303,7 +305,7 @@ export default function AdminContentReview() {
                   href={`/admin/content/works/${item.ownerUid}/${item.workId}`}
                   className="hover:text-xiio-accent transition"
                 >
-                  {item.title}
+                  {resolveDisplayTitle(untitledLabel, item.title)}
                 </Link>
               </h2>
               <p className="text-sm text-xiio-muted mt-1">{item.deletionRequest?.reason}</p>

@@ -8,6 +8,7 @@ import SubpageHeader from "@/components/layout/SubpageHeader";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
+import UploaderFormSection from "@/components/uploader/UploaderFormSection";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
@@ -15,6 +16,7 @@ import PlaybackVideo from "@/components/PlaybackVideo";
 import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import { uploadFileViaTus } from "@/lib/streamTusUpload";
+import { resolveDisplayTitle } from "@/lib/works/display-title";
 import {
   isLegacyClipPromo,
   isPromoAspectRatio,
@@ -96,7 +98,15 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       const rev = json.pendingRevision;
       const source = json.revisionMode && rev ? rev : promo;
       const draft = json.work.promoDraft;
-      setTitle(source?.title ?? promo?.title ?? draft?.title ?? json.work.title);
+      setTitle(
+        resolveDisplayTitle(
+          t("common.untitled"),
+          source?.title,
+          promo?.title,
+          draft?.title,
+          json.work?.title
+        )
+      );
       setDescription(
         source?.description ?? promo?.description ?? draft?.description ?? json.work.description ?? ""
       );
@@ -392,6 +402,14 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       );
 
   const activePromo = revisionMode && pendingRevision ? pendingRevision : promo;
+  const untitledLabel = t("common.untitled");
+  const workDisplayTitle = resolveDisplayTitle(untitledLabel, work.title);
+  const activePromoTitle = resolveDisplayTitle(
+    untitledLabel,
+    activePromo?.title,
+    promo?.title,
+    work.title
+  );
   const promoDurationSec =
     activePromo && "durationSec" in activePromo && activePromo.durationSec
       ? activePromo.durationSec
@@ -407,10 +425,10 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const leftColumn = (
     <>
       {work.playbackUrl ? (
-        <div>
+        <section className="rounded-2xl border border-white/10 bg-xiio-surface p-5 md:p-6">
           <p className="text-xs text-xiio-muted mb-2">{t("promoEditor.fullVideoLabel")}</p>
           <PlaybackVideo src={work.playbackUrl} maxHeightClass="max-h-[min(52vh,520px)]" />
-        </div>
+        </section>
       ) : (
         <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] min-h-[280px] lg:min-h-[360px] flex items-center justify-center p-6 text-center">
           <p className="text-sm text-xiio-muted">{t("promoEditor.waitEncoding")}</p>
@@ -418,27 +436,25 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       )}
       {((revisionMode && pendingRevisionPlayback) ||
         (!revisionMode && promo?.playbackUrl && promo.streamStatus === "ready")) && (
-        <div className="mt-6">
+        <section className="rounded-2xl border border-white/10 bg-xiio-surface p-5 md:p-6">
           <p className="text-sm text-xiio-muted mb-2">{t("promoEditor.preview")}</p>
           <PlaybackVideo
-            src={revisionMode ? pendingRevisionPlayback! : promo!.playbackUrl!}
+            src={
+              revisionMode
+                ? (pendingRevisionPlayback ?? "")
+                : (promo?.playbackUrl ?? "")
+            }
             maxHeightClass="max-h-[min(52vh,520px)]"
           />
-        </div>
+        </section>
       )}
     </>
   );
 
   const rightColumn = (
     <>
-      {awaitingPromoUpload && (
-        <div className="rounded-xl border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3 text-sm text-white/90">
-          {t("promoEditor.awaitingPromoUpload")}
-        </div>
-      )}
-
       {savedPromoStatus && (revisionMode ? pendingRevision : promo) && (
-        <section className="rounded-2xl border border-xiio-accent/30 bg-xiio-accent/10 p-5">
+        <section className="rounded-2xl border border-xiio-accent/30 bg-xiio-accent/10 p-5 md:p-6">
           <div className="flex items-start gap-3">
             {promoEncoding && (
               <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
@@ -470,7 +486,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
                 ) : promoDurationSec ? (
                   <li>{t("promoEditor.videoDuration", { sec: promoDurationSec.toFixed(1) })}</li>
                 ) : null}
-                <li>{revisionMode && pendingRevision ? pendingRevision.title : promo!.title}</li>
+                <li>{activePromoTitle}</li>
               </ul>
             </div>
           </div>
@@ -478,24 +494,27 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       )}
 
       {showEditor && (
-        <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6 space-y-6">
-          <section>
-            <h2 className="text-sm font-semibold text-white mb-2">{t("promoEditor.promoVideoSection")}</h2>
-            <p className="text-xs text-xiio-muted mb-3 leading-relaxed">{t("uploader.promoVideoFileHint")}</p>
+        <div className="space-y-6">
+          <UploaderFormSection
+            title={t("promoEditor.promoVideoSection")}
+            hint={t("uploader.promoVideoFileHint")}
+          >
             <VideoUploadDropzone file={promoFile} onFileChange={setPromoFile} disabled={busy} />
             {promoFile ? (
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void uploadPromoVideo()}
-                className="mt-3 px-4 py-2.5 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-medium disabled:opacity-40"
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-semibold disabled:opacity-40"
               >
                 {busy ? t("common.processing") : t("promoEditor.uploadPromoVideo")}
               </button>
             ) : null}
-          </section>
-          <section>
-            <h2 className="text-sm font-semibold text-white mb-3">{t("promoEditor.thumbnailSection")}</h2>
+          </UploaderFormSection>
+          <UploaderFormSection
+            title={t("promoEditor.thumbnailSection")}
+            hint={t("uploader.uploadThumbnailHint")}
+          >
             <ThumbnailUploadField
               file={thumbnailFile}
               previewUrl={thumbnailPreview}
@@ -508,48 +527,51 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
                 type="button"
                 disabled={busy}
                 onClick={() => void saveThumbnail()}
-                className="mt-3 px-4 py-2 rounded-lg border border-white/15 text-white text-sm hover:bg-white/5 disabled:opacity-40"
+                className="w-full sm:w-auto px-5 py-3 rounded-xl border border-white/20 text-white text-sm font-medium hover:bg-white/5 disabled:opacity-40"
               >
                 {busy ? t("common.processing") : t("promoEditor.saveThumbnail")}
               </button>
             ) : null}
-          </section>
-          <PromoShortFields
-            title={title}
-            onTitleChange={setTitle}
-            description={description}
-            onDescriptionChange={setDescription}
-            disabled={busy}
-          />
-          <div className="flex flex-wrap gap-2 pt-4 mt-4 border-t border-white/10">
-            <button
-              type="button"
+          </UploaderFormSection>
+          <UploaderFormSection title={t("uploader.uploadPromoInfoTitle")}>
+            <PromoShortFields
+              title={title}
+              onTitleChange={setTitle}
+              description={description}
+              onDescriptionChange={setDescription}
               disabled={busy}
-              onClick={() => void savePromoMeta()}
-              className="px-4 py-2.5 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-medium disabled:opacity-40"
-            >
-              {busy ? t("common.processing") : t("promoEditor.saveMeta")}
-            </button>
-            {promo && (promo.platformStatus === "draft" || promo.platformStatus === "rejected") && (
+            />
+            <div className="flex flex-wrap gap-3 pt-2">
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => void deletePromo()}
-                className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 text-sm hover:bg-red-500/10 disabled:opacity-40"
+                onClick={() => void savePromoMeta()}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-semibold disabled:opacity-40"
               >
-                {t("promoEditor.deletePromo")}
+                {busy ? t("common.processing") : t("promoEditor.saveMeta")}
               </button>
-            )}
-          </div>
+              {promo && (promo.platformStatus === "draft" || promo.platformStatus === "rejected") && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void deletePromo()}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-500/10 disabled:opacity-40"
+                >
+                  {t("promoEditor.deletePromo")}
+                </button>
+              )}
+            </div>
+          </UploaderFormSection>
         </div>
       )}
 
       {promoEncoding && (
-        <div className="flex flex-wrap gap-2">
+        <div className="rounded-2xl border border-white/10 bg-xiio-surface p-5 md:p-6">
+          <div className="flex flex-wrap gap-3">
           <button
             type="button"
             disabled
-            className="px-4 py-2.5 rounded-lg bg-white/10 text-xiio-muted text-sm font-medium cursor-not-allowed"
+            className="px-5 py-3 rounded-xl bg-white/10 text-xiio-muted text-sm font-medium cursor-not-allowed"
           >
             {t("promoEditor.encodingButton")}
           </button>
@@ -557,10 +579,11 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
             type="button"
             disabled={busy}
             onClick={() => void load({ silent: true })}
-            className="px-4 py-2 rounded-lg border border-white/15 text-white text-sm hover:bg-white/5 disabled:opacity-40"
+            className="px-5 py-3 rounded-xl border border-white/20 text-white text-sm font-medium hover:bg-white/5 disabled:opacity-40"
           >
             {t("promoEditor.refreshStatus")}
           </button>
+          </div>
         </div>
       )}
     </>
@@ -575,7 +598,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           backLabel={t("promoEditor.backToWorks")}
           backFallbackHref="/uploader/works"
         />
-        <p className="text-xiio-muted text-sm mb-6 -mt-2">{work.title}</p>
+        <p className="text-xiio-muted text-sm mb-6 -mt-2">{workDisplayTitle}</p>
 
         <UploaderFormShell
           layout="split"

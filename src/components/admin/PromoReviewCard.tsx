@@ -8,6 +8,7 @@ import type { ContentModeration } from "@/types/moderation";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
 import { useTranslations } from "@/context/LocaleContext";
+import { resolveDisplayTitle } from "@/lib/works/display-title";
 import { isLongDescription } from "@/lib/works/description";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import type { PromoPlatformStatus, StreamStatus, WorkDoc } from "@/types/work";
@@ -258,12 +259,16 @@ function CompareColumn({
 function RevisionCompareSection({
   livePromo,
   promo,
+  untitledLabel,
   t,
 }: {
   livePromo: PromoLiveSnapshot;
   promo: PromoReviewItem["promo"];
+  untitledLabel: string;
   t: TranslateFn;
 }) {
+  const pendingTitle = resolveDisplayTitle(untitledLabel, promo?.title);
+  const liveTitle = resolveDisplayTitle(untitledLabel, livePromo?.title);
   return (
     <div className="mb-4 grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
       <CompareColumn
@@ -275,12 +280,12 @@ function RevisionCompareSection({
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3">
           <PromoMetaFields
-            title={promo.title}
-            description={promo.description}
-            clipStartSec={promo.clipStartSec}
-            clipEndSec={promo.clipEndSec}
-            durationSec={promo.durationSec}
-            streamStatus={promo.streamStatus}
+            title={pendingTitle}
+            description={promo?.description}
+            clipStartSec={promo?.clipStartSec ?? 0}
+            clipEndSec={promo?.clipEndSec ?? 0}
+            durationSec={promo?.durationSec}
+            streamStatus={promo?.streamStatus}
             clampDescription
             t={t}
           />
@@ -307,7 +312,7 @@ function RevisionCompareSection({
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3">
           <PromoMetaFields
-            title={livePromo.title}
+            title={liveTitle}
             description={livePromo.description}
             clipStartSec={livePromo.clipStartSec}
             clipEndSec={livePromo.clipEndSec}
@@ -339,10 +344,22 @@ export default function PromoReviewCard({
   onRejectReasonChange,
 }: Props) {
   const { t } = useTranslations();
+  const untitledLabel = t("common.untitled");
   const canPromoReject = canSubmitReject("", rejectReason, false);
   const work = row.work;
   const promo = row.promo;
   const isRevisionCompare = row.isRevision && row.livePromo;
+
+  if (!work || !promo) {
+    return null;
+  }
+
+  const promoDisplayTitle = resolveDisplayTitle(
+    untitledLabel,
+    promo.title,
+    work.title
+  );
+  const workDisplayTitle = resolveDisplayTitle(untitledLabel, work.title);
 
   return (
     <li className="rounded-2xl border border-white/10 bg-xiio-surface p-5">
@@ -351,7 +368,7 @@ export default function PromoReviewCard({
           href={`/admin/content/works/${row.ownerUid}/${row.workId}`}
           className="hover:text-xiio-accent transition"
         >
-          {promo.title ?? work.title}
+          {promoDisplayTitle}
         </Link>
         {row.isRevision && (
           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
@@ -368,7 +385,7 @@ export default function PromoReviewCard({
 
       <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
         <p className="text-xs font-semibold text-white/80">{t("admin.contentReview.parentWork")}</p>
-        <MetaRow label={t("admin.contentReview.workTitle")} value={work.title} />
+        <MetaRow label={t("admin.contentReview.workTitle")} value={workDisplayTitle} />
         <MetaRow
           label={t("admin.contentReview.workSection")}
           value={t(`myWorks.section.${work.section}`)}
@@ -398,12 +415,17 @@ export default function PromoReviewCard({
       </div>
 
       {isRevisionCompare ? (
-        <RevisionCompareSection livePromo={row.livePromo!} promo={promo} t={t} />
+        <RevisionCompareSection
+          livePromo={row.livePromo!}
+          promo={promo}
+          untitledLabel={untitledLabel}
+          t={t}
+        />
       ) : (
         <>
           <div className="mb-4">
             <PromoMetaBlock
-              title={promo.title}
+              title={promoDisplayTitle}
               description={promo.description}
               clipStartSec={promo.clipStartSec}
               clipEndSec={promo.clipEndSec}

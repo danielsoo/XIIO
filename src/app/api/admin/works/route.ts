@@ -6,6 +6,7 @@ import {
   mapPromoWorkQueueItem,
 } from "@/lib/server/admin-work-queue-map";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
+import { FALLBACK_WORK_TITLE, resolveDisplayTitle } from "@/lib/works/display-title";
 import { getDbOrNull, parsePromoDoc, parseWorkDoc, worksCol } from "@/lib/server/works";
 
 export async function GET(request: Request) {
@@ -141,7 +142,7 @@ export async function GET(request: Request) {
         ownerUid,
         ownerEmail: userSnap.data()?.email ?? null,
         ownerName: userSnap.data()?.displayName ?? null,
-        title: work.title,
+        title: resolveDisplayTitle(FALLBACK_WORK_TITLE, work.title),
         section: work.section,
         platformStatus: work.platformStatus,
         streamStatus: work.streamStatus,
@@ -171,7 +172,7 @@ export async function GET(request: Request) {
         ownerUid,
         ownerEmail: userSnap.data()?.email ?? null,
         ownerName: userSnap.data()?.displayName ?? null,
-        title: promo.title ?? work?.title,
+        title: resolveDisplayTitle(FALLBACK_WORK_TITLE, promo.title, work?.title),
         section: work?.section,
         platformStatus: promo.platformStatus,
         streamStatus: promo.streamStatus,

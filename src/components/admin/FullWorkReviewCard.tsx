@@ -7,6 +7,7 @@ import ModerationFlagsPanel from "@/components/admin/ModerationFlagsPanel";
 import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useTranslations } from "@/context/LocaleContext";
+import { resolveDisplayTitle } from "@/lib/works/display-title";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import type { WorkDoc } from "@/types/work";
 import type { RejectReasonCode } from "@/types/work";
@@ -29,6 +30,7 @@ type Props = {
 
 export default function FullWorkReviewCard({ item, busy, onApprove, onReject }: Props) {
   const { t } = useTranslations();
+  const displayTitle = resolveDisplayTitle(t("common.untitled"), item?.title);
   const [approvedCategory, setApprovedCategory] = useState(item.proposedCategory ?? "");
   const [tagsText, setTagsText] = useState((item.proposedTags ?? []).join(", "));
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -65,7 +67,7 @@ export default function FullWorkReviewCard({ item, busy, onApprove, onReject }: 
               href={`/admin/content/works/${item.ownerUid}/${item.id}`}
               className="hover:text-xiio-accent transition"
             >
-              {item.title}
+              {displayTitle}
             </Link>
             {item.isRevision && (
               <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
