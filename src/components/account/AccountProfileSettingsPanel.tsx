@@ -7,7 +7,6 @@ import { useTranslations } from "@/context/LocaleContext";
 import ProfileAboutForm from "@/components/profile/ProfileAboutForm";
 import ProfileDiscoverSettings from "@/components/profile/ProfileDiscoverSettings";
 import ProfileIdentityChangePanel from "@/components/profile/ProfileIdentityChangePanel";
-import ProfilePhotoEditor from "@/components/profile/ProfilePhotoEditor";
 import ProfileWorksThumbnailGrid from "@/components/profile/ProfileWorksThumbnailGrid";
 import PublicProfileCard from "@/components/profile/PublicProfileCard";
 import PortfolioShareSection from "@/components/settings/PortfolioShareSection";
@@ -21,7 +20,6 @@ type Props = {
   section: ProfileSectionId;
   onHandleClaimed?: () => void;
   onSavedGoPreview?: () => void;
-  onAvatarUpdated?: (avatarUrl: string | null) => void;
 };
 
 export default function AccountProfileSettingsPanel({
@@ -29,7 +27,6 @@ export default function AccountProfileSettingsPanel({
   section,
   onHandleClaimed,
   onSavedGoPreview,
-  onAvatarUpdated,
 }: Props) {
   const { user } = useAuth();
   const { t } = useTranslations();
@@ -106,14 +103,6 @@ export default function AccountProfileSettingsPanel({
     []
   );
 
-  const mergeAvatar = (avatarUrl: string | null) => {
-    onAvatarUpdated?.(avatarUrl);
-    setData((prev) => {
-      if (!prev) return prev;
-      return { ...prev, profile: { ...prev.profile, avatarUrl } };
-    });
-  };
-
   if (!handle) {
     const stubProfile = {
       uid: user?.uid ?? "",
@@ -126,11 +115,6 @@ export default function AccountProfileSettingsPanel({
         <p className="text-sm text-xiio-muted">{t("accountProfile.profileNoHandle")}</p>
         {section === "about" && (
           <>
-            <ProfilePhotoEditor
-              displayName={stubProfile.displayName}
-              avatarUrl={stubProfile.avatarUrl}
-              onUpdated={mergeAvatar}
-            />
             <ProfileAboutForm
               profile={stubProfile}
               handleLocked={false}
@@ -181,11 +165,6 @@ export default function AccountProfileSettingsPanel({
                 : null
             }
             onSubmitted={(req) => onIdentityRequest("displayNameChangeRequest", req)}
-          />
-          <ProfilePhotoEditor
-            displayName={data.profile.displayName}
-            avatarUrl={data.profile.avatarUrl ?? accountProfile.avatarUrl}
-            onUpdated={mergeAvatar}
           />
           <div className="border-t border-white/10 pt-6">
             <ProfileAboutForm

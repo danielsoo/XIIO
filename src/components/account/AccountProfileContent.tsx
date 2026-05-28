@@ -291,9 +291,6 @@ export default function AccountProfileContent() {
           section={profileSection}
           onHandleClaimed={reloadProfile}
           onSavedGoPreview={goPreviewSection}
-          onAvatarUpdated={(avatarUrl) =>
-            setProfile((prev) => (prev ? { ...prev, avatarUrl } : prev))
-          }
         />
       );
     }
@@ -315,6 +312,9 @@ export default function AccountProfileContent() {
           profile={profile}
           email={user?.email ?? null}
           metaItems={heroMetaItems}
+          onAvatarUpdated={(avatarUrl) =>
+            setProfile((prev) => (prev ? { ...prev, avatarUrl } : prev))
+          }
         />
 
         <section className="bg-xiio-surface rounded-2xl border border-white/10 p-5 lg:p-6 min-h-[320px]">

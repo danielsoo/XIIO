@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRef, useState, type DragEvent } from "react";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
+import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { uploadUserProfileAvatar } from "@/lib/userAvatar";
+import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import type { UserProfileDoc } from "@/types/user";
 import type { PlatformPurpose } from "@/types/user";
 
@@ -40,14 +44,26 @@ type Props = {
   profile: UserProfileDoc;
   email: string | null;
   metaItems?: AccountProfileMetaItem[];
+  onAvatarUpdated?: (avatarUrl: string | null) => void;
 };
 
-export default function AccountProfileHero({ profile, email, metaItems = [] }: Props) {
+export default function AccountProfileHero({
+  profile,
+  email,
+  metaItems = [],
+  onAvatarUpdated,
+}: Props) {
+  const { user } = useAuth();
   const { t } = useTranslations();
   const verified = profile.emailVerified;
   const pendingReq = profile.directorNameChangeRequest?.status === "pending";
   const showUpload =
     profile.platformPurpose === "upload" || profile.platformPurpose === "both";
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarErr, setAvatarErr] = useState<string | null>(null);
+  const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   const quickBtn =
     "inline-flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium border border-white/20 text-white hover:bg-white/5 transition";
@@ -55,16 +71,110 @@ export default function AccountProfileHero({ profile, email, metaItems = [] }: P
   const hasMeta = metaItems.length > 0;
   const stackedMeta = metaItems.filter((m) => m.stack);
   const otherMeta = metaItems.filter((m) => !m.stack);
+  const canEditAvatar = Boolean(user);
+
+  const patchAvatarUrl = async (next: string | null) => {
+    if (!user) return false;
+    const token = await user.getIdToken();
+    const res = await fetch("/api/me/professional-profile", {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ avatarUrl: next }),
+    });
+    const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
+    if (!res.ok) {
+      setAvatarErr(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
+      return false;
+    }
+    return true;
+  };
+
+  const handleAvatarFile = async (file: File | undefined) => {
+    if (!user || !file) return;
+    if (!file.type.startsWith("image/")) {
+      setAvatarErr(t("profile.photo.invalidType"));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarErr(t("profile.photo.tooLarge"));
+      return;
+    }
+    setAvatarBusy(true);
+    setAvatarErr(null);
+    setAvatarMsg(null);
+    try {
+      const url = await uploadUserProfileAvatar(user.uid, file);
+      const ok = await patchAvatarUrl(url);
+      if (!ok) return;
+      onAvatarUpdated?.(url);
+      setAvatarMsg(t("profile.photo.photoUpdated"));
+    } catch (e) {
+      setAvatarErr(formatClientError(t, e, { titleKey: "profile.photo.uploadFailed" }));
+    } finally {
+      setAvatarBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const onAvatarDrop = (e: DragEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (!canEditAvatar || avatarBusy) return;
+    void handleAvatarFile(e.dataTransfer.files?.[0]);
+  };
 
   return (
     <section className="bg-xiio-surface rounded-2xl p-6 border border-white/10">
       <div className="flex flex-col lg:flex-row lg:items-stretch gap-6 lg:gap-8">
         <div className="flex flex-col sm:flex-row gap-5 sm:gap-6 min-w-0 flex-1">
-          <ProfileAvatar
-            displayName={profile.displayName || "?"}
-            avatarUrl={profile.avatarUrl}
-            className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-full bg-xiio-accent/20 ring-2 ring-xiio-accent/40 flex items-center justify-center text-2xl sm:text-3xl font-bold text-white overflow-hidden mx-auto sm:mx-0"
-          />
+          <div className="mx-auto sm:mx-0">
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              disabled={!canEditAvatar || avatarBusy}
+              onChange={(e) => void handleAvatarFile(e.target.files?.[0])}
+            />
+            <button
+              type="button"
+              disabled={!canEditAvatar || avatarBusy}
+              onClick={() => inputRef.current?.click()}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                if (canEditAvatar && !avatarBusy) setDragOver(true);
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+              }}
+              onDrop={onAvatarDrop}
+              className={`group relative block rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent ${
+                canEditAvatar ? "cursor-pointer" : "cursor-default"
+              }`}
+              aria-label={canEditAvatar ? t("profile.photo.changePhoto") : undefined}
+            >
+              <ProfileAvatar
+                displayName={profile.displayName || "?"}
+                avatarUrl={profile.avatarUrl}
+                className={`w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-full bg-xiio-accent/20 ring-2 ring-xiio-accent/40 flex items-center justify-center text-2xl sm:text-3xl font-bold text-white overflow-hidden transition ${
+                  dragOver ? "ring-xiio-accent shadow-[0_0_0_3px_rgba(124,92,255,0.25)]" : ""
+                }`}
+              />
+              {canEditAvatar && (
+                <>
+                  <span className="pointer-events-none absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/25 transition" />
+                  <span className="pointer-events-none absolute -bottom-1 -right-1 h-8 w-8 rounded-full border border-white/20 bg-black/80 text-white flex items-center justify-center shadow-lg">
+                    ✎
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
 
           <div className="min-w-0 flex-1 text-center sm:text-left">
             <h1 className="text-2xl font-bold text-white truncate">{profile.displayName || "—"}</h1>
@@ -112,6 +222,8 @@ export default function AccountProfileHero({ profile, email, metaItems = [] }: P
                 </Link>
               )}
             </div>
+            {avatarErr && <p className="text-red-400 text-xs mt-3">{avatarErr}</p>}
+            {avatarMsg && <p className="text-emerald-400 text-xs mt-3">{avatarMsg}</p>}
           </div>
         </div>
 
