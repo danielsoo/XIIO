@@ -12,7 +12,7 @@ type UploaderSettingsResponse = {
 };
 
 const inputClass =
-  "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent";
+  "w-full rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-white/30 transition focus:outline-none focus:border-xiio-accent/80 focus:bg-white/[0.06] focus:ring-2 focus:ring-xiio-accent/20";
 
 export default function DirectorNameSettingsSection() {
   const { user } = useAuth();
@@ -108,71 +108,81 @@ export default function DirectorNameSettingsSection() {
 
   return (
     <section className="rounded-2xl border border-white/10 bg-xiio-surface/90 p-6 md:p-8 shadow-lg shadow-black/25 backdrop-blur-sm">
-      <h2 className="text-lg font-semibold text-white mb-2">{t("settings.directorNameSection")}</h2>
-      <p className="text-xs text-xiio-muted mb-4 leading-relaxed">{t("settings.directorNameLockedHint")}</p>
+      <div className="mx-auto w-full max-w-4xl">
+        <div className="mb-6 border-b border-white/10 pb-4">
+          <h2 className="text-lg font-semibold text-white">{t("settings.directorNameSection")}</h2>
+          <p className="mt-1.5 text-sm text-xiio-muted leading-relaxed">{t("settings.directorNameLockedHint")}</p>
+        </div>
 
-      <div className="mb-4">
-        <p className="text-xs text-xiio-muted mb-1">{t("settings.directorNameCurrent")}</p>
-        <p className="text-white font-medium">{currentName}</p>
-      </div>
-
-      {isPending && (
-        <div className="mb-4 rounded-lg border border-xiio-accent/30 bg-xiio-accent/10 px-3 py-2 text-sm text-white">
-          {t("settings.directorNamePending")}
-          <p className="text-xs text-xiio-muted mt-1">
-            {pendingRequest.requestedName}
-            {pendingRequest.reason ? ` — ${pendingRequest.reason}` : ""}
+        <div className="mb-5 rounded-xl border border-white/8 bg-black/20 px-4 py-3">
+          <p className="text-xs font-medium tracking-wide text-xiio-muted/90 mb-1">
+            {t("settings.directorNameCurrent")}
           </p>
+          <p className="text-base font-semibold text-white">{currentName}</p>
         </div>
-      )}
 
-      {success && !isPending && (
-        <p className="mb-4 text-sm text-green-400">{t("settings.directorNameSuccess")}</p>
-      )}
+        {isPending && (
+          <div className="mb-4 rounded-xl border border-xiio-accent/30 bg-xiio-accent/10 px-4 py-3 text-sm text-white">
+            {t("settings.directorNamePending")}
+            <p className="text-xs text-xiio-muted mt-1.5">
+              {pendingRequest.requestedName}
+              {pendingRequest.reason ? ` — ${pendingRequest.reason}` : ""}
+            </p>
+          </div>
+        )}
 
-      {error && (
-        <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
-          {error}
-        </div>
-      )}
+        {success && !isPending && (
+          <p className="mb-4 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-300">
+            {t("settings.directorNameSuccess")}
+          </p>
+        )}
 
-      <form onSubmit={(e) => void submit(e)} className="space-y-3">
-        <div>
-          <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="director-change-name">
-            {t("settings.directorNameRequestLabel")}
-          </label>
-          <input
-            id="director-change-name"
-            type="text"
-            value={requestedName}
-            onChange={(e) => setRequestedName(e.target.value)}
-            disabled={busy || isPending}
-            className={inputClass}
-            maxLength={120}
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="director-change-reason">
-            {t("settings.directorNameReasonLabel")}
-          </label>
-          <textarea
-            id="director-change-reason"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            disabled={busy || isPending}
-            placeholder={t("settings.directorNameReasonPlaceholder")}
-            className={`${inputClass} min-h-[72px] resize-y`}
-            maxLength={500}
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={busy || isPending || !requestedName.trim()}
-          className="w-full py-2.5 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover disabled:opacity-40 text-white text-sm font-medium transition"
-        >
-          {busy ? t("settings.directorNameSubmitting") : t("settings.directorNameSubmit")}
-        </button>
-      </form>
+        {error && (
+          <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-400 text-sm whitespace-pre-wrap break-words">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={(e) => void submit(e)} className="space-y-4">
+          <div className="max-w-xl">
+            <label className="block text-xs font-medium text-xiio-muted mb-1.5" htmlFor="director-change-name">
+              {t("settings.directorNameRequestLabel")}
+            </label>
+            <input
+              id="director-change-name"
+              type="text"
+              value={requestedName}
+              onChange={(e) => setRequestedName(e.target.value)}
+              disabled={busy || isPending}
+              className={inputClass}
+              maxLength={120}
+            />
+          </div>
+          <div className="max-w-3xl">
+            <label className="block text-xs font-medium text-xiio-muted mb-1.5" htmlFor="director-change-reason">
+              {t("settings.directorNameReasonLabel")}
+            </label>
+            <textarea
+              id="director-change-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              disabled={busy || isPending}
+              placeholder={t("settings.directorNameReasonPlaceholder")}
+              className={`${inputClass} min-h-[92px] resize-y`}
+              maxLength={500}
+            />
+          </div>
+          <div className="max-w-3xl pt-1">
+            <button
+              type="submit"
+              disabled={busy || isPending || !requestedName.trim()}
+              className="w-full py-2.5 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover disabled:opacity-40 text-white text-sm font-semibold tracking-[0.01em] transition"
+            >
+              {busy ? t("settings.directorNameSubmitting") : t("settings.directorNameSubmit")}
+            </button>
+          </div>
+        </form>
+      </div>
     </section>
   );
 }
