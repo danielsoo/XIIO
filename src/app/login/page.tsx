@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { EMAIL_NOT_VERIFIED, useAuth, isAuthAccountConflict } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
@@ -21,6 +21,8 @@ function LoginForm() {
     useAuth();
   const { t } = useTranslations();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -33,9 +35,21 @@ function LoginForm() {
     if (savedEmail) setEmail(savedEmail);
   }, []);
 
+  const finishAuth = async (signedIn: User) => {
+    const stored =
+      typeof window !== "undefined" ? sessionStorage.getItem("xiio-auth-return") : null;
+    const target = returnTo ?? stored;
+    if (target && target.startsWith("/") && !target.startsWith("//")) {
+      sessionStorage.removeItem("xiio-auth-return");
+      router.push(target);
+      return;
+    }
+    await routeAfterAuth(signedIn.uid, router);
+  };
+
   const completeSocialLogin = async (signedIn: User) => {
     saveRememberLogin(rememberMe, email);
-    await routeAfterAuth(signedIn.uid, router);
+    await finishAuth(signedIn);
   };
 
   const runSocial = async (
@@ -69,7 +83,7 @@ function LoginForm() {
       await loginWithEmail(email, password, rememberMe);
       const current = auth?.currentUser;
       if (!current) throw new Error("no user");
-      await routeAfterAuth(current.uid, router);
+      await finishAuth(current);
     } catch (err: unknown) {
       if (err instanceof Error && err.message === EMAIL_NOT_VERIFIED) {
         setError(t("auth.login.errorEmailNotVerified"));

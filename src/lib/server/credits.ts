@@ -217,6 +217,52 @@ export async function syncCreditIndexForWork(
   await batch.commit();
 }
 
+/** 단일 크레딧 추가 — 동일 userId+role이 있으면 idempotent하게 기존 반환 */
+export async function appendAcceptedWorkCredit(
+  db: Firestore,
+  ownerUid: string,
+  workId: string,
+  input: WorkCreditInput,
+  displayName: string
+): Promise<{ credit: WorkCredit; created: boolean }> {
+  const workSnap = await worksCol(db, ownerUid).doc(workId).get();
+  if (!workSnap.exists) throw new Error("work_not_found");
+  const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
+
+  const existing = await listWorkCredits(db, ownerUid, workId);
+  const duplicate = existing.find((c) => c.userId === input.userId && c.role === input.role);
+  if (duplicate) {
+    return { credit: duplicate, created: false };
+  }
+
+  const col = creditsCol(db, ownerUid, workId);
+  const ref = col.doc();
+  const sortOrder = input.sortOrder ?? existing.length;
+  const data = {
+    userId: input.userId,
+    role: input.role,
+    displayName: displayName.slice(0, 120) || null,
+    characterName: normalizeCreditCharacterNameForFirestore(input.characterName),
+    sortOrder,
+    status: "accepted",
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+  await ref.set(data);
+  const credit: WorkCredit = {
+    id: ref.id,
+    userId: input.userId,
+    role: input.role,
+    displayName: displayName.slice(0, 120) || undefined,
+    characterName: normalizeCreditCharacterName(input.characterName),
+    sortOrder,
+    status: "accepted",
+  };
+  const allAccepted = [...existing.filter((c) => c.status === "accepted"), credit];
+  await syncCreditIndexForWork(db, ownerUid, workId, work, allAccepted);
+  return { credit, created: true };
+}
+
 export async function refreshCreditIndexForWorkStatus(
   db: Firestore,
   ownerUid: string,

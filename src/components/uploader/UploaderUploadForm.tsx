@@ -12,7 +12,10 @@ import { uploaderInputClass } from "@/components/uploader/uploaderFormStyles";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
 import WorkTagInput from "@/components/uploader/WorkTagInput";
-import CreditTagInput, { type TaggedCredit } from "@/components/network/CreditTagInput";
+import CreditTagInput, {
+  type PendingEmailInvite,
+  type TaggedCredit,
+} from "@/components/network/CreditTagInput";
 import { useTranslations } from "@/context/LocaleContext";
 import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
 import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
@@ -85,6 +88,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [contentCategory, setContentCategory] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [credits, setCredits] = useState<TaggedCredit[]>([]);
+  const [pendingEmailInvites, setPendingEmailInvites] = useState<PendingEmailInvite[]>([]);
   const directorLocked = Boolean(initialDirector?.trim());
   const lockedDirectorName = initialDirector?.trim() ?? "";
   const [director, setDirector] = useState(lockedDirectorName);
@@ -427,6 +431,27 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         return;
       }
 
+      if (pendingEmailInvites.length > 0) {
+        for (const inv of pendingEmailInvites) {
+          try {
+            await fetch(`/api/me/works/${encodeURIComponent(workId)}/collab-invites`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email: inv.email,
+                role: inv.role,
+                characterName: inv.characterName,
+              }),
+            });
+          } catch {
+            /* non-blocking — upload already succeeded */
+          }
+        }
+      }
+
       onSuccess({ workId, message: t("uploader.uploadSuccess") });
       setStepIndex(0);
       setFile(null);
@@ -442,6 +467,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       setPromoCrop(defaultPromoFrameCrop());
       setPromoTitle("");
       setPromoDescription("");
+      setCredits([]);
+      setPendingEmailInvites([]);
     } catch (unexpected) {
       onError(formatClientError(t, unexpected, { titleKey: "uploader.errorUploadFailed" }));
     } finally {
@@ -674,7 +701,13 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               <label className="block text-xs text-xiio-muted mb-1.5">
                 {t("network.credits.sectionTitle")}
               </label>
-              <CreditTagInput value={credits} onChange={setCredits} disabled={busy} />
+              <CreditTagInput
+                value={credits}
+                onChange={setCredits}
+                disabled={busy}
+                pendingEmailInvites={pendingEmailInvites}
+                onPendingEmailInvitesChange={setPendingEmailInvites}
+              />
             </div>
             <div>
               <p className="text-xs text-xiio-muted mb-1">{t("uploader.uploadAspectRatioLabel")}</p>
