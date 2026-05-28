@@ -20,6 +20,7 @@ import {
   circularDistance,
   shouldWarmExpandedStripItem,
 } from "@/components/shorts/promoCarouselUtils";
+import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
 import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
@@ -1315,7 +1316,14 @@ export default function PromoShortCarouselStage({
                         className="h-full w-full"
                       />
                     )
-                  ) : null}
+                  ) : (
+                    <PromoShortPeekPreview
+                      item={item}
+                      compactShell
+                      dimOverlay
+                      dimLevel={isWrapArc ? "strong" : sideDimLevel}
+                    />
+                  )}
                   {carouselSwipeEnabled && placement.visible && placement.role === "left" && !isWrapArc && (
                     <div
                       role="presentation"
