@@ -3,12 +3,12 @@
 import { useMemo, useState } from "react";
 import ContentCard from "@/components/ContentCard";
 import PlaybackVideo from "@/components/PlaybackVideo";
+import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
 import PromoShortPlayer from "@/components/shorts/PromoShortPlayer";
-import { HOME_HERO_PEEK_SIDE_FRAME_CLASS, HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPlayer";
+import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPlayer";
 import { useTranslations } from "@/context/LocaleContext";
 import { gradientForTitle } from "@/lib/works/catalog-ui";
 import { buildEditorPreviewPromoShort } from "@/lib/works/editor-preview-promo";
-import { promoCropToVideoStyle } from "@/lib/works/promo-crop-interaction";
 import type { PromoShort } from "@/types/promoShort";
 import type { PromoFrameCrop } from "@/types/work";
 
@@ -26,60 +26,20 @@ type Props = {
   workId?: string;
 };
 
-function CroppedCoverImage({
-  src,
-  alt,
-  frameCrop,
-  className = "",
-}: {
-  src: string;
-  alt: string;
-  frameCrop: PromoFrameCrop;
-  className?: string;
-}) {
-  const style = promoCropToVideoStyle(frameCrop);
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={`absolute inset-0 h-full w-full object-cover ${className}`}
-      style={style}
-      loading="eager"
-      decoding="async"
-    />
-  );
-}
-
-function PortraitThumbFrame({
-  src,
-  frameCrop,
-  className = "",
-}: {
-  src?: string | null;
-  frameCrop: PromoFrameCrop;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`relative overflow-hidden rounded-[14px] border border-white/10 bg-gradient-to-br from-gray-900 via-[#1a0533]/90 to-gray-900 ${className}`}
-    >
-      {src ? (
-        <CroppedCoverImage src={src} alt="" frameCrop={frameCrop} />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-xs text-xiio-muted px-2 text-center">
-          —
-        </div>
-      )}
-    </div>
-  );
-}
-
 function CatalogPlaceholderCard() {
   return (
     <div
       className="relative rounded-2xl overflow-hidden aspect-video bg-white/[0.06] border border-white/10"
       aria-hidden
     />
+  );
+}
+
+function ShortsEncodingPlaceholder({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.03] min-h-[200px] flex items-center justify-center p-6 text-center">
+      <p className="text-sm text-xiio-muted leading-relaxed">{message}</p>
+    </div>
   );
 }
 
@@ -98,26 +58,30 @@ export default function SubmissionSurfacePreviews({
 }: Props) {
   const { t } = useTranslations();
   const [fullPlaybackOpen, setFullPlaybackOpen] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
-  const displayThumbnail = liveThumbnailUrl ?? catalogThumbnailUrl ?? null;
+  const catalogThumbnailSrc = liveThumbnailUrl ?? catalogThumbnailUrl ?? null;
+  const canPlayShorts = Boolean(promoPlaybackUrl?.trim());
 
   const previewPromo: PromoShort = useMemo(
     () =>
       buildEditorPreviewPromoShort({
         title,
         description,
-        thumbnailUrl: displayThumbnail,
+        thumbnailUrl: null,
         frameCrop,
         videoUrl: promoPlaybackUrl ?? "",
         director,
         ownerUid,
         workId,
       }),
-    [title, description, displayThumbnail, frameCrop, promoPlaybackUrl, director, ownerUid, workId]
+    [title, description, frameCrop, promoPlaybackUrl, director, ownerUid, workId]
   );
 
+  const carouselItems = useMemo(() => (canPlayShorts ? [previewPromo] : []), [canPlayShorts, previewPromo]);
+
   const catalogGradient = gradientForTitle(workTitle || title);
-  const canPlayShorts = Boolean(promoPlaybackUrl?.trim());
+  const shortsEncodingMessage = t("promoEditor.previewShortsEncoding");
 
   return (
     <section className="rounded-2xl border border-white/10 bg-xiio-surface p-5 md:p-6 mb-6 space-y-6">
@@ -131,7 +95,7 @@ export default function SubmissionSurfacePreviews({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <ContentCard
             title={workTitle || title}
-            thumbnailUrl={displayThumbnail ?? undefined}
+            thumbnailUrl={catalogThumbnailSrc ?? undefined}
             gradient={catalogGradient}
           />
           <CatalogPlaceholderCard />
@@ -144,19 +108,18 @@ export default function SubmissionSurfacePreviews({
 
       <div className="space-y-2">
         <p className="text-xs font-medium text-white/90">{t("promoEditor.previewHeroTitle")}</p>
-        <div className={HOME_HERO_PEEK_VIEWPORT_CLASS}>
-          <div className={`relative ${HOME_HERO_PEEK_SIDE_FRAME_CLASS} scale-90 opacity-80`}>
-            <PortraitThumbFrame src={displayThumbnail} frameCrop={frameCrop} className="h-full w-full" />
-            <div className="absolute inset-0 bg-black/55 pointer-events-none rounded-[14px]" aria-hidden />
-          </div>
-          <div className={HOME_HERO_PEEK_SIDE_FRAME_CLASS}>
-            <PortraitThumbFrame src={displayThumbnail} frameCrop={frameCrop} className="h-full w-full" />
-          </div>
-          <div className={`relative ${HOME_HERO_PEEK_SIDE_FRAME_CLASS} scale-90 opacity-80`}>
-            <PortraitThumbFrame src={displayThumbnail} frameCrop={frameCrop} className="h-full w-full" />
-            <div className="absolute inset-0 bg-black/55 pointer-events-none rounded-[14px]" aria-hidden />
-          </div>
-        </div>
+        {canPlayShorts ? (
+          <PromoShortCarousel
+            items={carouselItems}
+            index={carouselIndex}
+            onIndexChange={setCarouselIndex}
+            playerSize="homeHeroSmall"
+            compact
+            viewportClassName={HOME_HERO_PEEK_VIEWPORT_CLASS}
+          />
+        ) : (
+          <ShortsEncodingPlaceholder message={shortsEncodingMessage} />
+        )}
       </div>
 
       <div className="space-y-2">
@@ -174,11 +137,7 @@ export default function SubmissionSurfacePreviews({
               expandedEmbed
             />
           ) : (
-            <PortraitThumbFrame
-              src={displayThumbnail}
-              frameCrop={frameCrop}
-              className="w-full aspect-[9/16] max-h-[min(52vh,520px)] mx-auto"
-            />
+            <ShortsEncodingPlaceholder message={shortsEncodingMessage} />
           )}
         </div>
       </div>

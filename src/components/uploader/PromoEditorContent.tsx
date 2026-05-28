@@ -10,6 +10,7 @@ import UploadWizardStepper, {
   type UploadWizardStepMeta,
 } from "@/components/uploader/UploadWizardStepper";
 import SubmissionSurfacePreviews from "@/components/uploader/SubmissionSurfacePreviews";
+import ThumbnailPreviewStages from "@/components/uploader/ThumbnailPreviewStages";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
 import UploaderFormSection from "@/components/uploader/UploaderFormSection";
@@ -697,6 +698,15 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
             disabled={busy}
             error={thumbnailFieldError}
           />
+          {thumbnailPreview && (
+            <ThumbnailPreviewStages
+              src={thumbnailPreview}
+              fullTitle={t("uploader.fullThumbnailPreviewTitle")}
+              fullHint={t("uploader.fullThumbnailPreviewHint")}
+              shortsTitle={t("uploader.shortsThumbnailPreviewTitle")}
+              shortsHint={t("uploader.shortsThumbnailPreviewHint")}
+            />
+          )}
           {thumbnailFile ? (
             <button
               type="button"
