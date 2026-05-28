@@ -20,7 +20,6 @@ import {
   circularDistance,
   shouldWarmExpandedStripItem,
 } from "@/components/shorts/promoCarouselUtils";
-import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
 import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
@@ -86,6 +85,8 @@ const SLIDE_MS = 560;
 const SLIDE_OFFSET_RATIO = 0.55;
 const SLIDE_ENTER_EXTRA_PX = 20;
 const SLIDE_EDGE_FADE = 0.08;
+type VisiblePreloadMode = "hybrid" | "allAuto";
+const VISIBLE_PRELOAD_MODE: VisiblePreloadMode = "hybrid";
 
 function peekScaleRatio(): number {
   if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
@@ -1191,17 +1192,6 @@ export default function PromoShortCarouselStage({
               const slotPlaybackEnabled = showAsCenter
                 ? (isLiveCenter || isPromoting) && !isTransitioning
                 : false;
-              const slotVideoPreload = showAsCenter
-                ? isLiveCenter || isPromoting
-                  ? "auto"
-                  : "metadata"
-                : "metadata";
-              const outgoingImmediateDim =
-                isOutgoingCenter && animatingShift
-                  ? isExpandedCenter
-                    ? "expandedSide"
-                    : "default"
-                  : null;
               const ariaLiveCenter = isLiveCenter || isPromoting;
               const isWrapArc =
                 transitionMode === "revolve" &&
@@ -1209,11 +1199,6 @@ export default function PromoShortCarouselStage({
                 placement.visible &&
                 ((revolvePhase === "toNext" && placement.role === "left") ||
                   (revolvePhase === "toPrev" && placement.role === "right"));
-              const isAdjacentPreload =
-                placement.visible &&
-                (placement.role === "left" || placement.role === "right") &&
-                !showAsCenter &&
-                !isWrapArc;
               const wrapArcClass = isWrapArc
                 ? revolvePhase === "toNext"
                   ? "animate-carousel-wrap-to-next"
@@ -1227,6 +1212,23 @@ export default function PromoShortCarouselStage({
                 placement.role === "incoming";
               const isAdjacentStripRole =
                 placement.role === "left" || placement.role === "right";
+              const isVisibleSide = placement.visible && placement.role !== "center";
+              const sideDimLevel =
+                isExpandedCenter && isOuterStripRole ? "expandedOuter" : isExpandedCenter ? "expandedSide" : "default";
+              const immediateDimLevel =
+                animatingShift && (isVisibleSide || isOutgoingCenter) ? sideDimLevel : null;
+              const isVisiblePreloadSlot = placement.visible && !showAsCenter;
+              const slotVideoPreload = (() => {
+                if (showAsCenter) {
+                  return isLiveCenter || isPromoting ? "auto" : "metadata";
+                }
+                if (!placement.visible) return "metadata";
+                if (!isExpandedCenter) return "auto";
+                if (placement.role === "farLeft" || placement.role === "farRight") {
+                  return VISIBLE_PRELOAD_MODE === "allAuto" ? "auto" : "metadata";
+                }
+                return "auto";
+              })();
               const slotFrameClass = placement.visible
                 ? isWrapArc
                   ? carouselWrapFrameClass
@@ -1263,7 +1265,7 @@ export default function PromoShortCarouselStage({
                   }}
                   aria-hidden={placement.visible ? !ariaLiveCenter : true}
                 >
-                  {showAsCenter || isAdjacentPreload ? (
+                  {showAsCenter || isVisiblePreloadSlot ? (
                     isExpandedCenter ? (
                       <PromoShortPlayer
                         item={item}
@@ -1272,9 +1274,9 @@ export default function PromoShortCarouselStage({
                         videoPreload={slotVideoPreload}
                         preserveFrame={preserveCenterFrame}
                         expandedChrome={showAsCenter}
-                        carouselAdjacentEmbed={isAdjacentPreload}
-                        carouselAdjacentDimLevel="expandedSide"
-                        transitionDimLevel={outgoingImmediateDim}
+                        carouselAdjacentEmbed={isVisiblePreloadSlot}
+                        carouselAdjacentDimLevel={sideDimLevel}
+                        transitionDimLevel={immediateDimLevel}
                         layout={layout}
                         compact={compact}
                         scrollExpand={showAsCenter}
@@ -1292,8 +1294,9 @@ export default function PromoShortCarouselStage({
                         playbackEnabled={slotPlaybackEnabled}
                         preserveFrame={preserveCenterFrame}
                         heroCarouselEmbed
-                        carouselAdjacentEmbed={isAdjacentPreload}
-                        transitionDimLevel={outgoingImmediateDim}
+                        carouselAdjacentEmbed={isVisiblePreloadSlot}
+                        carouselAdjacentDimLevel={sideDimLevel}
+                        transitionDimLevel={immediateDimLevel}
                         videoPreload={slotVideoPreload}
                         variant="teaser"
                         playerSize={playerSize}
@@ -1310,22 +1313,7 @@ export default function PromoShortCarouselStage({
                         className="h-full w-full"
                       />
                     )
-                  ) : (
-                    <PromoShortPeekPreview
-                      item={item}
-                      compactShell
-                      dimOverlay
-                      dimLevel={
-                        isWrapArc
-                          ? "strong"
-                          : isExpandedCenter
-                            ? isOuterStripRole
-                              ? "expandedOuter"
-                              : "expandedSide"
-                            : "default"
-                      }
-                    />
-                  )}
+                  ) : null}
                   {carouselSwipeEnabled && placement.visible && placement.role === "left" && !isWrapArc && (
                     <div
                       role="presentation"
