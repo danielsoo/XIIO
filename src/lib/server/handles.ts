@@ -73,7 +73,9 @@ export async function searchUsersByHandlePrefix(
   db: Firestore,
   query: string,
   limit = 10
-): Promise<{ uid: string; handle: string; displayName: string }[]> {
+): Promise<
+  { uid: string; handle: string; displayName: string; defaultDirectorName: string | null }[]
+> {
   const prefix = normalizeHandle(query);
   if (!prefix || prefix.length < 2) return [];
 
@@ -85,7 +87,12 @@ export async function searchUsersByHandlePrefix(
     .limit(Math.min(limit, 20))
     .get();
 
-  const results: { uid: string; handle: string; displayName: string }[] = [];
+  const results: {
+    uid: string;
+    handle: string;
+    displayName: string;
+    defaultDirectorName: string | null;
+  }[] = [];
   for (const doc of snap.docs) {
     const uid = String(doc.data().uid ?? "");
     if (!uid) continue;
@@ -93,10 +100,15 @@ export async function searchUsersByHandlePrefix(
     if (!userSnap.exists) continue;
     const data = userSnap.data() as Record<string, unknown>;
     if (data.isDiscoverable === false) continue;
+    const defaultDirectorName =
+      typeof data.defaultDirectorName === "string" && data.defaultDirectorName.trim()
+        ? data.defaultDirectorName.trim().slice(0, 120)
+        : null;
     results.push({
       uid,
       handle: doc.id,
       displayName: String(data.displayName ?? doc.id),
+      defaultDirectorName,
     });
   }
   return results;

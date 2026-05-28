@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { resolveWorkCreditDisplayName } from "@/lib/credit-display-name";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { uploaderInputClass } from "@/components/uploader/uploaderFormStyles";
@@ -16,10 +17,14 @@ export type TaggedCredit = WorkCreditInput & {
 export type PendingEmailInvite = {
   email: string;
   role: WorkCreditRole;
-  characterName?: string;
 };
 
-type SearchHit = { uid: string; handle: string; displayName: string };
+type SearchHit = {
+  uid: string;
+  handle: string;
+  displayName: string;
+  defaultDirectorName: string | null;
+};
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -57,7 +62,6 @@ export default function CreditTagInput({
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [role, setRole] = useState<WorkCreditRole>("actor");
-  const [characterName, setCharacterName] = useState("");
   const [searching, setSearching] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const [showNoResultsHint, setShowNoResultsHint] = useState(false);
@@ -65,7 +69,6 @@ export default function CreditTagInput({
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<WorkCreditRole>("actor");
-  const [inviteCharacterName, setInviteCharacterName] = useState("");
   const [inviteSending, setInviteSending] = useState(false);
   const [inviteMsg, setInviteMsg] = useState<string | null>(null);
   const [inviteErr, setInviteErr] = useState<string | null>(null);
@@ -108,8 +111,19 @@ export default function CreditTagInput({
         setHits([]);
         return;
       }
-      const data = (await res.json()) as { items?: SearchHit[] };
-      setHits((data.items ?? []).filter((h) => h.uid !== user.uid));
+      const data = (await res.json()) as {
+        items?: (SearchHit & { defaultDirectorName?: string | null })[];
+      };
+      setHits(
+        (data.items ?? [])
+          .filter((h) => h.uid !== user.uid)
+          .map((h) => ({
+            uid: h.uid,
+            handle: h.handle,
+            displayName: h.displayName,
+            defaultDirectorName: h.defaultDirectorName ?? null,
+          }))
+      );
     } finally {
       setSearching(false);
     }
@@ -126,12 +140,25 @@ export default function CreditTagInput({
     }
   }, [hits, highlight]);
 
+  const resolvedNameForHit = useCallback(
+    (hit: SearchHit, creditRole: WorkCreditRole) =>
+      resolveWorkCreditDisplayName(
+        {
+          displayName: hit.displayName,
+          defaultDirectorName: hit.defaultDirectorName,
+          handle: hit.handle,
+        },
+        creditRole
+      ),
+    []
+  );
+
   const addHit = async (hit: SearchHit) => {
     if (value.some((v) => v.userId === hit.uid && v.role === role)) return;
+    const resolvedName = resolvedNameForHit(hit, role);
     const credit: WorkCreditInput = {
       userId: hit.uid,
       role,
-      characterName: role === "actor" && characterName.trim() ? characterName.trim() : undefined,
       sortOrder: value.length + 1,
     };
     if (mode === "published" && onAddCredit) {
@@ -148,13 +175,12 @@ export default function CreditTagInput({
         {
           ...credit,
           handle: hit.handle,
-          displayName: hit.displayName,
+          displayName: resolvedName,
         },
       ]);
     }
     setQuery("");
     setHits([]);
-    setCharacterName("");
     setHighlight(0);
     setShowNoResultsHint(false);
   };
@@ -178,7 +204,6 @@ export default function CreditTagInput({
 
   const clearDraft = () => {
     setQuery("");
-    setCharacterName("");
     setHits([]);
     setHighlight(0);
     setShowNoResultsHint(false);
@@ -203,14 +228,9 @@ export default function CreditTagInput({
       {
         email,
         role: inviteRole,
-        characterName:
-          inviteRole === "actor" && inviteCharacterName.trim()
-            ? inviteCharacterName.trim()
-            : undefined,
       },
     ]);
     setInviteEmail("");
-    setInviteCharacterName("");
     setInviteErr(null);
   };
 
@@ -239,10 +259,6 @@ export default function CreditTagInput({
         body: JSON.stringify({
           email,
           role: inviteRole,
-          characterName:
-            inviteRole === "actor" && inviteCharacterName.trim()
-              ? inviteCharacterName.trim()
-              : undefined,
           locale,
         }),
       });
@@ -256,7 +272,6 @@ export default function CreditTagInput({
         return;
       }
       setInviteEmail("");
-      setInviteCharacterName("");
       if (data.emailFallbackUrl) {
         setFallbackInviteUrl(data.emailFallbackUrl);
         setInviteMsg(t("network.credits.invite.sentWithLink"));
@@ -317,18 +332,11 @@ export default function CreditTagInput({
     tryAdd();
   };
 
-  const handleCharacterKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== "Enter") return;
-    if (isImeComposing(e) || shouldIgnoreEnterAfterComposition()) return;
-    e.preventDefault();
-    e.stopPropagation();
-    tryAdd();
-  };
-
   return (
     <div className="space-y-5">
       <div className="space-y-3">
         <p className="text-xs text-xiio-muted">{t("network.credits.hint")}</p>
+        <p className="text-xs text-xiio-muted/90">{t("network.credits.autoNameHint")}</p>
 
         {value.length > 0 && (
           <ul className="flex flex-wrap gap-2">
@@ -339,7 +347,9 @@ export default function CreditTagInput({
               >
                 <span>
                   @{c.handle} · {t(`network.credits.role.${c.role}`)}
-                  {c.characterName ? ` (${c.characterName})` : ""}
+                  {(c.displayName || c.characterName) && (
+                    <> · {c.displayName || c.characterName}</>
+                  )}
                 </span>
                 {allowRemove && (
                   <button
@@ -398,27 +408,6 @@ export default function CreditTagInput({
                 ))}
               </select>
             </div>
-            {role === "actor" && (
-              <div className="flex-1 min-w-[120px]">
-                <label className="block text-xs text-xiio-muted mb-1">
-                  {t("network.credits.character")}
-                </label>
-                <input
-                  type="text"
-                  value={characterName}
-                  onChange={(e) => setCharacterName(e.target.value)}
-                  onKeyDown={handleCharacterKeyDown}
-                  onCompositionStart={() => {
-                    composingRef.current = true;
-                  }}
-                  onCompositionEnd={() => {
-                    composingRef.current = false;
-                    compositionEndAtRef.current = Date.now();
-                  }}
-                  className={uploaderInputClass}
-                />
-              </div>
-            )}
             <button
               type="button"
               onClick={tryAdd}
@@ -449,21 +438,26 @@ export default function CreditTagInput({
         )}
         {hits.length > 0 && (
           <ul className="rounded-lg border border-white/10 bg-black/30 divide-y divide-white/5">
-            {hits.map((h, i) => (
-              <li key={h.uid}>
-                <button
-                  type="button"
-                  onClick={() => void addHit(h)}
-                  onMouseEnter={() => setHighlight(i)}
-                  className={`w-full text-left px-3 py-2 text-sm transition ${
-                    i === highlight ? "bg-xiio-accent/20 text-white" : "hover:bg-white/5"
-                  }`}
-                >
-                  <span className="text-white">@{h.handle}</span>
-                  <span className="text-xiio-muted ml-2">{h.displayName}</span>
-                </button>
-              </li>
-            ))}
+            {hits.map((h, i) => {
+              const previewName = resolvedNameForHit(h, role);
+              return (
+                <li key={h.uid}>
+                  <button
+                    type="button"
+                    onClick={() => void addHit(h)}
+                    onMouseEnter={() => setHighlight(i)}
+                    className={`w-full text-left px-3 py-2 text-sm transition ${
+                      i === highlight ? "bg-xiio-accent/20 text-white" : "hover:bg-white/5"
+                    }`}
+                  >
+                    <span className="text-white">@{h.handle}</span>
+                    {previewName ? (
+                      <span className="text-xiio-muted ml-2">{previewName}</span>
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -517,19 +511,6 @@ export default function CreditTagInput({
                 ))}
               </select>
             </div>
-            {inviteRole === "actor" && (
-              <div className="flex-1 min-w-[120px]">
-                <label className="block text-xs text-xiio-muted mb-1">
-                  {t("network.credits.character")}
-                </label>
-                <input
-                  type="text"
-                  value={inviteCharacterName}
-                  onChange={(e) => setInviteCharacterName(e.target.value)}
-                  className={uploaderInputClass}
-                />
-              </div>
-            )}
             <button
               type="button"
               onClick={() => void sendEmailInvite()}

@@ -45,7 +45,6 @@ export async function POST(request: Request, { params }: Params) {
   let body: {
     email?: string;
     role?: string;
-    characterName?: string;
     message?: string;
     locale?: string;
   };
@@ -63,7 +62,6 @@ export async function POST(request: Request, { params }: Params) {
   const input: CollabInviteCreateInput = {
     email: String(body.email ?? ""),
     role: roleRaw as WorkCreditRole,
-    characterName: body.characterName,
     message: body.message,
   };
 

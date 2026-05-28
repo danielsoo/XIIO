@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "@/context/LocaleContext";
 import type { VideoFileMetadata } from "@/hooks/useVideoFileMetadata";
+import PromoCropFrameEditor from "@/components/uploader/PromoCropFrameEditor";
 import { defaultPromoFrameCrop, normalizePromoFrameCrop } from "@/lib/works/promo-crop";
+import { promoCropToVideoStyle } from "@/lib/works/promo-crop-interaction";
 import type { PromoFrameCrop } from "@/types/work";
 
 type Props = {
@@ -120,9 +122,13 @@ export default function VideoUploadDropzone({
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="rounded-xl border border-white/10 bg-black/50 p-3">
                   <p className="text-xs text-xiio-muted mb-2">{t("uploader.promoRawPreview")}</p>
-                  <div className="relative w-full rounded-lg overflow-hidden border border-white/10 bg-black" style={{ aspectRatio: "16 / 9" }}>
-                    <video src={previewUrl} className="absolute inset-0 w-full h-full object-contain" muted playsInline preload="metadata" />
-                  </div>
+                  <PromoCropFrameEditor
+                    previewUrl={previewUrl}
+                    crop={effectiveCrop}
+                    onCropChange={onCropChange}
+                    disabled={disabled}
+                    meta={meta}
+                  />
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/50 p-3">
                   <p className="text-xs text-xiio-muted mb-2">{t("uploader.promoShortsPreview")}</p>
@@ -130,46 +136,13 @@ export default function VideoUploadDropzone({
                     <video
                       src={previewUrl}
                       className="absolute inset-0 w-full h-full object-cover"
-                      style={{
-                        objectPosition: `${effectiveCrop.focalX}% ${effectiveCrop.focalY}%`,
-                        transform: `scale(${effectiveCrop.zoom})`,
-                        transformOrigin: `${effectiveCrop.focalX}% ${effectiveCrop.focalY}%`,
-                      }}
+                      style={promoCropToVideoStyle(effectiveCrop)}
                       muted
                       playsInline
                       preload="metadata"
                     />
                   </div>
                 </div>
-              </div>
-              <div className="mt-4 space-y-3">
-                <RangeControl
-                  label={t("uploader.promoCropFocusX")}
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={effectiveCrop.focalX}
-                  disabled={disabled}
-                  onChange={(value) => onCropChange({ ...effectiveCrop, focalX: value })}
-                />
-                <RangeControl
-                  label={t("uploader.promoCropFocusY")}
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={effectiveCrop.focalY}
-                  disabled={disabled}
-                  onChange={(value) => onCropChange({ ...effectiveCrop, focalY: value })}
-                />
-                <RangeControl
-                  label={t("uploader.promoCropZoom")}
-                  min={1}
-                  max={2.5}
-                  step={0.05}
-                  value={effectiveCrop.zoom}
-                  disabled={disabled}
-                  onChange={(value) => onCropChange({ ...effectiveCrop, zoom: value })}
-                />
               </div>
             </div>
           ) : null}
@@ -221,36 +194,5 @@ export default function VideoUploadDropzone({
         </label>
       )}
     </div>
-  );
-}
-
-type RangeControlProps = {
-  label: string;
-  min: number;
-  max: number;
-  step: number;
-  value: number;
-  disabled?: boolean;
-  onChange: (value: number) => void;
-};
-
-function RangeControl({ label, min, max, step, value, disabled, onChange }: RangeControlProps) {
-  return (
-    <label className="block">
-      <div className="mb-1 flex items-center justify-between text-xs text-xiio-muted">
-        <span>{label}</span>
-        <span className="tabular-nums">{value.toFixed(step < 1 ? 2 : 0)}</span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-xiio-accent"
-      />
-    </label>
   );
 }

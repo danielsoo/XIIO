@@ -14,6 +14,22 @@ import { parseWorkDoc, worksCol } from "@/lib/server/works";
 const HANDLE_REGEX = /^[a-z0-9_]{3,30}$/;
 const CREDIT_CHARACTER_NAME_MAX = 120;
 
+/** creditIndex·CreditRolePill 호환 — 표시명 스냅샷 */
+export function creditCharacterNameSnapshot(displayName: string): string | null {
+  const trimmed = displayName.trim().slice(0, CREDIT_CHARACTER_NAME_MAX);
+  return trimmed || null;
+}
+
+export function resolveCreditDisplayNameFromMap(
+  displayNames: Map<string, string>,
+  userId: string,
+  role: string
+): string {
+  return (
+    displayNames.get(`${userId}:${role}`) ?? displayNames.get(userId) ?? ""
+  ).slice(0, CREDIT_CHARACTER_NAME_MAX);
+}
+
 /** Firestore 문서용 — undefined 금지, 빈 값은 null */
 export function normalizeCreditCharacterNameForFirestore(
   characterName?: string
@@ -135,12 +151,16 @@ export async function writeWorkCredits(
   let order = 0;
   for (const input of inputs) {
     const ref = col.doc();
-    const displayName = displayNames.get(input.userId)?.slice(0, 120);
+    const displayName = resolveCreditDisplayNameFromMap(
+      displayNames,
+      input.userId,
+      input.role
+    );
     const data = {
       userId: input.userId,
       role: input.role,
-      displayName: displayName ?? null,
-      characterName: normalizeCreditCharacterNameForFirestore(input.characterName),
+      displayName: displayName || null,
+      characterName: creditCharacterNameSnapshot(displayName),
       sortOrder: input.sortOrder ?? order++,
       status: "accepted",
       createdAt: FieldValue.serverTimestamp(),
@@ -151,8 +171,8 @@ export async function writeWorkCredits(
       id: ref.id,
       userId: input.userId,
       role: input.role,
-      displayName,
-      characterName: normalizeCreditCharacterName(input.characterName),
+      displayName: displayName || undefined,
+      characterName: creditCharacterNameSnapshot(displayName) ?? undefined,
       sortOrder: data.sortOrder as number,
       status: "accepted",
     });
@@ -238,11 +258,12 @@ export async function appendAcceptedWorkCredit(
   const col = creditsCol(db, ownerUid, workId);
   const ref = col.doc();
   const sortOrder = input.sortOrder ?? existing.length;
+  const trimmedDisplay = displayName.trim().slice(0, 120);
   const data = {
     userId: input.userId,
     role: input.role,
-    displayName: displayName.slice(0, 120) || null,
-    characterName: normalizeCreditCharacterNameForFirestore(input.characterName),
+    displayName: trimmedDisplay || null,
+    characterName: creditCharacterNameSnapshot(trimmedDisplay),
     sortOrder,
     status: "accepted",
     createdAt: FieldValue.serverTimestamp(),
@@ -253,8 +274,8 @@ export async function appendAcceptedWorkCredit(
     id: ref.id,
     userId: input.userId,
     role: input.role,
-    displayName: displayName.slice(0, 120) || undefined,
-    characterName: normalizeCreditCharacterName(input.characterName),
+    displayName: trimmedDisplay || undefined,
+    characterName: creditCharacterNameSnapshot(trimmedDisplay) ?? undefined,
     sortOrder,
     status: "accepted",
   };
@@ -298,9 +319,13 @@ export async function ensureOwnerDirectorCredit(
         })
       ),
   ];
-  const names = new Map<string, string>([[ownerUid, displayName || work.director || ""]]);
+  const names = new Map<string, string>([
+    [`${ownerUid}:director`, displayName || work.director || ""],
+  ]);
   for (const c of existing) {
-    if (c.displayName) names.set(c.userId, c.displayName);
+    if (c.displayName) {
+      names.set(`${c.userId}:${c.role}`, c.displayName);
+    }
   }
   await writeWorkCredits(db, ownerUid, workId, work, inputs, names);
 }

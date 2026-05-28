@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
 import {
+  creditDisplayNameMapKey,
+  resolveWorkCreditDisplayName,
+} from "@/lib/credit-display-name";
+import {
   appendAcceptedWorkCredit,
   isWorkCreditRole,
   listWorkCredits,
@@ -53,7 +57,7 @@ export async function POST(request: Request, { params }: Params) {
   const workSnap = await worksCol(db, ownerUid).doc(workId).get();
   if (!workSnap.exists) return jsonError("not_found", "작품을 찾을 수 없습니다.", 404);
 
-  let body: { userId?: string; role?: string; characterName?: string };
+  let body: { userId?: string; role?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -70,7 +74,6 @@ export async function POST(request: Request, { params }: Params) {
   const input = normalizeWorkCreditInput({
     userId,
     role: roleRaw,
-    characterName: body.characterName,
   });
 
   const validated = validateCreditInputs([input], ownerUid);
@@ -84,7 +87,15 @@ export async function POST(request: Request, { params }: Params) {
     return jsonError("user_not_found", "회원을 찾을 수 없습니다.", 404);
   }
   const profile = parseUserProfileDoc(userSnap.data() as Record<string, unknown>);
-  const displayName = profile.displayName || profile.handle || "";
+  const displayName =
+    resolveWorkCreditDisplayName(
+      {
+        displayName: profile.displayName,
+        defaultDirectorName: profile.defaultDirectorName,
+        handle: profile.handle,
+      },
+      roleRaw
+    ) || profile.handle || "";
 
   try {
     const { credit, created } = await appendAcceptedWorkCredit(
@@ -135,19 +146,21 @@ export async function PUT(request: Request, { params }: Params) {
   const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
   const displayNames = new Map<string, string>();
 
-  const ownerSnap = await db.collection("users").doc(ownerUid).get();
-  if (ownerSnap.exists) {
-    const p = parseUserProfileDoc(ownerSnap.data() as Record<string, unknown>);
-    displayNames.set(ownerUid, p.displayName || p.defaultDirectorName || "");
-  }
-
   for (const c of validated.credits) {
-    if (displayNames.has(c.userId)) continue;
+    const key = creditDisplayNameMapKey(c.userId, c.role);
+    if (displayNames.has(key)) continue;
     const u = await db.collection("users").doc(c.userId).get();
-    if (u.exists) {
-      const p = parseUserProfileDoc(u.data() as Record<string, unknown>);
-      displayNames.set(c.userId, p.displayName);
-    }
+    if (!u.exists) continue;
+    const p = parseUserProfileDoc(u.data() as Record<string, unknown>);
+    const resolved = resolveWorkCreditDisplayName(
+      {
+        displayName: p.displayName,
+        defaultDirectorName: p.defaultDirectorName,
+        handle: p.handle,
+      },
+      c.role
+    );
+    displayNames.set(key, resolved);
   }
 
   const credits = await writeWorkCredits(

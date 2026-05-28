@@ -188,6 +188,7 @@ export const messages = {
       credits: {
         sectionTitle: "출연·크루 태그",
         hint: "XIIO 가입 회원만 @handle로 태그할 수 있습니다. 승인된 작품에 크레딧이 연결됩니다.",
+        autoNameHint: "표시 이름은 각 회원의 프로필(감독명·표시 이름) 설정을 따릅니다.",
         search: "회원 검색",
         searchPlaceholder: "handle 2자 이상",
         roleLabel: "역할",
@@ -1073,7 +1074,11 @@ export const messages = {
       errorPromoTooLong: "쇼츠 영상은 최대 120초입니다.",
       errorPromoVideoInvalid: "쇼츠 영상 파일을 확인해 주세요.",
       promoSourceMeta: "{width}x{height} · {sec}초",
-      promoCropHint: "가로 영상도 업로드할 수 있어요. 아래에서 쇼츠 화면(9:16)에서 보일 영역을 조정해 주세요.",
+      promoCropHint:
+        "점선 프레임을 드래그해 쇼츠(9:16)에 보일 영역을 맞춰 주세요. − / + 로 확대할 수 있습니다.",
+      promoCropDragLabel: "쇼츠 크롭 영역",
+      promoCropZoomIn: "확대",
+      promoCropZoomOut: "축소",
       promoRawPreview: "원본 비율 미리보기",
       promoShortsPreview: "쇼츠 노출 미리보기 (9:16)",
       promoCropFocusX: "가로 위치",
@@ -1509,6 +1514,7 @@ export const messages = {
       credits: {
         sectionTitle: "Cast & crew tags",
         hint: "Tag XIIO members by @handle. Credits attach after the work is published.",
+        autoNameHint: "Credit names come from each member's profile (director name or display name).",
         search: "Search members",
         searchPlaceholder: "At least 2 characters",
         roleLabel: "Role",
@@ -2394,7 +2400,11 @@ export const messages = {
       errorPromoTooLong: "Promo video must be 120 seconds or less.",
       errorPromoVideoInvalid: "Could not use this promo video file.",
       promoSourceMeta: "{width}x{height} · {sec}s",
-      promoCropHint: "Landscape uploads are allowed. Adjust what appears inside the 9:16 shorts frame below.",
+      promoCropHint:
+        "Drag the dashed frame to choose what appears in the 9:16 shorts crop. Use − / + to zoom.",
+      promoCropDragLabel: "Shorts crop region",
+      promoCropZoomIn: "Zoom in",
+      promoCropZoomOut: "Zoom out",
       promoRawPreview: "Original preview",
       promoShortsPreview: "Shorts preview (9:16)",
       promoCropFocusX: "Horizontal focus",

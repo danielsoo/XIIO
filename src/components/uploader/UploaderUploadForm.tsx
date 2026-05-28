@@ -323,13 +323,10 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               title: promoTitle.trim(),
               description: promoDescription.trim() || undefined,
             },
-            credits: credits.map(({ userId, role, characterName, sortOrder }) => ({
+            credits: credits.map(({ userId, role, sortOrder }) => ({
               userId,
               role,
               sortOrder,
-              ...(characterName?.trim()
-                ? { characterName: characterName.trim() }
-                : {}),
             })),
           }),
         });
@@ -443,7 +440,6 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               body: JSON.stringify({
                 email: inv.email,
                 role: inv.role,
-                characterName: inv.characterName,
               }),
             });
           } catch {

@@ -17,6 +17,10 @@ import {
 import { defaultAspectRatioForSection, isVideoAspectRatio } from "@/lib/works/aspect-ratio";
 import { isWorkSection } from "@/lib/works/constants";
 import {
+  creditDisplayNameMapKey,
+  resolveWorkCreditDisplayName,
+} from "@/lib/credit-display-name";
+import {
   ensureOwnerDirectorCredit,
   validateCreditInputs,
   writeWorkCredits,
@@ -156,7 +160,16 @@ export async function POST(request: Request) {
         directorFromBody || profile?.defaultDirectorName?.trim().slice(0, 120) || null;
 
       const sortOrder = await nextWorkSortOrder(db, session.uid);
-      const displayName = profile?.displayName || director || "Creator";
+      const ownerCreditName = profile
+        ? resolveWorkCreditDisplayName(
+            {
+              displayName: profile.displayName,
+              defaultDirectorName: profile.defaultDirectorName,
+              handle: profile.handle,
+            },
+            "director"
+          ) || director || "Creator"
+        : director || "Creator";
       await worksCol(db, session.uid).doc(workId).set({
         kind: "full",
         section: sectionRaw,
@@ -183,13 +196,26 @@ export async function POST(request: Request) {
       ];
       const validated = validateCreditInputs(withDirector, session.uid);
       if (validated.ok && validated.credits.length > 0) {
-        const names = new Map<string, string>([[session.uid, displayName]]);
+        const names = new Map<string, string>([
+          [creditDisplayNameMapKey(session.uid, "director"), ownerCreditName],
+        ]);
         for (const c of validated.credits) {
-          if (names.has(c.userId)) continue;
+          const key = creditDisplayNameMapKey(c.userId, c.role);
+          if (names.has(key)) continue;
           const u = await db.collection("users").doc(c.userId).get();
           if (u.exists) {
             const p = parseUserProfileDoc(u.data() as Record<string, unknown>);
-            names.set(c.userId, p.displayName);
+            names.set(
+              key,
+              resolveWorkCreditDisplayName(
+                {
+                  displayName: p.displayName,
+                  defaultDirectorName: p.defaultDirectorName,
+                  handle: p.handle,
+                },
+                c.role
+              )
+            );
           }
         }
         await writeWorkCredits(
@@ -217,7 +243,7 @@ export async function POST(request: Request) {
             streamUid: upload.uid,
             director: director ?? undefined,
           },
-          displayName
+          ownerCreditName
         );
       }
     } catch (e) {

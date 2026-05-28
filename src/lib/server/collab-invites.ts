@@ -6,6 +6,7 @@ import {
   normalizeInviteEmail,
   parseCollabInvite,
 } from "@/lib/collab-invite-pure";
+import { resolveWorkCreditDisplayName } from "@/lib/credit-display-name";
 import {
   appendAcceptedWorkCredit,
   isWorkCreditRole,
@@ -119,14 +120,13 @@ export async function createCollabInvite(
   const token = generateCollabInviteToken();
   const ref = collabInvitesCol(db).doc();
   const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
-  const characterName = params.input.characterName?.trim().slice(0, 120) || null;
   const message = params.input.message?.trim().slice(0, 500) || null;
 
   const data = {
     ownerUid: params.ownerUid,
     workId: params.workId,
     role: params.input.role,
-    characterName,
+    characterName: null,
     invitedEmail: params.input.email.trim(),
     invitedEmailNormalized: emailNormalized,
     token,
@@ -190,7 +190,15 @@ export async function acceptCollabInvite(
   const accepterSnap = await db.collection("users").doc(accepterUid).get();
   if (!accepterSnap.exists) return { ok: false, error: "user_not_found" };
   const accepterProfile = parseUserProfileDoc(accepterSnap.data() as Record<string, unknown>);
-  const displayName = accepterProfile.displayName || accepterProfile.handle || "";
+  const displayName =
+    resolveWorkCreditDisplayName(
+      {
+        displayName: accepterProfile.displayName,
+        defaultDirectorName: accepterProfile.defaultDirectorName,
+        handle: accepterProfile.handle,
+      },
+      invite.role
+    ) || accepterProfile.handle || "";
 
   const workSnap = await worksCol(db, invite.ownerUid).doc(invite.workId).get();
   if (!workSnap.exists) return { ok: false, error: "work_not_found" };
@@ -214,11 +222,16 @@ export async function acceptCollabInvite(
     });
   });
 
-  await appendAcceptedWorkCredit(db, invite.ownerUid, invite.workId, {
-    userId: accepterUid,
-    role: invite.role,
-    characterName: invite.characterName,
-  }, displayName);
+  await appendAcceptedWorkCredit(
+    db,
+    invite.ownerUid,
+    invite.workId,
+    {
+      userId: accepterUid,
+      role: invite.role,
+    },
+    displayName
+  );
 
   return {
     ok: true,

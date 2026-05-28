@@ -114,12 +114,6 @@ export default function CollabInvitePage() {
                 <dt className="text-xiio-muted">{t("collabInvite.roleLabel")}</dt>
                 <dd className="text-white">{t(`network.credits.role.${invite.role}`)}</dd>
               </div>
-              {invite.characterName && (
-                <div>
-                  <dt className="text-xiio-muted">{t("network.credits.character")}</dt>
-                  <dd className="text-white">{invite.characterName}</dd>
-                </div>
-              )}
               <div>
                 <dt className="text-xiio-muted">{t("collabInvite.invitedBy")}</dt>
                 <dd className="text-white">{invite.ownerDisplayName}</dd>
