@@ -9,14 +9,13 @@ import PromoShortFields from "@/components/uploader/PromoShortFields";
 import UploadWizardStepper, {
   type UploadWizardStepMeta,
 } from "@/components/uploader/UploadWizardStepper";
-import ThumbnailPreviewStages from "@/components/uploader/ThumbnailPreviewStages";
+import SubmissionSurfacePreviews from "@/components/uploader/SubmissionSurfacePreviews";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
 import UploaderFormSection from "@/components/uploader/UploaderFormSection";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import PlaybackVideo from "@/components/PlaybackVideo";
 import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import { uploadFileViaTus } from "@/lib/streamTusUpload";
@@ -41,6 +40,7 @@ import type {
 type EditorData = {
   work: WorkDoc & { playbackUrl?: string; durationSec?: number };
   promo: (PromoShortDoc & { id: string; playbackUrl?: string }) | null;
+  catalogThumbnailUrl?: string;
   revisionMode?: boolean;
   revisionReviewStatus?: RevisionReviewStatus;
   pendingRevision?: PromoPendingRevision | null;
@@ -95,6 +95,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [thumbnailFieldError, setThumbnailFieldError] = useState<string | null>(null);
   const [savedThumbnailUrl, setSavedThumbnailUrl] = useState<string | null>(null);
+  const [catalogThumbnailUrl, setCatalogThumbnailUrl] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const stepInitWorkRef = useRef<string | null>(null);
 
@@ -117,6 +118,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         return;
       }
       setData(json);
+      setCatalogThumbnailUrl(json.catalogThumbnailUrl ?? null);
       setRevisionMode(Boolean(json.revisionMode));
       setRevisionReviewStatus(json.revisionReviewStatus);
       setPendingRevisionPlayback(json.pendingRevisionPlayback);
@@ -243,6 +245,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       const url = await uploadPromoThumbnail(user.uid, workId, thumbnailFile);
       await patchPromoThumbnailUrl(token, workId, url);
       setSavedThumbnailUrl(url);
+      setCatalogThumbnailUrl(url);
       setThumbnailFile(null);
       setThumbnailPreview(url);
       setMsg(t("promoEditor.thumbnailSaved"));
@@ -478,7 +481,10 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       : !revisionMode && promo?.playbackUrl && promo.streamStatus === "ready"
         ? promo.playbackUrl
         : null;
-  const showPlaybackSection = Boolean(work.playbackUrl || promoPlaybackUrl);
+  const liveThumbnailUrl = thumbnailPreview ?? savedThumbnailUrl ?? catalogThumbnailUrl;
+  const promoStreamReady = revisionMode
+    ? pendingRevision?.streamStatus === "ready"
+    : promo?.streamStatus === "ready";
 
   const currentStep = PROMO_EDITOR_STEPS[stepIndex] ?? "video";
   const isLastStep = stepIndex === PROMO_EDITOR_STEPS.length - 1;
@@ -505,7 +511,15 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const validatePromoEditorStep = (step: PromoEditorStepId): boolean => {
     switch (step) {
       case "video": {
-        if (hasPromoVideo) return true;
+        if (!fullReady) {
+          setErr(t("promoEditor.waitEncoding"));
+          return false;
+        }
+        if (hasPromoVideo && promoEncoding) {
+          setErr(t("promoEditor.errorEncodingBeforeNext"));
+          return false;
+        }
+        if (hasPromoVideo && promoStreamReady) return true;
         if (!promoFile) {
           setErr(t("uploader.errorPromoVideoRequired"));
           return false;
@@ -569,35 +583,24 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     scrollWizardTop();
   };
 
-  const sharedPreviewSections = (
-    <>
-      {showPlaybackSection && (
-        <UploaderFormSection title={t("promoEditor.playbackSectionTitle")}>
-          <div className="grid gap-4 md:grid-cols-2">
-            {work.playbackUrl ? (
-              <div>
-                <p className="text-xs text-xiio-muted mb-2">{t("promoEditor.fullVideoLabel")}</p>
-                <PlaybackVideo src={work.playbackUrl} maxHeightClass="max-h-[min(40vh,400px)]" />
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.03] min-h-[200px] flex items-center justify-center p-4 text-center">
-                <p className="text-sm text-xiio-muted">{t("promoEditor.waitEncoding")}</p>
-              </div>
-            )}
-            {promoPlaybackUrl ? (
-              <div>
-                <p className="text-xs text-xiio-muted mb-2">{t("promoEditor.preview")}</p>
-                <PlaybackVideo src={promoPlaybackUrl} maxHeightClass="max-h-[min(40vh,400px)]" />
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.03] min-h-[200px] flex items-center justify-center p-4 text-center">
-                <p className="text-sm text-xiio-muted">{t("promoEditor.previewEmpty")}</p>
-              </div>
-            )}
-          </div>
-        </UploaderFormSection>
-      )}
+  const livePreviewPanel = showEditor ? (
+    <SubmissionSurfacePreviews
+      workTitle={workDisplayTitle}
+      catalogThumbnailUrl={catalogThumbnailUrl}
+      liveThumbnailUrl={liveThumbnailUrl}
+      title={title}
+      description={description}
+      director={work.director ?? ""}
+      frameCrop={promoCrop}
+      promoPlaybackUrl={promoPlaybackUrl}
+      fullPlaybackUrl={work.playbackUrl}
+      ownerUid={user.uid}
+      workId={workId}
+    />
+  ) : null;
 
+  const editorSections = (
+    <>
       {savedPromoStatus && (revisionMode ? pendingRevision : promo) && (
         <section className="rounded-2xl border border-xiio-accent/30 bg-xiio-accent/10 p-5 md:p-6">
           <div className="flex items-start gap-3">
@@ -686,6 +689,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           title={t("promoEditor.stepThumbnailTitle")}
           hint={t("promoEditor.stepThumbnailHint")}
         >
+          <p className="text-xs text-xiio-muted leading-relaxed">{t("promoEditor.thumbnailLiveHint")}</p>
           <ThumbnailUploadField
             file={thumbnailFile}
             previewUrl={thumbnailPreview}
@@ -693,15 +697,6 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
             disabled={busy}
             error={thumbnailFieldError}
           />
-          {thumbnailPreview && (
-            <ThumbnailPreviewStages
-              src={thumbnailPreview}
-              fullTitle={t("uploader.fullThumbnailPreviewTitle")}
-              fullHint={t("uploader.fullThumbnailPreviewHint")}
-              shortsTitle={t("uploader.shortsThumbnailPreviewTitle")}
-              shortsHint={t("uploader.shortsThumbnailPreviewHint")}
-            />
-          )}
           {thumbnailFile ? (
             <button
               type="button"
@@ -832,27 +827,6 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         />
         <p className="text-xiio-muted text-sm mb-6 -mt-2">{workDisplayTitle}</p>
 
-        {showEditor && (
-          <div className="mb-6 lg:hidden">
-            <div className="flex justify-between text-xs text-xiio-muted mb-1">
-              <span className="font-medium text-white">{stepLabels[currentStep]}</span>
-              <span>
-                {t("uploader.uploadStepProgress", {
-                  current: stepIndex + 1,
-                  total: PROMO_EDITOR_STEPS.length,
-                })}
-              </span>
-            </div>
-            <p className="text-xs text-xiio-muted mb-2 leading-relaxed">{stepHints[currentStep]}</p>
-            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-              <div
-                className="h-full bg-xiio-accent transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
         <div className={showEditor ? "lg:grid lg:grid-cols-[minmax(200px,240px)_1fr] lg:gap-8 lg:items-start" : undefined}>
           {showEditor && (
             <div className="hidden lg:block sticky top-28 self-start mb-6 lg:mb-0">
@@ -935,7 +909,28 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           }
           footer={wizardFooter}
         >
-          {sharedPreviewSections}
+          {livePreviewPanel}
+          {showEditor && (
+            <div className="mb-6 lg:hidden">
+              <div className="flex justify-between text-xs text-xiio-muted mb-1">
+                <span className="font-medium text-white">{stepLabels[currentStep]}</span>
+                <span>
+                  {t("uploader.uploadStepProgress", {
+                    current: stepIndex + 1,
+                    total: PROMO_EDITOR_STEPS.length,
+                  })}
+                </span>
+              </div>
+              <p className="text-xs text-xiio-muted mb-2 leading-relaxed">{stepHints[currentStep]}</p>
+              <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full bg-xiio-accent transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+          {editorSections}
         </UploaderFormShell>
           </div>
         </div>

@@ -14,6 +14,7 @@ import {
   parsePromoDoc,
   parseWorkDoc,
   promoRef,
+  resolveWorkListThumbnailUrl,
   worksCol,
 } from "@/lib/server/works";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
@@ -96,10 +97,12 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const revisionMode = promo?.platformStatus === "published";
+  const catalogThumbnailUrl = await resolveWorkListThumbnailUrl(db, session.uid, workId, work);
 
   return NextResponse.json({
     work: { ...work, playbackUrl: fullPlayback ?? undefined, durationSec: fullInfo?.duration },
     promo,
+    catalogThumbnailUrl,
     revisionMode,
     pendingRevision,
     pendingRevisionPlayback,
