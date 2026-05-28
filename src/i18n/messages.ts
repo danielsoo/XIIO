@@ -198,6 +198,9 @@ export const messages = {
         addNoResults: "검색 결과에서 회원을 선택하세요.",
         remove: "제거",
         searching: "검색 중…",
+        postUploadHint: "등록된 크레딧은 삭제할 수 없습니다. 추가만 가능합니다.",
+        loadError: "크레딧을 불러오지 못했습니다.",
+        addError: "크레딧을 추가하지 못했습니다.",
         role: {
           director: "감독",
           actor: "배우",
@@ -1516,6 +1519,9 @@ export const messages = {
         addNoResults: "Select a member from search results.",
         remove: "Remove",
         searching: "Searching…",
+        postUploadHint: "Credits cannot be removed after upload. You can only add more.",
+        loadError: "Could not load credits.",
+        addError: "Could not add credit.",
         role: {
           director: "Director",
           actor: "Actor",

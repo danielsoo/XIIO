@@ -705,13 +705,13 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
                 value={credits}
                 onChange={setCredits}
                 disabled={busy}
+                mode="draft"
                 pendingEmailInvites={pendingEmailInvites}
                 onPendingEmailInvitesChange={setPendingEmailInvites}
               />
             </div>
             <div>
               <p className="text-xs text-xiio-muted mb-1">{t("uploader.uploadAspectRatioLabel")}</p>
-              <p className="text-xs text-xiio-muted/80 mb-2">{t("uploader.uploadAspectRatioHint")}</p>
               <AspectRatioPicker value={aspectRatio} onChange={setAspectRatio} disabled={busy} />
             </div>
           </UploaderFormSection>

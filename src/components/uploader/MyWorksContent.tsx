@@ -304,14 +304,6 @@ export default function MyWorksContent() {
                           : t("myWorks.createPromo")}
                       </Link>
                     )}
-                    {promoPublished && (
-                      <Link
-                        href={`/uploader/works/${work.id}/promo`}
-                        className="px-3 py-1.5 text-xs rounded-lg border border-white/15 text-white hover:bg-white/5 transition"
-                      >
-                        {t("myWorks.editPromo")}
-                      </Link>
-                    )}
                     {workPublished && (
                       <Link
                         href={`/uploader/works/${work.id}/edit`}

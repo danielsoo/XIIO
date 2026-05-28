@@ -6,6 +6,7 @@ import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import WorkTagInput from "@/components/uploader/WorkTagInput";
+import WorkCreditsSection from "@/components/uploader/WorkCreditsSection";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
@@ -351,6 +352,13 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
                 user={user}
                 inputClassName="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm text-xiio-muted mb-1">
+                {t("network.credits.sectionTitle")}
+              </label>
+              <WorkCreditsSection workId={workId} disabled={busy || revEncoding} />
             </div>
 
             <div>

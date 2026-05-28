@@ -28,8 +28,12 @@ type Props = {
   onChange: (next: TaggedCredit[]) => void;
   disabled?: boolean;
   workId?: string;
+  /** draft: 업로드 전(추가·삭제). published: 업로드 후(추가만) */
+  mode?: "draft" | "published";
   pendingEmailInvites?: PendingEmailInvite[];
   onPendingEmailInvitesChange?: (next: PendingEmailInvite[]) => void;
+  /** published 모드에서 @handle 추가 시 서버에 즉시 반영 */
+  onAddCredit?: (credit: WorkCreditInput) => Promise<void>;
 };
 
 const TAGGABLE_ROLES: WorkCreditRole[] = WORK_CREDIT_ROLES.filter((r) => r !== "director");
@@ -39,9 +43,13 @@ export default function CreditTagInput({
   onChange,
   disabled,
   workId,
+  mode: modeProp,
   pendingEmailInvites = [],
   onPendingEmailInvitesChange,
+  onAddCredit,
 }: Props) {
+  const mode = modeProp ?? (workId ? "published" : "draft");
+  const allowRemove = mode === "draft" && !disabled;
   const { t, locale } = useTranslations();
   const { user } = useAuth();
   const composingRef = useRef(false);
@@ -53,6 +61,7 @@ export default function CreditTagInput({
   const [searching, setSearching] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const [showNoResultsHint, setShowNoResultsHint] = useState(false);
+  const [addCreditErr, setAddCreditErr] = useState<string | null>(null);
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<WorkCreditRole>("actor");
@@ -117,19 +126,32 @@ export default function CreditTagInput({
     }
   }, [hits, highlight]);
 
-  const addHit = (hit: SearchHit) => {
+  const addHit = async (hit: SearchHit) => {
     if (value.some((v) => v.userId === hit.uid && v.role === role)) return;
-    onChange([
-      ...value,
-      {
-        userId: hit.uid,
-        role,
-        handle: hit.handle,
-        displayName: hit.displayName,
-        characterName: role === "actor" && characterName.trim() ? characterName.trim() : undefined,
-        sortOrder: value.length + 1,
-      },
-    ]);
+    const credit: WorkCreditInput = {
+      userId: hit.uid,
+      role,
+      characterName: role === "actor" && characterName.trim() ? characterName.trim() : undefined,
+      sortOrder: value.length + 1,
+    };
+    if (mode === "published" && onAddCredit) {
+      setAddCreditErr(null);
+      try {
+        await onAddCredit(credit);
+      } catch (e) {
+        setAddCreditErr(e instanceof Error ? e.message : t("network.credits.addError"));
+        return;
+      }
+    } else {
+      onChange([
+        ...value,
+        {
+          ...credit,
+          handle: hit.handle,
+          displayName: hit.displayName,
+        },
+      ]);
+    }
     setQuery("");
     setHits([]);
     setCharacterName("");
@@ -151,7 +173,7 @@ export default function CreditTagInput({
       setShowNoResultsHint(true);
       return;
     }
-    addHit(target);
+    void addHit(target);
   };
 
   const clearDraft = () => {
@@ -168,6 +190,7 @@ export default function CreditTagInput({
       setInviteErr(t("network.credits.invite.invalidEmail"));
       return;
     }
+    if (!onPendingEmailInvitesChange) return;
     if (
       pendingEmailInvites.some(
         (p) => p.email.toLowerCase() === email.toLowerCase() && p.role === inviteRole
@@ -175,7 +198,7 @@ export default function CreditTagInput({
     ) {
       return;
     }
-    onPendingEmailInvitesChange?.([
+    onPendingEmailInvitesChange([
       ...pendingEmailInvites,
       {
         email,
@@ -189,7 +212,6 @@ export default function CreditTagInput({
     setInviteEmail("");
     setInviteCharacterName("");
     setInviteErr(null);
-    setInviteMsg(t("network.credits.invite.queued"));
   };
 
   const sendEmailInvite = async () => {
@@ -319,7 +341,7 @@ export default function CreditTagInput({
                   @{c.handle} · {t(`network.credits.role.${c.role}`)}
                   {c.characterName ? ` (${c.characterName})` : ""}
                 </span>
-                {!disabled && (
+                {allowRemove && (
                   <button
                     type="button"
                     onClick={() => remove(c.userId, c.role)}
@@ -420,6 +442,7 @@ export default function CreditTagInput({
         {!disabled && (
           <p className="text-xs text-xiio-muted">{t("network.credits.addHint")}</p>
         )}
+        {addCreditErr && <p className="text-xs text-red-400">{addCreditErr}</p>}
         {searching && <p className="text-xs text-xiio-muted">{t("network.credits.searching")}</p>}
         {!searching && showNoResultsHint && (
           <p className="text-xs text-amber-400/90">{t("network.credits.addNoResults")}</p>
@@ -430,7 +453,7 @@ export default function CreditTagInput({
               <li key={h.uid}>
                 <button
                   type="button"
-                  onClick={() => addHit(h)}
+                  onClick={() => void addHit(h)}
                   onMouseEnter={() => setHighlight(i)}
                   className={`w-full text-left px-3 py-2 text-sm transition ${
                     i === highlight ? "bg-xiio-accent/20 text-white" : "hover:bg-white/5"
@@ -445,7 +468,7 @@ export default function CreditTagInput({
         )}
       </div>
 
-      {!disabled && onPendingEmailInvitesChange && (
+      {!disabled && (onPendingEmailInvitesChange || workId) && (
         <div className="space-y-3 pt-3 border-t border-white/10">
           <div>
             <p className="text-xs font-medium text-white mb-1">
@@ -454,8 +477,11 @@ export default function CreditTagInput({
             <p className="text-xs text-xiio-muted leading-relaxed">
               {t("network.credits.invite.hint")}
             </p>
-            {!workId && (
+            {mode === "draft" && (
               <p className="text-xs text-amber-400/80 mt-1">{t("network.credits.invite.queued")}</p>
+            )}
+            {mode === "published" && (
+              <p className="text-xs text-xiio-muted/90 mt-1">{t("network.credits.postUploadHint")}</p>
             )}
           </div>
 
@@ -531,7 +557,7 @@ export default function CreditTagInput({
             </div>
           )}
 
-          {pendingEmailInvites.length > 0 && (
+          {mode === "draft" && pendingEmailInvites.length > 0 && (
             <ul className="space-y-1">
               {pendingEmailInvites.map((inv, i) => (
                 <li
@@ -544,13 +570,15 @@ export default function CreditTagInput({
                       role: t(`network.credits.role.${inv.role}`),
                     })}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => removeQueuedInvite(i)}
-                    className="text-xiio-muted hover:text-white"
-                  >
-                    ×
-                  </button>
+                  {allowRemove && (
+                    <button
+                      type="button"
+                      onClick={() => removeQueuedInvite(i)}
+                      className="text-xiio-muted hover:text-white"
+                    >
+                      ×
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
