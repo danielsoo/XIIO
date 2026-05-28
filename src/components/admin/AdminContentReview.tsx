@@ -141,11 +141,11 @@ export default function AdminContentReview() {
   ];
 
   return (
-    <div>
+    <div className="space-y-5 sm:space-y-6">
       <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{t("admin.contentTitle")}</h1>
       <p className="text-xiio-muted text-sm mb-6">{t("admin.contentDesc")}</p>
 
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2">
         {tabs.map(({ id, label }) => {
           const count = tabPendingCount(id, stats);
           return (
@@ -174,16 +174,14 @@ export default function AdminContentReview() {
         })}
       </div>
 
-      {err && (
-        <p className="mb-4 text-red-400 text-sm whitespace-pre-wrap break-words">{err}</p>
-      )}
+      {err && <p className="text-red-400 text-sm whitespace-pre-wrap break-words">{err}</p>}
 
       {loading ? (
         <p className="text-xiio-muted">{t("admin.loading")}</p>
       ) : items.length === 0 ? (
         <p className="text-xiio-muted">{t("admin.contentReview.empty")}</p>
       ) : tab === "full_pending" ? (
-        <ul className="space-y-4">
+        <ul className="space-y-3 sm:space-y-4">
           {(items as FullQueueItem[]).map((item) => (
             <FullWorkReviewCard
               key={item.id}
@@ -205,7 +203,7 @@ export default function AdminContentReview() {
           ))}
         </ul>
       ) : tab === "ai_flagged" ? (
-        <ul className="space-y-4">
+        <ul className="space-y-3 sm:space-y-4">
           {(
             items as (
               | ({ queueKind: "full" } & FullQueueItem)
@@ -257,7 +255,7 @@ export default function AdminContentReview() {
           )}
         </ul>
       ) : tab === "promo_pending" ? (
-        <ul className="space-y-4">
+        <ul className="space-y-3 sm:space-y-4">
           {(items as PromoReviewItem[]).map((row) => {
             const promoKey = `promo_${row.ownerUid}_${row.workId}`;
             const rejectOpen = promoRejectOpenKey === promoKey;
@@ -289,7 +287,7 @@ export default function AdminContentReview() {
           })}
         </ul>
       ) : (
-        <ul className="space-y-4">
+        <ul className="space-y-3 sm:space-y-4">
           {(items as RemovalItem[]).map((item) => (
             <li
               key={`${item.kind}_${item.ownerUid}_${item.workId}`}

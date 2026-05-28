@@ -113,7 +113,9 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
           </Link>
         </div>
       </aside>
-      <main className="flex-1 min-w-0 p-6 md:p-8">{children}</main>
+      <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8">
+        <div className="mx-auto w-full max-w-6xl">{children}</div>
+      </main>
     </div>
   );
 }
