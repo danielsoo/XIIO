@@ -237,6 +237,7 @@ function PlayerChrome({
   carouselAdjacentEmbed = false,
   carouselAdjacentDimLevel = "default",
   transitionDimLevel = null,
+  forcePortraitFrame = false,
   teaserCenterAction = "watch-overlay",
   expandedChrome = false,
   onTeaserExpandRequest,
@@ -257,6 +258,8 @@ function PlayerChrome({
   carouselAdjacentDimLevel?: PromoShortPeekDimLevel;
   /** center -> side 전환 시작 즉시 딤 오버레이 */
   transitionDimLevel?: PromoShortPeekDimLevel | null;
+  /** 메타 노출과 무관하게 9:16 프레임 고정 */
+  forcePortraitFrame?: boolean;
   teaserCenterAction?: TeaserCenterAction;
   expandedChrome?: boolean;
   onTeaserExpandRequest?: () => void;
@@ -448,7 +451,8 @@ function PlayerChrome({
 
   const fixedTeaserFrame = isTeaser && playerSize === "homeHeroSmall" && !peekSide;
   const peekSideFrame = isTeaser && peekSide;
-  const fixedPortraitFrame = fixedTeaserFrame || peekSideFrame || expandedChrome;
+  const fixedPortraitFrame =
+    fixedTeaserFrame || peekSideFrame || expandedChrome || forcePortraitFrame;
   const smallShell = peekSideFrame
     ? HOME_HERO_PEEK_SIDE_FRAME_CLASS
     : fixedTeaserFrame
@@ -757,6 +761,7 @@ export default function PromoShortPlayer({
   carouselAdjacentEmbed = false,
   carouselAdjacentDimLevel = "default",
   transitionDimLevel = null,
+  forcePortraitFrame = false,
   teaserCenterAction = "watch-overlay",
   expandedChrome = false,
   onTeaserExpandRequest,
@@ -772,6 +777,7 @@ export default function PromoShortPlayer({
   carouselAdjacentEmbed?: boolean;
   carouselAdjacentDimLevel?: PromoShortPeekDimLevel;
   transitionDimLevel?: PromoShortPeekDimLevel | null;
+  forcePortraitFrame?: boolean;
   teaserCenterAction?: TeaserCenterAction;
   expandedChrome?: boolean;
   onTeaserExpandRequest?: () => void;
@@ -822,6 +828,7 @@ export default function PromoShortPlayer({
       carouselAdjacentEmbed={carouselAdjacentEmbed}
       carouselAdjacentDimLevel={carouselAdjacentDimLevel}
       transitionDimLevel={transitionDimLevel}
+      forcePortraitFrame={forcePortraitFrame}
       teaserCenterAction={teaserCenterAction}
       onTeaserExpandRequest={onTeaserExpandRequest}
       onToggleFullscreen={() => void toggle()}
