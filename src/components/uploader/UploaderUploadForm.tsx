@@ -725,6 +725,9 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             {promoFile && promoFileError === "invalid_dimensions" && (
               <p className="text-xs text-red-400">{t("uploader.errorPromoVideoInvalid")}</p>
             )}
+            {promoFile && promoFileError === "invalid_duration" && (
+              <p className="text-xs text-red-400">{t("uploader.errorPromoVideoInvalid")}</p>
+            )}
             {promoFile && promoMeta && promoFileError === "too_short" && (
               <p className="text-xs text-red-400">{t("uploader.errorPromoTooShort")}</p>
             )}

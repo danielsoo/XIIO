@@ -525,6 +525,9 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           {promoFile && promoFileError === "invalid_dimensions" && (
             <p className="text-xs text-red-400">{t("uploader.errorPromoVideoInvalid")}</p>
           )}
+          {promoFile && promoFileError === "invalid_duration" && (
+            <p className="text-xs text-red-400">{t("uploader.errorPromoVideoInvalid")}</p>
+          )}
           {promoFile && promoMeta && promoFileError === "too_short" && (
             <p className="text-xs text-red-400">{t("uploader.errorPromoTooShort")}</p>
           )}

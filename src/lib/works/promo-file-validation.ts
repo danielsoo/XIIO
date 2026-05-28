@@ -1,14 +1,16 @@
 import {
   validatePromoVideoDimensions,
   validatePromoVideoDuration,
+  type PromoVideoAspectError,
+  type PromoVideoDurationError,
 } from "@/lib/works/promo-video";
 
+export type { PromoVideoAspectError, PromoVideoDurationError };
+
 export type PromoFileValidationError =
+  | PromoVideoAspectError
+  | PromoVideoDurationError
   | "loading"
-  | "too_small"
-  | "invalid_dimensions"
-  | "too_short"
-  | "too_long"
   | null;
 
 export function getPromoFileValidationError(
