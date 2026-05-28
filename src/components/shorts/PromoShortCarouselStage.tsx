@@ -83,6 +83,8 @@ const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUS
 const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
 const CAROUSEL_BACK_SCALE_RATIO = 0.52;
 const SLIDE_MS = 560;
+/** endTransition 타이머와 동일 — 프레임 커밋 지연 */
+const SLIDE_COMMIT_BUFFER_MS = 80;
 const SLIDE_OFFSET_RATIO = 0.55;
 const SLIDE_ENTER_EXTRA_PX = 20;
 const SLIDE_EDGE_FADE = 0.08;
@@ -226,15 +228,23 @@ function getVisibleExpandedRoles(quintet: Quintet, count: number): Set<ExpandedS
   return visible;
 }
 
+/** 확대 strip 5단 크기 — center frame 기준 실측 scale (peek/outer max-w와 동일 체감) */
+function expandedStripScales(metrics: ExpandedStripMetrics) {
+  const { centerW, peekAdjacentW, peekOuterW } = metrics;
+  const safeCenterW = Math.max(centerW, 1);
+  return {
+    adjacentScale: peekAdjacentW / safeCenterW,
+    outerScale: (peekOuterW / safeCenterW) * EXPANDED_OUTER_PEEK_SCALE,
+  };
+}
+
 function expandedStripSlotTransform(
   role: ExpandedStripRole,
   phase: RevolvePhase,
   metrics: ExpandedStripMetrics
 ): { transform: string; opacity: number; zIndex: number } {
-  const { offsetAdjacent, offsetOuter, centerW, peekAdjacentW, peekOuterW } = metrics;
-  const adjacentScale = Math.min(1, Math.max(0.7, peekAdjacentW / Math.max(centerW, 1)));
-  const outerScaleBase = Math.min(1, Math.max(0.55, peekOuterW / Math.max(centerW, 1)));
-  const outerScale = outerScaleBase * EXPANDED_OUTER_PEEK_SCALE;
+  const { offsetAdjacent, offsetOuter } = metrics;
+  const { adjacentScale, outerScale } = expandedStripScales(metrics);
 
   if (phase === "idle") {
     switch (role) {
@@ -343,9 +353,8 @@ function expandedIncomingSlotTransform(
   atEnter: boolean,
   metrics: ExpandedStripMetrics
 ): { transform: string; opacity: number; zIndex: number } {
-  const { offsetOuter, centerW, peekOuterW } = metrics;
-  const outerScaleBase = Math.min(1, Math.max(0.55, peekOuterW / Math.max(centerW, 1)));
-  const outerScale = outerScaleBase * EXPANDED_OUTER_PEEK_SCALE;
+  const { offsetOuter } = metrics;
+  const { outerScale } = expandedStripScales(metrics);
   const enterX = offsetOuter + SLIDE_ENTER_EXTRA_PX;
 
   if (phase === "toNext") {
@@ -704,8 +713,6 @@ export default function PromoShortCarouselStage({
   const carouselWrapFrameClass = isExpandedCenter
     ? EXPANDED_VIEWER_CENTER_FRAME_CLASS
     : HERO_CAROUSEL_WRAP_FRAME_CLASS;
-  const expandedPeekFrameClass = `${EXPANDED_VIEWER_PEEK_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
-  const expandedOuterPeekFrameClass = `${EXPANDED_VIEWER_OUTER_PEEK_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
   const { t } = useTranslations();
   const count = items.length;
   const current = items[index];
@@ -739,8 +746,6 @@ export default function PromoShortCarouselStage({
   const [transitionMode, setTransitionMode] = useState<ActiveTransitionMode>("revolve");
   const [animPrevIndex, setAnimPrevIndex] = useState(0);
   const [incomingAtEnter, setIncomingAtEnter] = useState(true);
-  const wasAnimatingShiftRef = useRef(false);
-  const [frameClassCommitReady, setFrameClassCommitReady] = useState(true);
 
   indexRef.current = index;
 
@@ -922,7 +927,8 @@ export default function PromoShortCarouselStage({
 
     if (revolvePhase === "toNext" || revolvePhase === "toPrev") {
       const durationMs = transitionMode === "slide" ? SLIDE_MS : REVOLVE_MS;
-      const timer = window.setTimeout(() => endTransition(), durationMs + 80);
+      const bufferMs = transitionMode === "slide" ? SLIDE_COMMIT_BUFFER_MS : 80;
+      const timer = window.setTimeout(() => endTransition(), durationMs + bufferMs);
       return () => window.clearTimeout(timer);
     }
   }, [index, isTransitioning, transitionMode, revolvePhase, endTransition]);
@@ -1034,31 +1040,6 @@ export default function PromoShortCarouselStage({
     revolvePhase !== "idle" &&
     (transitionMode === "revolve" || transitionMode === "slide");
   const animatingRevolve = transitionMode === "revolve" && revolvePhase !== "idle";
-  useEffect(() => {
-    if (!isExpandedCenter || transitionMode !== "slide") {
-      wasAnimatingShiftRef.current = false;
-      setFrameClassCommitReady(true);
-      return;
-    }
-    if (animatingShift) {
-      wasAnimatingShiftRef.current = true;
-      setFrameClassCommitReady(false);
-      return;
-    }
-    if (!wasAnimatingShiftRef.current) {
-      setFrameClassCommitReady(true);
-      return;
-    }
-    let cancelled = false;
-    const raf = requestAnimationFrame(() => {
-      if (!cancelled) setFrameClassCommitReady(true);
-    });
-    wasAnimatingShiftRef.current = false;
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-    };
-  }, [animatingShift, isExpandedCenter, transitionMode]);
   const transitionClass = animatingShift
     ? isExpandedCenter && transitionMode === "slide"
       ? "transition-[transform,opacity] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
@@ -1240,8 +1221,6 @@ export default function PromoShortCarouselStage({
                 placement.role === "farLeft" ||
                 placement.role === "farRight" ||
                 placement.role === "incoming";
-              const isAdjacentStripRole =
-                placement.role === "left" || placement.role === "right";
               const isVisibleSide = placement.visible && placement.role !== "center";
               const sideDimLevel =
                 isExpandedCenter && isOuterStripRole ? "expandedOuter" : isExpandedCenter ? "expandedSide" : "default";
@@ -1260,24 +1239,13 @@ export default function PromoShortCarouselStage({
                 }
                 return "auto";
               })();
-              const expandedIdleFrameClass =
-                isExpandedCenter && isOuterStripRole
-                  ? expandedOuterPeekFrameClass
-                  : isExpandedCenter && (isAdjacentStripRole || !showAsCenter)
-                    ? expandedPeekFrameClass
-                    : placement.frameClass;
-              const holdFrameCommit =
-                isExpandedCenter &&
-                transitionMode === "slide" &&
-                (animatingShift || !frameClassCommitReady);
-              const freezeCenterFrameDuringShift =
-                holdFrameCommit && (showAsCenter || isOutgoingCenter || isPromoting);
+              const useExpandedScaleSizing = Boolean(isExpandedCenter && stripMetrics);
               const slotFrameClass = placement.visible
                 ? isWrapArc
                   ? carouselWrapFrameClass
-                  : freezeCenterFrameDuringShift
+                  : useExpandedScaleSizing
                     ? carouselFrameClass
-                    : expandedIdleFrameClass
+                    : placement.frameClass
                 : carouselFrameClass;
 
               const slotEl = (
