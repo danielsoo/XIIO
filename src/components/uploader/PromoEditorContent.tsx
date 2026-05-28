@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
+import UploadWizardStepper, {
+  type UploadWizardStepMeta,
+} from "@/components/uploader/UploadWizardStepper";
 import ThumbnailPreviewStages from "@/components/uploader/ThumbnailPreviewStages";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
@@ -48,6 +51,26 @@ function isPromoEncoding(status: StreamStatus | undefined): boolean {
   return status === "uploading" || status === "processing";
 }
 
+type PromoEditorStepId = "video" | "thumbnail" | "info";
+
+const PROMO_EDITOR_STEPS: PromoEditorStepId[] = ["video", "thumbnail", "info"];
+
+const PROMO_EDITOR_STEP_META: UploadWizardStepMeta[] = [
+  { id: "video", titleKey: "promoEditor.stepVideoTitle", hintKey: "promoEditor.stepVideoHint" },
+  {
+    id: "thumbnail",
+    titleKey: "promoEditor.stepThumbnailTitle",
+    hintKey: "promoEditor.stepThumbnailHint",
+  },
+  { id: "info", titleKey: "promoEditor.stepInfoTitle", hintKey: "promoEditor.stepInfoHint" },
+];
+
+function computeInitialPromoStepIndex(hasVideo: boolean, hasThumbnail: boolean): number {
+  if (!hasVideo) return 0;
+  if (!hasThumbnail) return 1;
+  return 2;
+}
+
 export default function PromoEditorContent({ workId }: { workId: string }) {
   const searchParams = useSearchParams();
   const justUploaded = searchParams.get("uploaded") === "1";
@@ -72,6 +95,8 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [thumbnailFieldError, setThumbnailFieldError] = useState<string | null>(null);
   const [savedThumbnailUrl, setSavedThumbnailUrl] = useState<string | null>(null);
+  const [stepIndex, setStepIndex] = useState(0);
+  const stepInitWorkRef = useRef<string | null>(null);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!user) return;
@@ -135,6 +160,22 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    stepInitWorkRef.current = null;
+  }, [workId]);
+
+  useEffect(() => {
+    if (loading || !data) return;
+    if (stepInitWorkRef.current === workId) return;
+    stepInitWorkRef.current = workId;
+    const rev = Boolean(data.revisionMode);
+    const p = data.promo;
+    const pr = data.pendingRevision;
+    const hasVideo = rev ? Boolean(pr?.streamUid) : Boolean(p?.streamUid);
+    const thumb = p?.thumbnailUrl ?? data.work.promoDraft?.thumbnailUrl ?? null;
+    setStepIndex(computeInitialPromoStepIndex(hasVideo, Boolean(thumb)));
+  }, [loading, data, workId]);
 
   const promo = data?.promo;
   const pendingRevision = data?.pendingRevision;
@@ -293,6 +334,10 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   };
 
   const submitReview = async () => {
+    if (!title.trim()) {
+      setErr(t("uploader.errorPromoTitleRequired"));
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
@@ -435,7 +480,96 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         : null;
   const showPlaybackSection = Boolean(work.playbackUrl || promoPlaybackUrl);
 
-  const editorBody = (
+  const currentStep = PROMO_EDITOR_STEPS[stepIndex] ?? "video";
+  const isLastStep = stepIndex === PROMO_EDITOR_STEPS.length - 1;
+  const progress = ((stepIndex + 1) / PROMO_EDITOR_STEPS.length) * 100;
+  const hasPromoVideo = revisionMode
+    ? Boolean(pendingRevision?.streamUid)
+    : Boolean(promo?.streamUid);
+
+  const stepLabels: Record<PromoEditorStepId, string> = {
+    video: t("promoEditor.stepVideoTitle"),
+    thumbnail: t("promoEditor.stepThumbnailTitle"),
+    info: t("promoEditor.stepInfoTitle"),
+  };
+  const stepHints: Record<PromoEditorStepId, string> = {
+    video: t("promoEditor.stepVideoHint"),
+    thumbnail: t("promoEditor.stepThumbnailHint"),
+    info: t("promoEditor.stepInfoHint"),
+  };
+
+  const scrollWizardTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const validatePromoEditorStep = (step: PromoEditorStepId): boolean => {
+    switch (step) {
+      case "video": {
+        if (hasPromoVideo) return true;
+        if (!promoFile) {
+          setErr(t("uploader.errorPromoVideoRequired"));
+          return false;
+        }
+        if (promoFileError === "loading") {
+          setErr(t("uploader.errorPromoVideoLoading"));
+          return false;
+        }
+        if (promoFileError === "too_small") {
+          setErr(t("uploader.errorPromoTooSmall"));
+          return false;
+        }
+        if (promoFileError === "too_short") {
+          setErr(t("uploader.errorPromoTooShort"));
+          return false;
+        }
+        if (promoFileError === "too_long") {
+          setErr(t("uploader.errorPromoTooLong"));
+          return false;
+        }
+        if (promoFileError) {
+          setErr(t("uploader.errorPromoVideoInvalid"));
+          return false;
+        }
+        setErr(t("promoEditor.errorUploadBeforeNext"));
+        return false;
+      }
+      case "thumbnail": {
+        if (savedThumbnailUrl) return true;
+        if (thumbnailFile) {
+          setErr(t("promoEditor.errorSaveThumbnailBeforeNext"));
+          return false;
+        }
+        setErr(t("uploader.errorThumbnailRequired"));
+        return false;
+      }
+      case "info":
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const handleNext = () => {
+    setErr(null);
+    if (!validatePromoEditorStep(currentStep)) return;
+    setStepIndex((i) => Math.min(i + 1, PROMO_EDITOR_STEPS.length - 1));
+    scrollWizardTop();
+  };
+
+  const handleBack = () => {
+    setErr(null);
+    setStepIndex((i) => Math.max(i - 1, 0));
+    scrollWizardTop();
+  };
+
+  const handleStepClick = (index: number) => {
+    if (busy || index >= stepIndex) return;
+    setErr(null);
+    setStepIndex(index);
+    scrollWizardTop();
+  };
+
+  const sharedPreviewSections = (
     <>
       {showPlaybackSection && (
         <UploaderFormSection title={t("promoEditor.playbackSectionTitle")}>
@@ -504,10 +638,10 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         </section>
       )}
 
-      {showEditor && (
+      {showEditor && currentStep === "video" && (
         <UploaderFormSection
-          title={t("uploader.uploadZonePromoTitle")}
-          hint={t("uploader.uploadZonePromoHint")}
+          title={t("promoEditor.stepVideoTitle")}
+          hint={t("promoEditor.stepVideoHint")}
         >
           <p className="text-xs text-xiio-muted leading-relaxed">{t("uploader.promoVideoFileHint")}</p>
           <VideoUploadDropzone
@@ -544,6 +678,14 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
               {busy ? t("common.processing") : t("promoEditor.uploadPromoVideo")}
             </button>
           ) : null}
+        </UploaderFormSection>
+      )}
+
+      {showEditor && currentStep === "thumbnail" && (
+        <UploaderFormSection
+          title={t("promoEditor.stepThumbnailTitle")}
+          hint={t("promoEditor.stepThumbnailHint")}
+        >
           <ThumbnailUploadField
             file={thumbnailFile}
             previewUrl={thumbnailPreview}
@@ -570,6 +712,14 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
               {busy ? t("common.processing") : t("promoEditor.saveThumbnail")}
             </button>
           ) : null}
+        </UploaderFormSection>
+      )}
+
+      {showEditor && currentStep === "info" && (
+        <UploaderFormSection
+          title={t("promoEditor.stepInfoTitle")}
+          hint={t("promoEditor.stepInfoHint")}
+        >
           <PromoShortFields
             title={title}
             onTitleChange={setTitle}
@@ -624,6 +774,53 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     </>
   );
 
+  const wizardFooter = showEditor ? (
+    <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6 md:p-8 space-y-4">
+      {isLastStep && (
+        <p
+          className={`text-sm ${canSubmit ? "text-emerald-300/90" : "text-xiio-muted"}`}
+        >
+          {canSubmit ? t("promoEditor.submitHint") : t("promoEditor.statusReadyBody")}
+        </p>
+      )}
+      <div className="flex gap-3">
+        {stepIndex > 0 && (
+          <button
+            type="button"
+            onClick={handleBack}
+            disabled={busy}
+            className="flex-1 py-3 rounded-xl border border-white/20 text-white hover:bg-white/5 disabled:opacity-40 transition font-medium"
+          >
+            {t("common.previous")}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            if (busy) return;
+            if (isLastStep) {
+              void submitReview();
+              return;
+            }
+            handleNext();
+          }}
+          disabled={busy || (isLastStep && !canSubmit)}
+          className={`py-3 rounded-xl font-semibold transition disabled:opacity-40 ${
+            isLastStep
+              ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+              : "bg-xiio-accent hover:bg-xiio-accent-hover text-white"
+          } ${stepIndex === 0 ? "w-full" : "flex-1"}`}
+        >
+          {busy
+            ? t("common.processing")
+            : isLastStep
+              ? t("promoEditor.submitReview")
+              : t("common.next")}
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <AppPageShell standalone>
         <SubpageHeader
@@ -635,6 +832,41 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         />
         <p className="text-xiio-muted text-sm mb-6 -mt-2">{workDisplayTitle}</p>
 
+        {showEditor && (
+          <div className="mb-6 lg:hidden">
+            <div className="flex justify-between text-xs text-xiio-muted mb-1">
+              <span className="font-medium text-white">{stepLabels[currentStep]}</span>
+              <span>
+                {t("uploader.uploadStepProgress", {
+                  current: stepIndex + 1,
+                  total: PROMO_EDITOR_STEPS.length,
+                })}
+              </span>
+            </div>
+            <p className="text-xs text-xiio-muted mb-2 leading-relaxed">{stepHints[currentStep]}</p>
+            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div
+                className="h-full bg-xiio-accent transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className={showEditor ? "lg:grid lg:grid-cols-[minmax(200px,240px)_1fr] lg:gap-8 lg:items-start" : undefined}>
+          {showEditor && (
+            <div className="hidden lg:block sticky top-28 self-start mb-6 lg:mb-0">
+              <UploadWizardStepper
+                steps={PROMO_EDITOR_STEP_META}
+                currentIndex={stepIndex}
+                onStepClick={handleStepClick}
+                disabled={busy}
+                stepsLabelKey="promoEditor.wizardStepsLabel"
+              />
+            </div>
+          )}
+
+          <div className="min-w-0">
         <UploaderFormShell
           layout="stacked"
           banners={
@@ -701,24 +933,12 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
               )}
             </>
           }
-          footer={
-            canSubmit ? (
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
-                <p className="text-sm text-emerald-300/90 mb-3">{t("promoEditor.submitHint")}</p>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void submitReview()}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium disabled:opacity-40"
-                >
-                  {busy ? t("common.processing") : t("promoEditor.submitReview")}
-                </button>
-              </div>
-            ) : null
-          }
+          footer={wizardFooter}
         >
-          {editorBody}
+          {sharedPreviewSections}
         </UploaderFormShell>
+          </div>
+        </div>
     </AppPageShell>
   );
 }

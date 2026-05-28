@@ -13,6 +13,8 @@ type Props = {
   currentIndex: number;
   onStepClick?: (index: number) => void;
   disabled?: boolean;
+  /** i18n key for nav label; defaults to uploader.uploadWizardStepsLabel */
+  stepsLabelKey?: string;
 };
 
 export default function UploadWizardStepper({
@@ -20,16 +22,18 @@ export default function UploadWizardStepper({
   currentIndex,
   onStepClick,
   disabled = false,
+  stepsLabelKey = "uploader.uploadWizardStepsLabel",
 }: Props) {
   const { t } = useTranslations();
+  const stepsLabel = t(stepsLabelKey);
 
   return (
     <nav
       className="rounded-2xl border border-white/10 bg-xiio-surface p-5"
-      aria-label={t("uploader.uploadWizardStepsLabel")}
+      aria-label={stepsLabel}
     >
       <p className="text-xs font-medium text-xiio-muted uppercase tracking-wide mb-4">
-        {t("uploader.uploadWizardStepsLabel")}
+        {stepsLabel}
       </p>
       <ol className="space-y-0">
         {steps.map((step, index) => {
