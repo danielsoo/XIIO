@@ -89,6 +89,7 @@ const SLIDE_COMMIT_BUFFER_MS = 80;
 const SLIDE_OFFSET_RATIO = 0.55;
 const SLIDE_ENTER_EXTRA_PX = 20;
 const SLIDE_EDGE_FADE = 0.08;
+const EXPANDED_EDGE_ENTER_FADE = 0.22;
 type VisiblePreloadMode = "hybrid" | "allAuto";
 const VISIBLE_PRELOAD_MODE: VisiblePreloadMode = "hybrid";
 
@@ -285,7 +286,7 @@ function expandedStripSlotTransform(
       case "farLeft":
         return {
           transform: `translateX(${-offsetOuter - SLIDE_ENTER_EXTRA_PX}px) scale(${outerScale})`,
-          opacity: SLIDE_EDGE_FADE,
+          opacity: EXPANDED_EDGE_ENTER_FADE,
           zIndex: 1,
         };
       case "left":
@@ -318,7 +319,7 @@ function expandedStripSlotTransform(
       case "farRight":
         return {
           transform: `translateX(${offsetOuter + SLIDE_ENTER_EXTRA_PX}px) scale(${outerScale})`,
-          opacity: SLIDE_EDGE_FADE,
+          opacity: EXPANDED_EDGE_ENTER_FADE,
           zIndex: 1,
         };
       case "right":
@@ -362,7 +363,7 @@ function expandedIncomingSlotTransform(
     if (atEnter) {
       return {
         transform: `translateX(${enterX}px) scale(${outerScale})`,
-        opacity: SLIDE_EDGE_FADE,
+        opacity: EXPANDED_EDGE_ENTER_FADE,
         zIndex: 18,
       };
     }
@@ -376,7 +377,7 @@ function expandedIncomingSlotTransform(
   if (atEnter) {
     return {
       transform: `translateX(${-enterX}px) scale(${outerScale})`,
-      opacity: SLIDE_EDGE_FADE,
+      opacity: EXPANDED_EDGE_ENTER_FADE,
       zIndex: 18,
     };
   }
@@ -689,7 +690,8 @@ function placementForExpandedItem(
   incomingStyle: { transform: string; opacity: number; zIndex: number } | null,
   revolvePhase: RevolvePhase,
   metrics: ExpandedStripMetrics,
-  slotFrameClass: string
+  slotFrameClass: string,
+  keepEdgeVisibleDuringShift: boolean
 ): ItemPlacement {
   const visibleRoles = getVisibleExpandedRoles(displayQuintet, count);
 
@@ -714,7 +716,9 @@ function placementForExpandedItem(
   ];
 
   for (const { role, item } of roleEntries) {
-    if (item.id !== itemId || !visibleRoles.has(role)) continue;
+    const keepEdgeVisible =
+      keepEdgeVisibleDuringShift && (role === "farLeft" || role === "farRight");
+    if (item.id !== itemId || (!visibleRoles.has(role) && !keepEdgeVisible)) continue;
     const s = expandedStripSlotTransform(role, revolvePhase, metrics);
     return {
       visible: true,
@@ -979,7 +983,7 @@ export default function PromoShortCarouselStage({
   }, [index, isTransitioning, transitionMode, revolvePhase, endTransition]);
 
   useEffect(() => {
-    if (transitionMode !== "revolve") {
+    if (transitionMode === "fade") {
       setIncomingAtEnter(true);
       return;
     }
@@ -1149,6 +1153,10 @@ export default function PromoShortCarouselStage({
         ? expandedIncomingSlotTransform(revolvePhase, incomingAtEnter, stripMetrics)
         : incomingSlotTransform(revolvePhase, incomingAtEnter, metrics, transitionMode)
       : null;
+  const keepExpandedEdgeVisibleDuringShift =
+    isExpandedCenter &&
+    showIncoming &&
+    (revolvePhase === "toNext" || revolvePhase === "toPrev");
 
   const liveCenterId = items[index]!.id;
   const navOffsetX = stripMetrics?.offsetAdjacent ?? metrics.offsetX;
@@ -1216,7 +1224,8 @@ export default function PromoShortCarouselStage({
                       incomingStyle,
                       revolvePhase,
                       stripMetrics,
-                      carouselFrameClass
+                      carouselFrameClass,
+                      keepExpandedEdgeVisibleDuringShift
                     )
                   : placementForItem(
                       item.id,
