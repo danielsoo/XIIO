@@ -6,6 +6,7 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  type CSSProperties,
   type Ref,
 } from "react";
 import { isHlsSource } from "@/lib/video/isHlsSource";
@@ -20,6 +21,7 @@ export type StreamHlsVideoHandle = {
 type Props = {
   src: string;
   className?: string;
+  style?: CSSProperties;
   muted?: boolean;
   loop?: boolean;
   playsInline?: boolean;
@@ -70,6 +72,7 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
   {
     src,
     className = "",
+    style,
     muted = true,
     loop = false,
     playsInline = true,
@@ -240,6 +243,7 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
     <video
       ref={videoRef}
       className={className}
+      style={style}
       playsInline={playsInline}
       muted={muted}
       loop={loop}
