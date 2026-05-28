@@ -91,7 +91,32 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className={`grid gap-5 ${accountProfile ? "lg:grid-cols-2" : ""}`}>
+          {accountProfile && (
+            <section className={card}>
+              <CardTitle>{t("settings.accountSection")}</CardTitle>
+              <div className="flex items-center gap-4 mt-4">
+                <ProfileAvatar
+                  displayName={accountProfile.displayName || "?"}
+                  avatarUrl={accountProfile.avatarUrl}
+                  className="w-16 h-16 rounded-full bg-xiio-accent/20 ring-2 ring-xiio-accent/40 flex items-center justify-center text-xl font-bold text-white overflow-hidden shrink-0"
+                  imgClassName="w-full h-full object-cover"
+                />
+                <div className="min-w-0">
+                  <p className="text-lg font-medium text-white truncate">
+                    {accountProfile.displayName || "—"}
+                  </p>
+                  <Link
+                    href="/account"
+                    className="inline-block mt-2 text-sm font-medium text-xiio-accent hover:underline"
+                  >
+                    {t("settings.viewAccountProfile")}
+                  </Link>
+                </div>
+              </div>
+            </section>
+          )}
+
           <section className={card}>
             <CardTitle>{t("settings.language")}</CardTitle>
             <CardHint>{t("settings.languageHint")}</CardHint>
@@ -112,57 +137,30 @@ export default function SettingsPage() {
               ))}
             </div>
           </section>
-
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
-            {adminChecked && isAdmin && (
-              <section className={card}>
-                <CardTitle>{t("settings.timezone")}</CardTitle>
-                <CardHint>{t("settings.timezoneHint")}</CardHint>
-                <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
-                  {TIMEZONE_OPTIONS.map(({ id, labelKey }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => setTimezone(id)}
-                      className={`w-full py-2.5 px-4 rounded-xl text-sm font-medium text-left transition border ${
-                        timezone === id
-                          ? "bg-xiio-accent border-xiio-accent text-white"
-                          : "border-white/15 text-xiio-muted hover:text-white hover:border-white/30 hover:bg-white/5"
-                      }`}
-                    >
-                      {t(labelKey)}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {accountProfile && (
-              <section className={card}>
-                <CardTitle>{t("settings.accountSection")}</CardTitle>
-                <div className="flex items-center gap-4 mt-4">
-                  <ProfileAvatar
-                    displayName={accountProfile.displayName || "?"}
-                    avatarUrl={accountProfile.avatarUrl}
-                    className="w-16 h-16 rounded-full bg-xiio-accent/20 ring-2 ring-xiio-accent/40 flex items-center justify-center text-xl font-bold text-white overflow-hidden shrink-0"
-                    imgClassName="w-full h-full object-cover"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-lg font-medium text-white truncate">
-                      {accountProfile.displayName || "—"}
-                    </p>
-                    <Link
-                      href="/account"
-                      className="inline-block mt-2 text-sm font-medium text-xiio-accent hover:underline"
-                    >
-                      {t("settings.viewAccountProfile")}
-                    </Link>
-                  </div>
-                </div>
-              </section>
-            )}
-          </div>
         </div>
+
+        {adminChecked && isAdmin && (
+          <section className={`${card} mt-5 max-w-xl`}>
+            <CardTitle>{t("settings.timezone")}</CardTitle>
+            <CardHint>{t("settings.timezoneHint")}</CardHint>
+            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+              {TIMEZONE_OPTIONS.map(({ id, labelKey }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setTimezone(id)}
+                  className={`w-full py-2.5 px-4 rounded-xl text-sm font-medium text-left transition border ${
+                    timezone === id
+                      ? "bg-xiio-accent border-xiio-accent text-white"
+                      : "border-white/15 text-xiio-muted hover:text-white hover:border-white/30 hover:bg-white/5"
+                  }`}
+                >
+                  {t(labelKey)}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
         <div className="mt-8">
           <DirectorNameSettingsSection />
         </div>

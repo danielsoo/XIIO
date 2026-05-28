@@ -114,7 +114,7 @@ export default function DirectorNameSettingsSection() {
           <p className="mt-1.5 text-sm text-xiio-muted leading-relaxed">{t("settings.directorNameLockedHint")}</p>
         </div>
 
-        <div className="mb-5 pb-3 border-b border-white/8">
+        <div className="mb-5">
           <p className="text-xs font-medium tracking-wide text-xiio-muted/75 mb-1">
             {t("settings.directorNameCurrent")}
           </p>
