@@ -1274,7 +1274,8 @@ export default function PromoShortCarouselStage({
                         playbackEnabled={slotPlaybackEnabled}
                         videoPreload={slotVideoPreload}
                         preserveFrame={preserveCenterFrame}
-                        expandedChrome={showChrome}
+                        expandedEmbed
+                        showChrome={showChrome}
                         forcePortraitFrame
                         carouselAdjacentEmbed={isVisiblePreloadSlot}
                         carouselAdjacentDimLevel={sideDimLevel}
@@ -1296,6 +1297,7 @@ export default function PromoShortCarouselStage({
                         playbackEnabled={slotPlaybackEnabled}
                         preserveFrame={preserveCenterFrame}
                         heroCarouselEmbed
+                        showChrome={showChrome}
                         forcePortraitFrame
                         carouselAdjacentEmbed={isVisiblePreloadSlot}
                         carouselAdjacentDimLevel={sideDimLevel}

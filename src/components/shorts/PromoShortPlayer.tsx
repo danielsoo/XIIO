@@ -239,7 +239,8 @@ function PlayerChrome({
   transitionDimLevel = null,
   forcePortraitFrame = false,
   teaserCenterAction = "watch-overlay",
-  expandedChrome = false,
+  expandedEmbed = false,
+  showChrome = true,
   onTeaserExpandRequest,
   onToggleFullscreen,
   onExitFullscreen,
@@ -261,7 +262,8 @@ function PlayerChrome({
   /** 메타 노출과 무관하게 9:16 프레임 고정 */
   forcePortraitFrame?: boolean;
   teaserCenterAction?: TeaserCenterAction;
-  expandedChrome?: boolean;
+  expandedEmbed?: boolean;
+  showChrome?: boolean;
   onTeaserExpandRequest?: () => void;
   isFullscreen: boolean;
   layout: PromoShortLayout;
@@ -277,11 +279,12 @@ function PlayerChrome({
   onToggleFullscreen: () => void;
   onExitFullscreen: () => void;
 }) {
-  const effectiveFullscreen = isFullscreen || expandedChrome;
+  const effectiveFullscreen = isFullscreen || expandedEmbed;
   const isCarouselCenterEmbed =
-    heroCarouselEmbed || expandedChrome || carouselAdjacentEmbed;
+    heroCarouselEmbed || expandedEmbed || carouselAdjacentEmbed;
   const isTeaser = variant === "teaser" && !effectiveFullscreen && !carouselAdjacentEmbed;
   const hideHeroChrome =
+    !showChrome ||
     (heroCarouselEmbed && !effectiveFullscreen) ||
     carouselAdjacentEmbed ||
     Boolean(transitionDimLevel);
@@ -452,7 +455,7 @@ function PlayerChrome({
   const fixedTeaserFrame = isTeaser && playerSize === "homeHeroSmall" && !peekSide;
   const peekSideFrame = isTeaser && peekSide;
   const fixedPortraitFrame =
-    fixedTeaserFrame || peekSideFrame || expandedChrome || forcePortraitFrame;
+    fixedTeaserFrame || peekSideFrame || expandedEmbed || forcePortraitFrame;
   const smallShell = peekSideFrame
     ? HOME_HERO_PEEK_SIDE_FRAME_CLASS
     : fixedTeaserFrame
@@ -594,7 +597,7 @@ function PlayerChrome({
     </>
   );
 
-  const fullscreenControls = !expandedChrome && effectiveFullscreen ? (
+  const fullscreenControls = !expandedEmbed && effectiveFullscreen ? (
     <div className="absolute top-3 right-3 z-20">
       <button
         type="button"
@@ -763,6 +766,8 @@ export default function PromoShortPlayer({
   transitionDimLevel = null,
   forcePortraitFrame = false,
   teaserCenterAction = "watch-overlay",
+  expandedEmbed = false,
+  showChrome,
   expandedChrome = false,
   onTeaserExpandRequest,
   onFullscreenChange,
@@ -779,6 +784,8 @@ export default function PromoShortPlayer({
   transitionDimLevel?: PromoShortPeekDimLevel | null;
   forcePortraitFrame?: boolean;
   teaserCenterAction?: TeaserCenterAction;
+  expandedEmbed?: boolean;
+  showChrome?: boolean;
   expandedChrome?: boolean;
   onTeaserExpandRequest?: () => void;
   onFullscreenChange?: (active: boolean) => void;
@@ -797,21 +804,24 @@ export default function PromoShortPlayer({
   className?: string;
 }) {
   const resolvedLayout: PromoShortLayout = layout ?? "stacked";
+  const useExpandedEmbed = expandedEmbed || expandedChrome;
+  const useShowChrome = showChrome ?? useExpandedEmbed;
   const { ref, active, fallbackActive, toggle, exit } = useElementFullscreen<HTMLDivElement>();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!expandedChrome) onFullscreenChange?.(active);
-  }, [active, expandedChrome, onFullscreenChange]);
+    if (!useExpandedEmbed) onFullscreenChange?.(active);
+  }, [active, useExpandedEmbed, onFullscreenChange]);
 
   const chrome = (
     <PlayerChrome
       item={item}
       isActive={isActive}
-      isFullscreen={expandedChrome ? false : active}
-      expandedChrome={expandedChrome}
+      isFullscreen={useExpandedEmbed ? false : active}
+      expandedEmbed={useExpandedEmbed}
+      showChrome={useShowChrome}
       layout={resolvedLayout}
       variant={variant}
       playerSize={playerSize}
@@ -836,7 +846,7 @@ export default function PromoShortPlayer({
     />
   );
 
-  if (expandedChrome) {
+  if (useExpandedEmbed) {
     return <div className={className}>{chrome}</div>;
   }
 
