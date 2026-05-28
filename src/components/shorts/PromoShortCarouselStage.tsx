@@ -1217,6 +1217,7 @@ export default function PromoShortCarouselStage({
                 isExpandedCenter && isOuterStripRole ? "expandedOuter" : isExpandedCenter ? "expandedSide" : "default";
               const immediateDimLevel =
                 animatingShift && (isVisibleSide || isOutgoingCenter) ? sideDimLevel : null;
+              const showChrome = placement.role === "center" && !isOutgoingCenter;
               const isVisiblePreloadSlot = placement.visible && !showAsCenter;
               const slotVideoPreload = (() => {
                 if (showAsCenter) {
@@ -1229,23 +1230,20 @@ export default function PromoShortCarouselStage({
                 }
                 return "auto";
               })();
+              const expandedIdleFrameClass =
+                isExpandedCenter && isOuterStripRole
+                  ? expandedOuterPeekFrameClass
+                  : isExpandedCenter && (isAdjacentStripRole || !showAsCenter)
+                    ? expandedPeekFrameClass
+                    : placement.frameClass;
+              const freezeCenterFrameDuringShift =
+                isExpandedCenter && animatingShift && (showAsCenter || isOutgoingCenter);
               const slotFrameClass = placement.visible
                 ? isWrapArc
                   ? carouselWrapFrameClass
-                  : transitionMode === "slide" && isPromoting
+                  : freezeCenterFrameDuringShift
                     ? carouselFrameClass
-                  : transitionMode === "slide" &&
-                      isExpandedCenter &&
-                      placement.role === "center" &&
-                      animatingShift
-                    ? expandedPeekFrameClass
-                  : isExpandedCenter && isOuterStripRole
-                    ? expandedOuterPeekFrameClass
-                  : isExpandedCenter && (isAdjacentStripRole || !showAsCenter)
-                    ? expandedPeekFrameClass
-                  : isExpandedCenter && !showAsCenter
-                    ? expandedPeekFrameClass
-                    : placement.frameClass
+                    : expandedIdleFrameClass
                 : carouselFrameClass;
 
               const slotEl = (
@@ -1273,14 +1271,14 @@ export default function PromoShortCarouselStage({
                         playbackEnabled={slotPlaybackEnabled}
                         videoPreload={slotVideoPreload}
                         preserveFrame={preserveCenterFrame}
-                        expandedChrome={showAsCenter}
+                        expandedChrome={showChrome}
                         carouselAdjacentEmbed={isVisiblePreloadSlot}
                         carouselAdjacentDimLevel={sideDimLevel}
                         transitionDimLevel={immediateDimLevel}
                         layout={layout}
                         compact={compact}
-                        scrollExpand={showAsCenter}
-                        scrollRootRef={showAsCenter ? viewportRef : undefined}
+                        scrollExpand={showChrome}
+                        scrollRootRef={showChrome ? viewportRef : undefined}
                         loop={false}
                         onPlaybackEnded={
                           isLiveCenter && count > 1 ? handlePlaybackEnded : undefined

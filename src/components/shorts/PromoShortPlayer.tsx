@@ -279,7 +279,9 @@ function PlayerChrome({
     heroCarouselEmbed || expandedChrome || carouselAdjacentEmbed;
   const isTeaser = variant === "teaser" && !effectiveFullscreen && !carouselAdjacentEmbed;
   const hideHeroChrome =
-    (heroCarouselEmbed && !effectiveFullscreen) || carouselAdjacentEmbed;
+    (heroCarouselEmbed && !effectiveFullscreen) ||
+    carouselAdjacentEmbed ||
+    Boolean(transitionDimLevel);
   const { t } = useTranslations();
   const { user } = useAuth();
   const videoRef = useRef<StreamHlsVideoHandle>(null);
