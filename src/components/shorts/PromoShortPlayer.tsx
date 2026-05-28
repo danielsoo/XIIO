@@ -730,7 +730,7 @@ function PlayerChrome({
 
         {overlayDimLevel ? (
           <div
-            className={`absolute inset-0 z-[5] pointer-events-none ${adjacentDimClass[overlayDimLevel]}`}
+            className={`absolute inset-0 z-[5] pointer-events-none transition-colors duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${adjacentDimClass[overlayDimLevel]}`}
             aria-hidden
           />
         ) : null}

@@ -21,6 +21,7 @@ import {
   shouldWarmExpandedStripItem,
 } from "@/components/shorts/promoCarouselUtils";
 import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
+import type { PromoShortPeekDimLevel } from "@/components/shorts/PromoShortPeekPreview";
 import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
@@ -570,6 +571,49 @@ type ItemPlacement = {
   isCenter: boolean;
 };
 
+function expandedRoleDimLevel(role: PlacementRole | undefined): PromoShortPeekDimLevel | null {
+  if (!role || role === "center") return null;
+  if (role === "farLeft" || role === "farRight" || role === "incoming") return "expandedOuter";
+  return "expandedSide";
+}
+
+function shiftedExpandedRole(
+  role: PlacementRole | undefined,
+  phase: RevolvePhase
+): PlacementRole | undefined {
+  if (!role || phase === "idle") return role;
+  if (phase === "toNext") {
+    switch (role) {
+      case "left":
+        return "farLeft";
+      case "center":
+        return "left";
+      case "right":
+        return "center";
+      case "farRight":
+        return "right";
+      case "incoming":
+        return "farRight";
+      default:
+        return role;
+    }
+  }
+  switch (role) {
+    case "right":
+      return "farRight";
+    case "center":
+      return "right";
+    case "left":
+      return "center";
+    case "farLeft":
+      return "left";
+    case "incoming":
+      return "farLeft";
+    default:
+      return role;
+  }
+}
+
 function placementForItem(
   itemId: string,
   displayTriplet: Triplet,
@@ -746,6 +790,7 @@ export default function PromoShortCarouselStage({
   const [transitionMode, setTransitionMode] = useState<ActiveTransitionMode>("revolve");
   const [animPrevIndex, setAnimPrevIndex] = useState(0);
   const [incomingAtEnter, setIncomingAtEnter] = useState(true);
+  const [dimAtTarget, setDimAtTarget] = useState(false);
 
   indexRef.current = index;
 
@@ -950,6 +995,21 @@ export default function PromoShortCarouselStage({
       return () => cancelAnimationFrame(raf);
     }
   }, [revolvePhase, transitionMode]);
+
+  useEffect(() => {
+    const isShiftingNow =
+      revolvePhase !== "idle" &&
+      (transitionMode === "revolve" || transitionMode === "slide");
+    if (!isShiftingNow || !isExpandedCenter) {
+      setDimAtTarget(false);
+      return;
+    }
+    setDimAtTarget(false);
+    const raf = requestAnimationFrame(() => {
+      setDimAtTarget(true);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [isExpandedCenter, revolvePhase, transitionMode, revolveEpoch]);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const carouselSwipeEnabled = count > 1 && swipeEnabledProp;
@@ -1217,15 +1277,21 @@ export default function PromoShortCarouselStage({
                 : "";
               const slotMotionClass = isWrapArc ? wrapArcClass : transitionClass;
               const slotCenteringClass = isWrapArc ? "" : "-translate-y-1/2";
-              const isOuterStripRole =
-                placement.role === "farLeft" ||
-                placement.role === "farRight" ||
-                placement.role === "incoming";
-              const isVisibleSide = placement.visible && placement.role !== "center";
-              const sideDimLevel =
-                isExpandedCenter && isOuterStripRole ? "expandedOuter" : isExpandedCenter ? "expandedSide" : "default";
-              const immediateDimLevel =
-                animatingShift && (isVisibleSide || isOutgoingCenter) ? sideDimLevel : null;
+              const baseDimLevel = isExpandedCenter
+                ? expandedRoleDimLevel(placement.role)
+                : "default";
+              const targetRole =
+                isExpandedCenter && animatingShift
+                  ? shiftedExpandedRole(placement.role, revolvePhase)
+                  : placement.role;
+              const targetDimLevel = isExpandedCenter
+                ? expandedRoleDimLevel(targetRole)
+                : baseDimLevel;
+              const animatedDimLevel =
+                animatingShift && isExpandedCenter
+                  ? (dimAtTarget ? targetDimLevel : baseDimLevel)
+                  : null;
+              const sideDimLevel = (baseDimLevel ?? "default") as PromoShortPeekDimLevel;
               const showChrome = placement.role === "center" && !isOutgoingCenter;
               const isVisiblePreloadSlot = placement.visible && !showAsCenter;
               const slotVideoPreload = (() => {
@@ -1278,7 +1344,7 @@ export default function PromoShortCarouselStage({
                         forcePortraitFrame
                         carouselAdjacentEmbed={isVisiblePreloadSlot}
                         carouselAdjacentDimLevel={sideDimLevel}
-                        transitionDimLevel={immediateDimLevel}
+                        transitionDimLevel={animatedDimLevel}
                         layout={layout}
                         compact={compact}
                         scrollExpand={showChrome}
@@ -1300,7 +1366,7 @@ export default function PromoShortCarouselStage({
                         forcePortraitFrame
                         carouselAdjacentEmbed={isVisiblePreloadSlot}
                         carouselAdjacentDimLevel={sideDimLevel}
-                        transitionDimLevel={immediateDimLevel}
+                        transitionDimLevel={animatedDimLevel}
                         videoPreload={slotVideoPreload}
                         variant="teaser"
                         playerSize={playerSize}
