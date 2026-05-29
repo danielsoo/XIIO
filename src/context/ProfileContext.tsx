@@ -8,7 +8,9 @@ import {
   useState,
   ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { isUploaderAppRoute } from "@/lib/uploader-routes";
 import {
   loadStoredActiveWatchProfile,
   saveStoredActiveWatchProfile,
@@ -42,6 +44,8 @@ const ProfileContext = createContext<ProfileContextType | null>(null);
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const pathname = usePathname();
+  const skipClientFirestore = isUploaderAppRoute(pathname);
   const [profiles, setProfiles] = useState<WatchProfile[]>([]);
   const [activeProfile, setActiveProfile] = useState<WatchProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,11 +92,17 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (skipClientFirestore) {
+      setProfiles([]);
+      setLoading(false);
+      return;
+    }
+
     const stored = loadStoredActiveWatchProfile(user.uid);
     if (stored) setActiveProfile(stored);
 
     void refreshProfiles();
-  }, [user, refreshProfiles]);
+  }, [user, refreshProfiles, skipClientFirestore]);
 
   const selectProfile = (profile: WatchProfile) => {
     if (!user) return;

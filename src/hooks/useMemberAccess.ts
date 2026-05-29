@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
+import { isUploaderAppRoute } from "@/lib/uploader-routes";
 import {
   resolveMemberAccess,
   type MemberAccessResult,
@@ -13,12 +15,27 @@ import type { UserProfileDoc } from "@/types/user";
 
 export function useMemberAccess() {
   const { user, loading: authLoading } = useAuth();
+  const pathname = usePathname();
+  const skipClientFirestore = isUploaderAppRoute(pathname);
   const [access, setAccess] = useState<MemberAccessResult>({ kind: "none" });
   const [profile, setProfile] = useState<UserProfileDoc | null>(null);
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
+
+    if (skipClientFirestore) {
+      if (user) {
+        setAccess({ kind: "active" });
+        setProfile(null);
+      } else {
+        setAccess({ kind: "none" });
+        setProfile(null);
+      }
+      setChecked(true);
+      return;
+    }
+
     if (!user || !db) {
       setAccess({ kind: "none" });
       setProfile(null);
@@ -49,7 +66,7 @@ export function useMemberAccess() {
     );
 
     return () => unsub();
-  }, [user, authLoading]);
+  }, [user, authLoading, skipClientFirestore]);
 
   return {
     access,

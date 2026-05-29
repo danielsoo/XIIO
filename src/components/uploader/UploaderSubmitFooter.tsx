@@ -60,6 +60,9 @@ export default function UploaderSubmitFooter({
                 style={{ width: `${uploadPercent}%` }}
               />
             </div>
+            <p className="text-[11px] text-amber-200/90 leading-relaxed" role="status">
+              {t("uploader.uploadLeaveWarning")}
+            </p>
           </div>
         ) : null}
 
@@ -85,7 +88,7 @@ export default function UploaderSubmitFooter({
             {busy
               ? t("uploader.uploadProgress", { percent: uploadPercent })
               : isLastStep
-                ? t("uploader.uploadSubmit")
+                ? t("uploader.uploadSubmitReview")
                 : t("common.next")}
           </button>
         </div>

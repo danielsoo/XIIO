@@ -32,11 +32,14 @@ import {
   type ApiErrorBody,
 } from "@/lib/clientErrors";
 import { patchWorkStagingMeta } from "@/lib/works/patch-work-staging";
+import { useUploadLeaveGuard } from "@/hooks/useUploadLeaveGuard";
 import {
+  applySubmitProgress,
   uploadPercentForPhase,
   uploadPercentForThumbnail,
   type UploadPhase,
 } from "@/lib/works/upload-progress";
+import { submitStagedWorkForReview } from "@/lib/works/submit-for-review";
 import { uploadStagingVideo } from "@/lib/works/work-video-staging";
 import { defaultPromoFrameCrop, normalizePromoFrameCrop } from "@/lib/works/promo-crop";
 import { CATALOG_THUMBNAIL_FRAME_ASPECT } from "@/lib/works/promo-crop-interaction";
@@ -139,6 +142,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     if (!uploadError) return;
     footerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [uploadError]);
+
+  useUploadLeaveGuard(busy);
 
   const stepLabels: Record<UploadStepId, string> = useMemo(
     () => ({
@@ -459,7 +464,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
           setUploadPercent(uploadPercentForPhase("promo", ratio));
         });
         setUploadPhase("finalizing");
-        setUploadPercent(95);
+        setUploadPercent(uploadPercentForPhase("finalizing"));
         await patchWorkStagingMeta(token, workId, {
           full: {
             path: fullStaged.path,
@@ -472,7 +477,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             contentType: promoStaged.contentType,
           },
         });
-        setUploadPercent(100);
+        setUploadPercent(uploadPercentForPhase("finalizing"));
       } catch (stageErr) {
         reportError(formatClientError(t, stageErr, { titleKey: "uploader.errorStagingUploadFailed" }));
         return;
@@ -493,9 +498,26 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               }),
             });
           } catch {
-            /* non-blocking — upload already succeeded */
+            /* non-blocking */
           }
         }
+      }
+
+      try {
+        setUploadPhase("streamFull");
+        await submitStagedWorkForReview({
+          token,
+          workId,
+          frameCrop: promoCrop,
+          fullFile: file,
+          promoFile,
+          onProgress: (p) => applySubmitProgress(p, setUploadPhase, setUploadPercent),
+        });
+        setUploadPercent(100);
+        setUploadPhase("encoding");
+      } catch (submitErr) {
+        reportError(formatClientError(t, submitErr, { titleKey: "uploader.errorSubmitReviewFailed" }));
+        return;
       }
 
       setUploadError(null);

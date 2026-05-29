@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import AppPageShell from "@/components/layout/AppPageShell";
@@ -33,11 +34,18 @@ function streamLabel(t: (k: string) => string, s: StreamStatus): string {
 }
 
 export default function MyWorksContent() {
+  const searchParams = useSearchParams();
+  const justSubmitted = searchParams.get("submitted") === "1";
   const { user, loading: authLoading } = useAuth();
   const { t } = useTranslations();
   const { works, loading, error, refresh } = useMyWorks();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [submitBanner, setSubmitBanner] = useState(justSubmitted);
+
+  useEffect(() => {
+    setSubmitBanner(justSubmitted);
+  }, [justSubmitted]);
 
   const authFetch = async (url: string, init?: RequestInit) => {
     if (!user) throw new Error("no user");
@@ -141,6 +149,23 @@ export default function MyWorksContent() {
   return (
     <AppPageShell standalone>
         <SubpageHeader variant="standalone" title={t("myWorks.title")} backFallbackHref="/" />
+        {submitBanner ? (
+          <div
+            className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-emerald-300 text-sm leading-relaxed flex items-start justify-between gap-3"
+            role="status"
+          >
+            <p>{t("uploader.submitCompleteBanner")}</p>
+            <button
+              type="button"
+              onClick={() => setSubmitBanner(false)}
+              className="shrink-0 text-emerald-400/80 hover:text-emerald-300 text-lg leading-none"
+              aria-label={t("common.cancel")}
+            >
+              ×
+            </button>
+          </div>
+        ) : null}
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 -mt-2">
           <div>
             <p className="text-xiio-muted text-sm">{t("myWorks.subtitle")}</p>

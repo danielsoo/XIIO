@@ -132,9 +132,9 @@ export default function UploaderUploadInner() {
         <UploaderUploadForm
           user={user}
           initialDirector={defaultDirectorName}
-          onSuccess={({ workId }) => {
+          onSuccess={() => {
             setErr(null);
-            router.push(`/uploader/works/${workId}/promo?uploaded=1`);
+            router.push("/uploader/works?submitted=1");
           }}
           onError={(message) => {
             setErr(message);
