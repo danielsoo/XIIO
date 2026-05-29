@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "@/context/LocaleContext";
 import type { VideoFileMetadata } from "@/hooks/useVideoFileMetadata";
+import ExposurePreviewFrame from "@/components/uploader/ExposurePreviewFrame";
 import PromoCropFrameEditor from "@/components/uploader/PromoCropFrameEditor";
+import UploaderCropPreviewGrid from "@/components/uploader/UploaderCropPreviewGrid";
 import { defaultPromoFrameCrop, normalizePromoFrameCrop } from "@/lib/works/promo-crop";
-import { promoCropToVideoStyle } from "@/lib/works/promo-crop-interaction";
 import type { PromoFrameCrop } from "@/types/work";
 
 type Props = {
@@ -118,10 +119,10 @@ export default function VideoUploadDropzone({
           </div>
           {showPortraitPreview && onCropChange ? (
             <div className="border-t border-white/10 px-4 py-4 bg-xiio-surface/90">
-              <p className="text-xs text-white/85 mb-2">{t("uploader.promoCropHint")}</p>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-black/50 p-3">
-                  <p className="text-xs text-xiio-muted mb-2">{t("uploader.promoRawPreview")}</p>
+              <UploaderCropPreviewGrid
+                cropHint={t("uploader.promoCropHint")}
+                leftLabel={t("uploader.promoRawPreview")}
+                left={
                   <PromoCropFrameEditor
                     previewUrl={previewUrl}
                     crop={effectiveCrop}
@@ -129,21 +130,17 @@ export default function VideoUploadDropzone({
                     disabled={disabled}
                     meta={meta}
                   />
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/50 p-3">
-                  <p className="text-xs text-xiio-muted mb-2">{t("uploader.promoShortsPreview")}</p>
-                  <div className="mx-auto relative rounded-lg overflow-hidden border border-white/10 bg-black" style={{ width: 180, maxWidth: "100%", aspectRatio: "9 / 16" }}>
-                    <video
-                      src={previewUrl}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      style={promoCropToVideoStyle(effectiveCrop)}
-                      muted
-                      playsInline
-                      preload="metadata"
-                    />
-                  </div>
-                </div>
-              </div>
+                }
+                rightLabel={t("uploader.promoShortsPreview")}
+                right={
+                  <ExposurePreviewFrame
+                    src={previewUrl}
+                    crop={effectiveCrop}
+                    innerAspect="9/16"
+                    media="video"
+                  />
+                }
+              />
             </div>
           ) : null}
           {!showPortraitPreview ? null : (

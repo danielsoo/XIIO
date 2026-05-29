@@ -12,6 +12,7 @@ import UploadWizardStepper, {
 import PromoCropFrameEditor from "@/components/uploader/PromoCropFrameEditor";
 import SubmissionSurfacePreviews from "@/components/uploader/SubmissionSurfacePreviews";
 import ThumbnailPreviewStages from "@/components/uploader/ThumbnailPreviewStages";
+import UploaderCropPreviewGrid from "@/components/uploader/UploaderCropPreviewGrid";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
 import UploaderFormSection from "@/components/uploader/UploaderFormSection";
@@ -861,24 +862,31 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
             error={thumbnailFieldError}
           />
           {thumbnailPreview ? (
-            <>
-              <p className="text-xs text-xiio-muted leading-relaxed">{t("uploader.thumbnailCropHint")}</p>
-              <PromoCropFrameEditor
-                previewUrl={thumbnailPreview}
-                crop={thumbnailCrop}
-                onCropChange={(next) => setThumbnailCrop(normalizePromoFrameCrop(next))}
-                meta={thumbnailImageMeta}
-                frameAspect={CATALOG_THUMBNAIL_FRAME_ASPECT}
-                isImage
-                disabled={busy}
-              />
-              <ThumbnailPreviewStages
-                src={thumbnailPreview}
-                crop={thumbnailCrop}
-                title={t("uploader.catalogThumbnailPreviewTitle")}
-                hint={t("uploader.catalogThumbnailPreviewHint")}
-              />
-            </>
+            <UploaderCropPreviewGrid
+              cropHint={t("uploader.thumbnailCropHint")}
+              leftLabel={t("uploader.promoRawPreview")}
+              left={
+                <PromoCropFrameEditor
+                  previewUrl={thumbnailPreview}
+                  crop={thumbnailCrop}
+                  onCropChange={(next) => setThumbnailCrop(normalizePromoFrameCrop(next))}
+                  meta={thumbnailImageMeta}
+                  frameAspect={CATALOG_THUMBNAIL_FRAME_ASPECT}
+                  isImage
+                  disabled={busy}
+                />
+              }
+              rightLabel={t("uploader.catalogThumbnailPreviewTitle")}
+              right={
+                <ThumbnailPreviewStages
+                  embedded
+                  src={thumbnailPreview}
+                  crop={thumbnailCrop}
+                  title={t("uploader.catalogThumbnailPreviewTitle")}
+                  hint={t("uploader.catalogThumbnailPreviewHint")}
+                />
+              }
+            />
           ) : null}
           {thumbnailPreview ? (
             <button
