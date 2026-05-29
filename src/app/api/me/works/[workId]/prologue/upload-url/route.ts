@@ -95,7 +95,6 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const streamKind = isRevision ? "prologue_revision" : "prologue";
-  const prologueTitle = existing?.title ?? work.prologueDraft?.title ?? work.title;
 
   let upload: { tusEndpoint: string; uid: string };
   try {
@@ -105,7 +104,6 @@ export async function POST(request: Request, { params }: Params) {
         xiio_uid: session.uid,
         xiio_work_id: workId,
         xiio_kind: streamKind,
-        title: prologueTitle,
       },
     });
   } catch (e) {

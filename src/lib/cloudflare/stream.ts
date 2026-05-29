@@ -1,3 +1,5 @@
+import { withStreamDisplayName } from "@/lib/cloudflare/stream-display-name";
+
 /** @deprecated Use StreamTusUpload — basic POST blocked by browser CORS for direct uploads */
 export type StreamDirectUpload = {
   uploadURL: string;
@@ -87,9 +89,10 @@ export async function createTusDirectUpload(params: {
     throw new Error("Cloudflare Stream not configured");
   }
 
+  const meta = withStreamDisplayName(params.meta);
   const uploadMetadata = encodeTusMetadata({
     maxDurationSeconds: String(MAX_DURATION_SECONDS),
-    ...params.meta,
+    ...meta,
   });
 
   const res = await fetch(
@@ -165,7 +168,7 @@ export async function createClip(params: {
       clippedFromVideoUID: params.clippedFromVideoUID,
       startTimeSeconds: params.startTimeSeconds,
       endTimeSeconds: params.endTimeSeconds,
-      meta: params.meta,
+      meta: withStreamDisplayName(params.meta),
     }),
   });
 

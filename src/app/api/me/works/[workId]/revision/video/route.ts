@@ -77,7 +77,6 @@ export async function POST(request: Request, { params }: Params) {
         xiio_uid: session.uid,
         xiio_work_id: workId,
         xiio_kind: "full_revision",
-        title: work.title,
       },
     });
   } catch (e) {

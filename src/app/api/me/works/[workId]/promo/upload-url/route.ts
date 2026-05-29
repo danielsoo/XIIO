@@ -99,8 +99,6 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const streamKind = isRevision ? "promo_revision" : "promo";
-  const promoTitle =
-    existing?.title ?? work.promoDraft?.title ?? work.title;
 
   let upload: { tusEndpoint: string; uid: string };
   try {
@@ -110,7 +108,6 @@ export async function POST(request: Request, { params }: Params) {
         xiio_uid: session.uid,
         xiio_work_id: workId,
         xiio_kind: streamKind,
-        title: promoTitle,
       },
     });
   } catch (e) {

@@ -35,7 +35,6 @@ export async function beginFullStreamUpload(
       xiio_uid: uid,
       xiio_work_id: workId,
       xiio_kind: "full",
-      title: work.title,
     },
   });
 
@@ -79,7 +78,6 @@ export async function beginPromoStreamUpload(
   }
 
   const crop = normalizePromoFrameCrop(frameCrop);
-  const promoTitle = work.promoDraft?.title ?? work.title;
 
   const upload = await createTusDirectUpload({
     uploadLength,
@@ -87,7 +85,6 @@ export async function beginPromoStreamUpload(
       xiio_uid: uid,
       xiio_work_id: workId,
       xiio_kind: "promo",
-      title: promoTitle,
     },
   });
 
@@ -143,15 +140,12 @@ export async function beginPrologueStreamUpload(
     }
   }
 
-  const prologueTitle = work.prologueDraft?.title ?? work.title;
-
   const upload = await createTusDirectUpload({
     uploadLength,
     meta: {
       xiio_uid: uid,
       xiio_work_id: workId,
       xiio_kind: "prologue",
-      title: prologueTitle,
     },
   });
 
