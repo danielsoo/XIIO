@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
+import PromoCropFrameEditor from "@/components/uploader/PromoCropFrameEditor";
 import ThumbnailPreviewStages from "@/components/uploader/ThumbnailPreviewStages";
 import UploaderFormSection from "@/components/uploader/UploaderFormSection";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
@@ -18,6 +19,7 @@ import CreditTagInput, {
   type TaggedCredit,
 } from "@/components/network/CreditTagInput";
 import { useTranslations } from "@/context/LocaleContext";
+import { useImageFileMetadata } from "@/hooks/useImageFileMetadata";
 import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
 import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
 import {
@@ -26,8 +28,10 @@ import {
   readResponseJson,
   type ApiErrorBody,
 } from "@/lib/clientErrors";
-import { uploadFileViaTus } from "@/lib/streamTusUpload";
+import { patchWorkStagingMeta } from "@/lib/works/patch-work-staging";
+import { uploadStagingVideo } from "@/lib/works/work-video-staging";
 import { defaultPromoFrameCrop, normalizePromoFrameCrop } from "@/lib/works/promo-crop";
+import { CATALOG_THUMBNAIL_FRAME_ASPECT } from "@/lib/works/promo-crop-interaction";
 import {
   patchPromoThumbnailUrl,
   uploadPromoThumbnail,
@@ -79,6 +83,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [file, setFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [thumbnailCrop, setThumbnailCrop] = useState<PromoFrameCrop>(defaultPromoFrameCrop());
+  const thumbnailImageMeta = useImageFileMetadata(thumbnailFile ?? thumbnailPreview);
   const [thumbnailFieldError, setThumbnailFieldError] = useState<string | null>(null);
   const [promoFile, setPromoFile] = useState<File | null>(null);
   const promoMeta = useVideoFileMetadata(promoFile);
@@ -247,6 +253,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     setThumbnailFieldError(null);
     setThumbnailFile(next);
     setThumbnailPreview(preview);
+    setThumbnailCrop(defaultPromoFrameCrop());
   };
 
   const handleUpload = async () => {
@@ -328,7 +335,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
 
       const { data: sessionData, raw: sessionRaw } = await readResponseJson<{
         workId?: string;
-        tusEndpoint?: string;
+        staged?: boolean;
         error?: string;
         message?: string;
         detail?: string;
@@ -342,9 +349,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         return;
       }
 
-      const tusEndpoint = sessionData.tusEndpoint;
       const workId = sessionData.workId;
-      if (!tusEndpoint || !workId) {
+      if (!workId) {
         onError(
           [
             t("uploader.errorNoUploadUrl"),
@@ -362,7 +368,10 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
 
       try {
         const thumbUrl = await uploadPromoThumbnail(user.uid, workId, thumbnailFile);
-        await patchPromoThumbnailUrl(token, workId, thumbUrl);
+        await patchPromoThumbnailUrl(token, workId, {
+          thumbnailUrl: thumbUrl,
+          thumbnailCrop,
+        });
       } catch (thumbErr) {
         onError(
           formatClientError(t, thumbErr, { titleKey: "uploader.errorThumbnailUploadFailed" })
@@ -371,51 +380,25 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       }
 
       try {
-        await uploadFileViaTus(file, tusEndpoint, {
-          onProgress: (percent) => setUploadPercent(Math.round(percent * 0.5)),
-        });
-      } catch (streamErr) {
-        onError(formatClientError(t, streamErr, { titleKey: "uploader.errorStreamFailed" }));
-        return;
-      }
-
-      let promoSessionRes: Response;
-      try {
-        promoSessionRes = await fetch(`/api/me/works/${workId}/promo/upload-url`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+        const fullStaged = await uploadStagingVideo(user.uid, workId, "full", file);
+        setUploadPercent(33);
+        const promoStaged = await uploadStagingVideo(user.uid, workId, "promo", promoFile);
+        setUploadPercent(66);
+        await patchWorkStagingMeta(token, workId, {
+          full: {
+            path: fullStaged.path,
+            bytes: fullStaged.bytes,
+            contentType: fullStaged.contentType,
           },
-          body: JSON.stringify({ uploadLength: promoFile.size, frameCrop: promoCrop }),
+          promo: {
+            path: promoStaged.path,
+            bytes: promoStaged.bytes,
+            contentType: promoStaged.contentType,
+          },
         });
-      } catch (fetchErr) {
-        onError(formatClientError(t, fetchErr, { titleKey: "uploader.errorPromoUploadFailed" }));
-        return;
-      }
-
-      const { data: promoSession, raw: promoRaw } = await readResponseJson<{
-        tusEndpoint?: string;
-        message?: string;
-        error?: string;
-      }>(promoSessionRes);
-
-      if (!promoSessionRes.ok || !promoSession.tusEndpoint) {
-        onError(
-          formatApiError(t, promoSessionRes.status, {
-            ...promoSession,
-            message: promoSession.message ?? promoRaw.slice(0, 500),
-          })
-        );
-        return;
-      }
-
-      try {
-        await uploadFileViaTus(promoFile, promoSession.tusEndpoint, {
-          onProgress: (percent) => setUploadPercent(50 + Math.round(percent * 0.5)),
-        });
-      } catch (streamErr) {
-        onError(formatClientError(t, streamErr, { titleKey: "uploader.errorPromoStreamFailed" }));
+        setUploadPercent(100);
+      } catch (stageErr) {
+        onError(formatClientError(t, stageErr, { titleKey: "uploader.errorStagingUploadFailed" }));
         return;
       }
 
@@ -741,15 +724,28 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               disabled={busy}
               error={thumbnailFieldError}
             />
-            {thumbnailPreview && (
-              <ThumbnailPreviewStages
-                src={thumbnailPreview}
-                fullTitle={t("uploader.fullThumbnailPreviewTitle")}
-                fullHint={t("uploader.fullThumbnailPreviewHint")}
-                shortsTitle={t("uploader.shortsThumbnailPreviewTitle")}
-                shortsHint={t("uploader.shortsThumbnailPreviewHint")}
-              />
-            )}
+            {thumbnailPreview ? (
+              <>
+                <p className="text-xs text-xiio-muted leading-relaxed">{t("uploader.thumbnailCropHint")}</p>
+                <PromoCropFrameEditor
+                  previewUrl={thumbnailPreview}
+                  crop={thumbnailCrop}
+                  onCropChange={(next) => setThumbnailCrop(normalizePromoFrameCrop(next))}
+                  meta={thumbnailImageMeta}
+                  frameAspect={CATALOG_THUMBNAIL_FRAME_ASPECT}
+                  isImage
+                  disabled={busy}
+                />
+                <ThumbnailPreviewStages
+                  src={thumbnailPreview}
+                  crop={thumbnailCrop}
+                  fullTitle={t("uploader.fullThumbnailPreviewTitle")}
+                  fullHint={t("uploader.fullThumbnailPreviewHint")}
+                  shortsTitle={t("uploader.shortsThumbnailPreviewTitle")}
+                  shortsHint={t("uploader.shortsThumbnailPreviewHint")}
+                />
+              </>
+            ) : null}
             <PromoShortFields
               title={promoTitle}
               onTitleChange={setPromoTitle}

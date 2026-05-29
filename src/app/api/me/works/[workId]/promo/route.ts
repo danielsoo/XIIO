@@ -17,6 +17,7 @@ import {
   resolveWorkListThumbnailUrl,
   worksCol,
 } from "@/lib/server/works";
+import { normalizePromoFrameCrop } from "@/lib/works/promo-crop";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 
 type Params = { params: Promise<{ workId: string }> };
@@ -34,7 +35,12 @@ export async function GET(request: Request, { params }: Params) {
   if (!workSnap.exists) return jsonError("not_found", "작품을 찾을 수 없습니다.", 404);
 
   let work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
-  if (work.streamUid && work.streamStatus !== "ready" && work.streamStatus !== "error") {
+  if (
+    work.streamUid &&
+    work.streamStatus !== "staged" &&
+    work.streamStatus !== "ready" &&
+    work.streamStatus !== "error"
+  ) {
     const synced = await syncWorkStreamStatusIfNeeded(
       db,
       session.uid,
@@ -118,7 +124,7 @@ export async function PUT(request: Request, { params }: Params) {
   const { session } = auth;
   const { workId } = await params;
 
-  let body: { title?: string; description?: string };
+  let body: { title?: string; description?: string; frameCrop?: unknown };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -154,6 +160,10 @@ export async function PUT(request: Request, { params }: Params) {
     work.description ||
     null;
 
+  const frameCrop =
+    body.frameCrop !== undefined ? normalizePromoFrameCrop(body.frameCrop) : undefined;
+  const cropPatch = frameCrop !== undefined ? { frameCrop } : {};
+
   if (!existing.exists) {
     await promoDocRef.set(
       {
@@ -161,6 +171,7 @@ export async function PUT(request: Request, { params }: Params) {
         title: metaTitle,
         description: metaDescription,
         thumbnailUrl: work.promoDraft?.thumbnailUrl ?? null,
+        ...cropPatch,
         updatedAt: FieldValue.serverTimestamp(),
         createdAt: FieldValue.serverTimestamp(),
       },
@@ -182,6 +193,7 @@ export async function PUT(request: Request, { params }: Params) {
         {
           title: metaTitle,
           description: metaDescription,
+          ...cropPatch,
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }

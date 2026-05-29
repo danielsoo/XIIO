@@ -10,15 +10,22 @@ import {
   computeObjectContainRect,
   cropToFrameRect,
   frameCenterToCrop,
+  PORTRAIT_FRAME_ASPECT,
 } from "@/lib/works/promo-crop-interaction";
 import type { PromoFrameCrop } from "@/types/work";
+
+type SourceMeta = { width: number; height: number };
 
 type Props = {
   previewUrl: string;
   crop: PromoFrameCrop;
   onCropChange: (next: PromoFrameCrop) => void;
   disabled?: boolean;
-  meta?: VideoFileMetadata | null;
+  meta?: VideoFileMetadata | SourceMeta | null;
+  /** Crop frame width/height ratio (default 9:16 promo video) */
+  frameAspect?: number;
+  /** When true, render img instead of video */
+  isImage?: boolean;
 };
 
 const ZOOM_STEP = 0.1;
@@ -30,6 +37,8 @@ export default function PromoCropFrameEditor({
   onCropChange,
   disabled,
   meta,
+  frameAspect = PORTRAIT_FRAME_ASPECT,
+  isImage = false,
 }: Props) {
   const { t } = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -72,7 +81,10 @@ export default function PromoCropFrameEditor({
     [containerSize.width, containerSize.height, videoW, videoH]
   );
 
-  const frame = useMemo(() => cropToFrameRect(effectiveCrop, display), [effectiveCrop, display]);
+  const frame = useMemo(
+    () => cropToFrameRect(effectiveCrop, display, frameAspect),
+    [effectiveCrop, display, frameAspect]
+  );
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (disabled) return;
@@ -104,7 +116,8 @@ export default function PromoCropFrameEditor({
         height: frame.height,
       },
       display,
-      effectiveCrop.zoom
+      effectiveCrop.zoom,
+      frameAspect
     );
     onCropChange(
       frameCenterToCrop(
@@ -155,13 +168,21 @@ export default function PromoCropFrameEditor({
         className="relative w-full rounded-lg overflow-hidden border border-white/10 bg-black"
         style={{ aspectRatio: "16 / 9" }}
       >
-        <video
-          src={previewUrl}
-          className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-          muted
-          playsInline
-          preload="metadata"
-        />
+        {isImage ? (
+          <img
+            src={previewUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+          />
+        ) : (
+          <video
+            src={previewUrl}
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+            muted
+            playsInline
+            preload="metadata"
+          />
+        )}
         {containerSize.width > 0 && frame.width > 0 ? (
           <div
             role="slider"

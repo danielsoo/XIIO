@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { syncWorkStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
-import { getDbOrNull, parseWorkDoc, resolveWorkListThumbnailUrl } from "@/lib/server/works";
+import {
+  getDbOrNull,
+  parsePromoDoc,
+  parseWorkDoc,
+  promoRef,
+  resolveWorkListThumbnailUrl,
+} from "@/lib/server/works";
 import type { CatalogFeedItem, WorkSection } from "@/types/work";
 import { isWorkSection } from "@/lib/works/constants";
 
@@ -48,6 +54,11 @@ export async function GET(request: Request) {
     if (work.streamStatus !== "ready") continue;
 
     const thumbnailUrl = await resolveWorkListThumbnailUrl(db, ownerUid, doc.id, work);
+    const promoSnap = await promoRef(db, ownerUid, doc.id).get();
+    const promo = promoSnap.exists
+      ? parsePromoDoc(promoSnap.data() as Record<string, unknown>)
+      : null;
+    const thumbnailCrop = promo?.thumbnailCrop ?? work.promoDraft?.thumbnailCrop;
 
     items.push({
       id: `${ownerUid}_${doc.id}`,
@@ -59,6 +70,7 @@ export async function GET(request: Request) {
       approvedCategory: work.approvedCategory,
       approvedTags: work.approvedTags ?? [],
       thumbnailUrl,
+      ...(thumbnailCrop ? { thumbnailCrop } : {}),
     });
   }
 

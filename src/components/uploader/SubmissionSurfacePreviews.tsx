@@ -9,6 +9,7 @@ import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPla
 import { useTranslations } from "@/context/LocaleContext";
 import { gradientForTitle } from "@/lib/works/catalog-ui";
 import { buildEditorPreviewPromoShort } from "@/lib/works/editor-preview-promo";
+import { promoCropToVideoStyle } from "@/lib/works/promo-crop-interaction";
 import type { PromoShort } from "@/types/promoShort";
 import type { PromoFrameCrop } from "@/types/work";
 
@@ -16,6 +17,7 @@ type Props = {
   workTitle: string;
   catalogThumbnailUrl?: string | null;
   liveThumbnailUrl?: string | null;
+  thumbnailCrop?: PromoFrameCrop;
   title: string;
   description: string;
   director: string;
@@ -47,6 +49,7 @@ export default function SubmissionSurfacePreviews({
   workTitle,
   catalogThumbnailUrl,
   liveThumbnailUrl,
+  thumbnailCrop,
   title,
   description,
   director,
@@ -61,6 +64,7 @@ export default function SubmissionSurfacePreviews({
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   const catalogThumbnailSrc = liveThumbnailUrl ?? catalogThumbnailUrl ?? null;
+  const catalogImageStyle = thumbnailCrop ? promoCropToVideoStyle(thumbnailCrop) : undefined;
   const canPlayShorts = Boolean(promoPlaybackUrl?.trim());
 
   const previewPromo: PromoShort = useMemo(
@@ -96,6 +100,7 @@ export default function SubmissionSurfacePreviews({
           <ContentCard
             title={workTitle || title}
             thumbnailUrl={catalogThumbnailSrc ?? undefined}
+            imageStyle={catalogImageStyle}
             gradient={catalogGradient}
           />
           <CatalogPlaceholderCard />

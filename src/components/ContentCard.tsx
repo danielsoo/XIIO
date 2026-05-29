@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 
 interface ContentCardProps {
@@ -10,6 +11,7 @@ interface ContentCardProps {
   tags?: string[];
   gradient: string;
   thumbnailUrl?: string;
+  imageStyle?: CSSProperties;
   href?: string;
 }
 
@@ -17,6 +19,7 @@ export default function ContentCard({
   title,
   gradient,
   thumbnailUrl,
+  imageStyle,
   href,
 }: ContentCardProps) {
   const [thumbFailed, setThumbFailed] = useState(false);
@@ -35,6 +38,7 @@ export default function ContentCard({
           alt=""
           fill
           className="object-cover"
+          style={imageStyle}
           sizes="(max-width: 768px) 50vw, 25vw"
           unoptimized
           onError={() => setThumbFailed(true)}

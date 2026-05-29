@@ -14,6 +14,7 @@ import type {
   PromoDraft,
   WorkDoc,
   WorkSection,
+  WorkVideoStaging,
 } from "@/types/work";
 import { PROMO_SHORT_DOC_ID } from "@/types/work";
 import { parseContentModeration } from "@/lib/server/moderation/parse-content-moderation";
@@ -60,6 +61,7 @@ export function parsePromoDraft(data: Record<string, unknown>): PromoDraft | und
         ? d.description.trim()
         : null,
     thumbnailUrl,
+    thumbnailCrop: parsePromoFrameCrop(d.thumbnailCrop),
   };
 }
 
@@ -67,6 +69,23 @@ function parseStringArray(data: Record<string, unknown>, key: string): string[] 
   const v = data[key];
   if (!Array.isArray(v)) return undefined;
   return v.map((x) => String(x)).filter(Boolean);
+}
+
+function parseWorkVideoStaging(value: unknown): WorkVideoStaging | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const row = value as Record<string, unknown>;
+  const fullPath = typeof row.fullPath === "string" ? row.fullPath.trim() : "";
+  const promoPath = typeof row.promoPath === "string" ? row.promoPath.trim() : "";
+  if (!fullPath || !promoPath) return undefined;
+  return {
+    fullPath,
+    promoPath,
+    fullBytes: typeof row.fullBytes === "number" ? row.fullBytes : undefined,
+    promoBytes: typeof row.promoBytes === "number" ? row.promoBytes : undefined,
+    fullContentType: typeof row.fullContentType === "string" ? row.fullContentType : undefined,
+    promoContentType: typeof row.promoContentType === "string" ? row.promoContentType : undefined,
+    updatedAt: row.updatedAt,
+  };
 }
 
 function parsePromoFrameCrop(value: unknown): PromoFrameCrop | undefined {
@@ -96,7 +115,8 @@ export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc
     approvedAspectRatio: parseAspectRatio(data, "approvedAspectRatio"),
     platformStatus: (data.platformStatus as PlatformStatus) ?? "pending",
     streamStatus: (data.streamStatus as StreamStatus) ?? "uploading",
-    streamUid: String(data.streamUid ?? ""),
+    streamUid: data.streamUid ? String(data.streamUid) : undefined,
+    videoStaging: parseWorkVideoStaging(data.videoStaging),
     sortOrder: typeof data.sortOrder === "number" ? data.sortOrder : 0,
     rejectReasonCode:
       typeof rejectCode === "string" && isRejectReasonCode(rejectCode) ? rejectCode : undefined,
@@ -139,6 +159,7 @@ export function parsePromoDoc(data: Record<string, unknown>): PromoShortDoc {
       typeof data.thumbnailUrl === "string" && data.thumbnailUrl.trim()
         ? data.thumbnailUrl.trim()
         : null,
+    thumbnailCrop: parsePromoFrameCrop(data.thumbnailCrop),
     frameCrop: parsePromoFrameCrop(data.frameCrop),
     rejectReason: data.rejectReason ? String(data.rejectReason) : undefined,
     deletionRequest: data.deletionRequest as PromoShortDoc["deletionRequest"],

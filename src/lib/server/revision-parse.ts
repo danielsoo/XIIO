@@ -68,6 +68,11 @@ export function parsePromoPendingRevision(data: Record<string, unknown>): PromoP
     durationSec: typeof r.durationSec === "number" ? r.durationSec : undefined,
     title: r.title ? String(r.title) : undefined,
     description: r.description ? String(r.description) : undefined,
+    thumbnailUrl:
+      typeof r.thumbnailUrl === "string" && r.thumbnailUrl.trim()
+        ? r.thumbnailUrl.trim()
+        : null,
+    thumbnailCrop: parsePromoFrameCrop(r.thumbnailCrop),
     frameCrop: parsePromoFrameCrop(r.frameCrop),
     rejectReason: r.rejectReason ? String(r.rejectReason) : undefined,
     submittedAt: r.submittedAt,

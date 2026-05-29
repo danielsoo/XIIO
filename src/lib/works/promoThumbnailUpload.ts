@@ -1,5 +1,6 @@
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { storage } from "@/lib/firebase";
+import type { PromoFrameCrop } from "@/types/work";
 
 /** 홍보 썸네일 최대 용량 — storage.rules 와 동일하게 유지 */
 export const MAX_PROMO_THUMBNAIL_BYTES = 10 * 1024 * 1024;
@@ -30,18 +31,25 @@ export async function uploadPromoThumbnail(
   return getDownloadURL(storageRef);
 }
 
+export type PatchPromoThumbnailPayload = {
+  thumbnailUrl?: string;
+  thumbnailCrop?: PromoFrameCrop;
+};
+
 export async function patchPromoThumbnailUrl(
   token: string,
   workId: string,
-  thumbnailUrl: string
+  payload: PatchPromoThumbnailPayload | string
 ): Promise<void> {
+  const body: PatchPromoThumbnailPayload =
+    typeof payload === "string" ? { thumbnailUrl: payload } : payload;
   const res = await fetch(`/api/me/works/${workId}/promo-thumbnail`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ thumbnailUrl }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const text = await res.text();

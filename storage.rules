@@ -8,6 +8,15 @@ service firebase.storage {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Draft videos before Stream encode (author-only)
+    match /users/{userId}/works/{workId}/staging/{fileName} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 32 * 1024 * 1024 * 1024
+        && request.resource.contentType.matches('video/.*');
+    }
+
     // Promo short custom thumbnail (author-uploaded)
     match /users/{userId}/works/{workId}/promo-thumbnail.{fileName} {
       allow read: if true;

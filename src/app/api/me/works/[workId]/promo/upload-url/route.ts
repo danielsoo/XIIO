@@ -68,6 +68,14 @@ export async function POST(request: Request, { params }: Params) {
 
   const isRevision = Boolean(body.revision) || existing?.platformStatus === "published";
 
+  if (work.platformStatus === "draft" && !isRevision) {
+    return jsonError(
+      "use_staging",
+      "초안 작품은 영상을 스테이징에 저장한 뒤 심사 제출 시 인코딩됩니다.",
+      400
+    );
+  }
+
   if (isRevision) {
     if (existing?.platformStatus !== "published") {
       return jsonError("invalid_state", "게시된 쇼츠만 수정본 영상을 올릴 수 있습니다.", 400);

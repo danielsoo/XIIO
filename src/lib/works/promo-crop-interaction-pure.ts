@@ -12,6 +12,9 @@ export const PROMO_CROP_MAX_ZOOM = 2.5;
 /** 9:16 portrait frame — width / height */
 export const PORTRAIT_FRAME_ASPECT = 9 / 16;
 
+/** 16:9 catalog thumbnail frame — width / height */
+export const CATALOG_THUMBNAIL_FRAME_ASPECT = 16 / 9;
+
 export type Size = { width: number; height: number };
 export type Rect = { left: number; top: number; width: number; height: number };
 
@@ -62,21 +65,30 @@ export function computeObjectContainRect(layout: VideoLayout): Rect {
   return { left: (cw - width) / 2, top: 0, width, height };
 }
 
-/** 표시 영역 안에 들어가는 최대 9:16 프레임 (zoom=1 기준) */
-export function maxPortraitFrameInRect(w: number, h: number): Size {
-  if (w <= 0 || h <= 0) return { width: 0, height: 0 };
+/** 표시 영역 안에 들어가는 최대 프레임 (zoom=1 기준). frameAspect = width/height */
+export function maxFrameInRect(w: number, h: number, frameAspect: number): Size {
+  if (w <= 0 || h <= 0 || frameAspect <= 0) return { width: 0, height: 0 };
   let frameW = w;
-  let frameH = w / PORTRAIT_FRAME_ASPECT;
+  let frameH = w / frameAspect;
   if (frameH > h) {
     frameH = h;
-    frameW = h * PORTRAIT_FRAME_ASPECT;
+    frameW = h * frameAspect;
   }
   return { width: frameW, height: frameH };
 }
 
-export function cropToFrameRect(crop: PromoFrameCropPure, display: Rect): Rect {
+/** 표시 영역 안에 들어가는 최대 9:16 프레임 (zoom=1 기준) */
+export function maxPortraitFrameInRect(w: number, h: number): Size {
+  return maxFrameInRect(w, h, PORTRAIT_FRAME_ASPECT);
+}
+
+export function cropToFrameRect(
+  crop: PromoFrameCropPure,
+  display: Rect,
+  frameAspect: number = PORTRAIT_FRAME_ASPECT
+): Rect {
   const normalized = normalizePromoFrameCropPure(crop);
-  const base = maxPortraitFrameInRect(display.width, display.height);
+  const base = maxFrameInRect(display.width, display.height, frameAspect);
   const frameW = base.width / normalized.zoom;
   const frameH = base.height / normalized.zoom;
   const centerX = display.left + (normalized.focalX / 100) * display.width;
@@ -97,8 +109,13 @@ export function frameCenterToCrop(
   return normalizePromoFrameCropPure({ focalX, focalY, zoom });
 }
 
-export function clampFrameToDisplay(frame: Rect, display: Rect, zoom: number): Rect {
-  const base = maxPortraitFrameInRect(display.width, display.height);
+export function clampFrameToDisplay(
+  frame: Rect,
+  display: Rect,
+  zoom: number,
+  frameAspect: number = PORTRAIT_FRAME_ASPECT
+): Rect {
+  const base = maxFrameInRect(display.width, display.height, frameAspect);
   const frameW = base.width / zoom;
   const frameH = base.height / zoom;
   const centerX = clamp(
@@ -119,8 +136,13 @@ export function clampFrameToDisplay(frame: Rect, display: Rect, zoom: number): R
   };
 }
 
-export function frameRectToCrop(frame: Rect, display: Rect, zoom: number): PromoFrameCropPure {
-  const clamped = clampFrameToDisplay(frame, display, zoom);
+export function frameRectToCrop(
+  frame: Rect,
+  display: Rect,
+  zoom: number,
+  frameAspect: number = PORTRAIT_FRAME_ASPECT
+): PromoFrameCropPure {
+  const clamped = clampFrameToDisplay(frame, display, zoom, frameAspect);
   return frameCenterToCrop(
     clamped.left + clamped.width / 2,
     clamped.top + clamped.height / 2,

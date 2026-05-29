@@ -9,6 +9,7 @@ import PromoShortFields from "@/components/uploader/PromoShortFields";
 import UploadWizardStepper, {
   type UploadWizardStepMeta,
 } from "@/components/uploader/UploadWizardStepper";
+import PromoCropFrameEditor from "@/components/uploader/PromoCropFrameEditor";
 import SubmissionSurfacePreviews from "@/components/uploader/SubmissionSurfacePreviews";
 import ThumbnailPreviewStages from "@/components/uploader/ThumbnailPreviewStages";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
@@ -17,11 +18,27 @@ import UploaderFormSection from "@/components/uploader/UploaderFormSection";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { useImageFileMetadata } from "@/hooks/useImageFileMetadata";
 import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import { uploadFileViaTus } from "@/lib/streamTusUpload";
+import { patchWorkStagingMeta } from "@/lib/works/patch-work-staging";
+import {
+  submitStagedWorkForReview,
+  type SubmitProgress,
+} from "@/lib/works/submit-for-review";
+import {
+  getStagingDownloadUrl,
+  uploadStagingVideo,
+} from "@/lib/works/work-video-staging";
+import {
+  hasCompleteVideoStaging,
+  isStreamEncoding,
+  isWorkEditableForPromo,
+} from "@/lib/works/work-staging-ready";
 import { resolveDisplayTitle } from "@/lib/works/display-title";
 import { defaultPromoFrameCrop, normalizePromoFrameCrop } from "@/lib/works/promo-crop";
+import { CATALOG_THUMBNAIL_FRAME_ASPECT } from "@/lib/works/promo-crop-interaction";
 import { getPromoFileValidationError } from "@/lib/works/promo-file-validation";
 import { isLegacyClipPromo } from "@/lib/works/promo-video";
 import {
@@ -36,10 +53,11 @@ import type {
   PromoFrameCrop,
   StreamStatus,
   WorkDoc,
+  WorkVideoStaging,
 } from "@/types/work";
 
 type EditorData = {
-  work: WorkDoc & { playbackUrl?: string; durationSec?: number };
+  work: WorkDoc & { playbackUrl?: string; durationSec?: number; videoStaging?: WorkVideoStaging };
   promo: (PromoShortDoc & { id: string; playbackUrl?: string }) | null;
   catalogThumbnailUrl?: string;
   revisionMode?: boolean;
@@ -48,13 +66,9 @@ type EditorData = {
   pendingRevisionPlayback?: string;
 };
 
-function isPromoEncoding(status: StreamStatus | undefined): boolean {
-  return status === "uploading" || status === "processing";
-}
+type PromoEditorStepId = "video" | "thumbnail" | "info" | "preview";
 
-type PromoEditorStepId = "video" | "thumbnail" | "info";
-
-const PROMO_EDITOR_STEPS: PromoEditorStepId[] = ["video", "thumbnail", "info"];
+const PROMO_EDITOR_STEPS: PromoEditorStepId[] = ["video", "thumbnail", "info", "preview"];
 
 const PROMO_EDITOR_STEP_META: UploadWizardStepMeta[] = [
   { id: "video", titleKey: "promoEditor.stepVideoTitle", hintKey: "promoEditor.stepVideoHint" },
@@ -64,6 +78,11 @@ const PROMO_EDITOR_STEP_META: UploadWizardStepMeta[] = [
     hintKey: "promoEditor.stepThumbnailHint",
   },
   { id: "info", titleKey: "promoEditor.stepInfoTitle", hintKey: "promoEditor.stepInfoHint" },
+  {
+    id: "preview",
+    titleKey: "promoEditor.stepPreviewTitle",
+    hintKey: "promoEditor.stepPreviewHint",
+  },
 ];
 
 function computeInitialPromoStepIndex(hasVideo: boolean, hasThumbnail: boolean): number {
@@ -94,10 +113,15 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const [description, setDescription] = useState("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [thumbnailCrop, setThumbnailCrop] = useState<PromoFrameCrop>(defaultPromoFrameCrop());
+  const thumbnailImageMeta = useImageFileMetadata(thumbnailFile ?? thumbnailPreview);
   const [thumbnailFieldError, setThumbnailFieldError] = useState<string | null>(null);
   const [savedThumbnailUrl, setSavedThumbnailUrl] = useState<string | null>(null);
   const [catalogThumbnailUrl, setCatalogThumbnailUrl] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
+  const [stagingFullPlaybackUrl, setStagingFullPlaybackUrl] = useState<string | null>(null);
+  const [stagingPromoPlaybackUrl, setStagingPromoPlaybackUrl] = useState<string | null>(null);
+  const [submitProgress, setSubmitProgress] = useState<SubmitProgress | null>(null);
   const stepInitWorkRef = useRef<string | null>(null);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
@@ -140,6 +164,11 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         source?.description ?? promo?.description ?? draft?.description ?? json.work.description ?? ""
       );
       setPromoCrop(normalizePromoFrameCrop(source?.frameCrop ?? promo?.frameCrop));
+      setThumbnailCrop(
+        normalizePromoFrameCrop(
+          source?.thumbnailCrop ?? promo?.thumbnailCrop ?? draft?.thumbnailCrop
+        )
+      );
       const thumb =
         promo?.thumbnailUrl ?? draft?.thumbnailUrl ?? null;
       setSavedThumbnailUrl(thumb);
@@ -147,7 +176,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       setThumbnailPreview(thumb);
       setThumbnailFieldError(null);
       const encStatus = json.revisionMode ? rev?.streamStatus : promo?.streamStatus;
-      if (encStatus && !isPromoEncoding(encStatus) && encStatus === "ready") {
+      if (encStatus && !isStreamEncoding(encStatus) && encStatus === "ready") {
         setJustSavedVideo(false);
         if (opts?.silent) {
           setMsg(t("promoEditor.statusReadyBody"));
@@ -165,6 +194,36 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   }, [load]);
 
   useEffect(() => {
+    const staging = data?.work.videoStaging;
+    if (!staging?.fullPath?.trim() || !staging?.promoPath?.trim()) {
+      setStagingFullPlaybackUrl(null);
+      setStagingPromoPlaybackUrl(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [fullUrl, promoUrl] = await Promise.all([
+          getStagingDownloadUrl(staging.fullPath),
+          getStagingDownloadUrl(staging.promoPath),
+        ]);
+        if (!cancelled) {
+          setStagingFullPlaybackUrl(fullUrl);
+          setStagingPromoPlaybackUrl(promoUrl);
+        }
+      } catch {
+        if (!cancelled) {
+          setStagingFullPlaybackUrl(null);
+          setStagingPromoPlaybackUrl(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [data?.work.videoStaging]);
+
+  useEffect(() => {
     stepInitWorkRef.current = null;
   }, [workId]);
 
@@ -175,24 +234,28 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     const rev = Boolean(data.revisionMode);
     const p = data.promo;
     const pr = data.pendingRevision;
-    const hasVideo = rev ? Boolean(pr?.streamUid) : Boolean(p?.streamUid);
+    const isDraftWork = data.work.platformStatus === "draft";
+    const hasVideo = rev
+      ? Boolean(pr?.streamUid)
+      : isDraftWork
+        ? hasCompleteVideoStaging(data.work.videoStaging)
+        : Boolean(p?.streamUid);
     const thumb = p?.thumbnailUrl ?? data.work.promoDraft?.thumbnailUrl ?? null;
     setStepIndex(computeInitialPromoStepIndex(hasVideo, Boolean(thumb)));
   }, [loading, data, workId]);
 
   const promo = data?.promo;
   const pendingRevision = data?.pendingRevision;
-  const activeStreamStatus = revisionMode ? pendingRevision?.streamStatus : promo?.streamStatus;
-  const promoEncoding = activeStreamStatus ? isPromoEncoding(activeStreamStatus) : false;
 
   useEffect(() => {
     if (!user || !data) return;
     const work = data.work;
     const enc = revisionMode ? pendingRevision?.streamStatus : promo?.streamStatus;
+    const isDraftWork = work.platformStatus === "draft";
     const needsPoll =
-      work.streamStatus !== "ready" ||
-      (!promo?.streamUid && Boolean(work.promoDraft)) ||
-      (enc ? isPromoEncoding(enc) : false);
+      isStreamEncoding(work.streamStatus) ||
+      (enc ? isStreamEncoding(enc) : false) ||
+      (!isDraftWork && work.streamStatus !== "ready");
     if (!needsPoll) return;
     const id = window.setInterval(() => void load({ silent: true }), 5000);
     return () => window.clearInterval(id);
@@ -234,17 +297,26 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     setThumbnailFieldError(null);
     setThumbnailFile(next);
     setThumbnailPreview(preview);
+    setThumbnailCrop(defaultPromoFrameCrop());
   };
 
   const saveThumbnail = async () => {
-    if (!user || !thumbnailFile) return;
+    if (!user) return;
+    if (!thumbnailFile && !savedThumbnailUrl) return;
     setBusy(true);
     setErr(null);
     setMsg(null);
     try {
       const token = await user.getIdToken();
-      const url = await uploadPromoThumbnail(user.uid, workId, thumbnailFile);
-      await patchPromoThumbnailUrl(token, workId, url);
+      let url = savedThumbnailUrl;
+      if (thumbnailFile) {
+        url = await uploadPromoThumbnail(user.uid, workId, thumbnailFile);
+      }
+      if (!url) return;
+      await patchPromoThumbnailUrl(token, workId, {
+        ...(thumbnailFile ? { thumbnailUrl: url } : {}),
+        thumbnailCrop,
+      });
       setSavedThumbnailUrl(url);
       setCatalogThumbnailUrl(url);
       setThumbnailFile(null);
@@ -265,7 +337,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     try {
       const res = await authFetch(`/api/me/works/${workId}/promo`, {
         method: "PUT",
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify({ title, description, frameCrop: promoCrop }),
       });
       const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
       if (!res.ok) {
@@ -309,6 +381,26 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     setErr(null);
     setMsg(null);
     try {
+      const token = await user.getIdToken();
+      const workDraftMode = data?.work.platformStatus === "draft" && !revisionMode;
+
+      if (workDraftMode) {
+        const staged = await uploadStagingVideo(user.uid, workId, "promo", promoFile);
+        await patchWorkStagingMeta(token, workId, {
+          promo: {
+            path: staged.path,
+            bytes: staged.bytes,
+            contentType: staged.contentType,
+          },
+        });
+        const promoUrl = await getStagingDownloadUrl(staged.path);
+        setStagingPromoPlaybackUrl(promoUrl);
+        setPromoFile(null);
+        setMsg(t("promoEditor.promoStagedSaved"));
+        await load({ silent: true });
+        return;
+      }
+
       const res = await authFetch(`/api/me/works/${workId}/promo/upload-url`, {
         method: "POST",
         body: JSON.stringify({
@@ -326,7 +418,6 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       }
       await uploadFileViaTus(promoFile, body.tusEndpoint);
       setPromoFile(null);
-      setPromoCrop(defaultPromoFrameCrop());
       setJustSavedVideo(true);
       setMsg(t("promoEditor.savedEncoding"));
       await load({ silent: true });
@@ -342,9 +433,30 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       setErr(t("uploader.errorPromoTitleRequired"));
       return;
     }
+    if (!user) return;
+
     setBusy(true);
     setErr(null);
+    setSubmitProgress(null);
     try {
+      const workDraftMode = data?.work.platformStatus === "draft" && !revisionMode;
+
+      if (workDraftMode) {
+        const token = await user.getIdToken();
+        await submitStagedWorkForReview({
+          token,
+          workId,
+          frameCrop: promoCrop,
+          promoFile,
+          onProgress: setSubmitProgress,
+        });
+        setMsg(t("promoEditor.submitted"));
+        setJustSavedVideo(false);
+        setSubmitProgress(null);
+        await load();
+        return;
+      }
+
       const res = await authFetch(`/api/me/works/${workId}/promo/submit`, { method: "POST" });
       const { data: body, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
       if (!res.ok) {
@@ -358,6 +470,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       setErr(formatClientError(t, e, { titleKey: "myWorks.errorGeneric" }));
     } finally {
       setBusy(false);
+      setSubmitProgress(null);
     }
   };
 
@@ -412,32 +525,48 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   }
 
   const { work } = data;
+  const workDraftMode = work.platformStatus === "draft" && !revisionMode;
   const locked = revisionMode
     ? revisionReviewStatus === "pending"
     : promo?.platformStatus === "pending" || promo?.platformStatus === "published";
-  const fullReady = work.streamStatus === "ready";
+  const fullReady = workDraftMode ? isWorkEditableForPromo(work) : work.streamStatus === "ready";
+  const promoEncoding = workDraftMode
+    ? Boolean(submitProgress)
+    : isStreamEncoding(revisionMode ? pendingRevision?.streamStatus : promo?.streamStatus);
   const canSubmit = revisionMode
     ? Boolean(
         pendingRevision &&
           (pendingRevision.platformStatus === "draft" || pendingRevision.platformStatus === "rejected") &&
           pendingRevision.streamStatus === "ready"
       )
-    : Boolean(
-        promo &&
-          (promo.platformStatus === "draft" || promo.platformStatus === "rejected") &&
-          promo.streamStatus === "ready"
-      );
+    : workDraftMode
+      ? Boolean(
+          hasCompleteVideoStaging(work.videoStaging) &&
+            savedThumbnailUrl &&
+            title.trim() &&
+            !submitProgress
+        )
+      : Boolean(
+          promo &&
+            (promo.platformStatus === "draft" || promo.platformStatus === "rejected") &&
+            promo.streamStatus === "ready"
+        );
   const awaitingPromoUpload =
-    fullReady && !promo?.streamUid && Boolean(work.promoDraft) && !promoEncoding;
-  const showEditor =
+    !workDraftMode &&
     fullReady &&
-    !locked &&
-    !promoEncoding &&
-    (revisionMode ||
-      awaitingPromoUpload ||
-      !promo ||
-      promo.platformStatus === "draft" ||
-      promo.platformStatus === "rejected");
+    !promo?.streamUid &&
+    Boolean(work.promoDraft) &&
+    !promoEncoding;
+  const showEditor = workDraftMode
+    ? !locked
+    : fullReady &&
+      !locked &&
+      !promoEncoding &&
+      (revisionMode ||
+        awaitingPromoUpload ||
+        !promo ||
+        promo.platformStatus === "draft" ||
+        promo.platformStatus === "rejected");
   const savedPromoStatus = revisionMode
     ? Boolean(
         pendingRevision &&
@@ -479,30 +608,40 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const promoPlaybackUrl =
     revisionMode && pendingRevisionPlayback
       ? pendingRevisionPlayback
-      : !revisionMode && promo?.playbackUrl && promo.streamStatus === "ready"
-        ? promo.playbackUrl
-        : null;
+      : workDraftMode
+        ? stagingPromoPlaybackUrl
+        : !revisionMode && promo?.playbackUrl && promo.streamStatus === "ready"
+          ? promo.playbackUrl
+          : null;
+  const fullPlaybackUrl = workDraftMode
+    ? stagingFullPlaybackUrl
+    : work.playbackUrl ?? null;
   const liveThumbnailUrl = thumbnailPreview ?? savedThumbnailUrl ?? catalogThumbnailUrl;
   const promoStreamReady = revisionMode
     ? pendingRevision?.streamStatus === "ready"
     : promo?.streamStatus === "ready";
+  const activeStreamStatus = revisionMode ? pendingRevision?.streamStatus : promo?.streamStatus;
 
   const currentStep = PROMO_EDITOR_STEPS[stepIndex] ?? "video";
   const isLastStep = stepIndex === PROMO_EDITOR_STEPS.length - 1;
   const progress = ((stepIndex + 1) / PROMO_EDITOR_STEPS.length) * 100;
   const hasPromoVideo = revisionMode
     ? Boolean(pendingRevision?.streamUid)
-    : Boolean(promo?.streamUid);
+    : workDraftMode
+      ? hasCompleteVideoStaging(work.videoStaging)
+      : Boolean(promo?.streamUid);
 
   const stepLabels: Record<PromoEditorStepId, string> = {
     video: t("promoEditor.stepVideoTitle"),
     thumbnail: t("promoEditor.stepThumbnailTitle"),
     info: t("promoEditor.stepInfoTitle"),
+    preview: t("promoEditor.stepPreviewTitle"),
   };
   const stepHints: Record<PromoEditorStepId, string> = {
     video: t("promoEditor.stepVideoHint"),
     thumbnail: t("promoEditor.stepThumbnailHint"),
     info: t("promoEditor.stepInfoHint"),
+    preview: t("promoEditor.stepPreviewHint"),
   };
 
   const scrollWizardTop = () => {
@@ -513,14 +652,14 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     switch (step) {
       case "video": {
         if (!fullReady) {
-          setErr(t("promoEditor.waitEncoding"));
+          setErr(workDraftMode ? t("promoEditor.errorStagingIncomplete") : t("promoEditor.waitEncoding"));
           return false;
         }
-        if (hasPromoVideo && promoEncoding) {
+        if (!workDraftMode && hasPromoVideo && promoEncoding) {
           setErr(t("promoEditor.errorEncodingBeforeNext"));
           return false;
         }
-        if (hasPromoVideo && promoStreamReady) return true;
+        if (hasPromoVideo) return true;
         if (!promoFile) {
           setErr(t("uploader.errorPromoVideoRequired"));
           return false;
@@ -545,7 +684,11 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           setErr(t("uploader.errorPromoVideoInvalid"));
           return false;
         }
-        setErr(t("promoEditor.errorUploadBeforeNext"));
+        setErr(
+          workDraftMode
+            ? t("promoEditor.errorSavePromoStagingBeforeNext")
+            : t("promoEditor.errorUploadBeforeNext")
+        );
         return false;
       }
       case "thumbnail": {
@@ -557,7 +700,14 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
         setErr(t("uploader.errorThumbnailRequired"));
         return false;
       }
-      case "info":
+      case "info": {
+        if (!title.trim()) {
+          setErr(t("uploader.errorPromoTitleRequired"));
+          return false;
+        }
+        return true;
+      }
+      case "preview":
         return true;
       default:
         return true;
@@ -584,21 +734,29 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
     scrollWizardTop();
   };
 
-  const livePreviewPanel = showEditor ? (
-    <SubmissionSurfacePreviews
-      workTitle={workDisplayTitle}
-      catalogThumbnailUrl={catalogThumbnailUrl}
-      liveThumbnailUrl={liveThumbnailUrl}
-      title={title}
-      description={description}
-      director={work.director ?? ""}
-      frameCrop={promoCrop}
-      promoPlaybackUrl={promoPlaybackUrl}
-      fullPlaybackUrl={work.playbackUrl}
-      ownerUid={user.uid}
-      workId={workId}
-    />
-  ) : null;
+  const previewPanel =
+    showEditor && currentStep === "preview" ? (
+      <div className="space-y-4">
+        <p className="text-xs text-xiio-muted leading-relaxed">{t("promoEditor.previewGateHint")}</p>
+        {submitProgress ? (
+          <p className="text-sm text-amber-200/90">{t(`promoEditor.submitProgress.${submitProgress.phase}`)}</p>
+        ) : null}
+        <SubmissionSurfacePreviews
+          workTitle={workDisplayTitle}
+          catalogThumbnailUrl={catalogThumbnailUrl}
+          liveThumbnailUrl={liveThumbnailUrl}
+          thumbnailCrop={thumbnailCrop}
+          title={title}
+          description={description}
+          director={work.director ?? ""}
+          frameCrop={promoCrop}
+          promoPlaybackUrl={promoPlaybackUrl}
+          fullPlaybackUrl={fullPlaybackUrl}
+          ownerUid={user.uid}
+          workId={workId}
+        />
+      </div>
+    ) : null;
 
   const editorSections = (
     <>
@@ -679,7 +837,11 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
               onClick={() => void uploadPromoVideo()}
               className="w-full sm:w-auto px-5 py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-semibold disabled:opacity-40"
             >
-              {busy ? t("common.processing") : t("promoEditor.uploadPromoVideo")}
+              {busy
+                ? t("common.processing")
+                : workDraftMode
+                  ? t("promoEditor.savePromoStaging")
+                  : t("promoEditor.uploadPromoVideo")}
             </button>
           ) : null}
         </UploaderFormSection>
@@ -698,16 +860,29 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
             disabled={busy}
             error={thumbnailFieldError}
           />
-          {thumbnailPreview && (
-            <ThumbnailPreviewStages
-              src={thumbnailPreview}
-              fullTitle={t("uploader.fullThumbnailPreviewTitle")}
-              fullHint={t("uploader.fullThumbnailPreviewHint")}
-              shortsTitle={t("uploader.shortsThumbnailPreviewTitle")}
-              shortsHint={t("uploader.shortsThumbnailPreviewHint")}
-            />
-          )}
-          {thumbnailFile ? (
+          {thumbnailPreview ? (
+            <>
+              <p className="text-xs text-xiio-muted leading-relaxed">{t("uploader.thumbnailCropHint")}</p>
+              <PromoCropFrameEditor
+                previewUrl={thumbnailPreview}
+                crop={thumbnailCrop}
+                onCropChange={(next) => setThumbnailCrop(normalizePromoFrameCrop(next))}
+                meta={thumbnailImageMeta}
+                frameAspect={CATALOG_THUMBNAIL_FRAME_ASPECT}
+                isImage
+                disabled={busy}
+              />
+              <ThumbnailPreviewStages
+                src={thumbnailPreview}
+                crop={thumbnailCrop}
+                fullTitle={t("uploader.fullThumbnailPreviewTitle")}
+                fullHint={t("uploader.fullThumbnailPreviewHint")}
+                shortsTitle={t("uploader.shortsThumbnailPreviewTitle")}
+                shortsHint={t("uploader.shortsThumbnailPreviewHint")}
+              />
+            </>
+          ) : null}
+          {thumbnailPreview ? (
             <button
               type="button"
               disabled={busy}
@@ -781,11 +956,15 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
 
   const wizardFooter = showEditor ? (
     <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6 md:p-8 space-y-4">
-      {isLastStep && (
+      {currentStep === "preview" && (
         <p
           className={`text-sm ${canSubmit ? "text-emerald-300/90" : "text-xiio-muted"}`}
         >
-          {canSubmit ? t("promoEditor.submitHint") : t("promoEditor.statusReadyBody")}
+          {canSubmit
+            ? workDraftMode
+              ? t("promoEditor.submitHintStaged")
+              : t("promoEditor.submitHint")
+            : t("promoEditor.previewNotReady")}
         </p>
       )}
       <div className="flex gap-3">
@@ -872,9 +1051,14 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
                   body={t("promoEditor.revisionPendingBody")}
                 />
               )}
-              {!fullReady && (
+              {!fullReady && !workDraftMode && (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-300 text-sm">
                   {t("promoEditor.waitEncoding")}
+                </div>
+              )}
+              {workDraftMode && !hasCompleteVideoStaging(work.videoStaging) && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-300 text-sm">
+                  {t("promoEditor.errorStagingIncomplete")}
                 </div>
               )}
               {awaitingPromoUpload && (
@@ -919,8 +1103,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           }
           footer={wizardFooter}
         >
-          {livePreviewPanel}
-          {showEditor && (
+          {showEditor && currentStep !== "preview" && (
             <div className="mb-6 lg:hidden">
               <div className="flex justify-between text-xs text-xiio-muted mb-1">
                 <span className="font-medium text-white">{stepLabels[currentStep]}</span>
@@ -940,7 +1123,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
               </div>
             </div>
           )}
-          {editorSections}
+          {currentStep === "preview" ? previewPanel : editorSections}
         </UploaderFormShell>
           </div>
         </div>

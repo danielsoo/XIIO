@@ -3,11 +3,13 @@ import type { PromoFrameCrop } from "@/types/work";
 
 export {
   adjustZoom,
+  CATALOG_THUMBNAIL_FRAME_ASPECT,
   clampFrameToDisplay,
   computeObjectContainRect,
   cropToFrameRect,
   frameCenterToCrop,
   frameRectToCrop,
+  maxFrameInRect,
   maxPortraitFrameInRect,
   PORTRAIT_FRAME_ASPECT,
 } from "@/lib/works/promo-crop-interaction-pure";

@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  createTusDirectUpload,
-  isStreamConfigured,
-  MAX_STREAM_UPLOAD_BYTES,
-} from "@/lib/cloudflare/stream";
+import { MAX_STREAM_UPLOAD_BYTES } from "@/lib/cloudflare/stream";
 import { hasDepositVerifiedClaim } from "@/lib/server/deposit-verification";
 import { isUploaderDepositEnabled } from "@/lib/payments/config";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
@@ -30,15 +26,8 @@ import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils
 import type { WorkCreditInput } from "@/types/credits";
 import type { PromoDraft, VideoAspectRatio } from "@/types/work";
 
+/** 작품 메타만 생성 — 영상은 Storage 스테이징 후 제출 전 확인에서 심사 제출 시 Stream 업로드 */
 export async function POST(request: Request) {
-  if (!isStreamConfigured()) {
-    return jsonError(
-      "stream_not_configured",
-      "Cloudflare Stream 환경 변수가 없습니다. CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_STREAM_API_TOKEN을 설정하세요.",
-      503
-    );
-  }
-
   const auth = await requireUser(request);
   if ("error" in auth) return auth.error;
   const { session } = auth;
@@ -122,145 +111,104 @@ export async function POST(request: Request) {
 
   const workId = crypto.randomUUID();
 
-  let upload: { tusEndpoint: string; uid: string };
+  const db = await getDbOrNull();
+  if (!db) {
+    return jsonError("admin_not_configured", "서버 DB를 사용할 수 없습니다.", 503);
+  }
+
   try {
-    upload = await createTusDirectUpload({
-      uploadLength,
-      meta: {
-        xiio_uid: session.uid,
-        xiio_work_id: workId,
-        xiio_kind: "full",
-        title,
-      },
+    const userSnap = await db.collection("users").doc(session.uid).get();
+    const profile = userSnap.exists
+      ? parseUserProfileDoc(userSnap.data() as Record<string, unknown>)
+      : null;
+    const directorFromBody = body.director?.trim().slice(0, 120) || "";
+    const director =
+      directorFromBody || profile?.defaultDirectorName?.trim().slice(0, 120) || null;
+
+    const sortOrder = await nextWorkSortOrder(db, session.uid);
+    const ownerCreditName = profile
+      ? resolveWorkCreditDisplayName(
+          {
+            displayName: profile.displayName,
+            defaultDirectorName: profile.defaultDirectorName,
+            handle: profile.handle,
+          },
+          "director"
+        ) || director || "Creator"
+      : director || "Creator";
+
+    await worksCol(db, session.uid).doc(workId).set({
+      kind: "full",
+      section: sectionRaw,
+      title,
+      description,
+      director,
+      proposedCategory: proposedCategory || null,
+      proposedTags: proposedTags.length > 0 ? proposedTags : null,
+      proposedAspectRatio,
+      promoDraft,
+      platformStatus: "draft",
+      streamStatus: "staged",
+      sortOrder,
+      ownerUid: session.uid,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
+
+    const creditInputs = Array.isArray(body.credits) ? body.credits : [];
+    const withDirector: WorkCreditInput[] = [
+      { userId: session.uid, role: "director", sortOrder: 0 },
+      ...creditInputs.filter((c) => !(c.userId === session.uid && c.role === "director")),
+    ];
+    const validated = validateCreditInputs(withDirector, session.uid);
+    const creditWork = {
+      title,
+      section: sectionRaw,
+      platformStatus: "draft" as const,
+    };
+    if (validated.ok && validated.credits.length > 0) {
+      const names = new Map<string, string>([
+        [creditDisplayNameMapKey(session.uid, "director"), ownerCreditName],
+      ]);
+      for (const c of validated.credits) {
+        const key = creditDisplayNameMapKey(c.userId, c.role);
+        if (names.has(key)) continue;
+        const u = await db.collection("users").doc(c.userId).get();
+        if (u.exists) {
+          const p = parseUserProfileDoc(u.data() as Record<string, unknown>);
+          names.set(
+            key,
+            resolveWorkCreditDisplayName(
+              {
+                displayName: p.displayName,
+                defaultDirectorName: p.defaultDirectorName,
+                handle: p.handle,
+              },
+              c.role
+            )
+          );
+        }
+      }
+      await writeWorkCredits(db, session.uid, workId, creditWork, validated.credits, names);
+    } else {
+      await ensureOwnerDirectorCredit(
+        db,
+        session.uid,
+        workId,
+        { ...creditWork, director: director ?? undefined },
+        ownerCreditName
+      );
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("[upload-url] Cloudflare Stream:", msg);
-    const storageFull =
-      /storage capacity exceeded|storage quota|exceeded your allocated storage/i.test(msg);
+    console.error("[upload-url] Firestore:", msg);
     return jsonError(
-      storageFull ? "stream_storage_full" : "stream_api_failed",
-      msg || "Cloudflare Stream API 호출에 실패했습니다.",
-      storageFull ? 507 : 502,
-      storageFull
-        ? "Cloudflare 대시보드 → Stream → Videos에서 기존 영상을 삭제하거나, Plans에서 저장 용량(분)을 늘리세요."
-        : "API 토큰 권한(Stream Edit)과 계정 ID를 확인하세요."
+      "firestore_write_failed",
+      msg || "Firestore에 저장하지 못했습니다.",
+      500,
+      "FIREBASE_SERVICE_ACCOUNT_JSON, Firestore DB 이름(xiio), 보안 규칙을 확인하세요."
     );
   }
 
-  const db = await getDbOrNull();
-  if (db) {
-    try {
-      const userSnap = await db.collection("users").doc(session.uid).get();
-      const profile = userSnap.exists
-        ? parseUserProfileDoc(userSnap.data() as Record<string, unknown>)
-        : null;
-      const directorFromBody = body.director?.trim().slice(0, 120) || "";
-      const director =
-        directorFromBody || profile?.defaultDirectorName?.trim().slice(0, 120) || null;
-
-      const sortOrder = await nextWorkSortOrder(db, session.uid);
-      const ownerCreditName = profile
-        ? resolveWorkCreditDisplayName(
-            {
-              displayName: profile.displayName,
-              defaultDirectorName: profile.defaultDirectorName,
-              handle: profile.handle,
-            },
-            "director"
-          ) || director || "Creator"
-        : director || "Creator";
-      await worksCol(db, session.uid).doc(workId).set({
-        kind: "full",
-        section: sectionRaw,
-        title,
-        description,
-        director,
-        proposedCategory: proposedCategory || null,
-        proposedTags: proposedTags.length > 0 ? proposedTags : null,
-        proposedAspectRatio,
-        promoDraft,
-        platformStatus: "pending",
-        streamStatus: "uploading",
-        streamUid: upload.uid,
-        sortOrder,
-        ownerUid: session.uid,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-
-      const creditInputs = Array.isArray(body.credits) ? body.credits : [];
-      const withDirector: WorkCreditInput[] = [
-        { userId: session.uid, role: "director", sortOrder: 0 },
-        ...creditInputs.filter((c) => !(c.userId === session.uid && c.role === "director")),
-      ];
-      const validated = validateCreditInputs(withDirector, session.uid);
-      if (validated.ok && validated.credits.length > 0) {
-        const names = new Map<string, string>([
-          [creditDisplayNameMapKey(session.uid, "director"), ownerCreditName],
-        ]);
-        for (const c of validated.credits) {
-          const key = creditDisplayNameMapKey(c.userId, c.role);
-          if (names.has(key)) continue;
-          const u = await db.collection("users").doc(c.userId).get();
-          if (u.exists) {
-            const p = parseUserProfileDoc(u.data() as Record<string, unknown>);
-            names.set(
-              key,
-              resolveWorkCreditDisplayName(
-                {
-                  displayName: p.displayName,
-                  defaultDirectorName: p.defaultDirectorName,
-                  handle: p.handle,
-                },
-                c.role
-              )
-            );
-          }
-        }
-        await writeWorkCredits(
-          db,
-          session.uid,
-          workId,
-          {
-            title,
-            section: sectionRaw,
-            platformStatus: "pending",
-            streamUid: upload.uid,
-          },
-          validated.credits,
-          names
-        );
-      } else {
-        await ensureOwnerDirectorCredit(
-          db,
-          session.uid,
-          workId,
-          {
-            title,
-            section: sectionRaw,
-            platformStatus: "pending",
-            streamUid: upload.uid,
-            director: director ?? undefined,
-          },
-          ownerCreditName
-        );
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error("[upload-url] Firestore:", msg);
-      return jsonError(
-        "firestore_write_failed",
-        msg || "Firestore에 저장하지 못했습니다.",
-        500,
-        "FIREBASE_SERVICE_ACCOUNT_JSON, Firestore DB 이름(xiio), 보안 규칙을 확인하세요."
-      );
-    }
-  }
-
-  return NextResponse.json({
-    workId,
-    streamUid: upload.uid,
-    tusEndpoint: upload.tusEndpoint,
-  });
+  return NextResponse.json({ workId, staged: true });
 }

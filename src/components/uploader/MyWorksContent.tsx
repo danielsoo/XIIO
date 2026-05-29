@@ -294,6 +294,7 @@ export default function MyWorksContent() {
                     </button>
                     {(work.promo ||
                       work.promoDraft ||
+                      work.platformStatus === "draft" ||
                       (work.streamStatus === "ready" && !promoPublished)) && (
                       <Link
                         href={`/uploader/works/${work.id}/promo`}

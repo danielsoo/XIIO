@@ -14,11 +14,22 @@ export const WORK_CATEGORIES = WORK_SECTIONS;
 /** @deprecated use WorkSection */
 export type WorkCategory = WorkSection;
 
-export type PlatformStatus = "pending" | "published" | "rejected" | "removal_requested";
+export type PlatformStatus = "draft" | "pending" | "published" | "rejected" | "removal_requested";
 
 export type PromoPlatformStatus = "draft" | "pending" | "published" | "rejected" | "removal_requested";
 
-export type StreamStatus = "uploading" | "processing" | "ready" | "error";
+export type StreamStatus = "staged" | "uploading" | "processing" | "ready" | "error";
+
+/** Firebase Storage 원본 — 심사 제출 시 Stream으로 1회 업로드 */
+export type WorkVideoStaging = {
+  fullPath: string;
+  promoPath: string;
+  fullBytes?: number;
+  promoBytes?: number;
+  fullContentType?: string;
+  promoContentType?: string;
+  updatedAt?: unknown;
+};
 
 /** 업로드 시 선택하는 목표 화면 비율 */
 export const WORK_ASPECT_RATIOS = ["16:9", "9:16", "4:3", "1:1", "21:9"] as const;
@@ -60,6 +71,7 @@ export type PromoDraft = {
   title: string;
   description?: string | null;
   thumbnailUrl?: string | null;
+  thumbnailCrop?: PromoFrameCrop;
 };
 
 export type PromoPendingRevision = {
@@ -74,6 +86,7 @@ export type PromoPendingRevision = {
   title?: string;
   description?: string;
   thumbnailUrl?: string | null;
+  thumbnailCrop?: PromoFrameCrop;
   frameCrop?: PromoFrameCrop;
   rejectReason?: string;
   submittedAt?: unknown;
@@ -100,7 +113,9 @@ export type WorkDoc = {
   approvedAspectRatio?: VideoAspectRatio;
   platformStatus: PlatformStatus;
   streamStatus: StreamStatus;
-  streamUid: string;
+  streamUid?: string;
+  /** 제출 전 원본 영상 경로 (Storage) */
+  videoStaging?: WorkVideoStaging;
   sortOrder: number;
   rejectReasonCode?: RejectReasonCode;
   rejectReason?: string;
@@ -133,6 +148,7 @@ export type PromoShortDoc = {
   title?: string;
   description?: string;
   thumbnailUrl?: string | null;
+  thumbnailCrop?: PromoFrameCrop;
   frameCrop?: PromoFrameCrop;
   rejectReason?: string;
   deletionRequest?: DeletionRequest;
@@ -193,4 +209,5 @@ export type CatalogFeedItem = {
   approvedCategory?: string;
   approvedTags: string[];
   thumbnailUrl?: string;
+  thumbnailCrop?: PromoFrameCrop;
 };
