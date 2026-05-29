@@ -667,7 +667,8 @@ function placementForTeaserItem(
   incomingStyle: { transform: string; opacity: number; zIndex: number } | null,
   revolvePhase: RevolvePhase,
   metrics: LayoutMetrics,
-  slotFrameClass: string
+  slotFrameClass: string,
+  keepEdgeVisibleDuringShift: boolean
 ): ItemPlacement {
   const visibleRoles = getVisibleTeaserRoles(displayQuartet, count);
   const incomingMinCount = count >= 4 ? 4 : 3;
@@ -692,7 +693,9 @@ function placementForTeaserItem(
   ];
 
   for (const { role, item } of roleEntries) {
-    if (item.id !== itemId || !visibleRoles.has(role)) continue;
+    const keepEdgeVisible =
+      keepEdgeVisibleDuringShift && (role === "farLeft" || role === "right");
+    if (item.id !== itemId || (!visibleRoles.has(role) && !keepEdgeVisible)) continue;
     const s = slotTransform(role, revolvePhase, metrics);
     return {
       visible: true,
@@ -1168,10 +1171,8 @@ export default function PromoShortCarouselStage({
       isExpandedCenter
         ? (revolvePhase === "toNext" && wrapCandidate.id === displayQuintet.farRight.id) ||
           (revolvePhase === "toPrev" && wrapCandidate.id === displayQuintet.farLeft.id)
-        : (revolvePhase === "toNext" && wrapCandidate.id === displayQuartet.left.id) ||
-          (revolvePhase === "toPrev" &&
-            (wrapCandidate.id === displayQuartet.right.id ||
-              wrapCandidate.id === displayQuartet.farLeft.id))
+        : (revolvePhase === "toNext" && wrapCandidate.id === displayQuartet.farLeft.id) ||
+          (revolvePhase === "toPrev" && wrapCandidate.id === displayQuartet.right.id)
     )
       ? wrapCandidate
       : null;
@@ -1183,6 +1184,11 @@ export default function PromoShortCarouselStage({
       : null;
   const keepExpandedEdgeVisibleDuringShift =
     isExpandedCenter &&
+    showIncoming &&
+    (revolvePhase === "toNext" || revolvePhase === "toPrev");
+  const keepTeaserEdgeVisibleDuringShift =
+    !isExpandedCenter &&
+    count >= 4 &&
     showIncoming &&
     (revolvePhase === "toNext" || revolvePhase === "toPrev");
 
@@ -1265,7 +1271,8 @@ export default function PromoShortCarouselStage({
                       incomingStyle,
                       revolvePhase,
                       metrics,
-                      carouselFrameClass
+                      carouselFrameClass,
+                      keepTeaserEdgeVisibleDuringShift
                     );
               const warmCenter =
                 !snapshot &&
