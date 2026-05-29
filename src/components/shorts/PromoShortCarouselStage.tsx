@@ -96,6 +96,8 @@ const SLIDE_MS = 560;
 const SLIDE_COMMIT_BUFFER_MS = 80;
 const SLIDE_ENTER_EXTRA_PX = 20;
 const EXPANDED_EDGE_ENTER_FADE = 0.22;
+/** Teaser 퇴장 farLeft/right — 슬라이드와 함께 완전히 사라짐 */
+const TEASER_EDGE_EXIT_OPACITY = 0;
 type VisiblePreloadMode = "hybrid" | "allAuto";
 const VISIBLE_PRELOAD_MODE: VisiblePreloadMode = "hybrid";
 
@@ -465,7 +467,7 @@ function slotTransform(
     if (role === "farLeft") {
       return {
         transform: `translateX(${-offsetFarLeft - SLIDE_ENTER_EXTRA_PX}px) scale(${farScale})`,
-        opacity: EXPANDED_EDGE_ENTER_FADE,
+        opacity: TEASER_EDGE_EXIT_OPACITY,
         zIndex: 1,
       };
     }
@@ -496,7 +498,7 @@ function slotTransform(
   if (role === "right") {
     return {
       transform: `translateX(${offsetX + SLIDE_ENTER_EXTRA_PX}px) scale(${peekScale})`,
-      opacity: EXPANDED_EDGE_ENTER_FADE,
+      opacity: TEASER_EDGE_EXIT_OPACITY,
       zIndex: 1,
     };
   }
@@ -826,6 +828,11 @@ export default function PromoShortCarouselStage({
   const [snapshot, setSnapshot] = useState<CarouselSnapshot | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [outgoingCenterId, setOutgoingCenterId] = useState<string | null>(null);
+  const [outgoingTeaserEdgeId, setOutgoingTeaserEdgeId] = useState<string | null>(null);
+  const [outgoingTeaserEdgePhase, setOutgoingTeaserEdgePhase] = useState<
+    "toNext" | "toPrev" | null
+  >(null);
+  const outgoingTeaserEdgeClearRafRef = useRef<number | null>(null);
   const [viewportOpacity, setViewportOpacity] = useState(1);
   const [transitionMode, setTransitionMode] = useState<ActiveTransitionMode>("revolve");
   const [animPrevIndex, setAnimPrevIndex] = useState(0);
@@ -840,6 +847,16 @@ export default function PromoShortCarouselStage({
     setOutgoingCenterId(null);
     setSnapshot(null);
     setRevolvePhase("idle");
+    if (outgoingTeaserEdgeClearRafRef.current !== null) {
+      cancelAnimationFrame(outgoingTeaserEdgeClearRafRef.current);
+    }
+    outgoingTeaserEdgeClearRafRef.current = requestAnimationFrame(() => {
+      outgoingTeaserEdgeClearRafRef.current = requestAnimationFrame(() => {
+        outgoingTeaserEdgeClearRafRef.current = null;
+        setOutgoingTeaserEdgeId(null);
+        setOutgoingTeaserEdgePhase(null);
+      });
+    });
   }, []);
 
   const endTransition = useCallback(() => {
@@ -983,6 +1000,19 @@ export default function PromoShortCarouselStage({
     const direction = requestedDirectionRef.current;
     const targetPhase = direction === 1 ? "toNext" : "toPrev";
     setAnimPrevIndex(prev);
+    if (!isExpandedCenter && mode === "slide" && count >= 4) {
+      const prevQuartet = teaserQuartetAt(items, prev);
+      if (targetPhase === "toNext") {
+        setOutgoingTeaserEdgeId(prevQuartet.farLeft.id);
+        setOutgoingTeaserEdgePhase("toNext");
+      } else {
+        setOutgoingTeaserEdgeId(prevQuartet.right.id);
+        setOutgoingTeaserEdgePhase("toPrev");
+      }
+    } else {
+      setOutgoingTeaserEdgeId(null);
+      setOutgoingTeaserEdgePhase(null);
+    }
     setSnapshot(isExpandedCenter ? quintetAt(items, prev) : teaserQuartetAt(items, prev));
     setIncomingAtEnter(true);
     setRevolvePhase("idle");
@@ -1279,7 +1309,35 @@ export default function PromoShortCarouselStage({
                 (isExpandedCenter
                   ? shouldWarmExpandedStripItem(itemIdx, index, count)
                   : shouldWarmTeaserStripItem(itemIdx, index, count));
-              if (!placement.visible && !warmCenter) return;
+              const isPostCommitOutgoingTeaserEdge =
+                !isExpandedCenter &&
+                outgoingTeaserEdgeId !== null &&
+                outgoingTeaserEdgePhase !== null &&
+                item.id === outgoingTeaserEdgeId &&
+                !placement.visible;
+              if (!placement.visible && !warmCenter && !isPostCommitOutgoingTeaserEdge) {
+                return;
+              }
+
+              const postCommitExitRole: TeaserSlotRole | null = isPostCommitOutgoingTeaserEdge
+                ? outgoingTeaserEdgePhase === "toNext"
+                  ? "farLeft"
+                  : "right"
+                : null;
+              const slotPlacement: ItemPlacement = isPostCommitOutgoingTeaserEdge
+                ? (() => {
+                    const s = slotTransform(postCommitExitRole!, outgoingTeaserEdgePhase!, metrics);
+                    return {
+                      visible: true,
+                      role: postCommitExitRole!,
+                      transform: s.transform,
+                      opacity: s.opacity,
+                      zIndex: s.zIndex,
+                      frameClass: carouselFrameClass,
+                      isCenter: false,
+                    };
+                  })()
+                : placement;
 
               const isTargetCenter = item.id === liveCenterId;
               const isLiveCenter = !snapshot && isTargetCenter;
@@ -1293,10 +1351,11 @@ export default function PromoShortCarouselStage({
                     : item.id === displayQuartet.left.id);
               const isExitingTeaserEdge =
                 !isExpandedCenter &&
-                animatingShift &&
-                placement.visible &&
-                ((revolvePhase === "toNext" && placement.role === "farLeft") ||
-                  (revolvePhase === "toPrev" && placement.role === "right"));
+                (isPostCommitOutgoingTeaserEdge ||
+                  (animatingShift &&
+                    slotPlacement.visible &&
+                    ((revolvePhase === "toNext" && slotPlacement.role === "farLeft") ||
+                      (revolvePhase === "toPrev" && slotPlacement.role === "right"))));
               const isOutgoingCenter = Boolean(
                 snapshot && outgoingCenterId && item.id === outgoingCenterId
               );
@@ -1306,8 +1365,8 @@ export default function PromoShortCarouselStage({
               const showAsCenter =
                 !isExitingTeaserEdge &&
                 (keepsVideoDuringShift ||
-                  (placement.isCenter && !isOutgoingCenter && !animatingShift) ||
-                  (warmCenter && !placement.visible) ||
+                  (slotPlacement.isCenter && !isOutgoingCenter && !animatingShift) ||
+                  (warmCenter && !slotPlacement.visible) ||
                   (isLiveCenter && !snapshot));
               const preserveCenterFrame = Boolean(
                 showAsCenter &&
@@ -1322,9 +1381,9 @@ export default function PromoShortCarouselStage({
                 isExpandedCenter &&
                 transitionMode === "revolve" &&
                 animatingRevolve &&
-                placement.visible &&
-                ((revolvePhase === "toNext" && placement.role === "left") ||
-                  (revolvePhase === "toPrev" && placement.role === "right"));
+                slotPlacement.visible &&
+                ((revolvePhase === "toNext" && slotPlacement.role === "left") ||
+                  (revolvePhase === "toPrev" && slotPlacement.role === "right"));
               const wrapArcClass = isWrapArc
                 ? revolvePhase === "toNext"
                   ? "animate-carousel-wrap-to-next"
@@ -1333,13 +1392,13 @@ export default function PromoShortCarouselStage({
               const slotMotionClass = isWrapArc ? wrapArcClass : transitionClass;
               const slotCenteringClass = isWrapArc ? "" : "-translate-y-1/2";
               const baseDimLevel = isExpandedCenter
-                ? expandedRoleDimLevel(placement.role)
-                : teaserRoleDimLevel(placement.role);
+                ? expandedRoleDimLevel(slotPlacement.role)
+                : teaserRoleDimLevel(slotPlacement.role);
               const targetRole = animatingShift
                 ? isExpandedCenter
-                  ? shiftedExpandedRole(placement.role, revolvePhase)
-                  : shiftedTeaserRole(placement.role, revolvePhase)
-                : placement.role;
+                  ? shiftedExpandedRole(slotPlacement.role, revolvePhase)
+                  : shiftedTeaserRole(slotPlacement.role, revolvePhase)
+                : slotPlacement.role;
               const targetDimLevel = isExpandedCenter
                 ? expandedRoleDimLevel(targetRole)
                 : teaserRoleDimLevel(targetRole);
@@ -1349,57 +1408,71 @@ export default function PromoShortCarouselStage({
                   : baseDimLevel
                 : null;
               const sideDimLevel = (baseDimLevel ?? "default") as PromoShortPeekDimLevel;
-              const showChrome = placement.role === "center" && !isOutgoingCenter;
+              const exitingTeaserEdgeDimLevel = isExitingTeaserEdge
+                ? (teaserRoleDimLevel(
+                    postCommitExitRole ??
+                      (slotPlacement.role === "farLeft" || slotPlacement.role === "right"
+                        ? slotPlacement.role
+                        : undefined)
+                  ) ?? sideDimLevel)
+                : null;
+              const showChrome = slotPlacement.role === "center" && !isOutgoingCenter;
               const isVisiblePreloadSlot =
-                placement.visible && !showAsCenter && !isExitingTeaserEdge;
+                slotPlacement.visible && !showAsCenter && !isExitingTeaserEdge;
               const slotVideoPreload = (() => {
                 if (showAsCenter) {
                   return isLiveCenter || isPromoting ? "auto" : "metadata";
                 }
-                if (!placement.visible) return "metadata";
+                if (!slotPlacement.visible) return "metadata";
                 if (!isExpandedCenter) {
-                  if (placement.role === "farLeft" || placement.role === "right") {
+                  if (slotPlacement.role === "farLeft" || slotPlacement.role === "right") {
                     return VISIBLE_PRELOAD_MODE === "allAuto" ? "auto" : "metadata";
                   }
                   return "auto";
                 }
-                if (placement.role === "farLeft" || placement.role === "farRight") {
+                if (slotPlacement.role === "farLeft" || slotPlacement.role === "farRight") {
                   return VISIBLE_PRELOAD_MODE === "allAuto" ? "auto" : "metadata";
                 }
                 return "auto";
               })();
               const useExpandedScaleSizing = Boolean(isExpandedCenter && stripMetrics);
-              const slotFrameClass = placement.visible
+              const slotFrameClass = slotPlacement.visible
                 ? isWrapArc
                   ? carouselWrapFrameClass
                   : useExpandedScaleSizing
                     ? carouselFrameClass
-                    : placement.frameClass
+                    : slotPlacement.frameClass
                 : carouselFrameClass;
+              const slotMotionStyle =
+                isPostCommitOutgoingTeaserEdge ? undefined : slideTransitionStyle;
 
               const slotEl = (
                 <div
                   key={isWrapArc ? `${item.id}-rev-${revolveEpoch}` : item.id}
-                  className={`absolute top-1/2 left-1/2 ${slotCenteringClass} will-change-transform ${slotMotionClass} ${slotFrameClass}`}
+                  className={`absolute top-1/2 left-1/2 ${slotCenteringClass} will-change-transform ${isPostCommitOutgoingTeaserEdge ? "" : slotMotionClass} ${slotFrameClass}`}
                   style={{
-                    transform: placement.visible
+                    transform: slotPlacement.visible
                       ? isWrapArc
                         ? undefined
-                        : `translate(-50%, -50%) ${placement.transform}`
+                        : `translate(-50%, -50%) ${slotPlacement.transform}`
                       : "translate(-50%, -50%) scale(0.85)",
-                    opacity: placement.visible ? (isWrapArc ? 1 : placement.opacity) : 0,
-                    zIndex: placement.visible ? placement.zIndex : 0,
-                    pointerEvents: placement.visible ? undefined : "none",
-                    ...slideTransitionStyle,
+                    opacity: slotPlacement.visible
+                      ? isWrapArc
+                        ? 1
+                        : slotPlacement.opacity
+                      : 0,
+                    zIndex: slotPlacement.visible ? slotPlacement.zIndex : 0,
+                    pointerEvents: slotPlacement.visible ? undefined : "none",
+                    ...slotMotionStyle,
                   }}
-                  aria-hidden={placement.visible ? !ariaLiveCenter : true}
+                  aria-hidden={slotPlacement.visible ? !ariaLiveCenter : true}
                 >
                   {isExitingTeaserEdge ? (
                     <PromoShortPeekPreview
                       item={item}
                       compactShell
                       dimOverlay
-                      dimLevel={animatedDimLevel ?? sideDimLevel}
+                      dimLevel={exitingTeaserEdgeDimLevel ?? sideDimLevel}
                     />
                   ) : showAsCenter || isVisiblePreloadSlot ? (
                     isExpandedCenter ? (
