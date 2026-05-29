@@ -1,6 +1,6 @@
 import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
-import { resolvePlaybackUrl } from "@/lib/cloudflare/stream";
+import { resolveReviewPlaybackUrl } from "@/lib/cloudflare/stream";
 import {
   mapFullWorkQueueItem,
   mapPromoWorkQueueItem,
@@ -134,7 +134,7 @@ export async function GET(request: Request) {
       const userSnap = await db.collection("users").doc(ownerUid).get();
       const playbackUrl =
         work.streamUid && work.streamStatus === "ready"
-          ? await resolvePlaybackUrl(work.streamUid)
+          ? await resolveReviewPlaybackUrl(work.streamUid)
           : undefined;
       items.push({
         kind: "full",
@@ -164,7 +164,7 @@ export async function GET(request: Request) {
       const userSnap = await db.collection("users").doc(ownerUid).get();
       const playbackUrl =
         promo.streamUid && promo.streamStatus === "ready"
-          ? await resolvePlaybackUrl(promo.streamUid)
+          ? await resolveReviewPlaybackUrl(promo.streamUid)
           : undefined;
       items.push({
         kind: "promo",

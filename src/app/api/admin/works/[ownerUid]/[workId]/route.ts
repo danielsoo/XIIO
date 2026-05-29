@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteStreamVideo, resolvePlaybackUrl } from "@/lib/cloudflare/stream";
+import { deleteStreamVideo, resolveReviewPlaybackUrl } from "@/lib/cloudflare/stream";
 import { listWorkAuditLog, recordAdminAudit } from "@/lib/server/admin-audit";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
 import { parseUserProfileDoc } from "@/lib/userAccess";
@@ -46,7 +46,7 @@ export async function GET(request: Request, { params }: Params) {
 
   const playbackUrl =
     work.streamUid && work.streamStatus === "ready"
-      ? await resolvePlaybackUrl(work.streamUid)
+      ? await resolveReviewPlaybackUrl(work.streamUid)
       : undefined;
 
   const promoSnap = await promoRef(db, ownerUid, workId).get();
@@ -55,7 +55,7 @@ export async function GET(request: Request, { params }: Params) {
     const parsed = parsePromoDoc(promoSnap.data() as Record<string, unknown>);
     const promoPlayback =
       parsed.streamUid && parsed.streamStatus === "ready"
-        ? await resolvePlaybackUrl(parsed.streamUid)
+        ? await resolveReviewPlaybackUrl(parsed.streamUid)
         : undefined;
     promo = {
       id: PROMO_SHORT_DOC_ID,
@@ -65,11 +65,15 @@ export async function GET(request: Request, { params }: Params) {
       clipEndSec: parsed.clipEndSec ?? 0,
       durationSec: parsed.durationSec,
       title: parsed.title,
+      thumbnailUrl: parsed.thumbnailUrl ?? null,
       playbackUrl: promoPlayback ?? undefined,
       deletionRequest: parsed.deletionRequest,
       rejectReason: parsed.rejectReason,
     };
   }
+
+  const catalogThumbnailUrl =
+    promo?.thumbnailUrl?.trim() || work.promoDraft?.thumbnailUrl?.trim() || null;
 
   const auditLog = await listWorkAuditLog(db, ownerUid, workId, auth.isSuperAdmin);
 
@@ -81,6 +85,7 @@ export async function GET(request: Request, { params }: Params) {
       displayName: ownerProfile?.displayName ?? ownerUid,
     },
     playbackUrl: playbackUrl ?? undefined,
+    catalogThumbnailUrl,
     promo,
     auditLog,
   };

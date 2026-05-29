@@ -189,6 +189,7 @@ export type AdminWorkDetail = {
   work: WorkDoc & { id: string };
   owner: AdminWorkDetailOwner;
   playbackUrl?: string;
+  catalogThumbnailUrl?: string | null;
   auditLog?: AdminWorkAuditItem[];
   promo?: {
     id: string;
@@ -198,6 +199,7 @@ export type AdminWorkDetail = {
     clipEndSec: number;
     durationSec?: number;
     title?: string;
+    thumbnailUrl?: string | null;
     playbackUrl?: string;
     deletionRequest?: WorkDoc["deletionRequest"];
     rejectReason?: string;

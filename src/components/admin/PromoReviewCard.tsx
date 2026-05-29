@@ -5,7 +5,8 @@ import { useState, type ReactNode } from "react";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import ModerationFlagsPanel from "@/components/admin/ModerationFlagsPanel";
 import type { ContentModeration } from "@/types/moderation";
-import PlaybackVideo from "@/components/PlaybackVideo";
+import AdminReviewVideo from "@/components/admin/AdminReviewVideo";
+import CatalogThumbnailReview from "@/components/admin/CatalogThumbnailReview";
 import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
 import { useTranslations } from "@/context/LocaleContext";
 import { resolveDisplayTitle } from "@/lib/works/display-title";
@@ -42,6 +43,7 @@ export type PromoReviewItem = {
     pendingRevision?: { contentModeration?: ContentModeration };
   };
   livePromo?: PromoLiveSnapshot;
+  catalogThumbnailUrl?: string | null;
 };
 
 type Props = {
@@ -291,7 +293,7 @@ function RevisionCompareSection({
           />
           <div className="mt-auto">
             {promo.playbackUrl ? (
-              <PlaybackVideo src={promo.playbackUrl} maxHeightClass="max-h-[42vh]" />
+              <AdminReviewVideo src={promo.playbackUrl} maxHeightClass="max-h-[42vh]" />
             ) : promo.streamStatus && promo.streamStatus !== "ready" ? (
               <p className="text-sm text-amber-300/90">
                 {t("admin.contentReview.promoNotReady", {
@@ -321,7 +323,7 @@ function RevisionCompareSection({
           />
           <div className="mt-auto">
             {livePromo.playbackUrl ? (
-              <PlaybackVideo src={livePromo.playbackUrl} maxHeightClass="max-h-[42vh]" />
+              <AdminReviewVideo src={livePromo.playbackUrl} maxHeightClass="max-h-[42vh]" />
             ) : (
               <p className="text-sm text-white/50">{t("admin.contentReview.noLiveVideo")}</p>
             )}
@@ -435,10 +437,12 @@ export default function PromoReviewCard({
             />
           </div>
 
+          <CatalogThumbnailReview url={row.catalogThumbnailUrl} />
+
           {promo.playbackUrl && (
             <div className="mb-4 max-w-3xl">
               <p className="text-xs text-xiio-muted mb-2">{t("admin.contentReview.promoVideo")}</p>
-              <PlaybackVideo src={promo.playbackUrl} maxHeightClass="max-h-[60vh]" />
+              <AdminReviewVideo src={promo.playbackUrl} maxHeightClass="max-h-[60vh]" />
             </div>
           )}
 

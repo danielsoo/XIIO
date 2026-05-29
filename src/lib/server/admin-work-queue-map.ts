@@ -1,5 +1,5 @@
 import type { Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
-import { resolvePlaybackUrl } from "@/lib/cloudflare/stream";
+import { resolveReviewPlaybackUrl } from "@/lib/cloudflare/stream";
 import {
   syncPromoRevisionStreamStatusIfNeeded,
   syncPromoStreamStatusIfNeeded,
@@ -33,7 +33,9 @@ export async function mapFullWorkQueueItem(
   }
   const userSnap = ownerUid ? await db.collection("users").doc(ownerUid).get() : null;
   const playbackUrl =
-    streamUid && streamStatus === "ready" ? await resolvePlaybackUrl(streamUid) : undefined;
+    streamUid && streamStatus === "ready" ? await resolveReviewPlaybackUrl(streamUid) : undefined;
+  const catalogThumbnailUrl =
+    work.promoDraft?.thumbnailUrl?.trim() || null;
   return {
     ...work,
     contentModeration: isRevision ? rev?.contentModeration : work.contentModeration,
@@ -52,6 +54,7 @@ export async function mapFullWorkQueueItem(
     ownerEmail: userSnap?.data()?.email ?? null,
     ownerName: userSnap?.data()?.displayName ?? null,
     playbackUrl,
+    catalogThumbnailUrl,
     isRevision,
   };
 }
@@ -93,7 +96,9 @@ export async function mapPromoWorkQueueItem(
   const promoTitle = resolveDisplayTitle(FALLBACK_WORK_TITLE, promo.title, work.title);
   const userSnap = await db.collection("users").doc(ownerUid).get();
   const playbackUrl =
-    streamUid && streamStatus === "ready" ? await resolvePlaybackUrl(streamUid) : undefined;
+    streamUid && streamStatus === "ready" ? await resolveReviewPlaybackUrl(streamUid) : undefined;
+  const catalogThumbnailUrl =
+    promo.thumbnailUrl?.trim() || work.promoDraft?.thumbnailUrl?.trim() || null;
 
   let livePromo:
     | {
@@ -107,7 +112,7 @@ export async function mapPromoWorkQueueItem(
   if (isRevision && parsed.platformStatus === "published") {
     const livePlayback =
       parsed.streamUid && parsed.streamStatus === "ready"
-        ? await resolvePlaybackUrl(parsed.streamUid)
+        ? await resolveReviewPlaybackUrl(parsed.streamUid)
         : undefined;
     livePromo = {
       title: resolveDisplayTitle(FALLBACK_WORK_TITLE, parsed.title, work.title),
@@ -132,6 +137,7 @@ export async function mapPromoWorkQueueItem(
     },
     livePromo,
     work: { ...work, id: workId, title: workTitle },
+    catalogThumbnailUrl,
     workId,
     ownerUid,
     ownerEmail: userSnap.data()?.email ?? null,

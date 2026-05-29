@@ -225,8 +225,9 @@ export function getStreamThumbnailUrl(streamUid: string): string | null {
   return `https://${sub}/${streamUid}/thumbnails/thumbnail.jpg`;
 }
 
-/** 홈 히어로·promo 피드 — HLS manifest를 고화질 rendition 위주로 */
+/** 홈 히어로·promo 피드·관리자 심사 — HLS manifest를 고화질 rendition 위주로 */
 export const STREAM_TEASER_BANDWIDTH_HINT_MBPS = 50;
+export const STREAM_REVIEW_BANDWIDTH_HINT_MBPS = STREAM_TEASER_BANDWIDTH_HINT_MBPS;
 
 export type PlaybackUrlOptions = {
   clientBandwidthHintMbps?: number;
@@ -262,6 +263,18 @@ export async function resolvePlaybackUrl(streamUid: string): Promise<string | nu
   if (direct) return direct;
   const info = await getStreamVideo(streamUid);
   return info?.playbackHls ?? null;
+}
+
+/** Admin content review — prefer high HLS rendition (same hint as public feed). */
+export async function resolveReviewPlaybackUrl(streamUid: string): Promise<string | null> {
+  const hinted = getPlaybackUrl(streamUid, {
+    clientBandwidthHintMbps: STREAM_REVIEW_BANDWIDTH_HINT_MBPS,
+  });
+  if (hinted) return hinted;
+  const info = await getStreamVideo(streamUid);
+  const hls = info?.playbackHls;
+  if (hls) return appendPlaybackBandwidthHint(hls, STREAM_REVIEW_BANDWIDTH_HINT_MBPS);
+  return null;
 }
 
 /** MP4 download path for AI moderation (public videos). */

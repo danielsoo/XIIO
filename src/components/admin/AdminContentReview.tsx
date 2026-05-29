@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
-import PlaybackVideo from "@/components/PlaybackVideo";
+import AdminReviewVideo from "@/components/admin/AdminReviewVideo";
 import FullWorkReviewCard, { type FullQueueItem } from "@/components/admin/FullWorkReviewCard";
 import PromoReviewCard, { type PromoReviewItem } from "@/components/admin/PromoReviewCard";
 import { useAdminWorkStats, type AdminWorkStats } from "@/hooks/useAdminWorkStats";
@@ -328,7 +328,7 @@ export default function AdminContentReview() {
               />
               {item.playbackUrl && (
                 <div className="mb-3 max-w-3xl">
-                  <PlaybackVideo src={item.playbackUrl} maxHeightClass="max-h-[60vh]" />
+                  <AdminReviewVideo src={item.playbackUrl} maxHeightClass="max-h-[60vh]" />
                 </div>
               )}
               <div className="flex flex-wrap gap-2 mt-3">

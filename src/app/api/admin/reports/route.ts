@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Timestamp, type Query } from "firebase-admin/firestore";
-import { resolvePlaybackUrl } from "@/lib/cloudflare/stream";
+import { resolveReviewPlaybackUrl } from "@/lib/cloudflare/stream";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
 import { parseReportDoc } from "@/lib/server/reports";
 import { parseUserProfileDoc } from "@/lib/userAccess";
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
           const work = parseWorkDoc(report.targetWorkId, workSnap.data() as Record<string, unknown>);
           targetTitle = work.title;
           if (work.streamUid && work.streamStatus === "ready") {
-            playbackUrl = (await resolvePlaybackUrl(work.streamUid)) ?? undefined;
+            playbackUrl = (await resolveReviewPlaybackUrl(work.streamUid)) ?? undefined;
           }
         }
       } else {
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
           const promo = parsePromoDoc(promoSnap.data() as Record<string, unknown>);
           targetTitle = promo.title ?? targetTitle;
           if (promo.streamUid && promo.streamStatus === "ready") {
-            playbackUrl = (await resolvePlaybackUrl(promo.streamUid)) ?? undefined;
+            playbackUrl = (await resolveReviewPlaybackUrl(promo.streamUid)) ?? undefined;
           }
         }
         const workSnap = await worksCol(db, report.targetOwnerUid)

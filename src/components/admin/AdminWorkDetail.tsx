@@ -6,7 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import { AdminOwnerLink } from "@/components/admin/AdminEntityLinks";
-import PlaybackVideo from "@/components/PlaybackVideo";
+import AdminReviewVideo from "@/components/admin/AdminReviewVideo";
+import CatalogThumbnailReview from "@/components/admin/CatalogThumbnailReview";
 import type { AdminWorkDetail } from "@/types/admin";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
@@ -150,10 +151,12 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
         )}
       </section>
 
+      <CatalogThumbnailReview url={data.catalogThumbnailUrl} className="mb-8" />
+
       <section className="mb-8 w-full">
         <h2 className="text-white font-semibold text-base mb-3">{t("admin.workDetail.fullVideo")}</h2>
         {playbackUrl ? (
-          <PlaybackVideo src={playbackUrl} />
+          <AdminReviewVideo src={playbackUrl} />
         ) : (
           <p className="text-xiio-muted text-sm rounded-xl border border-dashed border-white/15 px-4 py-8 text-center">
             {t("admin.workDetail.noPlayback")}
@@ -215,7 +218,7 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
             </p>
           )}
           {promo.playbackUrl ? (
-            <PlaybackVideo src={promo.playbackUrl} />
+            <AdminReviewVideo src={promo.playbackUrl} />
           ) : (
             <p className="text-xiio-muted text-sm rounded-xl border border-dashed border-white/15 px-4 py-8 text-center">
               {t("admin.workDetail.noPlayback")}

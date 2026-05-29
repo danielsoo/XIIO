@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
-import PlaybackVideo from "@/components/PlaybackVideo";
+import AdminReviewVideo from "@/components/admin/AdminReviewVideo";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import type { AdminReportListItem, AdminReportsListResponse } from "@/types/admin";
@@ -179,7 +179,7 @@ export default function AdminReportsReview() {
             />
             {item.playbackUrl && (
               <div className="mb-3 max-w-sm">
-                <PlaybackVideo src={item.playbackUrl} maxHeightClass="max-h-[50vh]" />
+                <AdminReviewVideo src={item.playbackUrl} maxHeightClass="max-h-[50vh]" />
               </div>
             )}
             {item.adminNote && tab === "resolved" && (

@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import ModerationFlagsPanel from "@/components/admin/ModerationFlagsPanel";
 import RejectReasonFields, { canSubmitReject } from "@/components/admin/RejectReasonFields";
-import PlaybackVideo from "@/components/PlaybackVideo";
+import AdminReviewVideo from "@/components/admin/AdminReviewVideo";
+import CatalogThumbnailReview from "@/components/admin/CatalogThumbnailReview";
 import { useTranslations } from "@/context/LocaleContext";
 import { resolveDisplayTitle } from "@/lib/works/display-title";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
@@ -18,6 +19,7 @@ export type FullQueueItem = WorkDoc & {
   ownerEmail: string | null;
   ownerName: string | null;
   playbackUrl?: string;
+  catalogThumbnailUrl?: string | null;
   isRevision?: boolean;
 };
 
@@ -103,9 +105,11 @@ export default function FullWorkReviewCard({ item, busy, onApprove, onReject }: 
         </p>
       </div>
 
+      <CatalogThumbnailReview url={item.catalogThumbnailUrl} />
+
       {item.playbackUrl && (
         <div className="mb-3 max-w-3xl">
-          <PlaybackVideo src={item.playbackUrl} />
+          <AdminReviewVideo src={item.playbackUrl} />
         </div>
       )}
 
