@@ -4,9 +4,11 @@ export type UploadPhase =
   | "creating"
   | "thumbnail"
   | "full"
+  | "prologue"
   | "promo"
   | "finalizing"
   | "streamFull"
+  | "streamPrologue"
   | "streamPromo"
   | "encoding";
 
@@ -14,15 +16,16 @@ export type UploadPhase =
 export const UPLOAD_PROGRESS = {
   creatingEnd: 5,
   thumbnailEnd: 10,
-  fullEnd: 22,
-  promoEnd: 35,
+  fullEnd: 20,
+  prologueEnd: 30,
+  promoEnd: 38,
   stagingEnd: 40,
-  streamFullEnd: 65,
+  streamFullEnd: 58,
+  streamPrologueEnd: 72,
   streamPromoEnd: 85,
   complete: 100,
 } as const;
 
-/** Thumbnail upload byte progress between creatingEnd and thumbnailEnd. */
 export function uploadPercentForThumbnail(byteRatio: number): number {
   const r = Math.min(1, Math.max(0, byteRatio));
   return Math.round(
@@ -31,7 +34,6 @@ export function uploadPercentForThumbnail(byteRatio: number): number {
   );
 }
 
-/** Map staging phase + optional byte ratio (0–1) to 0–40%. */
 export function uploadPercentForPhase(phase: UploadPhase, byteRatio = 0): number {
   const r = Math.min(1, Math.max(0, byteRatio));
   switch (phase) {
@@ -43,13 +45,18 @@ export function uploadPercentForPhase(phase: UploadPhase, byteRatio = 0): number
       return Math.round(
         UPLOAD_PROGRESS.thumbnailEnd + r * (UPLOAD_PROGRESS.fullEnd - UPLOAD_PROGRESS.thumbnailEnd)
       );
+    case "prologue":
+      return Math.round(
+        UPLOAD_PROGRESS.fullEnd + r * (UPLOAD_PROGRESS.prologueEnd - UPLOAD_PROGRESS.fullEnd)
+      );
     case "promo":
       return Math.round(
-        UPLOAD_PROGRESS.fullEnd + r * (UPLOAD_PROGRESS.promoEnd - UPLOAD_PROGRESS.fullEnd)
+        UPLOAD_PROGRESS.prologueEnd + r * (UPLOAD_PROGRESS.promoEnd - UPLOAD_PROGRESS.prologueEnd)
       );
     case "finalizing":
       return UPLOAD_PROGRESS.stagingEnd;
     case "streamFull":
+    case "streamPrologue":
     case "streamPromo":
     case "encoding":
       return uploadPercentForSubmitPhase(phase, byteRatio);
@@ -58,9 +65,8 @@ export function uploadPercentForPhase(phase: UploadPhase, byteRatio = 0): number
   }
 }
 
-/** Stream upload + encoding (after staging) mapped to 40–100%. */
 export function uploadPercentForSubmitPhase(
-  phase: SubmitProgressPhase | "streamFull" | "streamPromo" | "encoding",
+  phase: SubmitProgressPhase | "streamFull" | "streamPrologue" | "streamPromo" | "encoding",
   byteRatio = 0
 ): number {
   const r = Math.min(1, Math.max(0, byteRatio));
@@ -71,11 +77,17 @@ export function uploadPercentForSubmitPhase(
         UPLOAD_PROGRESS.stagingEnd +
           r * (UPLOAD_PROGRESS.streamFullEnd - UPLOAD_PROGRESS.stagingEnd)
       );
+    case "prologue_upload":
+    case "streamPrologue":
+      return Math.round(
+        UPLOAD_PROGRESS.streamFullEnd +
+          r * (UPLOAD_PROGRESS.streamPrologueEnd - UPLOAD_PROGRESS.streamFullEnd)
+      );
     case "promo_upload":
     case "streamPromo":
       return Math.round(
-        UPLOAD_PROGRESS.streamFullEnd +
-          r * (UPLOAD_PROGRESS.streamPromoEnd - UPLOAD_PROGRESS.streamFullEnd)
+        UPLOAD_PROGRESS.streamPrologueEnd +
+          r * (UPLOAD_PROGRESS.streamPromoEnd - UPLOAD_PROGRESS.streamPrologueEnd)
       );
     case "encoding":
     case "done":
@@ -95,12 +107,16 @@ export function applySubmitProgress(
 ): void {
   const phaseMap: Record<SubmitProgressPhase, UploadPhase> = {
     full_upload: "streamFull",
+    prologue_upload: "streamPrologue",
     promo_upload: "streamPromo",
     encoding: "encoding",
     done: "encoding",
   };
   const uiPhase = phaseMap[submit.phase];
   setPhase(uiPhase);
-  const ratio = submit.phase === "encoding" || submit.phase === "done" ? submit.percent / 100 : submit.percent / 100;
+  const ratio =
+    submit.phase === "encoding" || submit.phase === "done"
+      ? submit.percent / 100
+      : submit.percent / 100;
   setPercent(uploadPercentForSubmitPhase(submit.phase, ratio));
 }

@@ -5,6 +5,7 @@ export async function patchWorkStagingMeta(
   payload: {
     full?: { path: string; bytes: number; contentType: string };
     promo?: { path: string; bytes: number; contentType: string };
+    prologue?: { path: string; bytes: number; contentType: string };
   }
 ): Promise<void> {
   const res = await fetch(`/api/me/works/${workId}/staging`, {

@@ -11,8 +11,10 @@ import { refreshCreditIndexForWorkStatus } from "@/lib/server/credits";
 import {
   FieldValue,
   getDbOrNull,
+  parsePrologueDoc,
   parsePromoDoc,
   parseWorkDoc,
+  prologueRef,
   promoRef,
   worksCol,
 } from "@/lib/server/works";
@@ -21,7 +23,7 @@ import { isVideoAspectRatio } from "@/lib/works/aspect-ratio";
 import { isRejectReasonCode } from "@/lib/works/constants";
 import type { VideoAspectRatio } from "@/types/work";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
-import { PROMO_SHORT_DOC_ID } from "@/types/work";
+import { PROLOGUE_SHORT_DOC_ID, PROMO_SHORT_DOC_ID } from "@/types/work";
 import type { AdminWorkDetail } from "@/types/admin";
 
 type Params = { params: Promise<{ ownerUid: string; workId: string }> };
@@ -72,6 +74,26 @@ export async function GET(request: Request, { params }: Params) {
     };
   }
 
+  const prologueSnap = await prologueRef(db, ownerUid, workId).get();
+  let prologue: AdminWorkDetail["prologue"];
+  if (prologueSnap.exists) {
+    const parsed = parsePrologueDoc(prologueSnap.data() as Record<string, unknown>);
+    const prologuePlayback =
+      parsed.streamUid && parsed.streamStatus === "ready"
+        ? await resolveReviewPlaybackUrl(parsed.streamUid)
+        : undefined;
+    prologue = {
+      id: PROLOGUE_SHORT_DOC_ID,
+      platformStatus: parsed.platformStatus,
+      streamStatus: parsed.streamStatus,
+      durationSec: parsed.durationSec,
+      title: parsed.title,
+      playbackUrl: prologuePlayback ?? undefined,
+      deletionRequest: parsed.deletionRequest,
+      rejectReason: parsed.rejectReason,
+    };
+  }
+
   const catalogThumbnailUrl =
     promo?.thumbnailUrl?.trim() || work.promoDraft?.thumbnailUrl?.trim() || null;
 
@@ -87,6 +109,7 @@ export async function GET(request: Request, { params }: Params) {
     playbackUrl: playbackUrl ?? undefined,
     catalogThumbnailUrl,
     promo,
+    prologue,
     auditLog,
   };
 

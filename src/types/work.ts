@@ -24,10 +24,14 @@ export type StreamStatus = "staged" | "uploading" | "processing" | "ready" | "er
 export type WorkVideoStaging = {
   fullPath: string;
   promoPath: string;
+  /** 선택 — 프롤로그 스테이징 */
+  prologuePath?: string;
   fullBytes?: number;
   promoBytes?: number;
+  prologueBytes?: number;
   fullContentType?: string;
   promoContentType?: string;
+  prologueContentType?: string;
   updatedAt?: unknown;
 };
 
@@ -130,6 +134,7 @@ export type WorkDoc = {
   pendingRevision?: WorkPendingRevision;
   revisionReviewStatus?: RevisionReviewStatus;
   promoDraft?: PromoDraft;
+  prologueDraft?: PrologueDraft;
   contentModeration?: ContentModeration;
   /** 포트폴리오 제출 링크에서 기본 제외 (includedWorkIds로만 포함 가능) */
   portfolioSubmissionHidden?: boolean;
@@ -176,9 +181,42 @@ export type PromoFrameCrop = {
 
 export const PROMO_SHORT_DOC_ID = "promo";
 
+/** 업로드 시 저장 — 프롤로그 메타(영상은 prologue 문서에 별도 TUS) */
+export type PrologueDraft = {
+  title?: string;
+  description?: string | null;
+};
+
+export type ProloguePendingRevision = PromoPendingRevision;
+
+/** 본편 전 재생 — 썸네일·세로 크롭 없음 */
+export type PrologueShortDoc = {
+  platformStatus: PromoPlatformStatus;
+  streamStatus?: StreamStatus;
+  streamUid?: string;
+  durationSec?: number;
+  streamError?: string | null;
+  title?: string;
+  description?: string;
+  rejectReason?: string;
+  deletionRequest?: DeletionRequest;
+  submittedAt?: unknown;
+  publishedAt?: unknown;
+  reviewedAt?: unknown;
+  reviewedBy?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  pendingRevision?: ProloguePendingRevision;
+  revisionReviewStatus?: RevisionReviewStatus;
+  contentModeration?: ContentModeration;
+};
+
+export const PROLOGUE_SHORT_DOC_ID = "prologue";
+
 export type WorkListItem = WorkDoc & {
   id: string;
   promo?: (PromoShortDoc & { id: string }) | null;
+  prologue?: (PrologueShortDoc & { id: string }) | null;
   playbackUrl?: string;
 };
 

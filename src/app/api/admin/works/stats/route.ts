@@ -11,6 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       pendingFull: 0,
       pendingPromo: 0,
+      pendingPrologue: 0,
       aiFlagged: 0,
       removalRequested: 0,
       pendingReports: 0,
@@ -22,6 +23,8 @@ export async function GET(request: Request) {
     fullRevision,
     promoPending,
     promoRevision,
+    prologuePending,
+    prologueRevision,
     aiFull,
     aiFullRev,
     aiPromo,
@@ -34,6 +37,8 @@ export async function GET(request: Request) {
     db.collectionGroup("works").where("revisionReviewStatus", "==", "pending").get(),
     db.collectionGroup("promoShort").where("platformStatus", "==", "pending").get(),
     db.collectionGroup("promoShort").where("revisionReviewStatus", "==", "pending").get(),
+    db.collectionGroup("prologueShort").where("platformStatus", "==", "pending").get(),
+    db.collectionGroup("prologueShort").where("revisionReviewStatus", "==", "pending").get(),
     db
       .collectionGroup("works")
       .where("platformStatus", "==", "pending")
@@ -68,6 +73,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     pendingFull: fullPending.size + fullRevision.size,
     pendingPromo: promoPending.size + promoRevision.size,
+    pendingPrologue: prologuePending.size + prologueRevision.size,
     aiFlagged: aiKeys.size,
     removalRequested: fullRemoval.size + promoRemoval.size,
     pendingReports: pendingReportsSnap.size,

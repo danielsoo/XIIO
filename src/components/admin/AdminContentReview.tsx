@@ -7,18 +7,20 @@ import { useTranslations } from "@/context/LocaleContext";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import AdminReviewVideo from "@/components/admin/AdminReviewVideo";
 import FullWorkReviewCard, { type FullQueueItem } from "@/components/admin/FullWorkReviewCard";
+import PrologueReviewCard, { type PrologueReviewItem } from "@/components/admin/PrologueReviewCard";
 import PromoReviewCard, { type PromoReviewItem } from "@/components/admin/PromoReviewCard";
 import { useAdminWorkStats, type AdminWorkStats } from "@/hooks/useAdminWorkStats";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 import { resolveDisplayTitle } from "@/lib/works/display-title";
 import type { StreamStatus, WorkSection } from "@/types/work";
 
-type Tab = "full_pending" | "promo_pending" | "ai_flagged" | "removal";
+type Tab = "full_pending" | "promo_pending" | "prologue_pending" | "ai_flagged" | "removal";
 
 function tabPendingCount(tab: Tab, stats: AdminWorkStats | null): number {
   if (!stats) return 0;
   if (tab === "full_pending") return stats.pendingFull;
   if (tab === "promo_pending") return stats.pendingPromo;
+  if (tab === "prologue_pending") return stats.pendingPrologue;
   if (tab === "ai_flagged") return stats.aiFlagged;
   return stats.removalRequested;
 }
@@ -49,6 +51,8 @@ export default function AdminContentReview() {
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [promoRejectOpenKey, setPromoRejectOpenKey] = useState<string | null>(null);
   const [promoRejectReason, setPromoRejectReason] = useState("");
+  const [prologueRejectOpenKey, setPrologueRejectOpenKey] = useState<string | null>(null);
+  const [prologueRejectReason, setPrologueRejectReason] = useState("");
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -102,6 +106,37 @@ export default function AdminContentReview() {
     }
   };
 
+  const patchPrologue = async (
+    ownerUid: string,
+    workId: string,
+    action: string,
+    extra?: { rejectReason?: string }
+  ) => {
+    if (!user) return;
+    setBusyKey(`prologue_${ownerUid}_${workId}`);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/admin/works/${ownerUid}/${workId}/prologue`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action, ...extra }),
+      });
+      if (!res.ok) {
+        const { data, raw } = await readResponseJson<{ message?: string; error?: string }>(res);
+        setErr(formatApiError(t, res.status, { ...data, message: data.message ?? raw.slice(0, 500) }));
+        return;
+      }
+      await load();
+      setPrologueRejectOpenKey(null);
+      setPrologueRejectReason("");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
   const patchPromo = async (
     ownerUid: string,
     workId: string,
@@ -136,6 +171,7 @@ export default function AdminContentReview() {
   const tabs: { id: Tab; label: string }[] = [
     { id: "full_pending", label: t("admin.contentReview.tabFull") },
     { id: "promo_pending", label: t("admin.contentReview.tabPromo") },
+    { id: "prologue_pending", label: t("admin.contentReview.tabPrologue") },
     { id: "ai_flagged", label: t("admin.contentReview.tabAiFlagged") },
     { id: "removal", label: t("admin.contentReview.tabRemoval") },
   ];
@@ -156,6 +192,8 @@ export default function AdminContentReview() {
                 setTab(id);
                 setPromoRejectOpenKey(null);
                 setPromoRejectReason("");
+                setPrologueRejectOpenKey(null);
+                setPrologueRejectReason("");
               }}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
                 tab === id
@@ -282,6 +320,38 @@ export default function AdminContentReview() {
                   })
                 }
                 onRejectReasonChange={setPromoRejectReason}
+              />
+            );
+          })}
+        </ul>
+      ) : tab === "prologue_pending" ? (
+        <ul className="space-y-3 sm:space-y-4">
+          {(items as PrologueReviewItem[]).map((row) => {
+            const prologueKey = `prologue_${row.ownerUid}_${row.workId}`;
+            const rejectOpen = prologueRejectOpenKey === prologueKey;
+
+            return (
+              <PrologueReviewCard
+                key={prologueKey}
+                row={row}
+                busy={busyKey === prologueKey}
+                rejectOpen={rejectOpen}
+                rejectReason={prologueRejectReason}
+                onRejectOpen={() => {
+                  setPrologueRejectOpenKey(prologueKey);
+                  setPrologueRejectReason("");
+                }}
+                onRejectCancel={() => {
+                  setPrologueRejectOpenKey(null);
+                  setPrologueRejectReason("");
+                }}
+                onApprove={() => void patchPrologue(row.ownerUid, row.workId, "approve")}
+                onRejectConfirm={() =>
+                  void patchPrologue(row.ownerUid, row.workId, "reject", {
+                    rejectReason: prologueRejectReason.trim(),
+                  })
+                }
+                onRejectReasonChange={setPrologueRejectReason}
               />
             );
           })}

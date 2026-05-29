@@ -27,11 +27,14 @@ const SECTION_TITLE_KEYS: Record<PublicWorkWatch["section"], string> = {
   "school-battle": "nav.schoolBattle",
 };
 
+type WatchPhase = "prologue" | "main";
+
 export default function WatchPageContent({ ownerUid, workId }: Props) {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, checked: adminChecked } = useAdminAccess();
   const { t } = useTranslations();
   const [data, setData] = useState<PublicWorkWatch | null>(null);
+  const [phase, setPhase] = useState<WatchPhase>("main");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
@@ -55,6 +58,7 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
         return;
       }
       setData(body);
+      setPhase(body.prologue?.playbackUrl ? "prologue" : "main");
     } catch (e) {
       setErr(formatClientError(t, e, { titleKey: "watch.loadError" }));
     } finally {
@@ -66,7 +70,12 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
     void load();
   }, [load]);
 
-  useRecordEngagementView(ownerUid, workId, "full", Boolean(data) && !loading && !err);
+  useRecordEngagementView(
+    ownerUid,
+    workId,
+    "full",
+    Boolean(data) && !loading && !err && phase === "main"
+  );
 
   if (loading) {
     return (
@@ -89,83 +98,103 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
   const numericRatio = aspectRatioNumeric(ratioId);
   const tagLine = data.approvedTags.length > 0 ? data.approvedTags.join(" · ") : null;
   const isGuest = !authLoading && !user;
-  const useGuestPlayer = isGuest && Boolean(data.playbackUrl);
+  const showingPrologue = phase === "prologue" && Boolean(data.prologue?.playbackUrl);
+  const activePlayback = showingPrologue ? data.prologue! : data;
+  const useGuestPlayer = isGuest && Boolean(activePlayback.playbackUrl);
 
   return (
     <AppPageShell>
-        <SubpageHeader
-          backHref={sectionCatalogHref(data.section)}
-          backLabel={t(SECTION_TITLE_KEYS[data.section])}
-          backFallbackHref={sectionCatalogHref(data.section)}
-          showHome
-        />
+      <SubpageHeader
+        backHref={sectionCatalogHref(data.section)}
+        backLabel={t(SECTION_TITLE_KEYS[data.section])}
+        backFallbackHref={sectionCatalogHref(data.section)}
+        showHome
+      />
 
-        <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
-          <h1 className="text-2xl md:text-4xl font-bold text-white">{data.title}</h1>
-          <button
-            type="button"
-            onClick={() => {
-              if (!user) {
-                window.location.href = "/login";
-                return;
-              }
-              setReportOpen(true);
-            }}
-            className="shrink-0 text-sm text-white/60 hover:text-red-400 border border-white/15 rounded-lg px-3 py-1.5 transition"
-          >
-            {t("watch.report")}
-          </button>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+        <div>
+          {showingPrologue && (
+            <p className="text-xs text-xiio-accent font-medium mb-1">{t("watch.prologuePlaying")}</p>
+          )}
+          <h1 className="text-2xl md:text-4xl font-bold text-white">
+            {showingPrologue ? data.prologue?.title ?? data.title : data.title}
+          </h1>
         </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-xiio-muted mb-4">
-          {data.approvedCategory && <span>{data.approvedCategory}</span>}
-          {tagLine && <span>{tagLine}</span>}
-          <span>{t(aspectRatioMessageKey(ratioId))}</span>
-          {data.director && (
-            <span>
-              {t("watch.director")}: {data.director}
-            </span>
+        <button
+          type="button"
+          onClick={() => {
+            if (!user) {
+              window.location.href = "/login";
+              return;
+            }
+            setReportOpen(true);
+          }}
+          className="shrink-0 text-sm text-white/60 hover:text-red-400 border border-white/15 rounded-lg px-3 py-1.5 transition"
+        >
+          {t("watch.report")}
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-xiio-muted mb-4">
+        {data.approvedCategory && <span>{data.approvedCategory}</span>}
+        {tagLine && <span>{tagLine}</span>}
+        <span>{t(aspectRatioMessageKey(ratioId))}</span>
+        {data.director && (
+          <span>
+            {t("watch.director")}: {data.director}
+          </span>
+        )}
+      </div>
+
+      <div
+        className="w-full mx-auto mb-4 rounded-xl overflow-hidden bg-black border border-white/10 relative"
+        style={{ maxWidth: numericRatio >= 1 ? "100%" : "min(420px, 100%)" }}
+      >
+        <div className="relative w-full" style={{ aspectRatio: numericRatio }}>
+          {useGuestPlayer ? (
+            <GuestLimitedPlayer
+              key={showingPrologue ? "prologue" : "main"}
+              src={activePlayback.playbackUrl!}
+              durationSec={activePlayback.durationSec}
+            />
+          ) : (
+            <iframe
+              key={showingPrologue ? "prologue-embed" : "main-embed"}
+              src={showingPrologue ? data.prologue!.embedUrl : data.embedUrl}
+              title={showingPrologue ? data.prologue?.title ?? data.title : data.title}
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+              className="absolute inset-0 w-full h-full border-0"
+            />
           )}
         </div>
+        {showingPrologue ? (
+          <button
+            type="button"
+            onClick={() => setPhase("main")}
+            className="absolute bottom-3 right-3 z-10 rounded-lg bg-black/70 border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-black/90 transition"
+          >
+            {t("watch.skipPrologue")}
+          </button>
+        ) : null}
+      </div>
 
-        <div
-          className="w-full mx-auto mb-6 rounded-xl overflow-hidden bg-black border border-white/10"
-          style={{ maxWidth: numericRatio >= 1 ? "100%" : "min(420px, 100%)" }}
-        >
-          <div className="relative w-full" style={{ aspectRatio: numericRatio }}>
-            {useGuestPlayer ? (
-              <GuestLimitedPlayer
-                src={data.playbackUrl!}
-                durationSec={data.durationSec}
-              />
-            ) : (
-              <iframe
-                src={data.embedUrl}
-                title={data.title}
-                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full border-0"
-              />
-            )}
-          </div>
-        </div>
+      {(showingPrologue ? data.prologue?.description : data.description) && (
+        <p className="text-white/80 text-sm md:text-base mb-6 whitespace-pre-wrap max-w-3xl">
+          {showingPrologue ? data.prologue?.description : data.description}
+        </p>
+      )}
 
-        {data.description && (
-          <p className="text-white/80 text-sm md:text-base mb-6 whitespace-pre-wrap max-w-3xl">
-            {data.description}
+      {adminChecked && isAdmin && data.playbackUrl && (
+        <details className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-xiio-muted">
+          <summary className="cursor-pointer hover:text-white transition font-medium text-amber-200/90">
+            {t("watch.adminDirectPlayerTitle")}
+          </summary>
+          <p className="mt-3 mb-3 text-xs leading-relaxed text-xiio-muted">
+            {t("watch.adminDirectPlayerHint")}
           </p>
-        )}
-
-        {adminChecked && isAdmin && data.playbackUrl && (
-          <details className="mt-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-xiio-muted">
-            <summary className="cursor-pointer hover:text-white transition font-medium text-amber-200/90">
-              {t("watch.adminDirectPlayerTitle")}
-            </summary>
-            <p className="mt-3 mb-3 text-xs leading-relaxed text-xiio-muted">
-              {t("watch.adminDirectPlayerHint")}
-            </p>
-            <PlaybackVideo src={data.playbackUrl} maxHeightClass="max-h-[70vh]" />
-          </details>
-        )}
+          <PlaybackVideo src={data.playbackUrl} maxHeightClass="max-h-[70vh]" />
+        </details>
+      )}
 
       <ReportContentModal
         open={reportOpen}

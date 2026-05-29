@@ -213,7 +213,9 @@ export default function MyWorksContent() {
               const canRequestRemoval = work.platformStatus === "published";
               const promoPublished = promoStatus === "published";
               const workPublished = work.platformStatus === "published";
+              const prologueStatus = work.prologue?.platformStatus;
               const promoRevisionPending = work.promo?.revisionReviewStatus === "pending";
+              const prologueRevisionPending = work.prologue?.revisionReviewStatus === "pending";
               const workRevisionPending = work.revisionReviewStatus === "pending";
 
               return (
@@ -300,6 +302,17 @@ export default function MyWorksContent() {
                     )}
                   </div>
 
+                  <div className="flex flex-wrap gap-2 text-xs items-center">
+                    <span className="text-xiio-muted">{t("myWorks.prologueLabel")}:</span>
+                    {work.prologue ? (
+                      <span className={`px-2 py-0.5 rounded-full border ${statusBadgeClass(prologueStatus!)}`}>
+                        {t(`myWorks.promoStatus.${prologueStatus}`)}
+                      </span>
+                    ) : (
+                      <span className="text-xiio-muted">{t("myWorks.prologueNone")}</span>
+                    )}
+                  </div>
+
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <button
                       type="button"
@@ -338,7 +351,17 @@ export default function MyWorksContent() {
                         {t("myWorks.editVideo")}
                       </Link>
                     )}
-                    {(workRevisionPending || promoRevisionPending) && (
+                    {workPublished && (
+                      <Link
+                        href={`/uploader/works/${work.id}/prologue`}
+                        className="px-3 py-1.5 text-xs rounded-lg bg-white/10 text-white hover:bg-white/15 transition"
+                      >
+                        {work.prologue || work.prologueDraft
+                          ? t("myWorks.editPrologue")
+                          : t("myWorks.createPrologue")}
+                      </Link>
+                    )}
+                    {(workRevisionPending || promoRevisionPending || prologueRevisionPending) && (
                       <span className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">
                         {t("myWorks.revisionReviewPending")}
                       </span>

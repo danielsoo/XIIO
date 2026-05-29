@@ -4,6 +4,7 @@ import type { PromoFrameCrop } from "@/types/work";
 
 export type SubmitProgressPhase =
   | "full_upload"
+  | "prologue_upload"
   | "promo_upload"
   | "encoding"
   | "done";
@@ -14,8 +15,9 @@ export type SubmitProgress = {
 };
 
 type EditorSnapshot = {
-  work: { streamStatus?: string; platformStatus?: string };
+  work: { streamStatus?: string; platformStatus?: string; videoStaging?: { prologuePath?: string } };
   promo: { streamStatus?: string; platformStatus?: string } | null;
+  prologue: { streamStatus?: string; platformStatus?: string } | null;
 };
 
 async function authJson<T>(
@@ -50,10 +52,14 @@ async function pollEditorReady(
   while (Date.now() - started < maxMs) {
     const { ok, data } = await authJson<EditorSnapshot>(
       token,
-      `/api/me/works/${workId}/promo`,
+      `/api/me/works/${workId}/prologue`,
       { method: "GET" }
     );
-    if (ok && data.work.streamStatus === "ready" && data.promo?.streamStatus === "ready") {
+    const workReady = data.work.streamStatus === "ready";
+    const promoReady = data.promo?.streamStatus === "ready";
+    const hasPrologueStaging = Boolean(data.work.videoStaging?.prologuePath?.trim());
+    const prologueReady = !hasPrologueStaging || data.prologue?.streamStatus === "ready";
+    if (ok && workReady && promoReady && prologueReady) {
       return;
     }
     await new Promise((r) => setTimeout(r, 4000));
@@ -62,31 +68,37 @@ async function pollEditorReady(
 }
 
 /**
- * 스테이징된 본편·쇼츠를 Stream에 업로드한 뒤 심사 pending으로 전환.
+ * 스테이징된 본편·(선택)프롤로그·쇼츠를 Stream에 업로드한 뒤 심사 pending으로 전환.
  */
 export async function submitStagedWorkForReview(opts: {
   token: string;
   workId: string;
   frameCrop: PromoFrameCrop;
   fullFile?: File | null;
+  prologueFile?: File | null;
   promoFile?: File | null;
+  includePrologue?: boolean;
   onProgress?: (p: SubmitProgress) => void;
 }): Promise<void> {
-  const { token, workId, frameCrop, onProgress } = opts;
+  const { token, workId, frameCrop, onProgress, includePrologue = false } = opts;
 
   let fullFile = opts.fullFile ?? null;
+  let prologueFile = opts.prologueFile ?? null;
   let promoFile = opts.promoFile ?? null;
 
-  if (!fullFile || !promoFile) {
+  if (!fullFile || !promoFile || (includePrologue && !prologueFile)) {
     const snap = await authJson<{
-      work: { videoStaging?: { fullPath: string; promoPath: string } };
-    }>(token, `/api/me/works/${workId}/promo`, { method: "GET" });
+      work: { videoStaging?: { fullPath: string; promoPath: string; prologuePath?: string } };
+    }>(token, `/api/me/works/${workId}/prologue`, { method: "GET" });
     const staging = snap.data.work?.videoStaging;
     if (!staging?.fullPath || !staging?.promoPath) {
       throw new Error("staging_incomplete");
     }
     if (!fullFile) fullFile = await fetchStagingFile(staging.fullPath);
     if (!promoFile) promoFile = await fetchStagingFile(staging.promoPath);
+    if (includePrologue && staging.prologuePath && !prologueFile) {
+      prologueFile = await fetchStagingFile(staging.prologuePath);
+    }
   }
 
   onProgress?.({ phase: "full_upload", percent: 0 });
@@ -105,6 +117,30 @@ export async function submitStagedWorkForReview(opts: {
   await uploadFileViaTus(fullFile, fullSession.data.tusEndpoint, {
     onProgress: (p) => onProgress?.({ phase: "full_upload", percent: Math.round(p * 100) }),
   });
+
+  if (includePrologue && prologueFile) {
+    onProgress?.({ phase: "prologue_upload", percent: 0 });
+    const prologueSession = await authJson<{
+      tusEndpoint?: string;
+      message?: string;
+      error?: string;
+    }>(token, `/api/me/works/${workId}/prologue/stream-upload-url`, {
+      method: "POST",
+      body: "{}",
+    });
+
+    if (!prologueSession.ok || !prologueSession.data.tusEndpoint) {
+      throw new Error(
+        prologueSession.data.message ??
+          (prologueSession.raw.slice(0, 300) || "prologue_upload_url_failed")
+      );
+    }
+
+    await uploadFileViaTus(prologueFile, prologueSession.data.tusEndpoint, {
+      onProgress: (p) =>
+        onProgress?.({ phase: "prologue_upload", percent: Math.round(p * 100) }),
+    });
+  }
 
   onProgress?.({ phase: "promo_upload", percent: 0 });
   const promoSession = await authJson<{

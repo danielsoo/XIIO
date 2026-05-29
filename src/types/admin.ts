@@ -204,4 +204,14 @@ export type AdminWorkDetail = {
     deletionRequest?: WorkDoc["deletionRequest"];
     rejectReason?: string;
   };
+  prologue?: {
+    id: string;
+    platformStatus: PromoPlatformStatus;
+    streamStatus?: StreamStatus;
+    durationSec?: number;
+    title?: string;
+    playbackUrl?: string;
+    deletionRequest?: WorkDoc["deletionRequest"];
+    rejectReason?: string;
+  };
 };

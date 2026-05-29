@@ -11,13 +11,19 @@ export const ADMIN_AUDIT_ACTIONS = [
   "promo_revision_reject",
   "promo_removal_approve",
   "promo_removal_reject",
+  "prologue_approve",
+  "prologue_reject",
+  "prologue_revision_approve",
+  "prologue_revision_reject",
+  "prologue_removal_approve",
+  "prologue_removal_reject",
   "report_dismiss",
   "report_uphold",
 ] as const;
 
 export type AdminAuditAction = (typeof ADMIN_AUDIT_ACTIONS)[number];
 
-export type AdminAuditTargetType = "full" | "promo" | "report";
+export type AdminAuditTargetType = "full" | "promo" | "prologue" | "report";
 
 export type AdminAuditDoc = {
   actorUid: string;

@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 export type AdminWorkStats = {
   pendingFull: number;
   pendingPromo: number;
+  pendingPrologue: number;
   aiFlagged: number;
   removalRequested: number;
   pendingReports: number;
@@ -37,7 +38,11 @@ export function useAdminWorkStats(enabled: boolean) {
   const pendingTotal =
     stats == null
       ? 0
-      : stats.pendingFull + stats.pendingPromo + stats.aiFlagged + stats.removalRequested;
+      : stats.pendingFull +
+          stats.pendingPromo +
+          stats.pendingPrologue +
+          stats.aiFlagged +
+          stats.removalRequested;
 
   return { stats, pendingTotal, refresh };
 }

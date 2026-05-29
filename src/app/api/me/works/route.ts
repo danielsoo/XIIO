@@ -3,13 +3,19 @@ import { resolvePlaybackUrl } from "@/lib/cloudflare/stream";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
 import {
   getDbOrNull,
+  parsePrologueDoc,
   parsePromoDoc,
   parseWorkDoc,
+  prologueRef,
   promoRef,
   worksCol,
 } from "@/lib/server/works";
-import { syncPromoStreamStatusIfNeeded, syncWorkStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
-import { PROMO_SHORT_DOC_ID } from "@/types/work";
+import {
+  syncPrologueStreamStatusIfNeeded,
+  syncPromoStreamStatusIfNeeded,
+  syncWorkStreamStatusIfNeeded,
+} from "@/lib/server/sync-stream-status";
+import { PROLOGUE_SHORT_DOC_ID, PROMO_SHORT_DOC_ID } from "@/types/work";
 
 export async function GET(request: Request) {
   const auth = await requireUser(request);
@@ -55,11 +61,31 @@ export async function GET(request: Request) {
           streamStatus,
         };
       }
+      const prologueSnap = await prologueRef(db, session.uid, doc.id).get();
+      let prologue = null;
+      if (prologueSnap.exists) {
+        const parsed = parsePrologueDoc(prologueSnap.data() as Record<string, unknown>);
+        let streamStatus = parsed.streamStatus;
+        if (parsed.streamUid && streamStatus) {
+          streamStatus = await syncPrologueStreamStatusIfNeeded(
+            db,
+            session.uid,
+            doc.id,
+            parsed.streamUid,
+            streamStatus
+          );
+        }
+        prologue = {
+          id: PROLOGUE_SHORT_DOC_ID,
+          ...parsed,
+          streamStatus,
+        };
+      }
       let playbackUrl: string | undefined;
       if (work.streamStatus === "ready" && work.streamUid) {
         playbackUrl = (await resolvePlaybackUrl(work.streamUid)) ?? undefined;
       }
-      return { ...work, promo, playbackUrl };
+      return { ...work, promo, prologue, playbackUrl };
     })
   );
 

@@ -64,7 +64,7 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
     );
   }
 
-  const { work, owner, playbackUrl, promo } = data;
+  const { work, owner, playbackUrl, promo, prologue } = data;
 
   return (
     <div>
@@ -196,6 +196,29 @@ export default function AdminWorkDetail({ ownerUid, workId }: Props) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {prologue && (
+        <section className="w-full mb-8">
+          <h2 className="text-white font-semibold text-base mb-2">{t("admin.workDetail.prologueSection")}</h2>
+          <p className="text-xs text-xiio-muted mb-3">
+            {prologue.title ?? work.title} · {t(`myWorks.promoStatus.${prologue.platformStatus}`)}
+            {prologue.durationSec != null &&
+              ` · ${t("promoEditor.videoDuration", { sec: prologue.durationSec.toFixed(1) })}`}
+          </p>
+          {prologue.deletionRequest && (
+            <p className="text-orange-400 text-sm font-medium mb-3">
+              {t("admin.workDetail.deletionReason")}: {prologue.deletionRequest.reason}
+            </p>
+          )}
+          {prologue.playbackUrl ? (
+            <AdminReviewVideo src={prologue.playbackUrl} />
+          ) : (
+            <p className="text-xiio-muted text-sm rounded-xl border border-dashed border-white/15 px-4 py-8 text-center">
+              {t("admin.workDetail.noPlayback")}
+            </p>
+          )}
         </section>
       )}
 

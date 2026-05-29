@@ -3,7 +3,7 @@ import { storage } from "@/lib/firebase";
 import { MAX_STREAM_UPLOAD_BYTES } from "@/lib/cloudflare/stream";
 import { uploadBlobWithProgress } from "@/lib/works/storage-upload";
 
-export type StagingKind = "full" | "promo";
+export type StagingKind = "full" | "promo" | "prologue";
 
 const SAFE_VIDEO_EXT = ["mp4", "mov", "webm", "mkv"] as const;
 

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { resolveReviewPlaybackUrl } from "@/lib/cloudflare/stream";
 import {
   mapFullWorkQueueItem,
+  mapPrologueWorkQueueItem,
   mapPromoWorkQueueItem,
 } from "@/lib/server/admin-work-queue-map";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
@@ -59,6 +60,29 @@ export async function GET(request: Request) {
       await Promise.all([
         ...snap.docs.map((d) => mapPromo(d, false)),
         ...revSnap.docs.map((d) => mapPromo(d, true)),
+      ])
+    ).filter(Boolean);
+    return NextResponse.json({ items });
+  }
+
+  if (queue === "prologue_pending") {
+    const [snap, revSnap] = await Promise.all([
+      db.collectionGroup("prologueShort").where("platformStatus", "==", "pending").get(),
+      db.collectionGroup("prologueShort").where("revisionReviewStatus", "==", "pending").get(),
+    ]);
+    const seen = new Set<string>();
+
+    const mapPrologue = async (doc: QueryDocumentSnapshot, isRevision: boolean) => {
+      const key = doc.ref.path;
+      if (seen.has(key)) return null;
+      seen.add(key);
+      return mapPrologueWorkQueueItem(db, doc, isRevision);
+    };
+
+    const items = (
+      await Promise.all([
+        ...snap.docs.map((d) => mapPrologue(d, false)),
+        ...revSnap.docs.map((d) => mapPrologue(d, true)),
       ])
     ).filter(Boolean);
     return NextResponse.json({ items });

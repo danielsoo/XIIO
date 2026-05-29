@@ -4,12 +4,13 @@ import { verifyStreamWebhookSignature } from "@/lib/cloudflare/verify-stream-web
 import { getAdminDb } from "@/lib/server/firebase-admin";
 import { mapWebhookStreamStatus } from "@/lib/works/constants";
 import { finalizePromoStreamIfReady } from "@/lib/server/promo-stream-ready";
+import { finalizePrologueStreamIfReady } from "@/lib/server/prologue-stream-ready";
 import {
   isModerationKind,
   scheduleContentModerationByStreamUid,
   scheduleContentModerationFromMeta,
 } from "@/lib/server/moderation/trigger-content-moderation";
-import { FieldValue, promoRef, worksCol } from "@/lib/server/works";
+import { FieldValue, prologueRef, promoRef, worksCol } from "@/lib/server/works";
 
 export const runtime = "nodejs";
 
@@ -56,6 +57,31 @@ async function applyStreamStatus(
     );
     if (streamStatus === "ready") {
       await finalizePromoStreamIfReady(db, xiioUid, workId, streamUid, "promo");
+    }
+    return;
+  }
+  if (kind === "prologue_revision") {
+    await prologueRef(db, xiioUid, workId).set(
+      {
+        "pendingRevision.streamUid": streamUid,
+        "pendingRevision.streamStatus": streamStatus,
+        "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    if (streamStatus === "ready") {
+      await finalizePrologueStreamIfReady(db, xiioUid, workId, streamUid, "prologue_revision");
+    }
+    return;
+  }
+  if (kind === "prologue") {
+    await prologueRef(db, xiioUid, workId).set(
+      { streamUid, streamStatus, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+    if (streamStatus === "ready") {
+      await finalizePrologueStreamIfReady(db, xiioUid, workId, streamUid, "prologue");
     }
     return;
   }
@@ -149,6 +175,52 @@ async function applyByStreamUidLookup(
           const ownerUid = doc.ref.parent.parent?.parent?.parent?.id;
           if (ownerUid && workId) {
             await finalizePromoStreamIfReady(db, ownerUid, workId, streamUid, "promo_revision");
+          }
+        }
+      })
+    );
+    return true;
+  }
+
+  const prologueSnap = await db
+    .collectionGroup("prologueShort")
+    .where("streamUid", "==", streamUid)
+    .limit(10)
+    .get();
+  if (!prologueSnap.empty) {
+    await Promise.all(
+      prologueSnap.docs.map(async (doc) => {
+        await doc.ref.update({ streamStatus, updatedAt: FieldValue.serverTimestamp() });
+        if (streamStatus === "ready") {
+          const workId = doc.ref.parent.parent?.id;
+          const ownerUid = doc.ref.parent.parent?.parent?.parent?.id;
+          if (ownerUid && workId) {
+            await finalizePrologueStreamIfReady(db, ownerUid, workId, streamUid, "prologue");
+          }
+        }
+      })
+    );
+    return true;
+  }
+
+  const prologueRevSnap = await db
+    .collectionGroup("prologueShort")
+    .where("pendingRevision.streamUid", "==", streamUid)
+    .limit(10)
+    .get();
+  if (!prologueRevSnap.empty) {
+    await Promise.all(
+      prologueRevSnap.docs.map(async (doc) => {
+        await doc.ref.update({
+          "pendingRevision.streamStatus": streamStatus,
+          "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        if (streamStatus === "ready") {
+          const workId = doc.ref.parent.parent?.id;
+          const ownerUid = doc.ref.parent.parent?.parent?.parent?.id;
+          if (ownerUid && workId) {
+            await finalizePrologueStreamIfReady(db, ownerUid, workId, streamUid, "prologue_revision");
           }
         }
       })

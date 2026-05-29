@@ -4,8 +4,10 @@ import { requireCompleteMemberProfile } from "@/lib/server/member-access";
 import {
   FieldValue,
   getDbOrNull,
+  parsePrologueDoc,
   parsePromoDoc,
   parseWorkDoc,
+  prologueRef,
   promoRef,
   worksCol,
 } from "@/lib/server/works";
@@ -72,6 +74,26 @@ export async function POST(request: Request, { params }: Params) {
     updatedAt: FieldValue.serverTimestamp(),
     rejectReason: FieldValue.delete(),
   });
+
+  const prologueRefDoc = prologueRef(db, session.uid, workId);
+  const prologueSnap = await prologueRefDoc.get();
+  if (prologueSnap.exists) {
+    const prologue = parsePrologueDoc(prologueSnap.data() as Record<string, unknown>);
+    if (
+      prologue.platformStatus === "draft" ||
+      prologue.platformStatus === "rejected"
+    ) {
+      if (prologue.streamStatus !== "ready") {
+        return jsonError("not_ready", "프롤로그 인코딩이 끝난 후 제출할 수 있습니다.", 400);
+      }
+      await prologueRefDoc.update({
+        platformStatus: "pending",
+        submittedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        rejectReason: FieldValue.delete(),
+      });
+    }
+  }
 
   return NextResponse.json({
     ok: true,

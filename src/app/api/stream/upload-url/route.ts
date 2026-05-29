@@ -25,7 +25,7 @@ import {
 import { parseUploadLength } from "@/lib/server/parse-upload-length";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
 import type { WorkCreditInput } from "@/types/credits";
-import type { PromoDraft, VideoAspectRatio } from "@/types/work";
+import type { PrologueDraft, PromoDraft, VideoAspectRatio } from "@/types/work";
 
 /** 작품 메타만 생성 — 영상은 Storage 스테이징 후 제출 전 확인에서 심사 제출 시 Stream 업로드 */
 export async function POST(request: Request) {
@@ -58,6 +58,10 @@ export async function POST(request: Request) {
     aspectRatio?: string;
     uploadLength?: number | string;
     promoDraft?: {
+      title?: string;
+      description?: string;
+    };
+    prologueDraft?: {
       title?: string;
       description?: string;
     };
@@ -117,6 +121,16 @@ export async function POST(request: Request) {
     description: promoRaw.description?.trim() || null,
   };
 
+  let prologueDraft: PrologueDraft | undefined;
+  const prologueRaw = body.prologueDraft;
+  if (prologueRaw && typeof prologueRaw === "object") {
+    const pTitle = String(prologueRaw.title ?? "").trim().slice(0, 200);
+    prologueDraft = {
+      title: pTitle || undefined,
+      description: prologueRaw.description?.trim() || null,
+    };
+  }
+
   const workId = crypto.randomUUID();
 
   try {
@@ -150,6 +164,7 @@ export async function POST(request: Request) {
       proposedTags: proposedTags.length > 0 ? proposedTags : null,
       proposedAspectRatio,
       promoDraft,
+      ...(prologueDraft ? { prologueDraft } : {}),
       platformStatus: "draft",
       streamStatus: "staged",
       sortOrder,

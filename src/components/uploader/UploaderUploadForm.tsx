@@ -24,7 +24,7 @@ import CreditTagInput, {
 import { useTranslations } from "@/context/LocaleContext";
 import { useImageFileMetadata } from "@/hooks/useImageFileMetadata";
 import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
-import { defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
+import { aspectRatioMessageKey, defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
 import {
   formatApiError,
   formatClientError,
@@ -49,6 +49,10 @@ import {
   validatePromoThumbnailFile,
 } from "@/lib/works/promoThumbnailUpload";
 import { getPromoFileValidationError } from "@/lib/works/promo-file-validation";
+import { getPrologueFileValidationError } from "@/lib/works/prologue-file-validation";
+import PrologueUploadChoiceTiles, {
+  type PrologueUploadChoice,
+} from "@/components/uploader/PrologueUploadChoiceTiles";
 import { normalizeTags } from "@/lib/works/label-utils";
 import {
   WORK_SECTIONS,
@@ -58,9 +62,9 @@ import {
 } from "@/types/work";
 import type { User } from "firebase/auth";
 
-type UploadStepId = "fullWork" | "catalog" | "promo" | "preview";
+type UploadStepId = "fullWork" | "catalog" | "prologue" | "promo" | "preview";
 
-const UPLOAD_STEPS: UploadStepId[] = ["fullWork", "catalog", "promo", "preview"];
+const UPLOAD_STEPS: UploadStepId[] = ["fullWork", "catalog", "prologue", "promo", "preview"];
 
 const UPLOAD_STEP_META: UploadWizardStepMeta[] = [
   {
@@ -72,6 +76,11 @@ const UPLOAD_STEP_META: UploadWizardStepMeta[] = [
     id: "catalog",
     titleKey: "uploader.uploadZoneCatalogTitle",
     hintKey: "uploader.uploadZoneCatalogHint",
+  },
+  {
+    id: "prologue",
+    titleKey: "uploader.uploadZonePrologueTitle",
+    hintKey: "uploader.uploadZonePrologueHint",
   },
   {
     id: "promo",
@@ -102,6 +111,11 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [thumbnailCrop, setThumbnailCrop] = useState<PromoFrameCrop>(defaultPromoFrameCrop());
   const thumbnailImageMeta = useImageFileMetadata(thumbnailFile ?? thumbnailPreview);
   const [thumbnailFieldError, setThumbnailFieldError] = useState<string | null>(null);
+  const [prologueChoice, setPrologueChoice] = useState<PrologueUploadChoice | null>(null);
+  const [prologueFile, setPrologueFile] = useState<File | null>(null);
+  const prologueMeta = useVideoFileMetadata(prologueFile);
+  const [prologueTitle, setPrologueTitle] = useState("");
+  const [prologueDescription, setPrologueDescription] = useState("");
   const [promoFile, setPromoFile] = useState<File | null>(null);
   const promoMeta = useVideoFileMetadata(promoFile);
   const [promoCrop, setPromoCrop] = useState<PromoFrameCrop>(defaultPromoFrameCrop());
@@ -126,6 +140,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const footerRef = useRef<HTMLDivElement>(null);
   const [fullPlaybackUrl, setFullPlaybackUrl] = useState<string | null>(null);
   const [promoPlaybackUrl, setPromoPlaybackUrl] = useState<string | null>(null);
+  const [prologuePlaybackUrl, setProloguePlaybackUrl] = useState<string | null>(null);
 
   const currentStep = UPLOAD_STEPS[stepIndex] ?? "fullWork";
   const isLastStep = stepIndex === UPLOAD_STEPS.length - 1;
@@ -150,6 +165,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     () => ({
       fullWork: t("uploader.uploadZoneFullWorkTitle"),
       catalog: t("uploader.uploadZoneCatalogTitle"),
+      prologue: t("uploader.uploadZonePrologueTitle"),
       promo: t("uploader.uploadZonePromoTitle"),
       preview: t("uploader.uploadZonePreviewTitle"),
     }),
@@ -160,6 +176,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     () => ({
       fullWork: t("uploader.uploadZoneFullWorkHint"),
       catalog: t("uploader.uploadZoneCatalogHint"),
+      prologue: t("uploader.uploadZonePrologueHint"),
       promo: t("uploader.uploadZonePromoHint"),
       preview: t("uploader.uploadZonePreviewHint"),
     }),
@@ -183,6 +200,10 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   }, [title, promoTitle]);
 
   const promoFileError = getPromoFileValidationError(Boolean(promoFile), promoMeta);
+  const prologueFileError = getPrologueFileValidationError(
+    Boolean(prologueFile),
+    prologueMeta
+  );
 
   useEffect(() => {
     if (!promoFile) {
@@ -231,6 +252,25 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       case "catalog":
         if (!thumbnailFile) {
           setFormError(t("uploader.errorThumbnailRequired"));
+          return false;
+        }
+        return true;
+      case "prologue":
+        if (!prologueChoice) {
+          setFormError(t("uploader.errorPrologueChoiceRequired"));
+          return false;
+        }
+        if (prologueChoice === "skip") return true;
+        if (!prologueFile) {
+          setFormError(t("uploader.errorPrologueVideoRequired"));
+          return false;
+        }
+        if (prologueFileError === "loading") {
+          setFormError(t("uploader.errorPrologueVideoLoading"));
+          return false;
+        }
+        if (prologueFileError) {
+          setFormError(t("uploader.errorPrologueVideoInvalid"));
           return false;
         }
         return true;
@@ -321,6 +361,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     if (
       !validateStep("fullWork") ||
       !validateStep("catalog") ||
+      !validateStep("prologue") ||
       !validateStep("promo")
     ) {
       return;
@@ -393,6 +434,13 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               title: promoTitle.trim(),
               description: promoDescription.trim() || undefined,
             },
+            prologueDraft:
+              prologueChoice === "upload"
+                ? {
+                    title: prologueTitle.trim() || title.trim() || undefined,
+                    description: prologueDescription.trim() || undefined,
+                  }
+                : undefined,
             credits: credits.map(({ userId, role, sortOrder }) => ({
               userId,
               role,
@@ -464,6 +512,20 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         const fullStaged = await uploadStagingVideo(user.uid, workId, "full", file, (ratio) => {
           setUploadPercent(uploadPercentForPhase("full", ratio));
         });
+        let prologueStaged: { path: string; bytes: number; contentType: string } | null = null;
+        if (prologueChoice === "upload" && prologueFile) {
+          setUploadPhase("prologue");
+          setUploadPercent(uploadPercentForPhase("prologue", 0));
+          prologueStaged = await uploadStagingVideo(
+            user.uid,
+            workId,
+            "prologue",
+            prologueFile,
+            (ratio) => {
+              setUploadPercent(uploadPercentForPhase("prologue", ratio));
+            }
+          );
+        }
         setUploadPhase("promo");
         setUploadPercent(uploadPercentForPhase("promo", 0));
         const promoStaged = await uploadStagingVideo(user.uid, workId, "promo", promoFile, (ratio) => {
@@ -477,6 +539,15 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             bytes: fullStaged.bytes,
             contentType: fullStaged.contentType,
           },
+          ...(prologueStaged
+            ? {
+                prologue: {
+                  path: prologueStaged.path,
+                  bytes: prologueStaged.bytes,
+                  contentType: prologueStaged.contentType,
+                },
+              }
+            : {}),
           promo: {
             path: promoStaged.path,
             bytes: promoStaged.bytes,
@@ -517,7 +588,9 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
           workId,
           frameCrop: promoCrop,
           fullFile: file,
+          prologueFile: prologueChoice === "upload" ? prologueFile : null,
           promoFile,
+          includePrologue: prologueChoice === "upload",
           onProgress: (p) => applySubmitProgress(p, setUploadPhase, setUploadPercent),
         });
         setUploadPercent(100);
@@ -804,6 +877,76 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
                   />
                 }
               />
+            ) : null}
+          </UploaderFormSection>
+        )}
+
+        {currentStep === "prologue" && (
+          <UploaderFormSection
+            title={t("uploader.uploadZonePrologueTitle")}
+            hint={t("uploader.uploadZonePrologueHint")}
+          >
+            <PrologueUploadChoiceTiles
+              value={prologueChoice}
+              onChange={(choice) => {
+                setPrologueChoice(choice);
+                if (choice === "skip") {
+                  setPrologueFile(null);
+                }
+              }}
+              disabled={busy}
+            />
+            {prologueChoice === "upload" ? (
+              <div className="mt-6 space-y-4">
+                <p className="text-xs text-xiio-muted leading-relaxed">
+                  {t("uploader.prologueVideoFileHint", {
+                    ratio: t(aspectRatioMessageKey(aspectRatio)),
+                  })}
+                </p>
+                <div className="min-h-[280px] md:min-h-[320px]">
+                  <VideoUploadDropzone
+                    file={prologueFile}
+                    onFileChange={setPrologueFile}
+                    meta={prologueMeta}
+                    disabled={busy}
+                  />
+                </div>
+                {prologueFile && prologueFileError && (
+                  <p className="text-xs text-red-400">{t("uploader.errorPrologueVideoInvalid")}</p>
+                )}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="prologue-title">
+                      {t("uploader.prologueTitleLabel")}
+                    </label>
+                    <input
+                      id="prologue-title"
+                      type="text"
+                      value={prologueTitle}
+                      onChange={(e) => setPrologueTitle(e.target.value)}
+                      placeholder={title || t("uploader.uploadTitlePlaceholder")}
+                      disabled={busy}
+                      className={uploaderInputClass}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className="block text-xs text-xiio-muted mb-1.5"
+                      htmlFor="prologue-description"
+                    >
+                      {t("uploader.prologueDescriptionLabel")}
+                    </label>
+                    <textarea
+                      id="prologue-description"
+                      value={prologueDescription}
+                      onChange={(e) => setPrologueDescription(e.target.value)}
+                      rows={3}
+                      disabled={busy}
+                      className={`${uploaderInputClass} resize-y min-h-[4rem]`}
+                    />
+                  </div>
+                </div>
+              </div>
             ) : null}
           </UploaderFormSection>
         )}

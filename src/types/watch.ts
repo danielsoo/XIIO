@@ -14,4 +14,11 @@ export type PublicWorkWatch = {
   embedUrl: string;
   thumbnailUrl?: string;
   durationSec?: number;
+  prologue?: {
+    playbackUrl: string | null;
+    embedUrl: string;
+    durationSec?: number;
+    title?: string;
+    description?: string;
+  };
 };

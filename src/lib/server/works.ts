@@ -4,6 +4,7 @@ import {
   parseRevisionReviewStatus,
   parseWorkPendingRevision,
 } from "@/lib/server/revision-parse";
+// parsePromoPendingRevision reused for prologue pendingRevision shape
 import type {
   PlatformStatus,
   PromoFrameCrop,
@@ -11,12 +12,14 @@ import type {
   PromoShortDoc,
   RejectReasonCode,
   StreamStatus,
+  PrologueDraft,
+  PrologueShortDoc,
   PromoDraft,
   WorkDoc,
   WorkSection,
   WorkVideoStaging,
 } from "@/types/work";
-import { PROMO_SHORT_DOC_ID } from "@/types/work";
+import { PROMO_SHORT_DOC_ID, PROLOGUE_SHORT_DOC_ID } from "@/types/work";
 import { parseContentModeration } from "@/lib/server/moderation/parse-content-moderation";
 import { getStreamThumbnailUrl, getStreamVideo } from "@/lib/cloudflare/stream";
 import { getAdminDb } from "@/lib/server/firebase-admin";
@@ -38,10 +41,28 @@ export function promoRef(db: Firestore, uid: string, workId: string) {
   return worksCol(db, uid).doc(workId).collection("promoShort").doc(PROMO_SHORT_DOC_ID);
 }
 
+export function prologueRef(db: Firestore, uid: string, workId: string) {
+  return worksCol(db, uid).doc(workId).collection("prologueShort").doc(PROLOGUE_SHORT_DOC_ID);
+}
+
 function parseSection(data: Record<string, unknown>): WorkSection {
   const raw = data.section ?? data.category;
   const s = String(raw ?? "movies");
   return isWorkSection(s) ? s : "movies";
+}
+
+export function parsePrologueDraft(data: Record<string, unknown>): PrologueDraft | undefined {
+  const raw = data.prologueDraft;
+  if (!raw || typeof raw !== "object") return undefined;
+  const d = raw as Record<string, unknown>;
+  const title = typeof d.title === "string" ? d.title.trim() : "";
+  const description =
+    typeof d.description === "string" && d.description.trim() ? d.description.trim() : null;
+  if (!title && !description) return undefined;
+  return {
+    title: title ? title.slice(0, 200) : undefined,
+    description,
+  };
 }
 
 export function parsePromoDraft(data: Record<string, unknown>): PromoDraft | undefined {
@@ -77,13 +98,18 @@ function parseWorkVideoStaging(value: unknown): WorkVideoStaging | undefined {
   const fullPath = typeof row.fullPath === "string" ? row.fullPath.trim() : "";
   const promoPath = typeof row.promoPath === "string" ? row.promoPath.trim() : "";
   if (!fullPath || !promoPath) return undefined;
+  const prologuePath = typeof row.prologuePath === "string" ? row.prologuePath.trim() : "";
   return {
     fullPath,
     promoPath,
+    ...(prologuePath ? { prologuePath } : {}),
     fullBytes: typeof row.fullBytes === "number" ? row.fullBytes : undefined,
     promoBytes: typeof row.promoBytes === "number" ? row.promoBytes : undefined,
+    prologueBytes: typeof row.prologueBytes === "number" ? row.prologueBytes : undefined,
     fullContentType: typeof row.fullContentType === "string" ? row.fullContentType : undefined,
     promoContentType: typeof row.promoContentType === "string" ? row.promoContentType : undefined,
+    prologueContentType:
+      typeof row.prologueContentType === "string" ? row.prologueContentType : undefined,
     updatedAt: row.updatedAt,
   };
 }
@@ -132,6 +158,7 @@ export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc
     pendingRevision: parseWorkPendingRevision(data),
     revisionReviewStatus: parseRevisionReviewStatus(data),
     promoDraft: parsePromoDraft(data),
+    prologueDraft: parsePrologueDraft(data),
     contentModeration: parseContentModeration(data),
     portfolioSubmissionHidden: data.portfolioSubmissionHidden === true,
   };
@@ -139,6 +166,32 @@ export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc
 
 function parseCount(data: Record<string, unknown>, key: string): number {
   return typeof data[key] === "number" ? (data[key] as number) : 0;
+}
+
+export function parsePrologueDoc(data: Record<string, unknown>): PrologueShortDoc {
+  return {
+    platformStatus: (data.platformStatus as PrologueShortDoc["platformStatus"]) ?? "draft",
+    streamStatus: data.streamStatus as StreamStatus | undefined,
+    streamUid: data.streamUid ? String(data.streamUid) : undefined,
+    durationSec: typeof data.durationSec === "number" ? data.durationSec : undefined,
+    streamError:
+      typeof data.streamError === "string" && data.streamError.trim()
+        ? data.streamError.trim()
+        : null,
+    title: data.title ? String(data.title) : undefined,
+    description: data.description ? String(data.description) : undefined,
+    rejectReason: data.rejectReason ? String(data.rejectReason) : undefined,
+    deletionRequest: data.deletionRequest as PrologueShortDoc["deletionRequest"],
+    submittedAt: data.submittedAt,
+    publishedAt: data.publishedAt,
+    reviewedAt: data.reviewedAt,
+    reviewedBy: data.reviewedBy ? String(data.reviewedBy) : undefined,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+    pendingRevision: parsePromoPendingRevision(data),
+    revisionReviewStatus: parseRevisionReviewStatus(data),
+    contentModeration: parseContentModeration(data),
+  };
 }
 
 export function parsePromoDoc(data: Record<string, unknown>): PromoShortDoc {
@@ -190,6 +243,10 @@ export function canOwnerDeleteWork(platformStatus: PlatformStatus): boolean {
 
 export function canOwnerDeletePromo(platformStatus: PromoPlatformStatus): boolean {
   return platformStatus !== "published" && platformStatus !== "removal_requested";
+}
+
+export function canOwnerDeletePrologue(platformStatus: PromoPlatformStatus): boolean {
+  return canOwnerDeletePromo(platformStatus);
 }
 
 export async function getDbOrNull() {

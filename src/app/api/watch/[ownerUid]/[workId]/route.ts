@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { getStreamEmbedUrl, getStreamVideo, resolvePlaybackUrl } from "@/lib/cloudflare/stream";
-import { getDbOrNull, parseWorkDoc, worksCol } from "@/lib/server/works";
+import {
+  getDbOrNull,
+  parsePrologueDoc,
+  parseWorkDoc,
+  prologueRef,
+  worksCol,
+} from "@/lib/server/works";
 import type { PublicWorkWatch } from "@/types/watch";
 
 type Params = { params: Promise<{ ownerUid: string; workId: string }> };
@@ -49,6 +55,25 @@ export async function GET(_request: Request, { params }: Params) {
     thumbnailUrl: info?.thumbnail,
     durationSec: info?.duration,
   };
+
+  const prologueSnap = await prologueRef(db, ownerUid, workId).get();
+  if (prologueSnap.exists) {
+    const prologue = parsePrologueDoc(prologueSnap.data() as Record<string, unknown>);
+    if (
+      prologue.platformStatus === "published" &&
+      prologue.streamStatus === "ready" &&
+      prologue.streamUid
+    ) {
+      const prologuePlayback = await resolvePlaybackUrl(prologue.streamUid);
+      payload.prologue = {
+        playbackUrl: prologuePlayback,
+        embedUrl: getStreamEmbedUrl(prologue.streamUid),
+        durationSec: prologue.durationSec,
+        title: prologue.title,
+        description: prologue.description,
+      };
+    }
+  }
 
   return NextResponse.json(payload);
 }

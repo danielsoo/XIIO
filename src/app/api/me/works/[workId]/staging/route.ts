@@ -6,7 +6,12 @@ import type { WorkVideoStaging } from "@/types/work";
 
 type Params = { params: Promise<{ workId: string }> };
 
-function isValidStagingPath(uid: string, workId: string, path: string, kind: "full" | "promo"): boolean {
+function isValidStagingPath(
+  uid: string,
+  workId: string,
+  path: string,
+  kind: "full" | "promo" | "prologue"
+): boolean {
   const prefix = `users/${uid}/works/${workId}/staging/${kind}.`;
   return path.startsWith(prefix) && !path.includes("..");
 }
@@ -20,6 +25,7 @@ export async function PATCH(request: Request, { params }: Params) {
   let body: {
     full?: { path?: string; bytes?: number; contentType?: string };
     promo?: { path?: string; bytes?: number; contentType?: string };
+    prologue?: { path?: string; bytes?: number; contentType?: string };
   };
   try {
     body = (await request.json()) as typeof body;
@@ -63,6 +69,16 @@ export async function PATCH(request: Request, { params }: Params) {
     next.promoPath = path;
     if (typeof body.promo.bytes === "number") next.promoBytes = body.promo.bytes;
     if (body.promo.contentType) next.promoContentType = body.promo.contentType;
+  }
+
+  if (body.prologue?.path) {
+    const path = body.prologue.path.trim();
+    if (!isValidStagingPath(session.uid, workId, path, "prologue")) {
+      return jsonError("invalid_path", "프롤로그 스테이징 경로가 올바르지 않습니다.", 400);
+    }
+    next.prologuePath = path;
+    if (typeof body.prologue.bytes === "number") next.prologueBytes = body.prologue.bytes;
+    if (body.prologue.contentType) next.prologueContentType = body.prologue.contentType;
   }
 
   if (!next.fullPath) next.fullPath = existing.fullPath;

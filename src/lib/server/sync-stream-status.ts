@@ -3,7 +3,8 @@ import { getStreamVideo } from "@/lib/cloudflare/stream";
 import { mapWebhookStreamStatus } from "@/lib/works/constants";
 import type { StreamStatus } from "@/types/work";
 import { finalizePromoStreamIfReady } from "@/lib/server/promo-stream-ready";
-import { FieldValue, promoRef, worksCol } from "@/lib/server/works";
+import { finalizePrologueStreamIfReady } from "@/lib/server/prologue-stream-ready";
+import { FieldValue, prologueRef, promoRef, worksCol } from "@/lib/server/works";
 
 /** Firestore streamStatus가 uploading/processing일 때 Cloudflare API로 실제 상태 반영 */
 export async function syncWorkStreamStatusIfNeeded(
@@ -75,6 +76,57 @@ export async function syncPromoRevisionStreamStatusIfNeeded(
   });
   if (next === "ready") {
     await finalizePromoStreamIfReady(db, ownerUid, workId, streamUid, "promo_revision");
+  }
+  return next;
+}
+
+export async function syncPrologueStreamStatusIfNeeded(
+  db: Firestore,
+  ownerUid: string,
+  workId: string,
+  streamUid: string,
+  current: StreamStatus | undefined
+): Promise<StreamStatus | undefined> {
+  if (!streamUid || !current || current === "ready" || current === "error") return current;
+
+  const info = await getStreamVideo(streamUid);
+  if (!info?.statusState) return current;
+
+  const next = mapWebhookStreamStatus(info.statusState);
+  if (next === current) return current;
+
+  await prologueRef(db, ownerUid, workId).update({
+    streamStatus: next,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  if (next === "ready") {
+    await finalizePrologueStreamIfReady(db, ownerUid, workId, streamUid, "prologue");
+  }
+  return next;
+}
+
+export async function syncPrologueRevisionStreamStatusIfNeeded(
+  db: Firestore,
+  ownerUid: string,
+  workId: string,
+  streamUid: string,
+  current: StreamStatus | undefined
+): Promise<StreamStatus | undefined> {
+  if (!streamUid || !current || current === "ready" || current === "error") return current;
+
+  const info = await getStreamVideo(streamUid);
+  if (!info?.statusState) return current;
+
+  const next = mapWebhookStreamStatus(info.statusState);
+  if (next === current) return current;
+
+  await prologueRef(db, ownerUid, workId).update({
+    "pendingRevision.streamStatus": next,
+    "pendingRevision.updatedAt": FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  if (next === "ready") {
+    await finalizePrologueStreamIfReady(db, ownerUid, workId, streamUid, "prologue_revision");
   }
   return next;
 }
