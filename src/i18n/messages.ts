@@ -1062,6 +1062,13 @@ export const messages = {
       uploadSubmit: "업로드",
       uploadSubmitting: "업로드 중…",
       uploadProgress: "{percent}% 업로드 중…",
+      uploadPhase: {
+        creating: "작품 정보 저장 중…",
+        thumbnail: "썸네일 업로드 중…",
+        full: "본편 영상 업로드 중…",
+        promo: "숏폼 영상 업로드 중…",
+        finalizing: "마무리 중…",
+      },
       errorUploadLengthRequired: "파일 크기를 확인할 수 없습니다. 파일을 다시 선택해 주세요.",
       uploadGroupPromoRequired: "홍보 쇼츠 (필수)",
       promoRequiredHint:
@@ -2433,6 +2440,13 @@ export const messages = {
       uploadSubmit: "Upload",
       uploadSubmitting: "Uploading…",
       uploadProgress: "{percent}% uploading…",
+      uploadPhase: {
+        creating: "Saving work info…",
+        thumbnail: "Uploading thumbnail…",
+        full: "Uploading main video…",
+        promo: "Uploading promo short…",
+        finalizing: "Finishing up…",
+      },
       errorUploadLengthRequired: "Could not read file size. Please re-select the file.",
       uploadGroupPromoRequired: "Promo short (required)",
       promoRequiredHint:

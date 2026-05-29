@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import DirectorNameSetupModal from "@/components/uploader/DirectorNameSetupModal";
@@ -17,6 +17,12 @@ export default function UploaderUploadInner() {
   const { t } = useTranslations();
   const { depositVerified, depositEnabled, checked } = useDepositStatus();
   const [err, setErr] = useState<string | null>(null);
+  const topErrorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!err) return;
+    topErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [err]);
   const [defaultDirectorName, setDefaultDirectorName] = useState<string | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [showDirectorModal, setShowDirectorModal] = useState(false);
@@ -106,7 +112,11 @@ export default function UploaderUploadInner() {
         <p className="text-xiio-muted text-sm md:text-base max-w-2xl mb-8 -mt-4">{t("uploader.uploadBody")}</p>
 
         {err && (
-          <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-400 text-sm whitespace-pre-wrap break-words">
+          <div
+            ref={topErrorRef}
+            role="alert"
+            className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-400 text-sm whitespace-pre-wrap break-words"
+          >
             {err}
           </div>
         )}

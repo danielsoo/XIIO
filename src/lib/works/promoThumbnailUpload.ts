@@ -1,5 +1,6 @@
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref } from "firebase/storage";
 import { storage } from "@/lib/firebase";
+import { uploadBlobWithProgress } from "@/lib/works/storage-upload";
 import type { PromoFrameCrop } from "@/types/work";
 
 /** 홍보 썸네일 최대 용량 — storage.rules 와 동일하게 유지 */
@@ -14,7 +15,8 @@ export function validatePromoThumbnailFile(file: File): "type" | "size" | null {
 export async function uploadPromoThumbnail(
   uid: string,
   workId: string,
-  file: File
+  file: File,
+  onProgress?: (ratio: number) => void
 ): Promise<string> {
   if (!storage) {
     throw new Error("storage_not_configured");
@@ -27,7 +29,7 @@ export async function uploadPromoThumbnail(
   const safeExt = ["jpg", "jpeg", "png", "webp", "gif"].includes(ext) ? ext : "jpg";
   const path = `users/${uid}/works/${workId}/promo-thumbnail.${safeExt}`;
   const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, file, { contentType: file.type || "image/jpeg" });
+  await uploadBlobWithProgress(storageRef, file, { contentType: file.type || "image/jpeg" }, onProgress);
   return getDownloadURL(storageRef);
 }
 

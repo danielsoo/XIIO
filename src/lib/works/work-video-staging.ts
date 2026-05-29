@@ -1,6 +1,7 @@
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 import { MAX_STREAM_UPLOAD_BYTES } from "@/lib/cloudflare/stream";
+import { uploadBlobWithProgress } from "@/lib/works/storage-upload";
 
 export type StagingKind = "full" | "promo";
 
@@ -27,7 +28,8 @@ export async function uploadStagingVideo(
   uid: string,
   workId: string,
   kind: StagingKind,
-  file: File
+  file: File,
+  onProgress?: (ratio: number) => void
 ): Promise<{ path: string; bytes: number; contentType: string }> {
   if (!storage) throw new Error("storage_not_configured");
   const err = validateStagingVideoFile(file);
@@ -38,7 +40,7 @@ export async function uploadStagingVideo(
   const path = stagingObjectPath(uid, workId, kind, ext);
   const storageRef = ref(storage, path);
   const contentType = file.type || "video/mp4";
-  await uploadBytes(storageRef, file, { contentType });
+  await uploadBlobWithProgress(storageRef, file, { contentType }, onProgress);
   return { path, bytes: file.size, contentType };
 }
 

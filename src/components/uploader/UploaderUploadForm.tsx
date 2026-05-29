@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import UploaderSubmitFooter from "@/components/uploader/UploaderSubmitFooter";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
 import PromoCropFrameEditor from "@/components/uploader/PromoCropFrameEditor";
@@ -31,6 +32,11 @@ import {
   type ApiErrorBody,
 } from "@/lib/clientErrors";
 import { patchWorkStagingMeta } from "@/lib/works/patch-work-staging";
+import {
+  uploadPercentForPhase,
+  uploadPercentForThumbnail,
+  type UploadPhase,
+} from "@/lib/works/upload-progress";
 import { uploadStagingVideo } from "@/lib/works/work-video-staging";
 import { defaultPromoFrameCrop, normalizePromoFrameCrop } from "@/lib/works/promo-crop";
 import { CATALOG_THUMBNAIL_FRAME_ASPECT } from "@/lib/works/promo-crop-interaction";
@@ -110,13 +116,29 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [promoTitle, setPromoTitle] = useState("");
   const [promoDescription, setPromoDescription] = useState("");
   const [busy, setBusy] = useState(false);
-  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
+  const [uploadPercent, setUploadPercent] = useState(0);
+  const [uploadPhase, setUploadPhase] = useState<UploadPhase | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
   const [fullPlaybackUrl, setFullPlaybackUrl] = useState<string | null>(null);
   const [promoPlaybackUrl, setPromoPlaybackUrl] = useState<string | null>(null);
 
   const currentStep = UPLOAD_STEPS[stepIndex] ?? "fullWork";
   const isLastStep = stepIndex === UPLOAD_STEPS.length - 1;
   const progress = ((stepIndex + 1) / UPLOAD_STEPS.length) * 100;
+
+  const reportError = useCallback(
+    (message: string) => {
+      setUploadError(message);
+      onError(message);
+    },
+    [onError]
+  );
+
+  useEffect(() => {
+    if (!uploadError) return;
+    footerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [uploadError]);
 
   const stepLabels: Record<UploadStepId, string> = useMemo(
     () => ({
@@ -298,32 +320,34 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       return;
     }
     if (!file) {
-      onError(t("uploader.errorNoFile"));
+      reportError(t("uploader.errorNoFile"));
       return;
     }
     if (!file.size || !Number.isFinite(file.size)) {
-      onError(t("uploader.errorUploadLengthRequired"));
+      reportError(t("uploader.errorUploadLengthRequired"));
       return;
     }
     if (!description.trim()) {
-      onError(t("uploader.errorDescriptionRequired"));
+      reportError(t("uploader.errorDescriptionRequired"));
       return;
     }
     if (!thumbnailFile) {
-      onError(t("uploader.errorThumbnailRequired"));
+      reportError(t("uploader.errorThumbnailRequired"));
       return;
     }
     if (!promoTitle.trim()) {
-      onError(t("uploader.errorPromoTitleRequired"));
+      reportError(t("uploader.errorPromoTitleRequired"));
       return;
     }
     if (!promoFile) {
-      onError(t("uploader.errorPromoVideoRequired"));
+      reportError(t("uploader.errorPromoVideoRequired"));
       return;
     }
 
     setBusy(true);
-    setUploadPercent(null);
+    setUploadError(null);
+    setUploadPhase("creating");
+    setUploadPercent(0);
     setFormError("");
 
     try {
@@ -331,7 +355,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       try {
         token = await user.getIdToken();
       } catch (authErr) {
-        onError(formatClientError(t, authErr, { titleKey: "uploader.errorUploadAuth" }));
+        reportError(formatClientError(t, authErr, { titleKey: "uploader.errorUploadAuth" }));
         return;
       }
 
@@ -366,7 +390,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
           }),
         });
       } catch (fetchErr) {
-        onError(formatClientError(t, fetchErr, { titleKey: "uploader.errorUploadFailed" }));
+        reportError(formatClientError(t, fetchErr, { titleKey: "uploader.errorUploadFailed" }));
         return;
       }
 
@@ -382,13 +406,13 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         const body: ApiErrorBody = sessionData.error || sessionData.message
           ? sessionData
           : { message: sessionRaw.slice(0, 800) || `HTTP ${sessionRes.status}` };
-        onError(formatApiError(t, sessionRes.status, body));
+        reportError(formatApiError(t, sessionRes.status, body));
         return;
       }
 
       const workId = sessionData.workId;
       if (!workId) {
-        onError(
+        reportError(
           [
             t("uploader.errorNoUploadUrl"),
             sessionData.message
@@ -403,24 +427,39 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         return;
       }
 
+      setUploadPercent(uploadPercentForPhase("creating"));
+
       try {
-        const thumbUrl = await uploadPromoThumbnail(user.uid, workId, thumbnailFile);
+        setUploadPhase("thumbnail");
+        setUploadPercent(uploadPercentForPhase("creating"));
+        const thumbUrl = await uploadPromoThumbnail(user.uid, workId, thumbnailFile, (ratio) => {
+          setUploadPercent(uploadPercentForThumbnail(ratio));
+        });
         await patchPromoThumbnailUrl(token, workId, {
           thumbnailUrl: thumbUrl,
           thumbnailCrop,
         });
+        setUploadPercent(uploadPercentForPhase("thumbnail"));
       } catch (thumbErr) {
-        onError(
+        reportError(
           formatClientError(t, thumbErr, { titleKey: "uploader.errorThumbnailUploadFailed" })
         );
         return;
       }
 
       try {
-        const fullStaged = await uploadStagingVideo(user.uid, workId, "full", file);
-        setUploadPercent(33);
-        const promoStaged = await uploadStagingVideo(user.uid, workId, "promo", promoFile);
-        setUploadPercent(66);
+        setUploadPhase("full");
+        setUploadPercent(uploadPercentForPhase("full", 0));
+        const fullStaged = await uploadStagingVideo(user.uid, workId, "full", file, (ratio) => {
+          setUploadPercent(uploadPercentForPhase("full", ratio));
+        });
+        setUploadPhase("promo");
+        setUploadPercent(uploadPercentForPhase("promo", 0));
+        const promoStaged = await uploadStagingVideo(user.uid, workId, "promo", promoFile, (ratio) => {
+          setUploadPercent(uploadPercentForPhase("promo", ratio));
+        });
+        setUploadPhase("finalizing");
+        setUploadPercent(95);
         await patchWorkStagingMeta(token, workId, {
           full: {
             path: fullStaged.path,
@@ -435,7 +474,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         });
         setUploadPercent(100);
       } catch (stageErr) {
-        onError(formatClientError(t, stageErr, { titleKey: "uploader.errorStagingUploadFailed" }));
+        reportError(formatClientError(t, stageErr, { titleKey: "uploader.errorStagingUploadFailed" }));
         return;
       }
 
@@ -459,6 +498,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         }
       }
 
+      setUploadError(null);
       onSuccess({ workId, message: t("uploader.uploadSuccess") });
       setStepIndex(0);
       setFile(null);
@@ -477,10 +517,11 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       setCredits([]);
       setPendingEmailInvites([]);
     } catch (unexpected) {
-      onError(formatClientError(t, unexpected, { titleKey: "uploader.errorUploadFailed" }));
+      reportError(formatClientError(t, unexpected, { titleKey: "uploader.errorUploadFailed" }));
     } finally {
       setBusy(false);
-      setUploadPercent(null);
+      setUploadPhase(null);
+      setUploadPercent(0);
     }
   };
 
@@ -530,56 +571,24 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
           <UploaderFormShell
         layout="stacked"
         footer={
-          <div className="rounded-2xl border border-white/10 bg-xiio-surface p-6 md:p-8 space-y-4">
-            {busy && uploadPercent != null && (
-              <div className="space-y-1.5">
-                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full bg-xiio-accent transition-all duration-300"
-                    style={{ width: `${uploadPercent}%` }}
-                  />
-                </div>
-                <p className="text-sm text-xiio-muted text-center">
-                  {t("uploader.uploadProgress", { percent: uploadPercent })}
-                </p>
-              </div>
-            )}
-            <div className="flex gap-3">
-              {stepIndex > 0 && (
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  disabled={busy}
-                  className="flex-1 py-3 rounded-xl border border-white/20 text-white hover:bg-white/5 disabled:opacity-40 transition font-medium"
-                >
-                  {t("common.previous")}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  if (busy) return;
-                  if (isLastStep) {
-                    void handleUpload();
-                    return;
-                  }
-                  handleNext();
-                }}
-                disabled={busy}
-                className={`py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover disabled:opacity-40 text-white font-semibold transition ${
-                  stepIndex === 0 ? "w-full" : "flex-1"
-                }`}
-              >
-                {busy
-                  ? uploadPercent != null
-                    ? t("uploader.uploadProgress", { percent: uploadPercent })
-                    : t("uploader.uploadSubmitting")
-                  : isLastStep
-                    ? t("uploader.uploadSubmit")
-                    : t("common.next")}
-              </button>
-            </div>
-          </div>
+          <UploaderSubmitFooter
+            footerRef={footerRef}
+            busy={busy}
+            uploadPercent={uploadPercent}
+            uploadPhase={uploadPhase}
+            uploadError={uploadError}
+            stepIndex={stepIndex}
+            isLastStep={isLastStep}
+            onBack={handleBack}
+            onPrimary={() => {
+              if (busy) return;
+              if (isLastStep) {
+                void handleUpload();
+                return;
+              }
+              handleNext();
+            }}
+          />
         }
       >
         {currentStep === "fullWork" && (
