@@ -1118,8 +1118,11 @@ export const messages = {
       errorThumbnailUploadFailed: "썸네일 업로드에 실패했습니다.",
       uploadSuccess:
         "심사가 제출되었습니다. 관리자 검토 후 카탈로그·숏폼에 노출됩니다.",
+      uploadRedirecting: "내 작품 목록으로 이동 중입니다…",
       submitCompleteBanner: "심사 제출이 완료되었습니다. 아래 목록에서 상태를 확인할 수 있습니다.",
       errorSubmitReviewFailed: "심사 제출에 실패했습니다.",
+      errorSubmitReviewStagedSaved:
+        "영상과 썸네일은 서버에 저장되었습니다. 이 화면 4단계에서 다시 「심사 제출」을 누르거나, 내 작품 → 홍보 편집에서 마무리할 수 있습니다.",
       errorStagingUploadFailed: "영상 스테이징 업로드에 실패했습니다.",
       errorNoFile: "영상 파일을 선택해 주세요.",
       errorDepositRequired:
@@ -2504,9 +2507,12 @@ export const messages = {
       errorThumbnailUploadFailed: "Thumbnail upload failed.",
       uploadSuccess:
         "Submitted for review. It will appear in the catalog and shorts feed after admin approval.",
+      uploadRedirecting: "Redirecting to My works…",
       submitCompleteBanner:
         "Review submission complete. Check the status in the list below.",
       errorSubmitReviewFailed: "Could not submit for review.",
+      errorSubmitReviewStagedSaved:
+        "Your videos and thumbnail are saved on the server. Tap “Submit for review” again on step 4 here, or finish from My works → Edit promo.",
       errorStagingUploadFailed: "Video staging upload failed.",
       errorNoFile: "Please choose a video file.",
       errorDepositRequired: "Complete the uploader deposit before uploading.",

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
@@ -93,6 +93,7 @@ function computeInitialPromoStepIndex(hasVideo: boolean, hasThumbnail: boolean):
 }
 
 export default function PromoEditorContent({ workId }: { workId: string }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const justUploaded = searchParams.get("uploaded") === "1";
   const { user, loading: authLoading } = useAuth();
@@ -124,6 +125,11 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   const [stagingPromoPlaybackUrl, setStagingPromoPlaybackUrl] = useState<string | null>(null);
   const [submitProgress, setSubmitProgress] = useState<SubmitProgress | null>(null);
   const stepInitWorkRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!justUploaded) return;
+    router.replace("/uploader/works?submitted=1");
+  }, [justUploaded, router]);
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!user) return;
@@ -435,6 +441,13 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
       return;
     }
     if (!user) return;
+    if (
+      data &&
+      !revisionMode &&
+      (data.work.platformStatus === "pending" || data.promo?.platformStatus === "pending")
+    ) {
+      return;
+    }
 
     setBusy(true);
     setErr(null);
@@ -527,31 +540,37 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
 
   const { work } = data;
   const workDraftMode = work.platformStatus === "draft" && !revisionMode;
+  const reviewAlreadyPending =
+    !revisionMode &&
+    (work.platformStatus === "pending" || promo?.platformStatus === "pending");
   const locked = revisionMode
     ? revisionReviewStatus === "pending"
-    : promo?.platformStatus === "pending" || promo?.platformStatus === "published";
+    : reviewAlreadyPending || promo?.platformStatus === "published";
   const fullReady = workDraftMode ? isWorkEditableForPromo(work) : work.streamStatus === "ready";
   const promoEncoding = workDraftMode
     ? Boolean(submitProgress)
     : isStreamEncoding(revisionMode ? pendingRevision?.streamStatus : promo?.streamStatus);
-  const canSubmit = revisionMode
-    ? Boolean(
-        pendingRevision &&
-          (pendingRevision.platformStatus === "draft" || pendingRevision.platformStatus === "rejected") &&
-          pendingRevision.streamStatus === "ready"
-      )
-    : workDraftMode
+  const canSubmit =
+    !reviewAlreadyPending &&
+    (revisionMode
       ? Boolean(
-          hasCompleteVideoStaging(work.videoStaging) &&
-            savedThumbnailUrl &&
-            title.trim() &&
-            !submitProgress
+          pendingRevision &&
+            (pendingRevision.platformStatus === "draft" ||
+              pendingRevision.platformStatus === "rejected") &&
+            pendingRevision.streamStatus === "ready"
         )
-      : Boolean(
-          promo &&
-            (promo.platformStatus === "draft" || promo.platformStatus === "rejected") &&
-            promo.streamStatus === "ready"
-        );
+      : workDraftMode
+        ? Boolean(
+            hasCompleteVideoStaging(work.videoStaging) &&
+              savedThumbnailUrl &&
+              title.trim() &&
+              !submitProgress
+          )
+        : Boolean(
+            promo &&
+              (promo.platformStatus === "draft" || promo.platformStatus === "rejected") &&
+              promo.streamStatus === "ready"
+          ));
   const awaitingPromoUpload =
     !workDraftMode &&
     fullReady &&

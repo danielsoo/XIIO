@@ -7,6 +7,7 @@ import type { UploadPhase } from "@/lib/works/upload-progress";
 type Props = {
   footerRef?: RefObject<HTMLDivElement | null>;
   busy: boolean;
+  uploadComplete?: boolean;
   uploadPercent: number;
   uploadPhase: UploadPhase | null;
   uploadError: string | null;
@@ -19,6 +20,7 @@ type Props = {
 export default function UploaderSubmitFooter({
   footerRef,
   busy,
+  uploadComplete = false,
   uploadPercent,
   uploadPhase,
   uploadError,
@@ -30,6 +32,7 @@ export default function UploaderSubmitFooter({
   const { t } = useTranslations();
 
   const phaseLabel = uploadPhase != null ? t(`uploader.uploadPhase.${uploadPhase}`) : null;
+  const showProgress = busy && !uploadComplete;
 
   return (
     <div
@@ -46,7 +49,17 @@ export default function UploaderSubmitFooter({
           </div>
         ) : null}
 
-        {busy ? (
+        {uploadComplete ? (
+          <div className="space-y-2" role="status">
+            <p className="text-sm text-emerald-300/95 leading-relaxed">{t("uploader.uploadSuccess")}</p>
+            <p className="text-xs text-xiio-muted">{t("uploader.uploadRedirecting")}</p>
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-full w-full bg-xiio-accent animate-pulse" />
+            </div>
+          </div>
+        ) : null}
+
+        {showProgress ? (
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs text-xiio-muted">
               <span className="text-white/90 truncate pr-2">{phaseLabel}</span>
@@ -71,7 +84,7 @@ export default function UploaderSubmitFooter({
             <button
               type="button"
               onClick={onBack}
-              disabled={busy}
+              disabled={busy || uploadComplete}
               className="flex-1 py-3 rounded-xl border border-white/20 text-white hover:bg-white/5 disabled:opacity-40 transition font-medium"
             >
               {t("common.previous")}
@@ -80,16 +93,18 @@ export default function UploaderSubmitFooter({
           <button
             type="button"
             onClick={onPrimary}
-            disabled={busy}
+            disabled={busy || uploadComplete}
             className={`py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover disabled:opacity-40 text-white font-semibold transition ${
               stepIndex === 0 ? "w-full" : "flex-1"
             }`}
           >
-            {busy
-              ? t("uploader.uploadProgress", { percent: uploadPercent })
-              : isLastStep
-                ? t("uploader.uploadSubmitReview")
-                : t("common.next")}
+            {uploadComplete
+              ? t("uploader.uploadRedirecting")
+              : busy
+                ? t("uploader.uploadProgress", { percent: uploadPercent })
+                : isLastStep
+                  ? t("uploader.uploadSubmitReview")
+                  : t("common.next")}
           </button>
         </div>
       </div>

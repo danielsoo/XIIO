@@ -119,6 +119,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [promoTitle, setPromoTitle] = useState("");
   const [promoDescription, setPromoDescription] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploadComplete, setUploadComplete] = useState(false);
   const [uploadPercent, setUploadPercent] = useState(0);
   const [uploadPhase, setUploadPhase] = useState<UploadPhase | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -143,7 +144,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     footerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [uploadError]);
 
-  useUploadLeaveGuard(busy);
+  useUploadLeaveGuard(busy || uploadComplete);
 
   const stepLabels: Record<UploadStepId, string> = useMemo(
     () => ({
@@ -350,10 +351,15 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     }
 
     setBusy(true);
+    setUploadComplete(false);
     setUploadError(null);
     setUploadPhase("creating");
     setUploadPercent(0);
     setFormError("");
+
+    let stagingComplete = false;
+    let succeeded = false;
+    let keepProgressOnExit = false;
 
     try {
       let token: string;
@@ -478,6 +484,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
           },
         });
         setUploadPercent(uploadPercentForPhase("finalizing"));
+        stagingComplete = true;
       } catch (stageErr) {
         reportError(formatClientError(t, stageErr, { titleKey: "uploader.errorStagingUploadFailed" }));
         return;
@@ -516,34 +523,29 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         setUploadPercent(100);
         setUploadPhase("encoding");
       } catch (submitErr) {
-        reportError(formatClientError(t, submitErr, { titleKey: "uploader.errorSubmitReviewFailed" }));
+        const base = formatClientError(t, submitErr, {
+          titleKey: "uploader.errorSubmitReviewFailed",
+        });
+        const detail = stagingComplete ? `\n\n${t("uploader.errorSubmitReviewStagedSaved")}` : "";
+        reportError(`${base}${detail}`);
+        keepProgressOnExit = stagingComplete;
         return;
       }
 
       setUploadError(null);
+      setUploadPercent(100);
+      setUploadComplete(true);
+      succeeded = true;
       onSuccess({ workId, message: t("uploader.uploadSuccess") });
-      setStepIndex(0);
-      setFile(null);
-      setThumbnailFile(null);
-      setThumbnailPreview(null);
-      setThumbnailFieldError(null);
-      setTitle("");
-      setContentCategory("");
-      setTags([]);
-      setDirector(lockedDirectorName);
-      setDescription("");
-      setPromoFile(null);
-      setPromoCrop(defaultPromoFrameCrop());
-      setPromoTitle("");
-      setPromoDescription("");
-      setCredits([]);
-      setPendingEmailInvites([]);
     } catch (unexpected) {
       reportError(formatClientError(t, unexpected, { titleKey: "uploader.errorUploadFailed" }));
     } finally {
+      if (succeeded) return;
       setBusy(false);
-      setUploadPhase(null);
-      setUploadPercent(0);
+      if (!keepProgressOnExit) {
+        setUploadPhase(null);
+        setUploadPercent(0);
+      }
     }
   };
 
@@ -554,6 +556,22 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
 
   return (
     <form onSubmit={handleFormSubmit}>
+      {uploadComplete ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-xiio-bg/90 backdrop-blur-sm px-6"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="max-w-md w-full rounded-2xl border border-emerald-500/30 bg-xiio-surface p-8 text-center space-y-4 shadow-xl shadow-black/40">
+            <p className="text-lg font-semibold text-white">{t("uploader.uploadSuccess")}</p>
+            <p className="text-sm text-xiio-muted">{t("uploader.uploadRedirecting")}</p>
+            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-full w-full bg-xiio-accent animate-pulse" />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="mb-6 lg:hidden">
         <div className="flex justify-between text-xs text-xiio-muted mb-1">
           <span className="font-medium text-white">{stepLabels[currentStep]}</span>
@@ -585,7 +603,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             steps={UPLOAD_STEP_META}
             currentIndex={stepIndex}
             onStepClick={handleStepClick}
-            disabled={busy}
+            disabled={busy || uploadComplete}
           />
         </div>
 
@@ -596,6 +614,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
           <UploaderSubmitFooter
             footerRef={footerRef}
             busy={busy}
+            uploadComplete={uploadComplete}
             uploadPercent={uploadPercent}
             uploadPhase={uploadPhase}
             uploadError={uploadError}
@@ -603,7 +622,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             isLastStep={isLastStep}
             onBack={handleBack}
             onPrimary={() => {
-              if (busy) return;
+              if (busy || uploadComplete) return;
               if (isLastStep) {
                 void handleUpload();
                 return;

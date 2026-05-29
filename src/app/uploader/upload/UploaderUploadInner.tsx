@@ -134,7 +134,7 @@ export default function UploaderUploadInner() {
           initialDirector={defaultDirectorName}
           onSuccess={() => {
             setErr(null);
-            router.push("/uploader/works?submitted=1");
+            router.replace("/uploader/works?submitted=1");
           }}
           onError={(message) => {
             setErr(message);
