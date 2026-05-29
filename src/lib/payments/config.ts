@@ -1,6 +1,10 @@
 import type { PaymentProviderId, PaymentRegion } from "./types";
 
+/** 테스트 기간: true면 env와 관계없이 업로더 보증금 비활성. 정식 오픈 시 false로 변경. */
+const UPLOADER_DEPOSIT_FORCE_DISABLED = true;
+
 export function isUploaderDepositEnabled(): boolean {
+  if (UPLOADER_DEPOSIT_FORCE_DISABLED) return false;
   return process.env.UPLOADER_DEPOSIT_ENABLED === "true" || process.env.UPLOADER_DEPOSIT_ENABLED === "1";
 }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isStreamConfigured } from "@/lib/cloudflare/stream";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
+import { requireCompleteMemberProfile } from "@/lib/server/member-access";
 import { beginFullStreamUpload } from "@/lib/server/staging-stream-upload";
 import { getDbOrNull } from "@/lib/server/works";
 
@@ -19,6 +20,9 @@ export async function POST(request: Request, { params }: Params) {
 
   const db = await getDbOrNull();
   if (!db) return jsonError("admin_not_configured", "서버 DB를 사용할 수 없습니다.", 503);
+
+  const profileBlock = await requireCompleteMemberProfile(db, session.uid);
+  if (profileBlock) return profileBlock;
 
   try {
     const result = await beginFullStreamUpload(db, session.uid, workId);

@@ -1005,6 +1005,13 @@ export const messages = {
       errorSessionUrl: "결제 세션 URL을 받지 못했습니다. STRIPE_SECRET_KEY를 확인하세요.",
       errorRequestFailed: "요청에 실패했습니다.",
       uploadLoginRequired: "로그인이 필요합니다.",
+      profileRequiredTitle: "회원가입을 마무리해 주세요",
+      profileRequiredBody:
+        "업로더는 가입 설문을 완료한 회원만 이용할 수 있습니다. 표시 이름·생년월일 등 필수 항목을 입력해 주세요.",
+      accountDeletedBody:
+        "탈퇴한 계정입니다. 다시 이용하려면 새로 가입해 주세요.",
+      errorProfileRequired:
+        "가입 설문을 완료한 회원만 업로드할 수 있습니다. 회원가입을 마무리해 주세요.",
       uploadDepositTitle: "업로드 보증금 필요",
       uploadDepositBody:
         "영상 업로드는 보증금(소액 결제) 완료 후 가능합니다. 신원 보증이 아닌 스팸 완화 목적입니다.",
@@ -2394,6 +2401,13 @@ export const messages = {
       errorSessionUrl: "No checkout URL. Check STRIPE_SECRET_KEY.",
       errorRequestFailed: "Request failed.",
       uploadLoginRequired: "Sign in required.",
+      profileRequiredTitle: "Complete your signup",
+      profileRequiredBody:
+        "Only members who finished signup can use the uploader. Please fill in required fields such as display name and birth date.",
+      accountDeletedBody:
+        "This account was deleted. Sign up again to use XIIO.",
+      errorProfileRequired:
+        "Only members who finished signup can upload. Please complete registration.",
       uploadDepositTitle: "Upload deposit required",
       uploadDepositBody:
         "Complete the small deposit before uploading. Anti-spam only, not ID verification.",

@@ -26,7 +26,8 @@ export function useMemberAccess() {
 
     if (skipClientFirestore) {
       if (user) {
-        setAccess({ kind: "active" });
+        // Uploader routes skip Firestore; MemberGuard exempts /uploader — no "active" without profile.
+        setAccess({ kind: "none" });
         setProfile(null);
       } else {
         setAccess({ kind: "none" });

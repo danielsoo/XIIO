@@ -3,6 +3,7 @@ import { MAX_STREAM_UPLOAD_BYTES } from "@/lib/cloudflare/stream";
 import { hasDepositVerifiedClaim } from "@/lib/server/deposit-verification";
 import { isUploaderDepositEnabled } from "@/lib/payments/config";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
+import { requireCompleteMemberProfile } from "@/lib/server/member-access";
 import { parseUserProfileDoc } from "@/lib/userAccess";
 import {
   FieldValue,
@@ -31,6 +32,13 @@ export async function POST(request: Request) {
   const auth = await requireUser(request);
   if ("error" in auth) return auth.error;
   const { session } = auth;
+
+  const db = await getDbOrNull();
+  if (!db) {
+    return jsonError("admin_not_configured", "서버 DB를 사용할 수 없습니다.", 503);
+  }
+  const profileBlock = await requireCompleteMemberProfile(db, session.uid);
+  if (profileBlock) return profileBlock;
 
   if (isUploaderDepositEnabled()) {
     const verified = await hasDepositVerifiedClaim(session.uid);
@@ -110,11 +118,6 @@ export async function POST(request: Request) {
   };
 
   const workId = crypto.randomUUID();
-
-  const db = await getDbOrNull();
-  if (!db) {
-    return jsonError("admin_not_configured", "서버 DB를 사용할 수 없습니다.", 503);
-  }
 
   try {
     const userSnap = await db.collection("users").doc(session.uid).get();
