@@ -17,8 +17,8 @@ import {
   getTransitionMode,
 } from "@/components/shorts/promoCarouselTransition";
 import {
-  circularDistance,
   shouldWarmExpandedStripItem,
+  shouldWarmTeaserStripItem,
 } from "@/components/shorts/promoCarouselUtils";
 import PromoShortPeekPreview from "@/components/shorts/PromoShortPeekPreview";
 import type { PromoShortPeekDimLevel } from "@/components/shorts/PromoShortPeekPreview";
@@ -34,7 +34,12 @@ import PromoShortPlayer, {
 import { useTranslations } from "@/context/LocaleContext";
 import type { PromoShort } from "@/types/promoShort";
 
-type Triplet = { left: PromoShort; center: PromoShort; right: PromoShort };
+type TeaserQuartet = {
+  farLeft: PromoShort;
+  left: PromoShort;
+  center: PromoShort;
+  right: PromoShort;
+};
 
 type Quintet = {
   farLeft: PromoShort;
@@ -44,14 +49,14 @@ type Quintet = {
   farRight: PromoShort;
 };
 
-type CarouselSnapshot = Triplet | Quintet;
+type CarouselSnapshot = TeaserQuartet | Quintet;
 
 type RevolvePhase = "idle" | "toNext" | "toPrev";
 type ActiveTransitionMode = "revolve" | "fade" | "slide";
 
-type SlotRole = "left" | "center" | "right" | "incoming";
+type TeaserSlotRole = "farLeft" | "left" | "center" | "right" | "incoming";
 type ExpandedStripRole = "farLeft" | "left" | "center" | "right" | "farRight" | "incoming";
-type PlacementRole = SlotRole | ExpandedStripRole;
+type PlacementRole = TeaserSlotRole | ExpandedStripRole;
 
 const ENTER_GAP_PX = 100;
 const STAGE_GAP_PX = 16;
@@ -71,7 +76,11 @@ const EXPANDED_PEEK_MEASURE_WIDTH_PX = 256;
 const EXPANDED_OUTER_MEASURE_WIDTH_PX = 192;
 
 function isQuintetSnapshot(s: CarouselSnapshot): s is Quintet {
-  return "farLeft" in s;
+  return "farRight" in s;
+}
+
+function isTeaserQuartetSnapshot(s: CarouselSnapshot): s is TeaserQuartet {
+  return "farLeft" in s && !("farRight" in s);
 }
 /** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
 const PEEK_SCALE_SM = 180 / 236;
@@ -115,7 +124,10 @@ function layoutMetricsFromCenterWidth(
   const peekScale = options.peekScale ?? peekScaleRatio();
   const stageGapPx = options.stageGapPx ?? STAGE_GAP_PX;
   const peekVisualW = options.peekVisualWidthPx ?? centerW * peekScale;
+  const farVisualW = peekVisualW * CAROUSEL_BACK_SCALE_RATIO;
   const offsetX = centerW / 2 + stageGapPx + peekVisualW / 2;
+  const offsetFarLeft = offsetX + stageGapPx + peekVisualW / 2 + stageGapPx + farVisualW / 2;
+  const farScale = peekScale * CAROUSEL_BACK_SCALE_RATIO;
   /** 슬롯 scale 적용 후 피크 안쪽 가장자리(화살표 앵커) */
   const peekInnerArrowAnchorPx = options.peekVisualWidthPx
     ? peekVisualW / 2 - NAV_ARROW_INSET_PX
@@ -123,7 +135,9 @@ function layoutMetricsFromCenterWidth(
   return {
     centerW,
     offsetX,
+    offsetFarLeft,
     peekScale,
+    farScale,
     peekInnerArrowAnchorPx,
   };
 }
@@ -131,7 +145,9 @@ function layoutMetricsFromCenterWidth(
 type LayoutMetrics = {
   centerW: number;
   offsetX: number;
+  offsetFarLeft: number;
   peekScale: number;
+  farScale: number;
   peekInnerArrowAnchorPx: number;
 };
 
@@ -152,12 +168,15 @@ function expandedStripMetricsFromCenterWidth(
   const offsetOuter =
     offsetAdjacent + peekAdjacentW / 2 + EXPANDED_OUTER_GAP + peekOuterW / 2;
   const peekInnerArrowAnchorPx = peekAdjacentW / 2 - NAV_ARROW_INSET_PX;
+  const farScale = (peekAdjacentW / Math.max(centerW, 1)) * EXPANDED_OUTER_PEEK_SCALE;
   return {
     centerW,
     offsetX: offsetAdjacent,
+    offsetFarLeft: offsetOuter,
     offsetAdjacent,
     offsetOuter,
     peekScale,
+    farScale,
     peekAdjacentW,
     peekOuterW,
     peekInnerArrowAnchorPx,
@@ -190,13 +209,28 @@ const PEEK_TAP_LAYER_BASE =
 const PEEK_TAP_LAYER_LEFT = `${PEEK_TAP_LAYER_BASE} left-0`;
 const PEEK_TAP_LAYER_RIGHT = `${PEEK_TAP_LAYER_BASE} right-0`;
 
-function tripletAt(items: PromoShort[], centerIndex: number): Triplet {
+function teaserQuartetAt(items: PromoShort[], centerIndex: number): TeaserQuartet {
   const n = items.length;
   return {
+    farLeft: items[(centerIndex - 2 + n) % n]!,
     left: items[(centerIndex - 1 + n) % n]!,
     center: items[centerIndex]!,
     right: items[(centerIndex + 1) % n]!,
   };
+}
+
+function getVisibleTeaserRoles(quartet: TeaserQuartet, count: number): Set<TeaserSlotRole> {
+  const visible = new Set<TeaserSlotRole>(["center"]);
+  if (count >= 2) {
+    if (quartet.left.id !== quartet.center.id) visible.add("left");
+    if (quartet.right.id !== quartet.center.id) visible.add("right");
+  }
+  if (count >= 4) {
+    if (quartet.farLeft.id !== quartet.left.id && quartet.farLeft.id !== quartet.center.id) {
+      visible.add("farLeft");
+    }
+  }
+  return visible;
 }
 
 function quintetAt(items: PromoShort[], centerIndex: number): Quintet {
@@ -399,16 +433,24 @@ function expandedIncomingItemAt(
 }
 
 function slotTransform(
-  role: SlotRole,
+  role: TeaserSlotRole,
   phase: RevolvePhase,
   metrics: LayoutMetrics,
   transitionMode: ActiveTransitionMode
 ): { transform: string; opacity: number; zIndex: number } {
-  const { offsetX, peekScale } = metrics;
+  const { offsetX, offsetFarLeft, peekScale, farScale } = metrics;
 
   if (transitionMode === "slide") {
     const slideOffset = Math.round(offsetX * SLIDE_OFFSET_RATIO);
+    const slideFarOffset = Math.round(offsetFarLeft * SLIDE_OFFSET_RATIO);
     if (phase === "idle") {
+      if (role === "farLeft") {
+        return {
+          transform: `translateX(${-slideFarOffset}px) scale(${farScale})`,
+          opacity: 1,
+          zIndex: 10,
+        };
+      }
       if (role === "left") {
         return {
           transform: `translateX(${-slideOffset}px) scale(${peekScale})`,
@@ -427,11 +469,18 @@ function slotTransform(
     }
 
     if (phase === "toNext") {
-      if (role === "left") {
+      if (role === "farLeft") {
         return {
-          transform: `translateX(${-slideOffset}px) scale(${peekScale})`,
+          transform: `translateX(${-slideFarOffset}px) scale(${farScale})`,
           opacity: SLIDE_EDGE_FADE,
           zIndex: 1,
+        };
+      }
+      if (role === "left") {
+        return {
+          transform: `translateX(${-slideFarOffset}px) scale(${farScale})`,
+          opacity: 1,
+          zIndex: 12,
         };
       }
       if (role === "center") {
@@ -444,6 +493,13 @@ function slotTransform(
       return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
     }
 
+    if (role === "farLeft") {
+      return {
+        transform: `translateX(${-slideOffset}px) scale(${peekScale})`,
+        opacity: 1,
+        zIndex: 12,
+      };
+    }
     if (role === "right") {
       return {
         transform: `translateX(${slideOffset}px) scale(${peekScale})`,
@@ -462,6 +518,13 @@ function slotTransform(
   }
 
   if (phase === "idle") {
+    if (role === "farLeft") {
+      return {
+        transform: `translateX(${-offsetFarLeft}px) scale(${farScale})`,
+        opacity: 1,
+        zIndex: 10,
+      };
+    }
     if (role === "left") {
       return {
         transform: `translateX(${-offsetX}px) scale(${peekScale})`,
@@ -480,11 +543,18 @@ function slotTransform(
   }
 
   if (phase === "toNext") {
+    if (role === "farLeft") {
+      return {
+        transform: `translateX(${-offsetFarLeft - SLIDE_ENTER_EXTRA_PX}px) scale(${farScale})`,
+        opacity: SLIDE_EDGE_FADE,
+        zIndex: 1,
+      };
+    }
     if (role === "left") {
       return {
-        transform: `translateX(${offsetX}px) scale(${peekScale})`,
+        transform: `translateX(${-offsetFarLeft}px) scale(${farScale})`,
         opacity: 1,
-        zIndex: 1,
+        zIndex: 12,
       };
     }
     if (role === "center") {
@@ -497,6 +567,13 @@ function slotTransform(
     return { transform: "translateX(0) scale(1)", opacity: 1, zIndex: 25 };
   }
 
+  if (role === "farLeft") {
+    return {
+      transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+      opacity: 1,
+      zIndex: 12,
+    };
+  }
   if (role === "right") {
     return {
       transform: `translateX(${-offsetX}px) scale(${peekScale})`,
@@ -518,14 +595,20 @@ function incomingSlotTransform(
   phase: "toNext" | "toPrev",
   atEnter: boolean,
   metrics: LayoutMetrics,
-  transitionMode: ActiveTransitionMode
+  transitionMode: ActiveTransitionMode,
+  count: number
 ): { transform: string; opacity: number; zIndex: number } {
-  const { offsetX, peekScale } = metrics;
+  const { offsetX, offsetFarLeft, peekScale, farScale } = metrics;
   const slideOffset = Math.round(offsetX * SLIDE_OFFSET_RATIO);
+  const slideFarOffset = Math.round(offsetFarLeft * SLIDE_OFFSET_RATIO);
+  const useFarEnter = count >= 4 && phase === "toPrev";
   const enterX =
     transitionMode === "slide"
-      ? slideOffset + SLIDE_ENTER_EXTRA_PX
-      : offsetX + ENTER_GAP_PX;
+      ? (useFarEnter ? slideFarOffset : slideOffset) + SLIDE_ENTER_EXTRA_PX
+      : (useFarEnter ? offsetFarLeft : offsetX) + ENTER_GAP_PX;
+  const enterScale = useFarEnter ? farScale : peekScale;
+  const settleX = useFarEnter ? -offsetFarLeft : -offsetX;
+  const settleScale = useFarEnter ? farScale : peekScale;
 
   if (phase === "toNext") {
     if (atEnter) {
@@ -544,21 +627,27 @@ function incomingSlotTransform(
 
   if (atEnter) {
     return {
-      transform: `translateX(${-enterX}px) scale(${peekScale})`,
+      transform: `translateX(${-enterX}px) scale(${enterScale})`,
       opacity: transitionMode === "slide" ? SLIDE_EDGE_FADE : 1,
       zIndex: transitionMode === "slide" ? 15 : 4,
     };
   }
   return {
-    transform: `translateX(${-offsetX}px) scale(${peekScale})`,
+    transform: `translateX(${settleX}px) scale(${settleScale})`,
     opacity: 1,
-    zIndex: 15,
+    zIndex: useFarEnter ? 10 : 15,
   };
 }
 
-function incomingItemAt(items: PromoShort[], centerIndex: number, phase: "toNext" | "toPrev"): PromoShort {
+function incomingItemAt(
+  items: PromoShort[],
+  centerIndex: number,
+  phase: "toNext" | "toPrev",
+  count: number
+): PromoShort {
   const n = items.length;
   if (phase === "toNext") return items[(centerIndex + 2) % n]!;
+  if (count >= 4) return items[(centerIndex - 3 + n) % n]!;
   return items[(centerIndex - 2 + n) % n]!;
 }
 
@@ -615,9 +704,16 @@ function shiftedExpandedRole(
   }
 }
 
-function placementForItem(
+function teaserRoleDimLevel(role: PlacementRole | undefined): PromoShortPeekDimLevel | null {
+  if (!role || role === "center") return null;
+  if (role === "farLeft" || role === "incoming") return "expandedOuter";
+  return "default";
+}
+
+function placementForTeaserItem(
   itemId: string,
-  displayTriplet: Triplet,
+  displayQuartet: TeaserQuartet,
+  count: number,
   incomingItem: PromoShort | null,
   incomingStyle: { transform: string; opacity: number; zIndex: number } | null,
   revolvePhase: RevolvePhase,
@@ -625,7 +721,10 @@ function placementForItem(
   metrics: LayoutMetrics,
   slotFrameClass: string
 ): ItemPlacement {
-  if (incomingItem && incomingStyle && incomingItem.id === itemId) {
+  const visibleRoles = getVisibleTeaserRoles(displayQuartet, count);
+  const incomingMinCount = count >= 4 ? 4 : 3;
+
+  if (count >= incomingMinCount && incomingItem && incomingStyle && incomingItem.id === itemId) {
     return {
       visible: true,
       role: "incoming",
@@ -636,42 +735,28 @@ function placementForItem(
       isCenter: false,
     };
   }
-  if (displayTriplet.left.id === itemId) {
-    const s = slotTransform("left", revolvePhase, metrics, transitionMode);
+
+  const roleEntries: { role: TeaserSlotRole; item: PromoShort }[] = [
+    { role: "farLeft", item: displayQuartet.farLeft },
+    { role: "left", item: displayQuartet.left },
+    { role: "center", item: displayQuartet.center },
+    { role: "right", item: displayQuartet.right },
+  ];
+
+  for (const { role, item } of roleEntries) {
+    if (item.id !== itemId || !visibleRoles.has(role)) continue;
+    const s = slotTransform(role, revolvePhase, metrics, transitionMode);
     return {
       visible: true,
-      role: "left",
+      role,
       transform: s.transform,
       opacity: s.opacity,
       zIndex: s.zIndex,
       frameClass: slotFrameClass,
-      isCenter: false,
+      isCenter: role === "center",
     };
   }
-  if (displayTriplet.center.id === itemId) {
-    const s = slotTransform("center", revolvePhase, metrics, transitionMode);
-    return {
-      visible: true,
-      role: "center",
-      transform: s.transform,
-      opacity: s.opacity,
-      zIndex: s.zIndex,
-      frameClass: slotFrameClass,
-      isCenter: true,
-    };
-  }
-  if (displayTriplet.right.id === itemId) {
-    const s = slotTransform("right", revolvePhase, metrics, transitionMode);
-    return {
-      visible: true,
-      role: "right",
-      transform: s.transform,
-      opacity: s.opacity,
-      zIndex: s.zIndex,
-      frameClass: slotFrameClass,
-      isCenter: false,
-    };
-  }
+
   return {
     visible: false,
     transform: "translateX(0) scale(1)",
@@ -950,7 +1035,7 @@ export default function PromoShortCarouselStage({
       : getRevolveDirection(prev, index, count);
     const targetPhase = direction === 1 ? "toNext" : "toPrev";
     setAnimPrevIndex(prev);
-    setSnapshot(isExpandedCenter ? quintetAt(items, prev) : tripletAt(items, prev));
+    setSnapshot(isExpandedCenter ? quintetAt(items, prev) : teaserQuartetAt(items, prev));
     setIncomingAtEnter(true);
     setRevolvePhase("idle");
     const raf = requestAnimationFrame(() => {
@@ -1092,10 +1177,10 @@ export default function PromoShortCarouselStage({
     );
   }
 
-  const liveTriplet = tripletAt(items, index);
+  const liveQuartet = teaserQuartetAt(items, index);
   const liveQuintet = quintetAt(items, index);
-  const displayTriplet =
-    snapshot && !isQuintetSnapshot(snapshot) ? snapshot : liveTriplet;
+  const displayQuartet =
+    snapshot && isTeaserQuartetSnapshot(snapshot) ? snapshot : liveQuartet;
   const displayQuintet =
     snapshot && isQuintetSnapshot(snapshot) ? snapshot : liveQuintet;
   const stripMetrics =
@@ -1129,12 +1214,12 @@ export default function PromoShortCarouselStage({
   const showIncoming =
     (transitionMode === "revolve" || transitionMode === "slide") &&
     (revolvePhase === "toNext" || revolvePhase === "toPrev");
-  const incomingMinCount = isExpandedCenter ? 5 : 3;
+  const incomingMinCount = isExpandedCenter ? 5 : count >= 4 ? 4 : 3;
   const wrapCandidate =
     showIncoming && count >= incomingMinCount
       ? isExpandedCenter
         ? expandedIncomingItemAt(items, animPrevIndex, revolvePhase)
-        : incomingItemAt(items, animPrevIndex, revolvePhase)
+        : incomingItemAt(items, animPrevIndex, revolvePhase, count)
       : null;
   const incomingItem =
     wrapCandidate &&
@@ -1142,8 +1227,10 @@ export default function PromoShortCarouselStage({
       isExpandedCenter
         ? (revolvePhase === "toNext" && wrapCandidate.id === displayQuintet.farRight.id) ||
           (revolvePhase === "toPrev" && wrapCandidate.id === displayQuintet.farLeft.id)
-        : (revolvePhase === "toNext" && wrapCandidate.id === displayTriplet.left.id) ||
-          (revolvePhase === "toPrev" && wrapCandidate.id === displayTriplet.right.id)
+        : (revolvePhase === "toNext" && wrapCandidate.id === displayQuartet.left.id) ||
+          (revolvePhase === "toPrev" &&
+            (wrapCandidate.id === displayQuartet.right.id ||
+              wrapCandidate.id === displayQuartet.farLeft.id))
     )
       ? wrapCandidate
       : null;
@@ -1151,7 +1238,7 @@ export default function PromoShortCarouselStage({
     incomingItem && showIncoming
       ? stripMetrics
         ? expandedIncomingSlotTransform(revolvePhase, incomingAtEnter, stripMetrics)
-        : incomingSlotTransform(revolvePhase, incomingAtEnter, metrics, transitionMode)
+        : incomingSlotTransform(revolvePhase, incomingAtEnter, metrics, transitionMode, count)
       : null;
   const keepExpandedEdgeVisibleDuringShift =
     isExpandedCenter &&
@@ -1170,12 +1257,14 @@ export default function PromoShortCarouselStage({
         ),
       }
     : {
-        minWidth: `${Math.round(metrics.offsetX * 2 + ENTER_GAP_PX + 48)}px`,
+        minWidth: `${Math.round(
+          (count >= 4 ? metrics.offsetFarLeft : metrics.offsetX) * 2 + ENTER_GAP_PX + 48
+        )}px`,
         perspective: "1000px",
         transformStyle: "preserve-3d" as const,
         ["--carousel-offset-x" as string]: `${metrics.offsetX}px`,
         ["--carousel-peek-scale" as string]: String(metrics.peekScale),
-        ["--carousel-back-scale" as string]: String(metrics.peekScale * CAROUSEL_BACK_SCALE_RATIO),
+        ["--carousel-back-scale" as string]: String(metrics.farScale),
       };
 
   return (
@@ -1227,9 +1316,10 @@ export default function PromoShortCarouselStage({
                       carouselFrameClass,
                       keepExpandedEdgeVisibleDuringShift
                     )
-                  : placementForItem(
+                  : placementForTeaserItem(
                       item.id,
-                      displayTriplet,
+                      displayQuartet,
+                      count,
                       incomingItem,
                       incomingStyle,
                       revolvePhase,
@@ -1241,7 +1331,7 @@ export default function PromoShortCarouselStage({
                 !snapshot &&
                 (isExpandedCenter
                   ? shouldWarmExpandedStripItem(itemIdx, index, count)
-                  : circularDistance(itemIdx, index, count) <= 1);
+                  : shouldWarmTeaserStripItem(itemIdx, index, count));
               if (!placement.visible && !warmCenter) return;
 
               const isTargetCenter = item.id === liveCenterId;
@@ -1251,8 +1341,10 @@ export default function PromoShortCarouselStage({
                 (isExpandedCenter
                   ? (revolvePhase === "toNext" && item.id === displayQuintet.right.id) ||
                     (revolvePhase === "toPrev" && item.id === displayQuintet.left.id)
-                  : (revolvePhase === "toNext" && item.id === displayTriplet.right.id) ||
-                    (revolvePhase === "toPrev" && item.id === displayTriplet.left.id));
+                  : revolvePhase === "toNext"
+                    ? item.id === displayQuartet.right.id
+                    : item.id === displayQuartet.left.id ||
+                      (count >= 4 && item.id === displayQuartet.farLeft.id));
               const isOutgoingCenter = Boolean(
                 snapshot && outgoingCenterId && item.id === outgoingCenterId
               );
@@ -1288,7 +1380,7 @@ export default function PromoShortCarouselStage({
               const slotCenteringClass = isWrapArc ? "" : "-translate-y-1/2";
               const baseDimLevel = isExpandedCenter
                 ? expandedRoleDimLevel(placement.role)
-                : "default";
+                : teaserRoleDimLevel(placement.role);
               const targetRole =
                 isExpandedCenter && animatingShift
                   ? shiftedExpandedRole(placement.role, revolvePhase)

@@ -14,6 +14,12 @@ export function shouldWarmExpandedStripItem(i: number, center: number, count: nu
   return circularDistance(i, center, count) <= 2;
 }
 
+/** 홈 teaser 4장 — farLeft 포함 ±2 warm mount */
+export function shouldWarmTeaserStripItem(i: number, center: number, count: number): boolean {
+  if (count >= 4) return circularDistance(i, center, count) <= 2;
+  return circularDistance(i, center, count) <= 1;
+}
+
 export function centerVideoPreload(
   i: number,
   center: number,

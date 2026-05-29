@@ -17,7 +17,7 @@ type Props = {
   viewportClassName?: string;
 };
 
-/** 홈 히어로 — 3프레임 회전문 캐러셀 + 확대 뷰어 */
+/** 홈 히어로 — 4프레임(비대칭) 회전문 캐러셀 + 확대 뷰어 */
 export default function PromoShortTriptychStage({
   items,
   index,
