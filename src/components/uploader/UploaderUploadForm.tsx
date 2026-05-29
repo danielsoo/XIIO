@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
 import PromoCropFrameEditor from "@/components/uploader/PromoCropFrameEditor";
+import SubmissionSurfacePreviews from "@/components/uploader/SubmissionSurfacePreviews";
 import ThumbnailPreviewStages from "@/components/uploader/ThumbnailPreviewStages";
 import UploaderFormSection from "@/components/uploader/UploaderFormSection";
 import UploaderFormShell from "@/components/uploader/UploaderFormShell";
@@ -47,9 +48,9 @@ import {
 } from "@/types/work";
 import type { User } from "firebase/auth";
 
-type UploadStepId = "fullWork" | "catalog" | "promo";
+type UploadStepId = "fullWork" | "catalog" | "promo" | "preview";
 
-const UPLOAD_STEPS: UploadStepId[] = ["fullWork", "catalog", "promo"];
+const UPLOAD_STEPS: UploadStepId[] = ["fullWork", "catalog", "promo", "preview"];
 
 const UPLOAD_STEP_META: UploadWizardStepMeta[] = [
   {
@@ -66,6 +67,11 @@ const UPLOAD_STEP_META: UploadWizardStepMeta[] = [
     id: "promo",
     titleKey: "uploader.uploadZonePromoTitle",
     hintKey: "uploader.uploadZonePromoHint",
+  },
+  {
+    id: "preview",
+    titleKey: "uploader.uploadZonePreviewTitle",
+    hintKey: "uploader.uploadZonePreviewHint",
   },
 ];
 
@@ -104,6 +110,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [promoDescription, setPromoDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [uploadPercent, setUploadPercent] = useState<number | null>(null);
+  const [fullPlaybackUrl, setFullPlaybackUrl] = useState<string | null>(null);
+  const [promoPlaybackUrl, setPromoPlaybackUrl] = useState<string | null>(null);
 
   const currentStep = UPLOAD_STEPS[stepIndex] ?? "fullWork";
   const isLastStep = stepIndex === UPLOAD_STEPS.length - 1;
@@ -114,6 +122,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       fullWork: t("uploader.uploadZoneFullWorkTitle"),
       catalog: t("uploader.uploadZoneCatalogTitle"),
       promo: t("uploader.uploadZonePromoTitle"),
+      preview: t("uploader.uploadZonePreviewTitle"),
     }),
     [t]
   );
@@ -123,6 +132,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
       fullWork: t("uploader.uploadZoneFullWorkHint"),
       catalog: t("uploader.uploadZoneCatalogHint"),
       promo: t("uploader.uploadZonePromoHint"),
+      preview: t("uploader.uploadZonePreviewHint"),
     }),
     [t]
   );
@@ -153,6 +163,26 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
     setPromoCrop((prev) => normalizePromoFrameCrop(prev));
   }, [promoFile, promoMeta]);
 
+  useEffect(() => {
+    if (!file) {
+      setFullPlaybackUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setFullPlaybackUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  useEffect(() => {
+    if (!promoFile) {
+      setPromoPlaybackUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(promoFile);
+    setPromoPlaybackUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [promoFile]);
+
   const scrollWizardTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -170,6 +200,10 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         }
         return true;
       case "catalog":
+        if (!thumbnailFile) {
+          setFormError(t("uploader.errorThumbnailRequired"));
+          return false;
+        }
         return true;
       case "promo":
         if (!promoFile) {
@@ -196,14 +230,12 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
           setFormError(t("uploader.errorPromoVideoInvalid"));
           return false;
         }
-        if (!thumbnailFile) {
-          setFormError(t("uploader.errorThumbnailRequired"));
-          return false;
-        }
         if (!promoTitle.trim()) {
           setFormError(t("uploader.errorPromoTitleRequired"));
           return false;
         }
+        return true;
+      case "preview":
         return true;
       default:
         return true;
@@ -257,7 +289,11 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   };
 
   const handleUpload = async () => {
-    if (!validateStep("fullWork") || !validateStep("promo")) {
+    if (
+      !validateStep("fullWork") ||
+      !validateStep("catalog") ||
+      !validateStep("promo")
+    ) {
       return;
     }
     if (!file) {
@@ -684,6 +720,33 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
               <p className="text-xs text-xiio-muted mb-1">{t("uploader.uploadAspectRatioLabel")}</p>
               <AspectRatioPicker value={aspectRatio} onChange={setAspectRatio} disabled={busy} />
             </div>
+            <ThumbnailUploadField
+              file={thumbnailFile}
+              previewUrl={thumbnailPreview}
+              onFileChange={handleThumbnailChange}
+              disabled={busy}
+              error={thumbnailFieldError}
+            />
+            {thumbnailPreview ? (
+              <>
+                <p className="text-xs text-xiio-muted leading-relaxed">{t("uploader.thumbnailCropHint")}</p>
+                <PromoCropFrameEditor
+                  previewUrl={thumbnailPreview}
+                  crop={thumbnailCrop}
+                  onCropChange={(next) => setThumbnailCrop(normalizePromoFrameCrop(next))}
+                  meta={thumbnailImageMeta}
+                  frameAspect={CATALOG_THUMBNAIL_FRAME_ASPECT}
+                  isImage
+                  disabled={busy}
+                />
+                <ThumbnailPreviewStages
+                  src={thumbnailPreview}
+                  crop={thumbnailCrop}
+                  title={t("uploader.catalogThumbnailPreviewTitle")}
+                  hint={t("uploader.catalogThumbnailPreviewHint")}
+                />
+              </>
+            ) : null}
           </UploaderFormSection>
         )}
 
@@ -717,41 +780,32 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             {promoFile && promoMeta && promoFileError === "too_long" && (
               <p className="text-xs text-red-400">{t("uploader.errorPromoTooLong")}</p>
             )}
-            <ThumbnailUploadField
-              file={thumbnailFile}
-              previewUrl={thumbnailPreview}
-              onFileChange={handleThumbnailChange}
-              disabled={busy}
-              error={thumbnailFieldError}
-            />
-            {thumbnailPreview ? (
-              <>
-                <p className="text-xs text-xiio-muted leading-relaxed">{t("uploader.thumbnailCropHint")}</p>
-                <PromoCropFrameEditor
-                  previewUrl={thumbnailPreview}
-                  crop={thumbnailCrop}
-                  onCropChange={(next) => setThumbnailCrop(normalizePromoFrameCrop(next))}
-                  meta={thumbnailImageMeta}
-                  frameAspect={CATALOG_THUMBNAIL_FRAME_ASPECT}
-                  isImage
-                  disabled={busy}
-                />
-                <ThumbnailPreviewStages
-                  src={thumbnailPreview}
-                  crop={thumbnailCrop}
-                  fullTitle={t("uploader.fullThumbnailPreviewTitle")}
-                  fullHint={t("uploader.fullThumbnailPreviewHint")}
-                  shortsTitle={t("uploader.shortsThumbnailPreviewTitle")}
-                  shortsHint={t("uploader.shortsThumbnailPreviewHint")}
-                />
-              </>
-            ) : null}
             <PromoShortFields
               title={promoTitle}
               onTitleChange={setPromoTitle}
               description={promoDescription}
               onDescriptionChange={setPromoDescription}
               disabled={busy}
+            />
+          </UploaderFormSection>
+        )}
+
+        {currentStep === "preview" && (
+          <UploaderFormSection
+            title={t("uploader.uploadZonePreviewTitle")}
+            hint={t("uploader.uploadZonePreviewHint")}
+          >
+            <SubmissionSurfacePreviews
+              workTitle={title.trim() || promoTitle.trim()}
+              liveThumbnailUrl={thumbnailPreview}
+              thumbnailCrop={thumbnailCrop}
+              title={promoTitle}
+              description={promoDescription}
+              director={(directorLocked ? lockedDirectorName : director).trim()}
+              frameCrop={promoCrop}
+              promoPlaybackUrl={promoPlaybackUrl}
+              fullPlaybackUrl={fullPlaybackUrl}
+              ownerUid={user.uid}
             />
           </UploaderFormSection>
         )}

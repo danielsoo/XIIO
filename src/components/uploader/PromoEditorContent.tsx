@@ -875,10 +875,8 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
               <ThumbnailPreviewStages
                 src={thumbnailPreview}
                 crop={thumbnailCrop}
-                fullTitle={t("uploader.fullThumbnailPreviewTitle")}
-                fullHint={t("uploader.fullThumbnailPreviewHint")}
-                shortsTitle={t("uploader.shortsThumbnailPreviewTitle")}
-                shortsHint={t("uploader.shortsThumbnailPreviewHint")}
+                title={t("uploader.catalogThumbnailPreviewTitle")}
+                hint={t("uploader.catalogThumbnailPreviewHint")}
               />
             </>
           ) : null}
