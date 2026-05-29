@@ -229,7 +229,7 @@ export async function syncCreditIndexForWork(
       workTitle: work.title,
       workSection: work.section,
       platformStatus: work.platformStatus,
-      streamUid: work.streamUid,
+      ...(work.streamUid ? { streamUid: work.streamUid } : {}),
       creditedAt: FieldValue.serverTimestamp(),
     };
     batch.set(ref, doc);

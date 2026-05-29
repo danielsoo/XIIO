@@ -4,6 +4,7 @@ import { FieldValue, getDbOrNull, parseWorkDoc, worksCol } from "@/lib/server/wo
 import { defaultAspectRatioForSection, isVideoAspectRatio } from "@/lib/works/aspect-ratio";
 import { isWorkSection } from "@/lib/works/constants";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
+import { omitUndefined } from "@/lib/server/firestore-write";
 import { syncWorkRevisionStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
 import { resolvePlaybackUrl } from "@/lib/cloudflare/stream";
 
@@ -109,7 +110,7 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   const existingRev = work.pendingRevision;
-  const pendingRevision = {
+  const pendingRevision = omitUndefined({
     platformStatus: "draft" as const,
     streamUid: existingRev?.streamUid,
     streamStatus: existingRev?.streamStatus,
@@ -121,7 +122,7 @@ export async function PATCH(request: Request, { params }: Params) {
     proposedTags: proposedTags.length > 0 ? proposedTags : undefined,
     proposedAspectRatio,
     updatedAt: FieldValue.serverTimestamp(),
-  };
+  });
 
   await ref.update({
     pendingRevision,
