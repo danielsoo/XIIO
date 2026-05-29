@@ -182,7 +182,7 @@ type Props = {
 };
 
 const PEEK_CAROUSEL_ARROW_BASE =
-  "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-white hover:text-white/80 transition pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] [text-shadow:0_1px_3px_rgba(0,0,0,0.95),0_0_10px_rgba(0,0,0,0.85),0_0_20px_rgba(0,0,0,0.55)] [-webkit-text-stroke:0.5px_rgba(0,0,0,0.35)]";
+  "flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center p-0 bg-transparent border-0 text-[2.75rem] sm:text-[3.25rem] font-light leading-none text-white hover:text-white/80 transition pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)] [text-shadow:0_1px_2px_rgba(0,0,0,0.45),0_0_6px_rgba(0,0,0,0.3)] [-webkit-text-stroke:0.5px_rgba(0,0,0,0.18)]";
 /** top-1/2 + translate Y만 공통 — X는 피크 right-2/left-2 와 동일 앵커 */
 const FIXED_CAROUSEL_ARROW_CLASS = `absolute top-1/2 ${PEEK_CAROUSEL_ARROW_BASE}`;
 const PEEK_TAP_LAYER_BASE =
