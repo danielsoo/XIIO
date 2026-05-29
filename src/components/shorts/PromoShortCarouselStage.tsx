@@ -1290,8 +1290,13 @@ export default function PromoShortCarouselStage({
                     (revolvePhase === "toPrev" && item.id === displayQuintet.left.id)
                   : revolvePhase === "toNext"
                     ? item.id === displayQuartet.right.id
-                    : item.id === displayQuartet.left.id ||
-                      (count >= 4 && item.id === displayQuartet.farLeft.id));
+                    : item.id === displayQuartet.left.id);
+              const isExitingTeaserEdge =
+                !isExpandedCenter &&
+                animatingShift &&
+                placement.visible &&
+                ((revolvePhase === "toNext" && placement.role === "farLeft") ||
+                  (revolvePhase === "toPrev" && placement.role === "right"));
               const isOutgoingCenter = Boolean(
                 snapshot && outgoingCenterId && item.id === outgoingCenterId
               );
@@ -1299,10 +1304,11 @@ export default function PromoShortCarouselStage({
                 animatingShift &&
                 (placement.isCenter || isPromoting || isOutgoingCenter);
               const showAsCenter =
-                keepsVideoDuringShift ||
-                (placement.isCenter && !isOutgoingCenter && !animatingShift) ||
-                (warmCenter && !placement.visible) ||
-                (isLiveCenter && !snapshot);
+                !isExitingTeaserEdge &&
+                (keepsVideoDuringShift ||
+                  (placement.isCenter && !isOutgoingCenter && !animatingShift) ||
+                  (warmCenter && !placement.visible) ||
+                  (isLiveCenter && !snapshot));
               const preserveCenterFrame = Boolean(
                 showAsCenter &&
                 snapshot &&
@@ -1344,13 +1350,19 @@ export default function PromoShortCarouselStage({
                 : null;
               const sideDimLevel = (baseDimLevel ?? "default") as PromoShortPeekDimLevel;
               const showChrome = placement.role === "center" && !isOutgoingCenter;
-              const isVisiblePreloadSlot = placement.visible && !showAsCenter;
+              const isVisiblePreloadSlot =
+                placement.visible && !showAsCenter && !isExitingTeaserEdge;
               const slotVideoPreload = (() => {
                 if (showAsCenter) {
                   return isLiveCenter || isPromoting ? "auto" : "metadata";
                 }
                 if (!placement.visible) return "metadata";
-                if (!isExpandedCenter) return "auto";
+                if (!isExpandedCenter) {
+                  if (placement.role === "farLeft" || placement.role === "right") {
+                    return VISIBLE_PRELOAD_MODE === "allAuto" ? "auto" : "metadata";
+                  }
+                  return "auto";
+                }
                 if (placement.role === "farLeft" || placement.role === "farRight") {
                   return VISIBLE_PRELOAD_MODE === "allAuto" ? "auto" : "metadata";
                 }
@@ -1382,7 +1394,14 @@ export default function PromoShortCarouselStage({
                   }}
                   aria-hidden={placement.visible ? !ariaLiveCenter : true}
                 >
-                  {showAsCenter || isVisiblePreloadSlot ? (
+                  {isExitingTeaserEdge ? (
+                    <PromoShortPeekPreview
+                      item={item}
+                      compactShell
+                      dimOverlay
+                      dimLevel={animatedDimLevel ?? sideDimLevel}
+                    />
+                  ) : showAsCenter || isVisiblePreloadSlot ? (
                     isExpandedCenter ? (
                       <PromoShortPlayer
                         item={item}
