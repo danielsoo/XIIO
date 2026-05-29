@@ -1,12 +1,27 @@
 import { buildCollabInviteUrl } from "@/lib/collabInviteUrl";
 import type { CollabInviteDoc } from "@/types/collab-invite";
 
-type SendInviteEmailResult =
+export type CollabInviteEmailSendReason = "not_configured" | "provider_error";
+
+export type SendInviteEmailResult =
   | { sent: true }
-  | { sent: false; reason: "not_configured" | "provider_error"; inviteUrl: string };
+  | {
+      sent: false;
+      reason: CollabInviteEmailSendReason;
+      inviteUrl: string;
+      hint?: string;
+    };
 
 function appOrigin(): string | undefined {
   return process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+}
+
+export function resolveResendFromEmail(): string {
+  return process.env.RESEND_FROM_EMAIL?.trim() || "XIIO <noreply@xiio.app>";
+}
+
+function isOnboardingResendFrom(from: string): boolean {
+  return /onboarding@resend\.dev/i.test(from);
 }
 
 export async function sendCollabInviteEmail(
@@ -15,11 +30,23 @@ export async function sendCollabInviteEmail(
 ): Promise<SendInviteEmailResult> {
   const inviteUrl = buildCollabInviteUrl(invite.token, appOrigin());
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.RESEND_FROM_EMAIL?.trim() || "XIIO <noreply@xiio.app>";
+  const from = resolveResendFromEmail();
 
   if (!apiKey) {
     console.info("[collab-invite] RESEND_API_KEY not set; invite link:", inviteUrl);
-    return { sent: false, reason: "not_configured", inviteUrl };
+    return {
+      sent: false,
+      reason: "not_configured",
+      inviteUrl,
+      hint: "RESEND_API_KEY is not set",
+    };
+  }
+
+  if (isOnboardingResendFrom(from)) {
+    console.warn(
+      "[collab-invite] RESEND_FROM_EMAIL uses onboarding@resend.dev — Resend only delivers to your account email. Use a verified custom domain for external recipients.",
+      { to: invite.invitedEmail }
+    );
   }
 
   const locale = options?.locale ?? "ko";
@@ -48,13 +75,22 @@ export async function sendCollabInviteEmail(
     });
     if (!res.ok) {
       const body = await res.text();
-      console.error("[collab-invite] Resend error:", res.status, body);
-      return { sent: false, reason: "provider_error", inviteUrl };
+      console.error("[collab-invite] Resend error:", res.status, body, {
+        from,
+        to: invite.invitedEmail,
+      });
+      const hint =
+        process.env.NODE_ENV === "development"
+          ? `Resend ${res.status}: ${body.slice(0, 200)}`
+          : undefined;
+      return { sent: false, reason: "provider_error", inviteUrl, hint };
     }
     return { sent: true };
   } catch (e) {
-    console.error("[collab-invite] Resend fetch failed:", e);
-    return { sent: false, reason: "provider_error", inviteUrl };
+    console.error("[collab-invite] Resend fetch failed:", e, { from, to: invite.invitedEmail });
+    const hint =
+      e instanceof Error && process.env.NODE_ENV === "development" ? e.message : undefined;
+    return { sent: false, reason: "provider_error", inviteUrl, hint };
   }
 }
 

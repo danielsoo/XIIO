@@ -1155,6 +1155,10 @@ export const messages = {
       uploadSuccess:
         "심사가 제출되었습니다. 관리자 검토 후 카탈로그·숏폼에 노출됩니다.",
       uploadRedirecting: "내 작품 목록으로 이동 중입니다…",
+      inviteEmailSent: "{email} — 초대 메일을 보냈습니다.",
+      inviteEmailFailed: "{email} — 초대 실패: {message}",
+      inviteEmailShareLink: "{email} — 메일을 보내지 못했습니다. 아래 링크를 직접 공유해 주세요.\n{url}",
+      inviteEmailSummaryTitle: "크레딧 이메일 초대",
       submitCompleteBanner: "심사 제출이 완료되었습니다. 아래 목록에서 상태를 확인할 수 있습니다.",
       errorSubmitReviewFailed: "심사 제출에 실패했습니다.",
       errorSubmitReviewStagedSaved:
@@ -2604,6 +2608,11 @@ export const messages = {
       uploadSuccess:
         "Submitted for review. It will appear in the catalog and shorts feed after admin approval.",
       uploadRedirecting: "Redirecting to My works…",
+      inviteEmailSent: "{email} — invitation email sent.",
+      inviteEmailFailed: "{email} — invite failed: {message}",
+      inviteEmailShareLink:
+        "{email} — could not send email. Share this link directly:\n{url}",
+      inviteEmailSummaryTitle: "Credit email invites",
       submitCompleteBanner:
         "Review submission complete. Check the status in the list below.",
       errorSubmitReviewFailed: "Could not submit for review.",

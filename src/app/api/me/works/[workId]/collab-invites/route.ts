@@ -111,6 +111,12 @@ export async function POST(request: Request, { params }: Params) {
     invite: created.invite,
     inviteUrl,
     emailSent: emailResult.sent,
-    ...(emailResult.sent ? {} : { emailFallbackUrl: emailResult.inviteUrl }),
+    ...(emailResult.sent
+      ? {}
+      : {
+          emailFallbackUrl: emailResult.inviteUrl,
+          emailSendReason: emailResult.reason,
+          ...(emailResult.hint ? { emailErrorHint: emailResult.hint } : {}),
+        }),
   });
 }

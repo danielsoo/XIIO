@@ -21,7 +21,7 @@ import CreditTagInput, {
   type PendingEmailInvite,
   type TaggedCredit,
 } from "@/components/network/CreditTagInput";
-import { useTranslations } from "@/context/LocaleContext";
+import { useLocale, useTranslations } from "@/context/LocaleContext";
 import { useImageFileMetadata } from "@/hooks/useImageFileMetadata";
 import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
 import { aspectRatioMessageKey, defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
@@ -101,8 +101,18 @@ type Props = {
   onError: (message: string) => void;
 };
 
+type CollabInvitePostResponse = {
+  emailSent?: boolean;
+  emailFallbackUrl?: string;
+  emailSendReason?: "not_configured" | "provider_error";
+  emailErrorHint?: string;
+  message?: string;
+  error?: string;
+};
+
 export default function UploaderUploadForm({ user, initialDirector, onSuccess, onError }: Props) {
   const { t } = useTranslations();
+  const { locale } = useLocale();
   const [stepIndex, setStepIndex] = useState(0);
   const [formError, setFormError] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -137,6 +147,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [uploadPercent, setUploadPercent] = useState(0);
   const [uploadPhase, setUploadPhase] = useState<UploadPhase | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [inviteEmailSummaryLines, setInviteEmailSummaryLines] = useState<string[]>([]);
   const footerRef = useRef<HTMLDivElement>(null);
   const [fullPlaybackUrl, setFullPlaybackUrl] = useState<string | null>(null);
   const [promoPlaybackUrl, setPromoPlaybackUrl] = useState<string | null>(null);
@@ -561,25 +572,68 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         return;
       }
 
+      const inviteSummaryLines: string[] = [];
       if (pendingEmailInvites.length > 0) {
         for (const inv of pendingEmailInvites) {
           try {
-            await fetch(`/api/me/works/${encodeURIComponent(workId)}/collab-invites`, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
+            const inviteRes = await fetch(
+              `/api/me/works/${encodeURIComponent(workId)}/collab-invites`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  email: inv.email,
+                  role: inv.role,
+                  locale,
+                }),
+              }
+            );
+            const { data: inviteBody, raw: inviteRaw } =
+              await readResponseJson<CollabInvitePostResponse>(inviteRes);
+            if (!inviteRes.ok) {
+              inviteSummaryLines.push(
+                t("uploader.inviteEmailFailed", {
+                  email: inv.email,
+                  message:
+                    (inviteBody.message ??
+                      inviteBody.error ??
+                      inviteRaw.slice(0, 200)) ||
+                    `HTTP ${inviteRes.status}`,
+                })
+              );
+              continue;
+            }
+            if (inviteBody.emailSent) {
+              inviteSummaryLines.push(t("uploader.inviteEmailSent", { email: inv.email }));
+            } else if (inviteBody.emailFallbackUrl) {
+              inviteSummaryLines.push(
+                t("uploader.inviteEmailShareLink", {
+                  email: inv.email,
+                  url: inviteBody.emailFallbackUrl,
+                })
+              );
+            } else {
+              inviteSummaryLines.push(
+                t("uploader.inviteEmailFailed", {
+                  email: inv.email,
+                  message: inviteBody.emailErrorHint ?? inviteBody.message ?? "unknown",
+                })
+              );
+            }
+          } catch (inviteErr) {
+            inviteSummaryLines.push(
+              t("uploader.inviteEmailFailed", {
                 email: inv.email,
-                role: inv.role,
-              }),
-            });
-          } catch {
-            /* non-blocking */
+                message: formatClientError(t, inviteErr, { titleKey: "myWorks.errorGeneric" }),
+              })
+            );
           }
         }
       }
+      setInviteEmailSummaryLines(inviteSummaryLines);
 
       try {
         setUploadPhase("streamFull");
@@ -637,6 +691,21 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
         >
           <div className="max-w-md w-full rounded-2xl border border-emerald-500/30 bg-xiio-surface p-8 text-center space-y-4 shadow-xl shadow-black/40">
             <p className="text-lg font-semibold text-white">{t("uploader.uploadSuccess")}</p>
+            {inviteEmailSummaryLines.length > 0 ? (
+              <div className="text-left rounded-xl border border-white/10 bg-black/30 px-4 py-3 space-y-2 max-h-48 overflow-y-auto">
+                <p className="text-xs font-medium text-white/80">
+                  {t("uploader.inviteEmailSummaryTitle")}
+                </p>
+                {inviteEmailSummaryLines.map((line, i) => (
+                  <p
+                    key={i}
+                    className="text-xs text-xiio-muted whitespace-pre-wrap break-all leading-relaxed"
+                  >
+                    {line}
+                  </p>
+                ))}
+              </div>
+            ) : null}
             <p className="text-sm text-xiio-muted">{t("uploader.uploadRedirecting")}</p>
             <div className="h-2 rounded-full bg-white/10 overflow-hidden">
               <div className="h-full w-full bg-xiio-accent animate-pulse" />

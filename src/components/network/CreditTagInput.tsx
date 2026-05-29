@@ -264,7 +264,9 @@ export default function CreditTagInput({
       });
       const data = (await res.json()) as {
         message?: string;
+        emailSent?: boolean;
         emailFallbackUrl?: string;
+        emailSendReason?: "not_configured" | "provider_error";
         invite?: CollabInviteDoc;
       };
       if (!res.ok) {
@@ -272,9 +274,15 @@ export default function CreditTagInput({
         return;
       }
       setInviteEmail("");
-      if (data.emailFallbackUrl) {
+      if (data.emailSent) {
+        setInviteMsg(t("network.credits.invite.sent"));
+      } else if (data.emailFallbackUrl) {
         setFallbackInviteUrl(data.emailFallbackUrl);
-        setInviteMsg(t("network.credits.invite.sentWithLink"));
+        setInviteMsg(
+          data.emailSendReason === "not_configured"
+            ? t("network.credits.invite.sentWithLink")
+            : t("network.credits.invite.sendError")
+        );
       } else {
         setInviteMsg(t("network.credits.invite.sent"));
       }
