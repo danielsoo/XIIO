@@ -60,14 +60,27 @@ const STAGE_GAP_PX = 16;
 /** tailwind max-w-lg — 확대 중앙 측정·초기 metrics */
 const EXPANDED_CENTER_MEASURE_WIDTH_PX = 512;
 /** 확대 인접(±1)–중앙 사이 여백 */
-const EXPANDED_ADJACENT_GAP = 84;
+const EXPANDED_ADJACENT_GAP = 56;
 /** 확대 인접–외곽(±2) 사이 여백 */
-const EXPANDED_OUTER_GAP = 28;
-/** center→adjacent 한 단계; adjacent→far도 동일 → far = r² */
-const CAROUSEL_TIER_RATIO = 0.9;
+const EXPANDED_OUTER_GAP = 20;
+const EXPANDED_STAGE_PADDING = 48;
+/** 목업 ±1 ≈ 0.77; HOME_HERO 160|180 vs 200|236 */
+const CAROUSEL_TEASER_TIER_RATIO_DEFAULT = 160 / 200;
+const CAROUSEL_TEASER_TIER_RATIO_SM = 180 / 236;
+/** 5장 quintet — 16rem/32rem ≈ 0.5 (viewport clamp로 추가 축소 가능) */
+const CAROUSEL_EXPANDED_TIER_RATIO = 0.52;
+const CAROUSEL_EXPANDED_TIER_MIN = 0.44;
+const CAROUSEL_EXPANDED_TIER_STEP = 0.02;
 
-function carouselTierRatio(): number {
-  return CAROUSEL_TIER_RATIO;
+function carouselTeaserTierRatio(): number {
+  if (typeof window === "undefined") return CAROUSEL_TEASER_TIER_RATIO_DEFAULT;
+  return window.matchMedia("(min-width: 640px)").matches
+    ? CAROUSEL_TEASER_TIER_RATIO_SM
+    : CAROUSEL_TEASER_TIER_RATIO_DEFAULT;
+}
+
+function carouselExpandedTierRatio(): number {
+  return CAROUSEL_EXPANDED_TIER_RATIO;
 }
 
 function isQuintetSnapshot(s: CarouselSnapshot): s is Quintet {
@@ -107,7 +120,7 @@ function layoutMetricsFromCenterWidth(
   centerW: number,
   options: LayoutMetricsOptions = {}
 ): LayoutMetrics {
-  const peekScale = options.peekScale ?? carouselTierRatio();
+  const peekScale = options.peekScale ?? carouselTeaserTierRatio();
   const stageGapPx = options.stageGapPx ?? STAGE_GAP_PX;
   const peekVisualW = options.peekVisualWidthPx ?? centerW * peekScale;
   /** center→peek와 동일 비율 단계: far = peek × peek */
@@ -145,10 +158,9 @@ type ExpandedStripMetrics = LayoutMetrics & {
   peekOuterW: number;
 };
 
-function expandedStripMetricsFromCenterWidth(centerW: number): ExpandedStripMetrics {
-  const adjacentScale = carouselTierRatio();
-  const outerScale = adjacentScale * adjacentScale;
-  const peekAdjacentW = centerW * adjacentScale;
+function expandedMetricsAtTier(centerW: number, tierRatio: number): ExpandedStripMetrics {
+  const outerScale = tierRatio * tierRatio;
+  const peekAdjacentW = centerW * tierRatio;
   const peekOuterW = centerW * outerScale;
   const offsetAdjacent = centerW / 2 + EXPANDED_ADJACENT_GAP + peekAdjacentW / 2;
   const offsetOuter =
@@ -160,12 +172,28 @@ function expandedStripMetricsFromCenterWidth(centerW: number): ExpandedStripMetr
     offsetFarLeft: offsetOuter,
     offsetAdjacent,
     offsetOuter,
-    peekScale: adjacentScale,
+    peekScale: tierRatio,
     farScale: outerScale,
     peekAdjacentW,
     peekOuterW,
     peekInnerArrowAnchorPx,
   };
+}
+
+function expandedStripMetricsFromCenterWidth(
+  centerW: number,
+  viewportW?: number
+): ExpandedStripMetrics {
+  const maxSpread = viewportW
+    ? (viewportW - EXPANDED_STAGE_PADDING) / 2
+    : Number.POSITIVE_INFINITY;
+  let tierRatio = carouselExpandedTierRatio();
+  while (tierRatio >= CAROUSEL_EXPANDED_TIER_MIN) {
+    const metrics = expandedMetricsAtTier(centerW, tierRatio);
+    if (metrics.offsetOuter <= maxSpread) return metrics;
+    tierRatio -= CAROUSEL_EXPANDED_TIER_STEP;
+  }
+  return expandedMetricsAtTier(centerW, CAROUSEL_EXPANDED_TIER_MIN);
 }
 
 export type PromoShortCarouselCenterMode = "teaser" | "expanded";
@@ -249,12 +277,11 @@ function getVisibleExpandedRoles(quintet: Quintet, count: number): Set<ExpandedS
   return visible;
 }
 
-/** 확대 strip 5단 크기 — teaser와 동일 tier (r, r²) */
-function expandedStripScales(_metrics: ExpandedStripMetrics) {
-  const adjacentScale = carouselTierRatio();
+/** 확대 strip 5단 크기 — metrics에 clamp된 tier 반영 */
+function expandedStripScales(metrics: ExpandedStripMetrics) {
   return {
-    adjacentScale,
-    outerScale: adjacentScale * adjacentScale,
+    adjacentScale: metrics.peekScale,
+    outerScale: metrics.farScale,
   };
 }
 
@@ -796,9 +823,13 @@ export default function PromoShortCarouselStage({
   const pendingFadeTargetRef = useRef<number | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const centerMeasureRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const [metrics, setMetrics] = useState<LayoutMetrics | ExpandedStripMetrics>(() =>
     isExpandedCenter
-      ? expandedStripMetricsFromCenterWidth(EXPANDED_CENTER_MEASURE_WIDTH_PX)
+      ? expandedStripMetricsFromCenterWidth(
+          EXPANDED_CENTER_MEASURE_WIDTH_PX,
+          typeof window !== "undefined" ? window.innerWidth : undefined
+        )
       : layoutMetricsFromCenterWidth(200)
   );
   const [revolvePhase, setRevolvePhase] = useState<RevolvePhase>("idle");
@@ -925,7 +956,8 @@ export default function PromoShortCarouselStage({
       const centerW = centerEl.offsetWidth;
       if (centerW <= 0) return;
       if (isExpandedCenter) {
-        setMetrics(expandedStripMetricsFromCenterWidth(centerW));
+        const viewportW = viewportRef.current?.clientWidth ?? window.innerWidth;
+        setMetrics(expandedStripMetricsFromCenterWidth(centerW, viewportW));
       } else {
         setMetrics(
           layoutMetricsFromCenterWidth(centerW, {
@@ -937,8 +969,14 @@ export default function PromoShortCarouselStage({
     measure();
     const ro = new ResizeObserver(measure);
     if (centerMeasureRef.current) ro.observe(centerMeasureRef.current);
+    if (isExpandedCenter && viewportRef.current) {
+      ro.observe(viewportRef.current);
+    }
+    const mq = window.matchMedia("(min-width: 640px)");
+    mq.addEventListener("change", measure);
     return () => {
       ro.disconnect();
+      mq.removeEventListener("change", measure);
     };
   }, [isExpandedCenter]);
 
@@ -1042,7 +1080,6 @@ export default function PromoShortCarouselStage({
     return () => cancelAnimationFrame(raf);
   }, [revolvePhase, transitionMode, revolveEpoch]);
 
-  const viewportRef = useRef<HTMLDivElement>(null);
   const carouselSwipeEnabled = count > 1 && swipeEnabledProp;
 
   useHorizontalSwipe(viewportRef, {
