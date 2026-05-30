@@ -82,7 +82,7 @@ export default function HomePageContent() {
     <main className="min-h-screen bg-xiio-bg" style={HERO_SECTION_STYLE}>
       <section
         ref={heroSectionRef}
-        className="relative w-full min-h-[clamp(380px,59vh,520px)] overflow-x-clip overflow-y-visible"
+        className="relative w-full min-h-[clamp(380px,59vh,520px)] overflow-visible"
       >
         {/* Layer 0 — base */}
         <div className="absolute inset-0 bg-[#1C4574]" aria-hidden />
@@ -105,7 +105,7 @@ export default function HomePageContent() {
         >
           <div
             className={`mx-auto w-full max-w-7xl grid gap-10 items-center ${
-              hasPromo ? "lg:grid-cols-[minmax(0,36rem)_minmax(0,1fr)] lg:gap-[var(--hero-col-gap)]" : ""
+              hasPromo ? "md:grid-cols-[minmax(0,1fr)_auto] md:gap-8 lg:gap-12" : ""
             }`}
           >
             <div
@@ -124,10 +124,7 @@ export default function HomePageContent() {
             </div>
 
             {hasPromo && (
-              <div
-                className="w-full min-w-0 max-w-full overflow-x-clip flex justify-center lg:justify-end lg:pl-4"
-                aria-label={t("home.promoSectionTitle")}
-              >
+              <div className="w-full min-w-0" aria-label={t("home.promoSectionTitle")}>
                 <PromoShortCarousel
                   items={promoItems}
                   index={promoIndex}
