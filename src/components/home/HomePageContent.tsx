@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import HomeHeroActions from "@/components/HomeHeroActions";
 import HomeCatalogSection from "@/components/home/HomeCatalogSection";
@@ -8,6 +8,12 @@ import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
 import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPlayer";
 import { useTranslations } from "@/context/LocaleContext";
 import { usePromoFeed } from "@/hooks/usePromoFeed";
+import {
+  HERO_DESIGN,
+  HERO_SECTION_STYLE,
+  heroDiagonalGradient,
+  heroMobileVerticalGradient,
+} from "@/lib/homeHeroLayout";
 import type { WorkSection } from "@/types/work";
 
 const HOME_SECTIONS: { href: string; section: WorkSection; titleKey: string }[] = [
@@ -26,6 +32,10 @@ export default function HomePageContent() {
   const hasPromo = promoItems.length > 0;
   const count = promoItems.length;
 
+  const heroSectionRef = useRef<HTMLElement>(null);
+  const heroTextRef = useRef<HTMLDivElement>(null);
+  const [gradStartPercent, setGradStartPercent] = useState<number>(HERO_DESIGN.gradFlatPercent);
+
   useEffect(() => {
     if (!promoId || count === 0) return;
     const i = promoItems.findIndex((s) => s.id === promoId);
@@ -36,32 +46,88 @@ export default function HomePageContent() {
     setPromoIndex(next);
   }, []);
 
+  useLayoutEffect(() => {
+    const section = heroSectionRef.current;
+    const text = heroTextRef.current;
+    if (!section || !text) return;
+
+    const measure = () => {
+      const lg = window.matchMedia("(min-width: 1024px)").matches;
+      if (!lg) {
+        setGradStartPercent(HERO_DESIGN.gradFlatPercent);
+        return;
+      }
+      const sectionRect = section.getBoundingClientRect();
+      const textRect = text.getBoundingClientRect();
+      const startPx = Math.max(0, textRect.right - sectionRect.left);
+      const pct = sectionRect.width > 0 ? (startPx / sectionRect.width) * 100 : HERO_DESIGN.gradFlatPercent;
+      setGradStartPercent(Math.round(pct * 10) / 10);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(section);
+    ro.observe(text);
+    window.addEventListener("resize", measure);
+    const mq = window.matchMedia("(min-width: 1024px)");
+    mq.addEventListener("change", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+      mq.removeEventListener("change", measure);
+    };
+  }, [hasPromo]);
+
   return (
-    <main className="min-h-screen bg-xiio-bg">
-      <section className="relative min-h-[max(42vh,380px)] overflow-visible">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0533] via-[#0a0a20] to-[#0a0a0a]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-xiio-accent/20 to-transparent" />
-        <div className="relative z-10 w-full px-4 sm:px-6 md:px-8 lg:px-10 pt-24 pb-12 md:pt-28 md:pb-16">
+    <main className="min-h-screen bg-xiio-bg" style={HERO_SECTION_STYLE}>
+      <section
+        ref={heroSectionRef}
+        className="relative w-full min-h-[clamp(380px,59vh,520px)] overflow-x-clip overflow-y-visible"
+      >
+        {/* Layer 0 — base */}
+        <div className="absolute inset-0 bg-[#1C4574]" aria-hidden />
+
+        {/* Layer 1 — diagonal (lg+) / vertical (mobile) */}
+        <div
+          className="absolute inset-0 pointer-events-none hidden lg:block"
+          aria-hidden
+          style={{ background: heroDiagonalGradient(gradStartPercent) }}
+        />
+        <div
+          className="absolute inset-0 pointer-events-none lg:hidden"
+          aria-hidden
+          style={{ background: heroMobileVerticalGradient() }}
+        />
+
+        <div
+          className="relative z-10 w-full pt-24 pb-12 md:pt-28 md:pb-16"
+          style={{ paddingLeft: "var(--hero-pad-x)", paddingRight: "var(--hero-pad-x)" }}
+        >
           <div
             className={`mx-auto w-full max-w-7xl grid gap-10 items-center ${
-              hasPromo ? "md:grid-cols-[minmax(0,1fr)_auto] md:gap-8 lg:gap-12" : ""
+              hasPromo ? "lg:grid-cols-[minmax(0,36rem)_minmax(0,1fr)] lg:gap-[var(--hero-col-gap)]" : ""
             }`}
           >
-            <div className={hasPromo ? "min-w-0 max-w-xl" : "max-w-2xl"}>
-              <div className="inline-block px-3 py-1 rounded-full bg-xiio-accent/20 border border-xiio-accent/40 text-xiio-accent text-xs font-semibold mb-4">
-                {t("home.heroBadge")}
-              </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 leading-tight">
+            <div
+              ref={heroTextRef}
+              className={hasPromo ? "min-w-0 max-w-xl lg:max-w-none" : "max-w-2xl"}
+            >
+              <h1 className="text-[clamp(28px,3.5vw,56px)] font-black italic text-white mb-4 leading-[1.1] tracking-tight">
                 {t("home.heroTitleLine1")}
                 <br />
                 {t("home.heroTitleLine2")}
               </h1>
-              <p className="text-xiio-muted text-base md:text-lg mb-6 max-w-lg">{t("home.heroSubtitle")}</p>
+              <p className="text-white/75 text-[clamp(10px,1.17vw,14px)] uppercase tracking-widest mb-6 max-w-lg leading-relaxed">
+                {t("home.heroSubtitle")}
+              </p>
               <HomeHeroActions />
             </div>
 
             {hasPromo && (
-              <div className="w-full min-w-0" aria-label={t("home.promoSectionTitle")}>
+              <div
+                className="w-full min-w-0 max-w-full overflow-x-clip flex justify-center lg:justify-end lg:pl-4"
+                aria-label={t("home.promoSectionTitle")}
+              >
                 <PromoShortCarousel
                   items={promoItems}
                   index={promoIndex}
@@ -74,10 +140,23 @@ export default function HomePageContent() {
             )}
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-xiio-bg to-transparent" />
+
+        {/* Layer 2 — bottom fade to catalog */}
+        <div
+          className="absolute bottom-0 inset-x-0 pointer-events-none bg-gradient-to-b from-transparent to-xiio-bg"
+          style={{
+            height: `${HERO_DESIGN.bottomFadePercent}%`,
+            minHeight: HERO_DESIGN.bottomFadeMinPx,
+            maxHeight: HERO_DESIGN.bottomFadeMaxPx,
+          }}
+          aria-hidden
+        />
       </section>
 
-      <div className="px-6 md:px-12 pb-16 space-y-12">
+      <div
+        className="pb-16 space-y-12"
+        style={{ paddingLeft: "var(--hero-pad-x)", paddingRight: "var(--hero-pad-x)" }}
+      >
         {HOME_SECTIONS.map(({ href, section, titleKey }) => (
           <HomeCatalogSection key={href} section={section} href={href} titleKey={titleKey} />
         ))}
