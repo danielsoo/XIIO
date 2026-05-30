@@ -5,7 +5,7 @@ export const HERO_DESIGN = {
   heroMinHeight: 426,
   padX: 24,
   textColWidth: 376,
-  colGap: 128,
+  colGap: 96,
   titleSize: 36,
   subtitleSize: 12,
   buttonHeight: 40,
@@ -56,5 +56,5 @@ export function heroMobileVerticalGradient(): string {
 /** section inline style — 목업 비율 CSS 변수 */
 export const HERO_SECTION_STYLE = {
   ["--hero-pad-x" as string]: `clamp(12px, ${heroPercentOfWidth(HERO_DESIGN.padX)}vw, 32px)`,
-  ["--hero-col-gap" as string]: `clamp(48px, ${heroPercentOfWidth(HERO_DESIGN.colGap)}vw, 128px)`,
+  ["--hero-col-gap" as string]: `clamp(40px, ${heroPercentOfWidth(HERO_DESIGN.colGap)}vw, 96px)`,
 } as const;

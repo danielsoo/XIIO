@@ -112,7 +112,7 @@ export default function HomePageContent() {
           style={{ paddingLeft: "var(--hero-pad-x)", paddingRight: "var(--hero-pad-x)" }}
         >
           <div
-            className={`w-full flex flex-col gap-10 items-stretch ${
+            className={`w-full max-w-[min(100%,1480px)] mx-auto flex flex-col gap-10 items-stretch ${
               hasPromo
                 ? "md:flex-row md:items-center md:justify-between md:gap-[var(--hero-col-gap)]"
                 : ""
