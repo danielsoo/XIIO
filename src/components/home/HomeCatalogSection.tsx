@@ -4,7 +4,7 @@ import Link from "next/link";
 import ContentCard from "@/components/ContentCard";
 import { useCatalogFeed } from "@/hooks/useCatalogFeed";
 import { useTranslations } from "@/context/LocaleContext";
-import { gradientForTitle, watchHref } from "@/lib/works/catalog-ui";
+import { gradientForTitle, VIDEO_THUMB_ROUNDED_CLASS, watchHref } from "@/lib/works/catalog-ui";
 import { promoCropToVideoStyle } from "@/lib/works/promo-crop-interaction";
 import type { WorkSection } from "@/types/work";
 
@@ -42,6 +42,7 @@ export default function HomeCatalogSection({ section, href, titleKey }: Props) {
               thumbnailUrl={item.thumbnailUrl}
               imageStyle={item.thumbnailCrop ? promoCropToVideoStyle(item.thumbnailCrop) : undefined}
               gradient={gradientForTitle(item.title)}
+              roundedClassName={VIDEO_THUMB_ROUNDED_CLASS}
             />
           ))}
         </div>

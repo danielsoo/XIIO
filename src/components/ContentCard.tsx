@@ -13,6 +13,7 @@ interface ContentCardProps {
   thumbnailUrl?: string;
   imageStyle?: CSSProperties;
   href?: string;
+  roundedClassName?: string;
 }
 
 export default function ContentCard({
@@ -21,6 +22,7 @@ export default function ContentCard({
   thumbnailUrl,
   imageStyle,
   href,
+  roundedClassName = "rounded-2xl",
 }: ContentCardProps) {
   const [thumbFailed, setThumbFailed] = useState(false);
 
@@ -57,8 +59,7 @@ export default function ContentCard({
     </>
   );
 
-  const className =
-    "group relative block rounded-2xl overflow-hidden aspect-video cursor-pointer hover:scale-[1.02] transition-transform duration-200";
+  const className = `group relative block ${roundedClassName} overflow-hidden aspect-video cursor-pointer hover:scale-[1.02] transition-transform duration-200`;
 
   if (href) {
     return (

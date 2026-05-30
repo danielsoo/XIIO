@@ -1,5 +1,8 @@
 import type { WorkSection } from "@/types/work";
 
+/** 쇼츠·홈 카탈로그 썸네일 공통 모서리 (14px) */
+export const VIDEO_THUMB_ROUNDED_CLASS = "rounded-[14px]";
+
 const GRADIENTS = [
   "bg-gradient-to-br from-blue-900 to-purple-900",
   "bg-gradient-to-br from-gray-800 to-gray-900",

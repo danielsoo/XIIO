@@ -29,6 +29,7 @@ import PromoShortPlayer, {
   HOME_HERO_TEASER_FRAME_CLASS,
 } from "@/components/shorts/PromoShortPlayer";
 import { useTranslations } from "@/context/LocaleContext";
+import { VIDEO_THUMB_ROUNDED_CLASS } from "@/lib/works/catalog-ui";
 import type { PromoShort } from "@/types/promoShort";
 
 type TeaserQuartet = {
@@ -90,8 +91,8 @@ function isQuintetSnapshot(s: CarouselSnapshot): s is Quintet {
 function isTeaserQuartetSnapshot(s: CarouselSnapshot): s is TeaserQuartet {
   return "farLeft" in s && !("farRight" in s);
 }
-const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-[14px] overflow-hidden";
-const HERO_CAROUSEL_WRAP_ROUNDED_CLASS = "rounded-[14px] overflow-hidden";
+const HERO_CAROUSEL_ROUNDED_CLASS = `${VIDEO_THUMB_ROUNDED_CLASS} overflow-hidden`;
+const HERO_CAROUSEL_WRAP_ROUNDED_CLASS = `${VIDEO_THUMB_ROUNDED_CLASS} overflow-hidden`;
 const CAROUSEL_BACK_LAYER_CLASS = "absolute inset-0 z-[1] pointer-events-none [&>*]:pointer-events-auto";
 const CAROUSEL_FRONT_LAYER_CLASS = "absolute inset-0 z-[10]";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
@@ -218,7 +219,7 @@ const PEEK_CAROUSEL_ARROW_BASE =
 /** top-1/2 + translate Y만 공통 — X는 피크 right-2/left-2 와 동일 앵커 */
 const FIXED_CAROUSEL_ARROW_CLASS = `absolute top-1/2 ${PEEK_CAROUSEL_ARROW_BASE}`;
 const PEEK_TAP_LAYER_BASE =
-  "absolute inset-y-0 z-40 w-[40%] cursor-pointer rounded-[14px] bg-transparent";
+  `absolute inset-y-0 z-40 w-[40%] cursor-pointer ${VIDEO_THUMB_ROUNDED_CLASS} bg-transparent`;
 const PEEK_TAP_LAYER_LEFT = `${PEEK_TAP_LAYER_BASE} left-0`;
 const PEEK_TAP_LAYER_RIGHT = `${PEEK_TAP_LAYER_BASE} right-0`;
 
