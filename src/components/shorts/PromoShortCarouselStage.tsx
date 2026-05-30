@@ -123,10 +123,11 @@ function layoutMetricsFromCenterWidth(
   const peekScale = options.peekScale ?? peekScaleRatio();
   const stageGapPx = options.stageGapPx ?? STAGE_GAP_PX;
   const peekVisualW = options.peekVisualWidthPx ?? centerW * peekScale;
-  const farVisualW = peekVisualW * CAROUSEL_BACK_SCALE_RATIO;
+  /** center→peek와 동일 비율 단계: far = peek × peek */
+  const farScale = peekScale * peekScale;
+  const farVisualW = peekVisualW * peekScale;
   const offsetX = centerW / 2 + stageGapPx + peekVisualW / 2;
-  const offsetFarLeft = offsetX + stageGapPx + peekVisualW / 2 + stageGapPx + farVisualW / 2;
-  const farScale = peekScale * CAROUSEL_BACK_SCALE_RATIO;
+  const offsetFarLeft = offsetX + peekVisualW / 2 + stageGapPx + farVisualW / 2;
   /** 슬롯 scale 적용 후 피크 안쪽 가장자리(화살표 앵커) */
   const peekInnerArrowAnchorPx = options.peekVisualWidthPx
     ? peekVisualW / 2 - NAV_ARROW_INSET_PX
