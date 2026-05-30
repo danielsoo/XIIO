@@ -12,6 +12,7 @@ import {
   HERO_DESIGN,
   HERO_SECTION_STYLE,
   heroDiagonalGradient,
+  heroBottomFadeGradient,
   heroMobileVerticalGradient,
 } from "@/lib/homeHeroLayout";
 import type { WorkSection } from "@/types/work";
@@ -85,18 +86,30 @@ export default function HomePageContent() {
         className="relative w-full min-h-[clamp(380px,59vh,520px)] overflow-visible"
       >
         {/* Layer 0 — base */}
-        <div className="absolute inset-0 bg-[#1C4574]" aria-hidden />
+        <div className="absolute inset-0 z-0 bg-[#1C4574]" aria-hidden />
 
         {/* Layer 1 — diagonal (lg+) / vertical (mobile) */}
         <div
-          className="absolute inset-0 pointer-events-none hidden lg:block"
+          className="absolute inset-0 z-0 pointer-events-none hidden lg:block"
           aria-hidden
           style={{ background: heroDiagonalGradient(gradStartPercent) }}
         />
         <div
-          className="absolute inset-0 pointer-events-none lg:hidden"
+          className="absolute inset-0 z-0 pointer-events-none lg:hidden"
           aria-hidden
           style={{ background: heroMobileVerticalGradient() }}
+        />
+
+        {/* Layer 2 — bottom fade (background only, below content) */}
+        <div
+          className="absolute bottom-0 inset-x-0 z-[1] pointer-events-none"
+          style={{
+            height: `${HERO_DESIGN.bottomFadePercent}%`,
+            minHeight: HERO_DESIGN.bottomFadeMinPx,
+            maxHeight: HERO_DESIGN.bottomFadeMaxPx,
+            background: heroBottomFadeGradient(),
+          }}
+          aria-hidden
         />
 
         <div
@@ -137,17 +150,6 @@ export default function HomePageContent() {
             )}
           </div>
         </div>
-
-        {/* Layer 2 — bottom fade to catalog */}
-        <div
-          className="absolute bottom-0 inset-x-0 pointer-events-none bg-gradient-to-b from-transparent to-xiio-bg"
-          style={{
-            height: `${HERO_DESIGN.bottomFadePercent}%`,
-            minHeight: HERO_DESIGN.bottomFadeMinPx,
-            maxHeight: HERO_DESIGN.bottomFadeMaxPx,
-          }}
-          aria-hidden
-        />
       </section>
 
       <div

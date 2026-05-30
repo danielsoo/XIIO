@@ -9,9 +9,9 @@ export const HERO_DESIGN = {
   titleSize: 36,
   subtitleSize: 12,
   buttonHeight: 40,
-  bottomFadePercent: 15,
-  bottomFadeMinPx: 48,
-  bottomFadeMaxPx: 80,
+  bottomFadePercent: 22,
+  bottomFadeMinPx: 64,
+  bottomFadeMaxPx: 120,
   gradAngleDeg: 118,
   gradFlatPercent: 39,
   gradDarkPercent: 72,
@@ -34,6 +34,14 @@ export function heroDiagonalGradient(gradStartPercent: number): string {
     ${HERO_DESIGN.heroBlue} ${start}%,
     ${HERO_DESIGN.heroBlueDark} ${start + 8}%,
     ${HERO_DESIGN.heroBlueDarker} ${HERO_DESIGN.gradDarkPercent}%,
+    ${HERO_DESIGN.heroBlueDarker} 100%)`;
+}
+
+export function heroBottomFadeGradient(): string {
+  return `linear-gradient(to bottom,
+    transparent 0%,
+    transparent 55%,
+    rgba(10, 10, 10, 0.35) 78%,
     ${HERO_DESIGN.heroBg} 100%)`;
 }
 
@@ -42,7 +50,7 @@ export function heroMobileVerticalGradient(): string {
     ${HERO_DESIGN.heroBlue} 0%,
     ${HERO_DESIGN.heroBlue} 45%,
     ${HERO_DESIGN.heroBlueDarker} 72%,
-    ${HERO_DESIGN.heroBg} 100%)`;
+    ${HERO_DESIGN.heroBlueDarker} 100%)`;
 }
 
 /** section inline style — 목업 비율 CSS 변수 */
