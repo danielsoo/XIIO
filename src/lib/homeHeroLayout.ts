@@ -13,6 +13,8 @@ export const HERO_DESIGN = {
   gradFlatPercent: 39,
   /** flat zone을 텍스트 끝보다 조금 더 오른쪽까지 확장 */
   gradStartOffsetPercent: 5,
+  /** flat 끝 → dark core까지 전환 폭 */
+  gradBlendSpanPercent: 22,
   gradDarkPercent: 74,
   heroBlue: "#1C4574",
   heroBlueDark: "#152a42",
@@ -27,12 +29,22 @@ export function heroPercentOfWidth(px: number): number {
 }
 
 export function heroDiagonalGradient(gradStartPercent: number): string {
-  const start = Math.max(0, Math.min(100, gradStartPercent));
+  const start = Math.max(0, Math.min(85, gradStartPercent));
+  const span = HERO_DESIGN.gradBlendSpanPercent;
+  const s1 = start + span * 0.25;
+  const s2 = start + span * 0.55;
+  const s3 = start + span * 0.85;
+  const s4 = Math.min(100, start + span);
+  const dark = Math.min(100, Math.max(s4 + 6, HERO_DESIGN.gradDarkPercent));
+
   return `linear-gradient(${HERO_DESIGN.gradAngleDeg}deg,
     ${HERO_DESIGN.heroBlue} 0%,
     ${HERO_DESIGN.heroBlue} ${start}%,
-    ${HERO_DESIGN.heroBlueDark} ${start + 8}%,
-    ${HERO_DESIGN.heroBlueDarker} ${HERO_DESIGN.gradDarkPercent}%,
+    rgba(28, 69, 116, 0.88) ${s1}%,
+    rgba(21, 42, 66, 0.72) ${s2}%,
+    rgba(13, 31, 51, 0.85) ${s3}%,
+    ${HERO_DESIGN.heroBlueDarker} ${s4}%,
+    ${HERO_DESIGN.heroBlueDarker} ${dark}%,
     ${HERO_DESIGN.heroBlueDarker} 100%)`;
 }
 
@@ -50,7 +62,9 @@ export function heroMobileVerticalGradient(): string {
   return `linear-gradient(180deg,
     ${HERO_DESIGN.heroBlue} 0%,
     ${HERO_DESIGN.heroBlue} 45%,
-    ${HERO_DESIGN.heroBlueDarker} 72%,
+    rgba(28, 69, 116, 0.88) 55%,
+    rgba(21, 42, 66, 0.72) 65%,
+    rgba(13, 31, 51, 0.85) 78%,
     ${HERO_DESIGN.heroBlueDarker} 88%,
     ${HERO_DESIGN.heroBg} 100%)`;
 }
