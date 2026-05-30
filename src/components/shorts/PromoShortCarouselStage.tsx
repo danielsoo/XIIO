@@ -25,8 +25,6 @@ import PromoShortPlayer, {
   type PromoShortLayout,
   type PromoShortPlayerSize,
   EXPANDED_VIEWER_CENTER_FRAME_CLASS,
-  EXPANDED_VIEWER_OUTER_PEEK_FRAME_CLASS,
-  EXPANDED_VIEWER_PEEK_FRAME_CLASS,
   HOME_HERO_PEEK_VIEWPORT_CLASS,
   HOME_HERO_TEASER_FRAME_CLASS,
 } from "@/components/shorts/PromoShortPlayer";
@@ -65,14 +63,12 @@ const EXPANDED_CENTER_MEASURE_WIDTH_PX = 512;
 const EXPANDED_ADJACENT_GAP = 84;
 /** 확대 인접–외곽(±2) 사이 여백 */
 const EXPANDED_OUTER_GAP = 28;
-/** 확대 피크 전용 프레임 사용 시 transform scale (프레임 너비가 크기 담당) */
-const EXPANDED_PEEK_SCALE = 1;
-/** 외곽 피크 미세 축소 */
-const EXPANDED_OUTER_PEEK_SCALE = 0.93;
-/** sm:max-w-[16rem] — 초기 adjacent peek 측정 fallback */
-const EXPANDED_PEEK_MEASURE_WIDTH_PX = 256;
-/** sm:max-w-[12rem] — 초기 outer peek 측정 fallback */
-const EXPANDED_OUTER_MEASURE_WIDTH_PX = 192;
+/** center→adjacent 한 단계; adjacent→far도 동일 → far = r² */
+const CAROUSEL_TIER_RATIO = 0.9;
+
+function carouselTierRatio(): number {
+  return CAROUSEL_TIER_RATIO;
+}
 
 function isQuintetSnapshot(s: CarouselSnapshot): s is Quintet {
   return "farRight" in s;
@@ -81,16 +77,12 @@ function isQuintetSnapshot(s: CarouselSnapshot): s is Quintet {
 function isTeaserQuartetSnapshot(s: CarouselSnapshot): s is TeaserQuartet {
   return "farLeft" in s && !("farRight" in s);
 }
-/** 피크 시각 너비 / teaser 프레임 (HOME_HERO_PEEK_SIDE 160|180 vs teaser 200|236) */
-const PEEK_SCALE_SM = 180 / 236;
-const PEEK_SCALE_DEFAULT = 160 / 200;
 const HERO_CAROUSEL_ROUNDED_CLASS = "rounded-[14px] overflow-hidden";
 const HERO_CAROUSEL_WRAP_ROUNDED_CLASS = "rounded-[14px] overflow-hidden";
 const CAROUSEL_BACK_LAYER_CLASS = "absolute inset-0 z-[1] pointer-events-none [&>*]:pointer-events-auto";
 const CAROUSEL_FRONT_LAYER_CLASS = "absolute inset-0 z-[10]";
 const HERO_CAROUSEL_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_ROUNDED_CLASS}`;
 const HERO_CAROUSEL_WRAP_FRAME_CLASS = `${HOME_HERO_TEASER_FRAME_CLASS} ${HERO_CAROUSEL_WRAP_ROUNDED_CLASS}`;
-const CAROUSEL_BACK_SCALE_RATIO = 0.52;
 const SLIDE_MS = 560;
 /** endTransition 타이머와 동일 — 프레임 커밋 지연 */
 const SLIDE_COMMIT_BUFFER_MS = 80;
@@ -100,11 +92,6 @@ const EXPANDED_EDGE_ENTER_FADE = 0.22;
 const TEASER_EDGE_EXIT_OPACITY = 0;
 type VisiblePreloadMode = "hybrid" | "allAuto";
 const VISIBLE_PRELOAD_MODE: VisiblePreloadMode = "hybrid";
-
-function peekScaleRatio(): number {
-  if (typeof window === "undefined") return PEEK_SCALE_DEFAULT;
-  return window.matchMedia("(min-width: 640px)").matches ? PEEK_SCALE_SM : PEEK_SCALE_DEFAULT;
-}
 
 /** 피크 카드 안 화살표가 쓰이던 inset (right-2 / left-2) */
 const NAV_ARROW_INSET_PX = 8;
@@ -120,7 +107,7 @@ function layoutMetricsFromCenterWidth(
   centerW: number,
   options: LayoutMetricsOptions = {}
 ): LayoutMetrics {
-  const peekScale = options.peekScale ?? peekScaleRatio();
+  const peekScale = options.peekScale ?? carouselTierRatio();
   const stageGapPx = options.stageGapPx ?? STAGE_GAP_PX;
   const peekVisualW = options.peekVisualWidthPx ?? centerW * peekScale;
   /** center→peek와 동일 비율 단계: far = peek × peek */
@@ -158,25 +145,23 @@ type ExpandedStripMetrics = LayoutMetrics & {
   peekOuterW: number;
 };
 
-function expandedStripMetricsFromCenterWidth(
-  centerW: number,
-  peekAdjacentW: number,
-  peekOuterW: number
-): ExpandedStripMetrics {
-  const peekScale = EXPANDED_PEEK_SCALE;
+function expandedStripMetricsFromCenterWidth(centerW: number): ExpandedStripMetrics {
+  const adjacentScale = carouselTierRatio();
+  const outerScale = adjacentScale * adjacentScale;
+  const peekAdjacentW = centerW * adjacentScale;
+  const peekOuterW = centerW * outerScale;
   const offsetAdjacent = centerW / 2 + EXPANDED_ADJACENT_GAP + peekAdjacentW / 2;
   const offsetOuter =
     offsetAdjacent + peekAdjacentW / 2 + EXPANDED_OUTER_GAP + peekOuterW / 2;
   const peekInnerArrowAnchorPx = peekAdjacentW / 2 - NAV_ARROW_INSET_PX;
-  const farScale = (peekAdjacentW / Math.max(centerW, 1)) * EXPANDED_OUTER_PEEK_SCALE;
   return {
     centerW,
     offsetX: offsetAdjacent,
     offsetFarLeft: offsetOuter,
     offsetAdjacent,
     offsetOuter,
-    peekScale,
-    farScale,
+    peekScale: adjacentScale,
+    farScale: outerScale,
     peekAdjacentW,
     peekOuterW,
     peekInnerArrowAnchorPx,
@@ -264,13 +249,12 @@ function getVisibleExpandedRoles(quintet: Quintet, count: number): Set<ExpandedS
   return visible;
 }
 
-/** 확대 strip 5단 크기 — center frame 기준 실측 scale (peek/outer max-w와 동일 체감) */
-function expandedStripScales(metrics: ExpandedStripMetrics) {
-  const { centerW, peekAdjacentW, peekOuterW } = metrics;
-  const safeCenterW = Math.max(centerW, 1);
+/** 확대 strip 5단 크기 — teaser와 동일 tier (r, r²) */
+function expandedStripScales(_metrics: ExpandedStripMetrics) {
+  const adjacentScale = carouselTierRatio();
   return {
-    adjacentScale: peekAdjacentW / safeCenterW,
-    outerScale: (peekOuterW / safeCenterW) * EXPANDED_OUTER_PEEK_SCALE,
+    adjacentScale,
+    outerScale: adjacentScale * adjacentScale,
   };
 }
 
@@ -812,16 +796,9 @@ export default function PromoShortCarouselStage({
   const pendingFadeTargetRef = useRef<number | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const centerMeasureRef = useRef<HTMLDivElement>(null);
-  const peekMeasureRef = useRef<HTMLDivElement>(null);
-  const outerPeekMeasureRef = useRef<HTMLDivElement>(null);
-
   const [metrics, setMetrics] = useState<LayoutMetrics | ExpandedStripMetrics>(() =>
     isExpandedCenter
-      ? expandedStripMetricsFromCenterWidth(
-          EXPANDED_CENTER_MEASURE_WIDTH_PX,
-          EXPANDED_PEEK_MEASURE_WIDTH_PX,
-          EXPANDED_OUTER_MEASURE_WIDTH_PX
-        )
+      ? expandedStripMetricsFromCenterWidth(EXPANDED_CENTER_MEASURE_WIDTH_PX)
       : layoutMetricsFromCenterWidth(200)
   );
   const [revolvePhase, setRevolvePhase] = useState<RevolvePhase>("idle");
@@ -948,11 +925,7 @@ export default function PromoShortCarouselStage({
       const centerW = centerEl.offsetWidth;
       if (centerW <= 0) return;
       if (isExpandedCenter) {
-        const peekAdjacentW =
-          peekMeasureRef.current?.offsetWidth || EXPANDED_PEEK_MEASURE_WIDTH_PX;
-        const peekOuterW =
-          outerPeekMeasureRef.current?.offsetWidth || EXPANDED_OUTER_MEASURE_WIDTH_PX;
-        setMetrics(expandedStripMetricsFromCenterWidth(centerW, peekAdjacentW, peekOuterW));
+        setMetrics(expandedStripMetricsFromCenterWidth(centerW));
       } else {
         setMetrics(
           layoutMetricsFromCenterWidth(centerW, {
@@ -964,18 +937,8 @@ export default function PromoShortCarouselStage({
     measure();
     const ro = new ResizeObserver(measure);
     if (centerMeasureRef.current) ro.observe(centerMeasureRef.current);
-    if (isExpandedCenter && peekMeasureRef.current) {
-      ro.observe(peekMeasureRef.current);
-    }
-    if (isExpandedCenter && outerPeekMeasureRef.current) {
-      ro.observe(outerPeekMeasureRef.current);
-    }
-    const mq = window.matchMedia("(min-width: 640px)");
-    const onMq = () => measure();
-    mq.addEventListener("change", onMq);
     return () => {
       ro.disconnect();
-      mq.removeEventListener("change", onMq);
     };
   }, [isExpandedCenter]);
 
@@ -1230,9 +1193,7 @@ export default function PromoShortCarouselStage({
         minWidth: `${Math.round(stripMetrics.offsetOuter * 2 + 48)}px`,
         ["--carousel-offset-x" as string]: `${stripMetrics.offsetAdjacent}px`,
         ["--carousel-peek-scale" as string]: String(stripMetrics.peekScale),
-        ["--carousel-back-scale" as string]: String(
-          stripMetrics.peekScale * CAROUSEL_BACK_SCALE_RATIO
-        ),
+        ["--carousel-back-scale" as string]: String(stripMetrics.farScale),
       }
     : {
         minWidth: `${Math.round(
@@ -1255,15 +1216,9 @@ export default function PromoShortCarouselStage({
       onKeyDown={onViewportKeyDown}
       className={`${viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS} touch-pan-y select-none outline-none`}
     >
-      {/* layout measure — teaser 프레임 하나만 */}
+      {/* layout measure — 중앙 프레임 너비 */}
       <div className="pointer-events-none absolute opacity-0 -z-50" aria-hidden>
         <div ref={centerMeasureRef} className={carouselFrameClass} />
-        {isExpandedCenter ? (
-          <>
-            <div ref={peekMeasureRef} className={EXPANDED_VIEWER_PEEK_FRAME_CLASS} />
-            <div ref={outerPeekMeasureRef} className={EXPANDED_VIEWER_OUTER_PEEK_FRAME_CLASS} />
-          </>
-        ) : null}
       </div>
 
       <div
