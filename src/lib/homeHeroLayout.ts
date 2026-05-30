@@ -5,13 +5,10 @@ export const HERO_DESIGN = {
   heroMinHeight: 426,
   padX: 24,
   textColWidth: 376,
-  colGap: 96,
+  colGap: 128,
   titleSize: 36,
   subtitleSize: 12,
   buttonHeight: 40,
-  bottomFadePercent: 22,
-  bottomFadeMinPx: 64,
-  bottomFadeMaxPx: 120,
   gradAngleDeg: 118,
   gradFlatPercent: 39,
   gradDarkPercent: 72,
@@ -37,11 +34,13 @@ export function heroDiagonalGradient(gradStartPercent: number): string {
     ${HERO_DESIGN.heroBlueDarker} 100%)`;
 }
 
-export function heroBottomFadeGradient(): string {
+/** section 전체 높이 — 하단만 카탈로그 bg로 feather (strip 박스 없음) */
+export function heroBottomFadeOverlay(): string {
   return `linear-gradient(to bottom,
     transparent 0%,
-    transparent 55%,
-    rgba(10, 10, 10, 0.35) 78%,
+    transparent 62%,
+    rgba(10, 10, 10, 0.12) 78%,
+    rgba(10, 10, 10, 0.45) 90%,
     ${HERO_DESIGN.heroBg} 100%)`;
 }
 
@@ -50,11 +49,12 @@ export function heroMobileVerticalGradient(): string {
     ${HERO_DESIGN.heroBlue} 0%,
     ${HERO_DESIGN.heroBlue} 45%,
     ${HERO_DESIGN.heroBlueDarker} 72%,
-    ${HERO_DESIGN.heroBlueDarker} 100%)`;
+    ${HERO_DESIGN.heroBlueDarker} 88%,
+    ${HERO_DESIGN.heroBg} 100%)`;
 }
 
 /** section inline style — 목업 비율 CSS 변수 */
 export const HERO_SECTION_STYLE = {
-  ["--hero-pad-x" as string]: `clamp(16px, ${heroPercentOfWidth(HERO_DESIGN.padX)}vw, 48px)`,
-  ["--hero-col-gap" as string]: `clamp(40px, ${heroPercentOfWidth(HERO_DESIGN.colGap)}vw, 96px)`,
+  ["--hero-pad-x" as string]: `clamp(12px, ${heroPercentOfWidth(HERO_DESIGN.padX)}vw, 32px)`,
+  ["--hero-col-gap" as string]: `clamp(48px, ${heroPercentOfWidth(HERO_DESIGN.colGap)}vw, 128px)`,
 } as const;

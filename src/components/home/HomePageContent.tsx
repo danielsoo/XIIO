@@ -11,8 +11,8 @@ import { usePromoFeed } from "@/hooks/usePromoFeed";
 import {
   HERO_DESIGN,
   HERO_SECTION_STYLE,
+  heroBottomFadeOverlay,
   heroDiagonalGradient,
-  heroBottomFadeGradient,
   heroMobileVerticalGradient,
 } from "@/lib/homeHeroLayout";
 import type { WorkSection } from "@/types/work";
@@ -100,15 +100,10 @@ export default function HomePageContent() {
           style={{ background: heroMobileVerticalGradient() }}
         />
 
-        {/* Layer 2 — bottom fade (background only, below content) */}
+        {/* Layer 2 — full-height bottom feather (background only, below content) */}
         <div
-          className="absolute bottom-0 inset-x-0 z-[1] pointer-events-none"
-          style={{
-            height: `${HERO_DESIGN.bottomFadePercent}%`,
-            minHeight: HERO_DESIGN.bottomFadeMinPx,
-            maxHeight: HERO_DESIGN.bottomFadeMaxPx,
-            background: heroBottomFadeGradient(),
-          }}
+          className="absolute inset-0 z-[1] pointer-events-none"
+          style={{ background: heroBottomFadeOverlay() }}
           aria-hidden
         />
 
@@ -117,14 +112,13 @@ export default function HomePageContent() {
           style={{ paddingLeft: "var(--hero-pad-x)", paddingRight: "var(--hero-pad-x)" }}
         >
           <div
-            className={`mx-auto w-full max-w-7xl grid gap-10 items-center ${
-              hasPromo ? "md:grid-cols-[minmax(0,1fr)_auto] md:gap-8 lg:gap-12" : ""
+            className={`w-full flex flex-col gap-10 items-stretch ${
+              hasPromo
+                ? "md:flex-row md:items-center md:justify-between md:gap-[var(--hero-col-gap)]"
+                : ""
             }`}
           >
-            <div
-              ref={heroTextRef}
-              className={hasPromo ? "min-w-0 max-w-xl lg:max-w-none" : "max-w-2xl"}
-            >
+            <div ref={heroTextRef} className={hasPromo ? "min-w-0 max-w-xl shrink-0" : "max-w-2xl"}>
               <h1 className="text-[clamp(28px,3.5vw,56px)] font-black italic text-white mb-4 leading-[1.1] tracking-tight">
                 {t("home.heroTitleLine1")}
                 <br />
@@ -137,7 +131,10 @@ export default function HomePageContent() {
             </div>
 
             {hasPromo && (
-              <div className="w-full min-w-0" aria-label={t("home.promoSectionTitle")}>
+              <div
+                className="w-full min-w-0 md:w-auto md:shrink-0 md:ml-auto flex justify-center md:justify-end"
+                aria-label={t("home.promoSectionTitle")}
+              >
                 <PromoShortCarousel
                   items={promoItems}
                   index={promoIndex}
