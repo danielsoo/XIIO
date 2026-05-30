@@ -151,54 +151,6 @@ type LayoutMetrics = {
   peekInnerArrowAnchorPx: number;
 };
 
-const TEASER_STAGE_PADDING = 48;
-const TEASER_MIN_CENTER_W = 120;
-
-function teaserIdleSpreadPx(metrics: LayoutMetrics, itemCount: number): number {
-  return (
-    (itemCount >= 4 ? metrics.offsetFarLeft : metrics.offsetX) * 2 + TEASER_STAGE_PADDING
-  );
-}
-
-function teaserSlideMinWidthPx(metrics: LayoutMetrics, itemCount: number): number {
-  return teaserIdleSpreadPx(metrics, itemCount) + ENTER_GAP_PX;
-}
-
-function fitTeaserCenterWidth(
-  naturalCenterW: number,
-  viewportW: number,
-  itemCount: number
-): number {
-  const layoutOpts = { stageGapPx: STAGE_GAP_PX };
-  const spreadAt = (w: number) =>
-    teaserIdleSpreadPx(layoutMetricsFromCenterWidth(w, layoutOpts), itemCount);
-
-  if (spreadAt(naturalCenterW) <= viewportW) return naturalCenterW;
-  if (spreadAt(TEASER_MIN_CENTER_W) > viewportW) return TEASER_MIN_CENTER_W;
-
-  let lo = TEASER_MIN_CENTER_W;
-  let hi = naturalCenterW;
-  while (hi - lo > 0.5) {
-    const mid = (lo + hi) / 2;
-    if (spreadAt(mid) <= viewportW) lo = mid;
-    else hi = mid;
-  }
-  return lo;
-}
-
-function teaserMetricsForViewport(
-  naturalCenterW: number,
-  viewportW: number | undefined,
-  itemCount: number
-): LayoutMetrics {
-  const layoutOpts = { stageGapPx: STAGE_GAP_PX };
-  const fitted =
-    viewportW && viewportW > 0
-      ? fitTeaserCenterWidth(naturalCenterW, viewportW, itemCount)
-      : naturalCenterW;
-  return layoutMetricsFromCenterWidth(fitted, layoutOpts);
-}
-
 type ExpandedStripMetrics = LayoutMetrics & {
   offsetAdjacent: number;
   offsetOuter: number;
@@ -880,7 +832,6 @@ export default function PromoShortCarouselStage({
         )
       : layoutMetricsFromCenterWidth(200)
   );
-  const [centerFramePx, setCenterFramePx] = useState<{ w: number; h: number } | null>(null);
   const [revolvePhase, setRevolvePhase] = useState<RevolvePhase>("idle");
   const [revolveEpoch, setRevolveEpoch] = useState(0);
   const [snapshot, setSnapshot] = useState<CarouselSnapshot | null>(null);
@@ -1002,42 +953,32 @@ export default function PromoShortCarouselStage({
     const measure = () => {
       const centerEl = centerMeasureRef.current;
       if (!centerEl) return;
-      const naturalCenterW = centerEl.offsetWidth;
-      const naturalCenterH = centerEl.offsetHeight;
-      if (naturalCenterW <= 0 || naturalCenterH <= 0) return;
+      const centerW = centerEl.offsetWidth;
+      if (centerW <= 0) return;
       if (isExpandedCenter) {
         const viewportW = viewportRef.current?.clientWidth ?? window.innerWidth;
-        const next = expandedStripMetricsFromCenterWidth(naturalCenterW, viewportW);
-        const scale = next.centerW / naturalCenterW;
-        setMetrics(next);
-        setCenterFramePx({
-          w: next.centerW,
-          h: Math.round(naturalCenterH * scale),
-        });
+        setMetrics(expandedStripMetricsFromCenterWidth(centerW, viewportW));
       } else {
-        const viewportW = viewportRef.current?.clientWidth;
-        const next = teaserMetricsForViewport(naturalCenterW, viewportW, count);
-        const scale = next.centerW / naturalCenterW;
-        setMetrics(next);
-        setCenterFramePx({
-          w: next.centerW,
-          h: Math.round(naturalCenterH * scale),
-        });
+        setMetrics(
+          layoutMetricsFromCenterWidth(centerW, {
+            stageGapPx: STAGE_GAP_PX,
+          })
+        );
       }
     };
     measure();
     const ro = new ResizeObserver(measure);
     if (centerMeasureRef.current) ro.observe(centerMeasureRef.current);
-    if (viewportRef.current) ro.observe(viewportRef.current);
+    if (isExpandedCenter && viewportRef.current) {
+      ro.observe(viewportRef.current);
+    }
     const mq = window.matchMedia("(min-width: 640px)");
     mq.addEventListener("change", measure);
-    window.addEventListener("resize", measure);
     return () => {
       ro.disconnect();
       mq.removeEventListener("change", measure);
-      window.removeEventListener("resize", measure);
     };
-  }, [isExpandedCenter, count]);
+  }, [isExpandedCenter]);
 
   useLayoutEffect(() => {
     const prev = prevIndexRef.current;
@@ -1284,24 +1225,19 @@ export default function PromoShortCarouselStage({
 
   const liveCenterId = items[index]!.id;
   const navOffsetX = stripMetrics?.offsetAdjacent ?? metrics.offsetX;
-  const centerWStyle = centerFramePx?.w ?? metrics.centerW;
-  const centerHStyle = centerFramePx?.h ?? metrics.centerW * (16 / 9);
   const stageMetricsStyle = stripMetrics
     ? {
-        minWidth: `${Math.round(stripMetrics.offsetOuter * 2 + EXPANDED_STAGE_PADDING)}px`,
-        ["--carousel-center-w" as string]: `${centerWStyle}px`,
-        ["--carousel-center-h" as string]: `${centerHStyle}px`,
+        minWidth: `${Math.round(stripMetrics.offsetOuter * 2 + 48)}px`,
         ["--carousel-offset-x" as string]: `${stripMetrics.offsetAdjacent}px`,
         ["--carousel-peek-scale" as string]: String(stripMetrics.peekScale),
         ["--carousel-back-scale" as string]: String(stripMetrics.farScale),
       }
     : {
-        minWidth: `${Math.round(teaserSlideMinWidthPx(metrics, count))}px`,
-        maxWidth: "100%",
+        minWidth: `${Math.round(
+          (count >= 4 ? metrics.offsetFarLeft : metrics.offsetX) * 2 + ENTER_GAP_PX + 48
+        )}px`,
         perspective: "1000px",
         transformStyle: "preserve-3d" as const,
-        ["--carousel-center-w" as string]: `${centerWStyle}px`,
-        ["--carousel-center-h" as string]: `${centerHStyle}px`,
         ["--carousel-offset-x" as string]: `${metrics.offsetX}px`,
         ["--carousel-peek-scale" as string]: String(metrics.peekScale),
         ["--carousel-back-scale" as string]: String(metrics.farScale),
@@ -1315,10 +1251,10 @@ export default function PromoShortCarouselStage({
       aria-label={t("home.promoSectionTitle")}
       tabIndex={carouselSwipeEnabled ? 0 : undefined}
       onKeyDown={onViewportKeyDown}
-      className={`${viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS} touch-pan-y select-none outline-none max-w-full overflow-x-clip`}
+      className={`${viewportClassName ?? HOME_HERO_PEEK_VIEWPORT_CLASS} touch-pan-y select-none outline-none`}
     >
       {/* layout measure — 중앙 프레임 너비 */}
-      <div className="pointer-events-none absolute opacity-0 -z-50 w-full max-w-full" aria-hidden>
+      <div className="pointer-events-none absolute opacity-0 -z-50" aria-hidden>
         <div ref={centerMeasureRef} className={carouselFrameClass} />
       </div>
 
