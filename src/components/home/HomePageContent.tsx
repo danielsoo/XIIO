@@ -35,7 +35,9 @@ export default function HomePageContent() {
 
   const heroSectionRef = useRef<HTMLElement>(null);
   const heroTextRef = useRef<HTMLDivElement>(null);
-  const [gradStartPercent, setGradStartPercent] = useState<number>(HERO_DESIGN.gradFlatPercent);
+  const [gradStartPercent, setGradStartPercent] = useState<number>(
+    HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent
+  );
 
   useEffect(() => {
     if (!promoId || count === 0) return;
@@ -54,15 +56,17 @@ export default function HomePageContent() {
 
     const measure = () => {
       const lg = window.matchMedia("(min-width: 1024px)").matches;
+      const offset = HERO_DESIGN.gradStartOffsetPercent;
       if (!lg) {
-        setGradStartPercent(HERO_DESIGN.gradFlatPercent);
+        setGradStartPercent(HERO_DESIGN.gradFlatPercent + offset);
         return;
       }
       const sectionRect = section.getBoundingClientRect();
       const textRect = text.getBoundingClientRect();
       const startPx = Math.max(0, textRect.right - sectionRect.left);
-      const pct = sectionRect.width > 0 ? (startPx / sectionRect.width) * 100 : HERO_DESIGN.gradFlatPercent;
-      setGradStartPercent(Math.round(pct * 10) / 10);
+      const base =
+        sectionRect.width > 0 ? (startPx / sectionRect.width) * 100 : HERO_DESIGN.gradFlatPercent;
+      setGradStartPercent(Math.min(100, Math.round((base + offset) * 10) / 10));
     };
 
     measure();

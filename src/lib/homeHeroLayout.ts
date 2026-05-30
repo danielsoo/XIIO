@@ -11,7 +11,9 @@ export const HERO_DESIGN = {
   buttonHeight: 40,
   gradAngleDeg: 118,
   gradFlatPercent: 39,
-  gradDarkPercent: 72,
+  /** flat zone을 텍스트 끝보다 조금 더 오른쪽까지 확장 */
+  gradStartOffsetPercent: 5,
+  gradDarkPercent: 74,
   heroBlue: "#1C4574",
   heroBlueDark: "#152a42",
   heroBlueDarker: "#0d1f33",
