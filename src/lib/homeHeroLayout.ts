@@ -13,6 +13,8 @@ export const HERO_DESIGN = {
   gradFlatPercent: 39,
   /** flat zone을 텍스트 끝보다 조금 더 오른쪽까지 확장 */
   gradStartOffsetPercent: 5,
+  /** mask feather — 이 % 위까지 파랑 레이어 fully visible */
+  bottomFeatherStartPercent: 52,
   heroBlue: "#1C4574",
   ctaBlue: "#256195",
   ctaBlueHover: "#2d6fa8",
@@ -44,6 +46,18 @@ export function heroMobileVerticalGradient(): string {
     rgba(${HERO_BLUE_RGB}, 1) 45%,
     rgba(${HERO_BLUE_RGB}, 0.35) 72%,
     rgba(${HERO_BLUE_RGB}, 0.08) 88%,
+    transparent 100%)`;
+}
+
+/** 하단 feather — mask alpha 1→0 (검정 덧칠 아님, main 검정 비침) */
+export function heroBottomFeatherMask(): string {
+  const start = HERO_DESIGN.bottomFeatherStartPercent;
+  return `linear-gradient(to bottom,
+    #000 0%,
+    #000 ${start}%,
+    rgba(0, 0, 0, 0.88) 68%,
+    rgba(0, 0, 0, 0.5) 82%,
+    rgba(0, 0, 0, 0.18) 93%,
     transparent 100%)`;
 }
 

@@ -11,10 +11,16 @@ import { usePromoFeed } from "@/hooks/usePromoFeed";
 import {
   HERO_DESIGN,
   HERO_SECTION_STYLE,
+  heroBottomFeatherMask,
   heroDiagonalGradient,
   heroMobileVerticalGradient,
 } from "@/lib/homeHeroLayout";
 import type { WorkSection } from "@/types/work";
+
+const heroBgMaskStyle = {
+  WebkitMaskImage: heroBottomFeatherMask(),
+  maskImage: heroBottomFeatherMask(),
+} as const;
 
 const HOME_SECTIONS: { href: string; section: WorkSection; titleKey: string }[] = [
   { href: "/movies", section: "movies", titleKey: "nav.movies" },
@@ -92,12 +98,12 @@ export default function HomePageContent() {
         <div
           className="absolute inset-0 z-0 pointer-events-none hidden lg:block"
           aria-hidden
-          style={{ background: heroDiagonalGradient(gradStartPercent) }}
+          style={{ background: heroDiagonalGradient(gradStartPercent), ...heroBgMaskStyle }}
         />
         <div
           className="absolute inset-0 z-0 pointer-events-none lg:hidden"
           aria-hidden
-          style={{ background: heroMobileVerticalGradient() }}
+          style={{ background: heroMobileVerticalGradient(), ...heroBgMaskStyle }}
         />
 
         <div
