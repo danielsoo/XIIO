@@ -11,7 +11,6 @@ import { usePromoFeed } from "@/hooks/usePromoFeed";
 import {
   HERO_DESIGN,
   HERO_SECTION_STYLE,
-  heroBottomFadeOverlay,
   heroDiagonalGradient,
   heroMobileVerticalGradient,
 } from "@/lib/homeHeroLayout";
@@ -89,10 +88,7 @@ export default function HomePageContent() {
         ref={heroSectionRef}
         className="relative w-full min-h-[clamp(380px,59vh,520px)] overflow-visible"
       >
-        {/* Layer 0 — base */}
-        <div className="absolute inset-0 z-0 bg-[#1C4574]" aria-hidden />
-
-        {/* Layer 1 — diagonal (lg+) / vertical (mobile) */}
+        {/* 파랑 → transparent (아래 main 검정 비침) */}
         <div
           className="absolute inset-0 z-0 pointer-events-none hidden lg:block"
           aria-hidden
@@ -102,13 +98,6 @@ export default function HomePageContent() {
           className="absolute inset-0 z-0 pointer-events-none lg:hidden"
           aria-hidden
           style={{ background: heroMobileVerticalGradient() }}
-        />
-
-        {/* Layer 2 — full-height bottom feather (background only, below content) */}
-        <div
-          className="absolute inset-0 z-[1] pointer-events-none"
-          style={{ background: heroBottomFadeOverlay() }}
-          aria-hidden
         />
 
         <div
