@@ -51,6 +51,7 @@ export const messages = {
       schoolBattle: "학교 대항전",
       discover: "창구",
       menuOpen: "메뉴 열기",
+      myList: "내가 찜한 리스트",
     },
     profileMenu: {
       ariaLabel: "프로필 메뉴",
@@ -1288,6 +1289,18 @@ export const messages = {
     catalog: {
       empty: "아직 공개된 작품이 없습니다.",
     },
+    myList: {
+      title: "내가 찜한 리스트",
+      subtitle: "나중에 볼 본편 작품을 모아 둡니다.",
+      empty: "아직 찜한 작품이 없습니다.",
+      loadError: "찜 목록을 불러오지 못했습니다.",
+    },
+    watchlist: {
+      add: "찜하기",
+      remove: "찜 해제",
+      inList: "찜함",
+      loginRequired: "찜하려면 로그인하세요.",
+    },
     watch: {
       loadError: "영상 정보를 불러오지 못했습니다.",
       notFound: "영상을 찾을 수 없거나 아직 공개되지 않았습니다.",
@@ -1506,6 +1519,7 @@ export const messages = {
       schoolBattle: "School Battle",
       discover: "Discover",
       menuOpen: "Open menu",
+      myList: "My List",
     },
     profileMenu: {
       ariaLabel: "Profile menu",
@@ -2742,6 +2756,18 @@ export const messages = {
     },
     catalog: {
       empty: "No published works yet.",
+    },
+    myList: {
+      title: "My List",
+      subtitle: "Full-length titles you've saved to watch later.",
+      empty: "You haven't saved any titles yet.",
+      loadError: "Could not load your list.",
+    },
+    watchlist: {
+      add: "Add to My List",
+      remove: "Remove from My List",
+      inList: "In My List",
+      loginRequired: "Sign in to add to your list.",
     },
     watch: {
       loadError: "Could not load video.",

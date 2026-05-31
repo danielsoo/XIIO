@@ -26,6 +26,11 @@ export default function Navbar() {
     [t]
   );
 
+  const myListItem = useMemo(
+    () => ({ label: t("nav.myList"), href: "/my-list" }),
+    [t]
+  );
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", onScroll);
@@ -63,6 +68,18 @@ export default function Navbar() {
             </Link>
           </li>
         ))}
+        {user ? (
+          <li>
+            <Link
+              href={myListItem.href}
+              className={`text-sm font-medium transition-colors ${
+                pathname === myListItem.href ? "text-white" : "text-xiio-muted hover:text-white"
+              }`}
+            >
+              {myListItem.label}
+            </Link>
+          </li>
+        ) : null}
       </ul>
 
       <div className="hidden md:flex items-center ml-auto">
@@ -116,6 +133,15 @@ export default function Navbar() {
               {label}
             </Link>
           ))}
+          {user ? (
+            <Link
+              href={myListItem.href}
+              onClick={() => setMenuOpen(false)}
+              className="text-sm text-xiio-muted hover:text-white transition"
+            >
+              {myListItem.label}
+            </Link>
+          ) : null}
           {!user && (
             <Link
               href="/login"

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import ReportContentModal from "@/components/report/ReportContentModal";
+import WatchlistButton from "@/components/watchlist/WatchlistButton";
 import GuestLimitedPlayer from "@/components/watch/GuestLimitedPlayer";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import { useAuth } from "@/context/AuthContext";
@@ -120,19 +121,22 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
             {showingPrologue ? data.prologue?.title ?? data.title : data.title}
           </h1>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            if (!user) {
-              window.location.href = "/login";
-              return;
-            }
-            setReportOpen(true);
-          }}
-          className="shrink-0 text-sm text-white/60 hover:text-red-400 border border-white/15 rounded-lg px-3 py-1.5 transition"
-        >
-          {t("watch.report")}
-        </button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <WatchlistButton ownerUid={ownerUid} workId={workId} />
+          <button
+            type="button"
+            onClick={() => {
+              if (!user) {
+                window.location.href = "/login";
+                return;
+              }
+              setReportOpen(true);
+            }}
+            className="text-sm text-white/60 hover:text-red-400 border border-white/15 rounded-lg px-3 py-1.5 transition"
+          >
+            {t("watch.report")}
+          </button>
+        </div>
       </div>
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-xiio-muted mb-4">
         {data.approvedCategory && <span>{data.approvedCategory}</span>}
