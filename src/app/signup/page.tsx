@@ -14,8 +14,7 @@ import { auth, db } from "@/lib/firebase";
 import { resolvePostLoginPath } from "@/lib/activeWatchProfile";
 import {
   FIRESTORE_PERMISSION_DENIED,
-  getUserProfile,
-  hasUserProfile,
+  fetchUserProfileWithRetry,
   isProfileComplete,
   markEmailVerified,
   saveUserProfile,
@@ -114,6 +113,8 @@ export default function SignupPage() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [profileCheckReady, setProfileCheckReady] = useState(() => !auth?.currentUser);
+  const [profileConnectionError, setProfileConnectionError] = useState(false);
 
   const oauthSignup = useMemo(() => {
     if (socialPending) return true;
@@ -189,77 +190,72 @@ export default function SignupPage() {
 
   useEffect(() => {
     const currentUser = auth?.currentUser;
-    if (!currentUser || verifyPhase) return;
+    if (!currentUser || verifyPhase) {
+      if (!currentUser) {
+        setProfileCheckReady(true);
+        setProfileConnectionError(false);
+      }
+      return;
+    }
 
     let cancelled = false;
+    setProfileCheckReady(false);
+    setProfileConnectionError(false);
+
     void (async () => {
-      const profile = await getUserProfile(currentUser.uid);
+      const result = await fetchUserProfileWithRetry(currentUser.uid);
       if (cancelled) return;
-      if (profile && isProfileComplete(profile)) {
+
+      if (result.status === "error") {
+        setProfileConnectionError(true);
+        setProfileCheckReady(true);
+        return;
+      }
+
+      if (result.status === "found" && isProfileComplete(result.profile)) {
         router.replace(resolvePostLoginPath(currentUser.uid, "/"));
         return;
       }
-    })();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [verifyPhase, router]);
-
-  // 미완성 프로필 → 기존 값 prefill
-  useEffect(() => {
-    const currentUser = auth?.currentUser;
-    if (!currentUser || verifyPhase) return;
-
-    let cancelled = false;
-    void (async () => {
-      const profile = await getUserProfile(currentUser.uid);
-      if (cancelled || !profile || isProfileComplete(profile)) return;
-      if (profile.displayName.trim()) setName(profile.displayName.trim());
-      if (profile.locale) {
-        setSignupLocale(profile.locale);
-        setLocale(profile.locale);
-      }
-      if (profile.birthDate) setBirthDate(profile.birthDate);
-      if (profile.gender) setGender(profile.gender);
-      if (profile.platformPurpose) setPlatformPurpose(profile.platformPurpose);
-      if (profile.defaultDirectorName) setDirectorName(profile.defaultDirectorName);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [verifyPhase, setLocale]);
-
-  // {t("common.login")}만 하고 Firestore 프로필이 없는 경우 → 가입 단계만 이어서 진행
-  useEffect(() => {
-    const currentUser = auth?.currentUser;
-    if (!currentUser || verifyPhase) return;
-
-    let cancelled = false;
-    (async () => {
-      const exists = await hasUserProfile(currentUser.uid);
-      if (cancelled || exists) return;
-      if (currentUser.displayName) setName(currentUser.displayName);
-      if (currentUser.email) setEmail(currentUser.email);
-      if (isOAuthProfileUser(currentUser)) {
-        setSocialPending(true);
-        setProfileOnlyMode(true);
-        void currentUser.getIdTokenResult().then((token) => {
-          const claim = token.claims.socialProvider;
-          if (claim === "kakao" || claim === "naver" || claim === "google" || claim === "apple") {
-            setPendingProvider(claim);
-          }
-        });
+      if (result.status === "found") {
+        const profile = result.profile;
+        if (profile.displayName.trim()) setName(profile.displayName.trim());
+        if (profile.locale) {
+          setSignupLocale(profile.locale);
+          setLocale(profile.locale);
+        }
+        if (profile.birthDate) setBirthDate(profile.birthDate);
+        if (profile.gender) setGender(profile.gender);
+        if (profile.platformPurpose) setPlatformPurpose(profile.platformPurpose);
+        if (profile.defaultDirectorName) setDirectorName(profile.defaultDirectorName);
+        if (isOAuthProfileUser(currentUser)) {
+          setSocialPending(true);
+          setProfileOnlyMode(true);
+        }
       } else {
-        setProfileOnlyMode(true);
+        if (currentUser.displayName) setName(currentUser.displayName);
+        if (currentUser.email) setEmail(currentUser.email);
+        if (isOAuthProfileUser(currentUser)) {
+          setSocialPending(true);
+          setProfileOnlyMode(true);
+          void currentUser.getIdTokenResult().then((token) => {
+            const claim = token.claims.socialProvider;
+            if (claim === "kakao" || claim === "naver" || claim === "google" || claim === "apple") {
+              setPendingProvider(claim);
+            }
+          });
+        } else {
+          setProfileOnlyMode(true);
+        }
       }
+
+      setProfileCheckReady(true);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [verifyPhase]);
+  }, [verifyPhase, router, setLocale]);
 
   const birthDateValidationMessage = (result: ReturnType<typeof validateSignupBirthDate>) => {
     switch (result) {
@@ -456,8 +452,8 @@ export default function SignupPage() {
       if (!(result instanceof Promise)) return;
 
       const signedIn = await result;
-      const existingProfile = await getUserProfile(signedIn.uid);
-      if (existingProfile && isProfileComplete(existingProfile)) {
+      const profileResult = await fetchUserProfileWithRetry(signedIn.uid);
+      if (profileResult.status === "found" && isProfileComplete(profileResult.profile)) {
         router.push(resolvePostLoginPath(signedIn.uid, "/"));
         return;
       }
@@ -575,7 +571,26 @@ export default function SignupPage() {
           </div>
         )}
 
-        {verifyPhase === null && (
+        {verifyPhase === null && !profileCheckReady && (
+          <div className="bg-xiio-surface rounded-2xl p-8 border border-white/10 min-h-[420px] flex items-center justify-center">
+            <p className="text-xiio-muted">{t("common.loading")}</p>
+          </div>
+        )}
+
+        {verifyPhase === null && profileCheckReady && profileConnectionError && (
+          <div className="bg-xiio-surface rounded-2xl p-8 border border-white/10 min-h-[420px] flex flex-col items-center justify-center gap-4 text-center">
+            <p className="text-xiio-muted text-sm">{t("auth.signup.profileConnectionError")}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="text-sm px-4 py-2 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white transition"
+            >
+              {t("common.retry")}
+            </button>
+          </div>
+        )}
+
+        {verifyPhase === null && profileCheckReady && !profileConnectionError && (
         <div className="bg-xiio-surface rounded-2xl p-8 border border-white/10 min-h-[420px] flex flex-col">
           {!oauthSignup ? (
             <div className="mb-6">
@@ -819,7 +834,7 @@ export default function SignupPage() {
         </div>
         )}
 
-        {verifyPhase === null && (
+        {verifyPhase === null && profileCheckReady && !profileConnectionError && (
           <p className="mt-6 text-center text-sm text-xiio-muted">
             {t("auth.signup.hasAccount")}{" "}
             <Link href="/login" className="text-xiio-accent hover:underline">

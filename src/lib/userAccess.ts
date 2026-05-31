@@ -34,7 +34,8 @@ export type MemberAccessResult =
   | { kind: "none" }
   | { kind: "no_profile" }
   | { kind: "deleted" }
-  | { kind: "active"; profile: UserProfileDoc };
+  | { kind: "active"; profile: UserProfileDoc }
+  | { kind: "error" };
 
 export function isAccountDeleted(profile: Pick<UserProfileDoc, "accountStatus">): boolean {
   return profile.accountStatus === "deleted";

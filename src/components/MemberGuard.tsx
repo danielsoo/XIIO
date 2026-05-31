@@ -7,7 +7,7 @@ import { useMemberAccess } from "@/hooks/useMemberAccess";
 
 const EXEMPT_PATHS = ["/login", "/signup", "/admin", "/auth", "/uploader"];
 
-/** Firestore 프로필 없으면 가입 플로우로 (승인 대기 없음 — 넷플릭스형) */
+/** Firestore 프로필 없거나 미완성이면 가입 플로우로 (일시 오류 시 redirect 하지 않음) */
 export default function MemberGuard() {
   const { user, loading: authLoading } = useAuth();
   const { access, checked } = useMemberAccess();
@@ -16,6 +16,7 @@ export default function MemberGuard() {
 
   useEffect(() => {
     if (authLoading || !checked || !user) return;
+    if (access.kind === "error" || access.kind === "none") return;
     if (EXEMPT_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
       return;
     }

@@ -21,6 +21,7 @@ export const messages = {
       previous: "이전",
       next: "다음",
       cancel: "취소",
+      retry: "다시 시도",
       save: "저장",
       saving: "저장 중...",
       showPassword: "비밀번호 표시",
@@ -543,6 +544,8 @@ export const messages = {
         errorPasswordMismatch: "비밀번호가 일치하지 않습니다.",
         errorReviewInput: "입력 정보를 다시 확인해주세요.",
         errorSessionExpired: "로그인 세션이 만료되었습니다. 다시 시도해주세요.",
+        profileConnectionError:
+          "프로필 정보를 확인하지 못했습니다. 네트워크 연결을 확인한 뒤 새로고침해 주세요.",
         errorGoogleFailed: "Google 가입에 실패했습니다.",
         errorAppleFailed: "Apple 가입에 실패했습니다.",
         errorKakaoFailed: "카카오 가입에 실패했습니다.",
@@ -1489,6 +1492,7 @@ export const messages = {
       previous: "Back",
       next: "Next",
       cancel: "Cancel",
+      retry: "Try again",
       save: "Save",
       saving: "Saving…",
       showPassword: "Show password",
@@ -2010,6 +2014,8 @@ export const messages = {
         errorPasswordMismatch: "Passwords do not match.",
         errorReviewInput: "Please check your input.",
         errorSessionExpired: "Session expired. Please try again.",
+        profileConnectionError:
+          "Could not verify your profile. Check your connection and refresh the page.",
         errorGoogleFailed: "Google sign-up failed.",
         errorAppleFailed: "Apple sign-up failed.",
         errorKakaoFailed: "Kakao sign-up failed.",

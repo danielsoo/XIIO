@@ -5,6 +5,15 @@ import { isAccountDeleted, parseUserProfileDoc } from "@/lib/userAccess";
 
 export const FIRESTORE_PERMISSION_DENIED = "FIRESTORE_PERMISSION_DENIED";
 
+export type UserProfileFetchResult =
+  | { status: "found"; profile: UserProfileDoc }
+  | { status: "missing" }
+  | { status: "error" };
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function mapFirestoreError(err: unknown): Error {
   const code = (err as { code?: string })?.code;
   if (code === "permission-denied") {
@@ -16,29 +25,42 @@ function mapFirestoreError(err: unknown): Error {
   return new Error("프로필 저장에 실패했습니다.");
 }
 
-export async function getUserProfile(uid: string): Promise<UserProfileDoc | null> {
-  if (!db) return null;
+export async function fetchUserProfile(uid: string): Promise<UserProfileFetchResult> {
+  if (!db) return { status: "error" };
   try {
     const snap = await getDoc(doc(db, "users", uid));
-    if (!snap.exists()) return null;
+    if (!snap.exists()) return { status: "missing" };
     const profile = parseUserProfileDoc(snap.data() as Record<string, unknown>);
-    if (isAccountDeleted(profile)) return null;
-    return profile;
+    if (isAccountDeleted(profile)) return { status: "missing" };
+    return { status: "found", profile };
   } catch {
-    return null;
+    return { status: "error" };
   }
 }
 
-export async function hasUserProfile(uid: string): Promise<boolean> {
-  if (!db) return false;
-  try {
-    const snap = await getDoc(doc(db, "users", uid));
-    if (!snap.exists()) return false;
-    const profile = parseUserProfileDoc(snap.data() as Record<string, unknown>);
-    return !isAccountDeleted(profile);
-  } catch {
-    return false;
+export async function fetchUserProfileWithRetry(
+  uid: string,
+  options?: { attempts?: number; delayMs?: number }
+): Promise<UserProfileFetchResult> {
+  const attempts = options?.attempts ?? 3;
+  const delayMs = options?.delayMs ?? 500;
+  let last: UserProfileFetchResult = { status: "error" };
+  for (let i = 0; i < attempts; i++) {
+    last = await fetchUserProfile(uid);
+    if (last.status !== "error") return last;
+    if (i < attempts - 1) await sleep(delayMs * (i + 1));
   }
+  return last;
+}
+
+export async function getUserProfile(uid: string): Promise<UserProfileDoc | null> {
+  const result = await fetchUserProfile(uid);
+  return result.status === "found" ? result.profile : null;
+}
+
+export async function hasUserProfile(uid: string): Promise<boolean> {
+  const result = await fetchUserProfile(uid);
+  return result.status === "found";
 }
 
 export async function saveUserProfile(
@@ -117,7 +139,8 @@ export function isProfileComplete(profile: UserProfileDoc): boolean {
 }
 
 export async function getPostAuthPath(uid: string): Promise<"/" | "/signup"> {
-  const profile = await getUserProfile(uid);
-  if (!profile || !isProfileComplete(profile)) return "/signup";
+  const result = await fetchUserProfileWithRetry(uid);
+  if (result.status === "error") return "/";
+  if (result.status === "missing" || !isProfileComplete(result.profile)) return "/signup";
   return "/";
 }

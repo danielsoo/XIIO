@@ -51,6 +51,9 @@ cp .env.example .env.local
 `.env.local`에 Firebase 클라이언트 키, Admin SDK, Cloudflare Stream 등 필요한 값을 채웁니다.  
 변수별 설명은 [`.env.example`](.env.example) 주석을 참고하세요.
 
+**Vercel 배포 시 Firestore DB 이름 일치 (중요):**  
+`NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID`와 서버용 `FIREBASE_FIRESTORE_DATABASE_ID`(또는 동일 public 값)가 **로컬·프로덕션·Firebase Console에서 실제 프로필이 저장된 DB**와 같아야 합니다. 값이 비거나 다르면 로그인은 되는데 가입 화면이 다시 뜰 수 있습니다.
+
 **최소 로컬 실행 (UI만):** Firebase `NEXT_PUBLIC_*` 클라이언트 변수  
 **업로드·재생·API:** `FIREBASE_SERVICE_ACCOUNT_JSON`, Cloudflare Stream 토큰 등 추가 필요
 
