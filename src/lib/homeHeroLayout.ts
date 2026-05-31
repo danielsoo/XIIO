@@ -14,8 +14,8 @@ export const HERO_DESIGN = {
   /** flat zone을 텍스트 끝보다 조금 더 오른쪽까지 확장 */
   gradStartOffsetPercent: 5,
   /** flat 끝 → dark core까지 전환 폭 */
-  gradBlendSpanPercent: 22,
-  gradDarkPercent: 74,
+  gradBlendSpanPercent: 34,
+  gradDarkPercent: 78,
   heroBlue: "#1C4574",
   heroBlueDark: "#152a42",
   heroBlueDarker: "#0d1f33",
@@ -30,20 +30,26 @@ export function heroPercentOfWidth(px: number): number {
 
 export function heroDiagonalGradient(gradStartPercent: number): string {
   const start = Math.max(0, Math.min(85, gradStartPercent));
+  const preStart = Math.max(0, start - 6);
   const span = HERO_DESIGN.gradBlendSpanPercent;
-  const s1 = start + span * 0.25;
-  const s2 = start + span * 0.55;
-  const s3 = start + span * 0.85;
-  const s4 = Math.min(100, start + span);
-  const dark = Math.min(100, Math.max(s4 + 6, HERO_DESIGN.gradDarkPercent));
+  const s1 = start + span * 0.2;
+  const s2 = start + span * 0.4;
+  const s3 = start + span * 0.55;
+  const s4 = start + span * 0.7;
+  const s5 = start + span * 0.85;
+  const s6 = Math.min(100, start + span);
+  const dark = Math.min(100, Math.max(s6 + 6, HERO_DESIGN.gradDarkPercent));
 
   return `linear-gradient(${HERO_DESIGN.gradAngleDeg}deg,
     ${HERO_DESIGN.heroBlue} 0%,
-    ${HERO_DESIGN.heroBlue} ${start}%,
-    rgba(28, 69, 116, 0.88) ${s1}%,
-    rgba(21, 42, 66, 0.72) ${s2}%,
-    rgba(13, 31, 51, 0.85) ${s3}%,
-    ${HERO_DESIGN.heroBlueDarker} ${s4}%,
+    ${HERO_DESIGN.heroBlue} ${preStart}%,
+    rgba(28, 69, 116, 0.97) ${start}%,
+    rgba(28, 69, 116, 0.82) ${s1}%,
+    rgba(21, 42, 66, 0.62) ${s2}%,
+    rgba(21, 42, 66, 0.42) ${s3}%,
+    rgba(13, 31, 51, 0.58) ${s4}%,
+    rgba(13, 31, 51, 0.75) ${s5}%,
+    rgba(10, 10, 10, 0.22) ${s6}%,
     ${HERO_DESIGN.heroBlueDarker} ${dark}%,
     ${HERO_DESIGN.heroBlueDarker} 100%)`;
 }
@@ -52,20 +58,28 @@ export function heroDiagonalGradient(gradStartPercent: number): string {
 export function heroBottomFadeOverlay(): string {
   return `linear-gradient(to bottom,
     transparent 0%,
-    transparent 62%,
-    rgba(10, 10, 10, 0.12) 78%,
-    rgba(10, 10, 10, 0.45) 90%,
+    transparent 48%,
+    rgba(10, 10, 10, 0.04) 58%,
+    rgba(10, 10, 10, 0.10) 68%,
+    rgba(10, 10, 10, 0.22) 78%,
+    rgba(10, 10, 10, 0.38) 86%,
+    rgba(10, 10, 10, 0.58) 92%,
+    rgba(10, 10, 10, 0.78) 97%,
     ${HERO_DESIGN.heroBg} 100%)`;
 }
 
 export function heroMobileVerticalGradient(): string {
   return `linear-gradient(180deg,
     ${HERO_DESIGN.heroBlue} 0%,
-    ${HERO_DESIGN.heroBlue} 45%,
-    rgba(28, 69, 116, 0.88) 55%,
-    rgba(21, 42, 66, 0.72) 65%,
-    rgba(13, 31, 51, 0.85) 78%,
-    ${HERO_DESIGN.heroBlueDarker} 88%,
+    ${HERO_DESIGN.heroBlue} 42%,
+    rgba(28, 69, 116, 0.97) 48%,
+    rgba(28, 69, 116, 0.82) 55%,
+    rgba(21, 42, 66, 0.62) 62%,
+    rgba(21, 42, 66, 0.42) 70%,
+    rgba(13, 31, 51, 0.58) 78%,
+    rgba(13, 31, 51, 0.75) 86%,
+    rgba(10, 10, 10, 0.22) 92%,
+    rgba(10, 10, 10, 0.45) 95%,
     ${HERO_DESIGN.heroBg} 100%)`;
 }
 
