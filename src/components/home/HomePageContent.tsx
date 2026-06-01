@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import HomeHeroActions from "@/components/HomeHeroActions";
+import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
 import HomeCatalogSection from "@/components/home/HomeCatalogSection";
 import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
 import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPlayer";
+import { HomeHeroThemeProvider, useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { usePromoFeed } from "@/hooks/usePromoFeed";
 import {
@@ -29,8 +31,9 @@ const HOME_SECTIONS: { href: string; section: WorkSection; titleKey: string }[] 
   { href: "/school-battle", section: "school-battle", titleKey: "nav.schoolBattle" },
 ];
 
-export default function HomePageContent() {
+function HomePageContentInner() {
   const { t } = useTranslations();
+  const { rgbTuple, heroStyle } = useHomeHeroTheme();
   const { items: promoItems } = usePromoFeed(true);
   const searchParams = useSearchParams();
   const promoId = searchParams.get("promo");
@@ -89,21 +92,29 @@ export default function HomePageContent() {
   }, [hasPromo]);
 
   return (
-    <main className="min-h-screen bg-xiio-bg" style={HERO_SECTION_STYLE}>
+    <main
+      className="min-h-screen bg-xiio-bg"
+      style={{ ...HERO_SECTION_STYLE, ...heroStyle }}
+    >
       <section
         ref={heroSectionRef}
         className="relative w-full min-h-[clamp(380px,59vh,520px)] overflow-visible"
       >
-        {/* 파랑 → transparent (아래 main 검정 비침) */}
         <div
           className="absolute inset-0 z-0 pointer-events-none hidden lg:block"
           aria-hidden
-          style={{ background: heroDiagonalGradient(gradStartPercent), ...heroBgMaskStyle }}
+          style={{
+            background: heroDiagonalGradient(gradStartPercent, rgbTuple),
+            ...heroBgMaskStyle,
+          }}
         />
         <div
           className="absolute inset-0 z-0 pointer-events-none lg:hidden"
           aria-hidden
-          style={{ background: heroMobileVerticalGradient(), ...heroBgMaskStyle }}
+          style={{
+            background: heroMobileVerticalGradient(rgbTuple),
+            ...heroBgMaskStyle,
+          }}
         />
 
         <div
@@ -156,6 +167,16 @@ export default function HomePageContent() {
           <HomeCatalogSection key={href} section={section} href={href} titleKey={titleKey} />
         ))}
       </div>
+
+      <AdminHomeColorPicker />
     </main>
+  );
+}
+
+export default function HomePageContent() {
+  return (
+    <HomeHeroThemeProvider>
+      <HomePageContentInner />
+    </HomeHeroThemeProvider>
   );
 }

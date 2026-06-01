@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --experimental-strip-types --test src/lib/collab-invite-pure.test.ts src/lib/works/promo-crop-interaction-pure.test.ts src/lib/credit-display-name-pure.test.ts src/lib/works/promo-file-validation.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/collab-invite-pure.test.ts src/lib/works/promo-crop-interaction-pure.test.ts src/lib/credit-display-name-pure.test.ts src/lib/works/promo-file-validation.test.ts src/lib/homeHeroColors.test.ts",
     "firebase:deploy": "firebase deploy --only firestore"
   },
   "dependencies": {
@@ -16,6 +16,7 @@
     "hls.js": "^1.6.16",
     "next": "15.3.8",
     "react": "^19.0.0",
+    "react-colorful": "^5.7.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.8.1",
     "stripe": "^22.1.1",

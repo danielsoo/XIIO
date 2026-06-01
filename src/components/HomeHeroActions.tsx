@@ -13,7 +13,7 @@ export default function HomeHeroActions() {
     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
       <Link
         href={watchNowHref}
-        className="inline-flex items-center justify-center rounded-full px-8 py-2.5 text-sm font-semibold text-white bg-[#256195] hover:bg-[#2d6fa8] transition"
+        className="inline-flex items-center justify-center rounded-full px-8 py-2.5 text-sm font-semibold text-white bg-[var(--hero-cta,#256195)] hover:bg-[var(--hero-cta-hover,#2d6fa8)] transition"
       >
         {t("home.watchNow")}
       </Link>
