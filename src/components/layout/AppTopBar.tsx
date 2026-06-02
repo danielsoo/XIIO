@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import ProfileMenu from "@/components/ProfileMenu";
+import ProfileAvatar from "@/components/ProfileAvatar";
+import { IconBell, IconSearch } from "@/components/icons/MockupIcons";
+import { getUserProfile } from "@/lib/userProfile";
+import type { UserProfileDoc } from "@/types/user";
 
 type Props = {
   onMenuOpen: () => void;
@@ -11,60 +16,115 @@ type Props = {
 
 export default function AppTopBar({ onMenuOpen }: Props) {
   const { t } = useTranslations();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  const [profile, setProfile] = useState<UserProfileDoc | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setProfile(null);
+      return;
+    }
+    let cancelled = false;
+    void getUserProfile(user.uid).then((p) => {
+      if (!cancelled) setProfile(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    if (menuOpen) document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [menuOpen]);
+
+  const displayName = profile?.displayName?.trim() || user?.displayName || user?.email || "";
 
   return (
-    <header className="sticky top-0 z-30 h-14 lg:h-16 flex items-center gap-3 px-4 lg:px-8 border-b border-white/5 bg-[#05070A]/80 backdrop-blur-md">
+    <header className="sticky top-0 z-30 h-14 lg:h-[60px] flex items-center gap-3 px-4 lg:px-8 bg-[#05070A]/90 backdrop-blur-md">
       <button
         type="button"
-        className="lg:hidden p-2 -ml-1 text-white/80 hover:text-white"
+        className="lg:hidden p-2 -ml-1 text-white/70 hover:text-white"
         onClick={onMenuOpen}
         aria-label={t("nav.menuOpen")}
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
           <path strokeLinecap="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
-      <div className="flex-1 flex justify-center max-w-xl mx-auto">
+      <div className="flex-1 flex justify-center max-w-2xl mx-auto">
         <label className="relative w-full hidden sm:block">
           <span className="sr-only">{t("topBar.searchLabel")}</span>
-          <svg
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/35"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden
-          >
-            <path strokeLinecap="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
-          </svg>
+          <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
           <input
             type="search"
             readOnly
             placeholder={t("topBar.searchPlaceholder")}
-            className="w-full rounded-full bg-white/5 border border-white/10 py-2 pl-10 pr-4 text-sm text-white placeholder:text-white/35 cursor-default"
+            className="w-full h-10 rounded-full bg-white/[0.04] border border-white/[0.08] py-2 pl-11 pr-4 text-sm text-white placeholder:text-white/30 cursor-default"
           />
         </label>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
         <button
           type="button"
-          className="p-2 rounded-full text-white/60 hover:text-white hover:bg-white/5 transition"
+          className="p-2.5 rounded-full text-white/50 hover:text-white hover:bg-white/5 transition"
           aria-label={t("topBar.notifications")}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.75}
-              d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"
-            />
-          </svg>
+          <IconBell />
         </button>
+
         {user ? (
-          <div className="hidden sm:block">
-            <ProfileMenu />
+          <div ref={ref} className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="p-1 rounded-full hover:ring-2 hover:ring-white/10 transition"
+              aria-label={t("profileMenu.ariaLabel")}
+            >
+              <ProfileAvatar
+                profile={{ name: displayName, avatarUrl: profile?.avatarUrl ?? null }}
+                size="sm"
+              />
+            </button>
+            {menuOpen ? (
+              <div className="absolute right-0 top-full mt-2 py-1 w-44 rounded-lg border border-white/10 bg-[#0c0e12] shadow-xl z-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    router.push("/account");
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5"
+                >
+                  {t("profileMenu.accountProfile")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    router.push("/settings");
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5"
+                >
+                  {t("profileMenu.settings")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void logout().then(() => router.push("/"))}
+                  className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5 border-t border-white/10"
+                >
+                  {t("profileMenu.logout")}
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : (
           <Link

@@ -1,44 +1,63 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+import { IconPlus } from "@/components/icons/MockupIcons";
+import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import type { HomeStoryItem } from "@/lib/homeMockData";
 
 type Props = {
   item: HomeStoryItem;
-  size?: "featured" | "compact";
+  variant?: "featured" | "surface";
 };
 
-export default function HomeStoryCard({ item, size = "featured" }: Props) {
-  const isFeatured = size === "featured";
+export default function HomeStoryCard({ item, variant = "featured" }: Props) {
+  const isFeatured = variant === "featured";
   const href = item.href ?? "/movies";
 
-  return (
-    <Link
-      href={href}
-      className={`group relative shrink-0 rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-white/20 transition ${
-        isFeatured ? "w-[min(72vw,280px)] sm:w-[300px]" : "w-[min(55vw,200px)] sm:w-[220px]"
-      }`}
-    >
-      <div
-        className={`relative bg-gradient-to-br ${item.gradient} ${
-          isFeatured ? "aspect-[4/5]" : "aspect-[3/4]"
-        }`}
+  if (isFeatured) {
+    return (
+      <Link
+        href={href}
+        className={`group relative shrink-0 ${MOCKUP_HOME.featuredCardWidth} ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-white/15 transition`}
       >
-        <button
-          type="button"
-          className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-white/80 hover:bg-black/60"
-          aria-label="+"
-          onClick={(e) => e.preventDefault()}
-        >
-          +
-        </button>
-        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-          <p className="font-semibold text-white text-sm leading-tight">{item.title}</p>
-          <p className="text-[11px] text-white/55 mt-1">
-            {item.category} · {item.duration}
-          </p>
+        <div className="relative aspect-[16/10] w-full">
+          <Image
+            src={item.imageUrl}
+            alt={item.title}
+            fill
+            className="object-cover"
+            sizes="300px"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <button
+            type="button"
+            className="absolute bottom-2.5 right-2.5 w-7 h-7 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-white/90 hover:bg-black/70"
+            aria-label="Add to list"
+            onClick={(e) => e.preventDefault()}
+          >
+            <IconPlus />
+          </button>
+          <div className="absolute inset-x-0 bottom-0 p-3">
+            <p className="font-semibold text-white text-sm leading-tight">{item.title}</p>
+            <p className="text-[11px] text-white/55 mt-0.5">
+              {item.category} · {item.duration}
+            </p>
+          </div>
         </div>
+      </Link>
+    );
+  }
+
+  return (
+    <Link href={href} className={`group shrink-0 ${MOCKUP_HOME.surfaceCardWidth}`}>
+      <div
+        className={`relative aspect-[16/10] w-full ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-white/15 transition mb-2`}
+      >
+        <Image src={item.imageUrl} alt={item.title} fill className="object-cover" sizes="200px" />
       </div>
+      <p className="font-medium text-white text-sm leading-tight px-0.5">{item.title}</p>
+      <p className="text-[11px] text-white/45 mt-0.5 px-0.5">{item.duration}</p>
     </Link>
   );
 }
