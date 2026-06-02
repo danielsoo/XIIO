@@ -21,7 +21,7 @@ export default function AppPageShell({
   standalone = false,
   className = "",
 }: Props) {
-  const pt = standalone ? "pt-6" : withNavbar ? "pt-24" : "pt-6";
+  const pt = standalone ? "pt-6" : withNavbar ? "pt-6" : "pt-6";
 
   return (
     <main className={`min-h-screen bg-xiio-bg pb-16 ${pt} ${PAGE_GUTTER} ${className}`.trim()}>

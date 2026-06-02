@@ -1,7 +1,11 @@
-import CategoryPageClient from "@/components/category/CategoryPageClient";
+import CategoryPageWithHero from "@/components/category/CategoryPageWithHero";
 
 export default function MoviesPage() {
   return (
-    <CategoryPageClient section="movies" titleKey="category.moviesTitle" subtitleKey="category.moviesSubtitle" />
+    <CategoryPageWithHero
+      section="movies"
+      titleKey="category.moviesTitle"
+      subtitleKey="category.filmsSubtitle"
+    />
   );
 }

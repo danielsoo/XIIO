@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { HsvColorPicker } from "react-colorful";
 import { useAuth } from "@/context/AuthContext";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
@@ -19,6 +20,7 @@ import {
 } from "@/lib/homeHeroColors";
 
 export default function AdminHomeColorPicker() {
+  const pathname = usePathname();
   const { t } = useTranslations();
   const { user } = useAuth();
   const { isAdmin, checked } = useAdminAccess();
@@ -103,7 +105,7 @@ export default function AdminHomeColorPicker() {
     }
   };
 
-  if (!checked || !isAdmin) return null;
+  if (!checked || !isAdmin || pathname !== "/") return null;
 
   const rgbTuple = hexToRgbTuple(theme.heroHex);
 

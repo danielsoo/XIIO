@@ -1,11 +1,5 @@
-import CategoryPageClient from "@/components/category/CategoryPageClient";
+import { redirect } from "next/navigation";
 
 export default function EntertainmentPage() {
-  return (
-    <CategoryPageClient
-      section="entertainment"
-      titleKey="category.entertainmentTitle"
-      subtitleKey="category.entertainmentSubtitle"
-    />
-  );
+  redirect("/movies");
 }

@@ -1,12 +1,5 @@
-import CategoryPageClient from "@/components/category/CategoryPageClient";
+import CampusMockPage from "@/components/campus/CampusMockPage";
 
 export default function SchoolBattlePage() {
-  return (
-    <CategoryPageClient
-      section="school-battle"
-      titleKey="category.schoolBattleTitle"
-      subtitleKey="category.schoolBattleSubtitle"
-      badgeKey="category.schoolBattleBadge"
-    />
-  );
+  return <CampusMockPage />;
 }

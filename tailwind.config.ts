@@ -28,6 +28,7 @@ const config: Config = {
           "system-ui",
           "sans-serif",
         ],
+        serif: ["var(--font-serif)", "Georgia", "Times New Roman", "serif"],
       },
     },
   },

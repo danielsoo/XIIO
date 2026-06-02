@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
+import { Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import Navbar from "@/components/Navbar";
+import AppShell from "@/components/layout/AppShell";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "XIIO — 다음 세대 콘텐츠 플랫폼",
@@ -11,10 +18,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko" className="dark">
-      <body className="font-sans">
+      <body className={`font-sans ${playfair.variable}`}>
         <Providers>
-          <Navbar />
-          {children}
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>
