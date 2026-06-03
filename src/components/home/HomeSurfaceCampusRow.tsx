@@ -69,7 +69,7 @@ export default function HomeSurfaceCampusRow({
 
   return (
     <section className="min-w-0 w-full">
-      <div className="mb-4 hidden lg:grid lg:grid-cols-[744px_380px] lg:gap-6">
+      <div className="mb-4 hidden lg:grid lg:grid-cols-[minmax(0,744px)_minmax(0,380px)] lg:gap-6 max-w-full">
         <SectionHeader
           title={title}
           viewAllHref={viewAllHref}
@@ -88,7 +88,7 @@ export default function HomeSurfaceCampusRow({
         />
       </div>
 
-      <div className="hidden lg:grid lg:grid-cols-[744px_380px] lg:gap-6 items-stretch">
+      <div className="hidden lg:grid lg:grid-cols-[minmax(0,744px)_minmax(0,380px)] lg:gap-6 items-stretch max-w-full min-w-0">
         <div
           className={`grid ${MOCKUP_HOME.surfaceRowGap}`}
           style={{ gridTemplateColumns: `repeat(${items.length}, 177px)` }}

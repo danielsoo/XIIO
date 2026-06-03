@@ -14,6 +14,7 @@ export const MOCKUP_CONTENT_INSET = {
 export const APP_SIDEBAR_IMPLEMENTATION_PX = 192;
 export const APP_CONTENT_BOUNDARY_INSET_PX =
   MOCKUP_CONTENT_INSET.left - APP_SIDEBAR_IMPLEMENTATION_PX;
+export const APP_CONTENT_RIGHT_MARGIN_PX = MOCKUP_CONTENT_INSET.rightMargin;
 
 /** Measured layout px on 001 mockup */
 export const MOCKUP_MEASURES = {

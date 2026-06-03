@@ -19,7 +19,7 @@ export default function HomeFeaturedStoryPanel({
   activeIndex = 0,
 }: Props) {
   return (
-    <div className="flex flex-col items-end text-right">
+    <div className="flex max-w-full flex-col items-end text-right">
       <p className={MOCKUP_HOME.featuredLabel}>{label}</p>
       <div className="flex items-start justify-end gap-3">
         <div className="min-w-0 text-right">

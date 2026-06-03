@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
+import { MOCKUP_CONTENT_INSET, MOCKUP_MEASURES } from "@/lib/mockupLayout";
 
 export type HeroWaveRect = {
   /** px from hero section left edge to image strip start */
@@ -30,7 +30,7 @@ const MIN_STRIP_WIDTH = 200;
 
 const LG_FALLBACK: HeroWaveRect = {
   insetLeft: MOCKUP_MEASURES.heroTextColWidth,
-  insetRight: 0,
+  insetRight: MOCKUP_CONTENT_INSET.rightMargin,
   height: 400,
   backdropTop: MOCKUP_MEASURES.heroBackdropTopOffsetLg,
   backdropExtendBottom: MOCKUP_MEASURES.heroBackdropExtendBottomLg,
@@ -81,7 +81,7 @@ export function HeroWaveLayoutProvider({ children }: { children: ReactNode }) {
 
     const sectionWidth = Math.round(sr.width);
     let insetLeft: number = MOCKUP_MEASURES.heroTextColWidth;
-    const insetRight = 0;
+    const insetRight = MOCKUP_CONTENT_INSET.rightMargin;
     const maxInsetLeft = Math.max(0, sectionWidth - MIN_STRIP_WIDTH - insetRight);
     insetLeft = Math.min(insetLeft, maxInsetLeft);
 
