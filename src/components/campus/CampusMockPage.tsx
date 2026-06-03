@@ -48,13 +48,23 @@ function splitSchoolName(name: string): { main: string; sub?: string } {
   return { main: name };
 }
 
-function SchoolNameBlock({ name }: { name: string }) {
+function SchoolNameBlock({
+  name,
+  variant = "default",
+}: {
+  name: string;
+  variant?: "default" | "active";
+}) {
   const { main, sub } = splitSchoolName(name);
+  const mainClass =
+    variant === "active" ? MOCKUP_CAMPUS.activeSchoolNameMain : MOCKUP_CAMPUS.schoolNameMain;
+  const subClass =
+    variant === "active" ? MOCKUP_CAMPUS.activeSchoolNameSub : MOCKUP_CAMPUS.schoolNameSub;
 
   return (
     <div className="text-center">
-      <p className={MOCKUP_CAMPUS.schoolNameMain}>{main}</p>
-      {sub ? <p className={MOCKUP_CAMPUS.schoolNameSub}>{sub}</p> : null}
+      <p className={mainClass}>{main}</p>
+      {sub ? <p className={subClass}>{sub}</p> : null}
     </div>
   );
 }
@@ -117,37 +127,33 @@ function SchoolLogo({
   );
 }
 
-function ActiveBattleSchoolSide({
+function ActiveBattleSchoolCluster({
   side,
   school,
-  filmsVotesLabel,
 }: {
   side: "left" | "right";
   school: CampusSchool;
-  filmsVotesLabel: string;
 }) {
   const isLeft = side === "left";
+  const wrapClass = isLeft
+    ? "flex min-w-0 flex-1 max-w-[42%] justify-end pr-1 sm:pr-4"
+    : "flex min-w-0 flex-1 max-w-[42%] justify-start pl-1 sm:pl-4";
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center">
+    <div className={wrapClass}>
       <div className={`${MOCKUP_CAMPUS.activeSchoolRow} justify-center`}>
         {isLeft ? (
           <>
-            <SchoolNameBlock name={school.name} />
-            <SchoolLogo school={school} size={80} variant="mark" />
+            <SchoolNameBlock name={school.name} variant="active" />
+            <SchoolLogo school={school} size={128} variant="mark" />
           </>
         ) : (
           <>
-            <SchoolLogo school={school} size={80} variant="mark" />
-            <SchoolNameBlock name={school.name} />
+            <SchoolLogo school={school} size={128} variant="mark" />
+            <SchoolNameBlock name={school.name} variant="active" />
           </>
         )}
       </div>
-      <p
-        className={`${MOCKUP_CAMPUS.activeSchoolStats} w-full ${isLeft ? "text-left" : "text-right"}`}
-      >
-        {filmsVotesLabel}
-      </p>
     </div>
   );
 }
@@ -159,6 +165,7 @@ function ActiveBattleCountdown({
   hrsLabel,
   minsLabel,
   secsLabel,
+  variant = "default",
 }: {
   countdown: { days: number; hours: number; mins: number; secs: number };
   votingEndsLabel: string;
@@ -166,12 +173,25 @@ function ActiveBattleCountdown({
   hrsLabel: string;
   minsLabel: string;
   secsLabel: string;
+  variant?: "default" | "compact";
 }) {
+  const compact = variant === "compact";
+  const labelClass = compact
+    ? MOCKUP_CAMPUS.activeCountdownLabel
+    : `${MOCKUP_CAMPUS.countdownLabel} mb-2`;
+  const digitsClass = compact
+    ? MOCKUP_CAMPUS.activeCountdownDigits
+    : `${MOCKUP_CAMPUS.countdownDigits} text-xl sm:text-2xl`;
+
   return (
-    <div className="flex w-full max-w-[200px] flex-col items-center text-center">
-      <p className={`${MOCKUP_CAMPUS.countdownLabel} mb-2`}>{votingEndsLabel}</p>
+    <div
+      className={`flex shrink-0 flex-col items-center text-center ${
+        compact ? "w-full max-w-[min(100%,280px)] px-1" : "w-full max-w-[200px]"
+      }`}
+    >
+      <p className={labelClass}>{votingEndsLabel}</p>
       <div
-        className={`grid w-full grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] items-center gap-1 ${MOCKUP_CAMPUS.countdownDigits} text-xl sm:text-2xl`}
+        className={`grid w-full grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] items-center gap-1 ${digitsClass}`}
       >
         <span className="text-center">{pad(countdown.days)}</span>
         <span className="text-white/30">:</span>
@@ -181,7 +201,7 @@ function ActiveBattleCountdown({
         <span className="text-white/30">:</span>
         <span className="text-center">{pad(countdown.secs)}</span>
       </div>
-      <div className="mt-1.5 grid w-full grid-cols-4 gap-1">
+      <div className={`grid w-full grid-cols-4 gap-1 ${compact ? "mt-1" : "mt-1.5"}`}>
         <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>{daysLabel}</span>
         <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>{hrsLabel}</span>
         <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>{minsLabel}</span>
@@ -336,29 +356,28 @@ export default function CampusMockPage() {
                 battleId="active"
                 variant="active"
               />
-              <div className="relative z-10">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <ActiveBattleSchoolSide
-                    side="left"
-                    school={schoolA}
-                    filmsVotesLabel={filmsVotesA}
+              <div className="relative z-10 flex flex-1 flex-col min-h-0">
+                <div className={MOCKUP_CAMPUS.activeBattleHero}>
+                  <ActiveBattleSchoolCluster side="left" school={schoolA} />
+                  <BattleVsRadar size="active" />
+                  <ActiveBattleSchoolCluster side="right" school={schoolB} />
+                </div>
+                <div className={MOCKUP_CAMPUS.activeBattleFooter}>
+                  <p className={`${MOCKUP_CAMPUS.activeBattleFooterStats} text-left`}>
+                    {filmsVotesA}
+                  </p>
+                  <ActiveBattleCountdown
+                    variant="compact"
+                    countdown={countdown}
+                    votingEndsLabel={t("campus.mock.votingEnds")}
+                    daysLabel={t("campus.mock.days")}
+                    hrsLabel={t("campus.mock.hrs")}
+                    minsLabel={t("campus.mock.mins")}
+                    secsLabel={t("campus.mock.secs")}
                   />
-                  <div className="flex shrink-0 flex-col items-center gap-4 px-1 pt-1">
-                    <BattleVsRadar />
-                    <ActiveBattleCountdown
-                      countdown={countdown}
-                      votingEndsLabel={t("campus.mock.votingEnds")}
-                      daysLabel={t("campus.mock.days")}
-                      hrsLabel={t("campus.mock.hrs")}
-                      minsLabel={t("campus.mock.mins")}
-                      secsLabel={t("campus.mock.secs")}
-                    />
-                  </div>
-                  <ActiveBattleSchoolSide
-                    side="right"
-                    school={schoolB}
-                    filmsVotesLabel={filmsVotesB}
-                  />
+                  <p className={`${MOCKUP_CAMPUS.activeBattleFooterStats} text-right`}>
+                    {filmsVotesB}
+                  </p>
                 </div>
               </div>
             </div>

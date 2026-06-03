@@ -2,9 +2,18 @@
 
 import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
 
-export default function BattleVsRadar() {
+type Props = {
+  size?: "default" | "active";
+};
+
+export default function BattleVsRadar({ size = "default" }: Props) {
+  const boxClass =
+    size === "active"
+      ? "h-[88px] w-[88px] sm:h-[96px] sm:w-[96px]"
+      : "h-[72px] w-[72px] sm:h-[88px] sm:w-[88px]";
+
   return (
-    <div className="relative flex h-[72px] w-[72px] shrink-0 items-center justify-center sm:h-[88px] sm:w-[88px]">
+    <div className={`relative flex shrink-0 items-center justify-center ${boxClass}`}>
       <svg
         className="absolute inset-0 h-full w-full text-white/15"
         viewBox="0 0 88 88"
