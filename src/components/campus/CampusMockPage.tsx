@@ -51,18 +51,22 @@ function splitSchoolName(name: string): { main: string; sub?: string } {
 function SchoolNameBlock({
   name,
   variant = "default",
+  align = "center",
 }: {
   name: string;
   variant?: "default" | "active";
+  align?: "left" | "center" | "right";
 }) {
   const { main, sub } = splitSchoolName(name);
   const mainClass =
     variant === "active" ? MOCKUP_CAMPUS.activeSchoolNameMain : MOCKUP_CAMPUS.schoolNameMain;
   const subClass =
     variant === "active" ? MOCKUP_CAMPUS.activeSchoolNameSub : MOCKUP_CAMPUS.schoolNameSub;
+  const alignClass =
+    align === "left" ? "text-left" : align === "right" ? "text-right" : "text-center";
 
   return (
-    <div className="text-center">
+    <div className={alignClass}>
       <p className={mainClass}>{main}</p>
       {sub ? <p className={subClass}>{sub}</p> : null}
     </div>
@@ -144,13 +148,13 @@ function ActiveBattleSchoolCluster({
       <div className={`${MOCKUP_CAMPUS.activeSchoolRow} justify-center`}>
         {isLeft ? (
           <>
-            <SchoolNameBlock name={school.name} variant="active" />
+            <SchoolNameBlock name={school.name} variant="active" align="right" />
             <SchoolLogo school={school} size={128} variant="mark" />
           </>
         ) : (
           <>
             <SchoolLogo school={school} size={128} variant="mark" />
-            <SchoolNameBlock name={school.name} variant="active" />
+            <SchoolNameBlock name={school.name} variant="active" align="left" />
           </>
         )}
       </div>
