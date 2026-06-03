@@ -32,7 +32,7 @@ const LG_FALLBACK: HeroWaveRect = {
   insetLeft: MOCKUP_MEASURES.heroTextColWidth,
   insetRight: 0,
   height: 400,
-  backdropTop: MOCKUP_MEASURES.heroBackdropTopOffsetLg,
+  backdropTop: 0,
   backdropExtendBottom: MOCKUP_MEASURES.heroBackdropExtendBottomLg,
 };
 
@@ -91,7 +91,7 @@ export function HeroWaveLayoutProvider({ children }: { children: ReactNode }) {
       insetLeft,
       insetRight,
       height,
-      backdropTop: MOCKUP_MEASURES.heroBackdropTopOffsetLg,
+      backdropTop: 0,
       backdropExtendBottom: MOCKUP_MEASURES.heroBackdropExtendBottomLg,
     });
   }, []);

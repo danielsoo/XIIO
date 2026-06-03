@@ -39,7 +39,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const isHomeChrome = pathname === "/";
+  const isHeroMockPage = pathname === "/" || pathname === "/school-battle";
   const [profile, setProfile] = useState<UserProfileDoc | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -71,7 +71,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
   return (
     <header
       className={`sticky top-0 z-30 flex min-w-0 items-center gap-3 px-4 lg:pl-0 ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.topBarHeight} ${
-        isHomeChrome ? "bg-transparent backdrop-blur-none" : "bg-xiio-bg/90 backdrop-blur-md"
+        isHeroMockPage ? "bg-transparent backdrop-blur-none" : "bg-xiio-bg/90 backdrop-blur-md"
       }`}
     >
       <button

@@ -2,9 +2,12 @@
 
 import Image from "next/image";
 import {
+  heroBackdropStripHeight,
   heroDiagonalGradient,
   heroFullBleedMaskStyle,
   heroMobileVerticalGradient,
+  heroPhotoBottomExtensionFade,
+  heroPhotoTopExtensionFade,
 } from "@/lib/homeHeroLayout";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
@@ -108,8 +111,7 @@ export default function HeroLandscapeBackdrop({
   if (variant === "home") {
     const stripWidth = `calc(100% - ${waveRect.insetLeft}px - ${waveRect.insetRight}px)`;
 
-    const backdropHeight =
-      waveRect.height - waveRect.backdropTop + waveRect.backdropExtendBottom;
+    const backdropHeight = heroBackdropStripHeight(waveRect);
 
     return (
       <div
@@ -138,7 +140,14 @@ export default function HeroLandscapeBackdrop({
           maskVariant="none"
           variant="home"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20 pointer-events-none" />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: heroPhotoTopExtensionFade(rgbTuple) }}
+        />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: heroPhotoBottomExtensionFade() }}
+        />
       </div>
     );
   }

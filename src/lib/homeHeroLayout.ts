@@ -4,7 +4,8 @@ import {
   rgbTupleToCssVar,
   type RgbTuple,
 } from "@/lib/homeHeroColors";
-import { MOCKUP_FRAME, MOCKUP_MEASURES } from "@/lib/mockupLayout";
+import { APP_MAIN_BG, MOCKUP_FRAME, MOCKUP_MEASURES } from "@/lib/mockupLayout";
+import type { HeroWaveRect } from "@/context/HeroWaveLayoutContext";
 
 /** 1536×1024 목업 기준 — mockupLayout과 동일 px */
 export const HERO_DESIGN = {
@@ -51,6 +52,55 @@ export function heroDiagonalGradient(
     rgba(${rgb}, 0.45) ${mid}%,
     rgba(${rgb}, 0.12) ${late}%,
     transparent 100%)`;
+}
+
+/** Photo strip height — extends behind TopBar; not a crop mask */
+export function heroBackdropStripHeight(waveRect: HeroWaveRect): number {
+  return (
+    waveRect.height + MOCKUP_MEASURES.topBarHeight + waveRect.backdropExtendBottom
+  );
+}
+
+/** Text/hero grid band — unchanged band below header */
+export function heroTextBandMinHeight(waveRect: HeroWaveRect): number {
+  return (
+    waveRect.height -
+    MOCKUP_MEASURES.heroBackdropTopOffsetLg +
+    waveRect.backdropExtendBottom
+  );
+}
+
+export function heroTextBandMarginTop(): number {
+  return MOCKUP_MEASURES.heroBackdropTopOffsetLg - MOCKUP_MEASURES.topBarHeight;
+}
+
+export function heroSectionMinHeight(waveRect: HeroWaveRect): number {
+  return (
+    heroTextBandMinHeight(waveRect) +
+    MOCKUP_MEASURES.topBarHeight -
+    MOCKUP_MEASURES.heroBackdropTopOffsetLg
+  );
+}
+
+/** Long top fade — theme blue extends into transparent header */
+export function heroPhotoTopExtensionFade(rgbTuple: RgbTuple = DEFAULT_HERO_RGB): string {
+  const rgb = heroRgbCss(rgbTuple);
+  return `linear-gradient(to bottom,
+    rgba(${rgb}, 0.65) 0%,
+    rgba(${rgb}, 0.38) 12%,
+    rgba(${rgb}, 0.18) 22%,
+    rgba(${rgb}, 0.08) 30%,
+    transparent 38%)`;
+}
+
+/** Long bottom fade — into main page background */
+export function heroPhotoBottomExtensionFade(): string {
+  return `linear-gradient(to bottom,
+    transparent 0%,
+    transparent 52%,
+    rgba(2, 4, 8, 0.35) 68%,
+    rgba(2, 4, 8, 0.72) 82%,
+    ${APP_MAIN_BG} 100%)`;
 }
 
 export function heroMobileVerticalGradient(rgbTuple: RgbTuple = DEFAULT_HERO_RGB): string {

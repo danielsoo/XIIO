@@ -19,7 +19,12 @@ import {
   PAST_BATTLES,
   type CampusSchool,
 } from "@/lib/campusMockData";
-import { HERO_DESIGN } from "@/lib/homeHeroLayout";
+import {
+  HERO_DESIGN,
+  heroSectionMinHeight,
+  heroTextBandMarginTop,
+  heroTextBandMinHeight,
+} from "@/lib/homeHeroLayout";
 import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
@@ -282,12 +287,10 @@ export default function CampusMockPage() {
     };
   }, []);
 
-  const backdropBandHeight =
-    waveRect.height - waveRect.backdropTop + waveRect.backdropExtendBottom;
   const heroGridBandStyle = isLg
     ? {
-        marginTop: waveRect.backdropTop - MOCKUP_MEASURES.topBarHeight,
-        minHeight: backdropBandHeight,
+        marginTop: heroTextBandMarginTop(),
+        minHeight: heroTextBandMinHeight(waveRect),
       }
     : undefined;
 
@@ -305,7 +308,7 @@ export default function CampusMockPage() {
       <section
         ref={setHeroSectionRef}
         className={`relative isolate flex flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
-        style={{ minHeight: waveRect.height + waveRect.backdropExtendBottom }}
+        style={{ minHeight: heroSectionMinHeight(waveRect) }}
       >
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}

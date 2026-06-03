@@ -20,8 +20,12 @@ import {
   SURFACE_STORIES,
 } from "@/lib/homeMockData";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
-import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
-import { HERO_DESIGN } from "@/lib/homeHeroLayout";
+import {
+  HERO_DESIGN,
+  heroSectionMinHeight,
+  heroTextBandMarginTop,
+  heroTextBandMinHeight,
+} from "@/lib/homeHeroLayout";
 
 export default function HomeMockPage() {
   const { t } = useTranslations();
@@ -97,12 +101,10 @@ export default function HomeMockPage() {
 
   const watchHref = user ? "/movies" : "/login";
 
-  const backdropBandHeight =
-    waveRect.height - waveRect.backdropTop + waveRect.backdropExtendBottom;
   const heroGridBandStyle = isLg
     ? {
-        marginTop: waveRect.backdropTop - MOCKUP_MEASURES.topBarHeight,
-        minHeight: backdropBandHeight,
+        marginTop: heroTextBandMarginTop(),
+        minHeight: heroTextBandMinHeight(waveRect),
       }
     : undefined;
 
@@ -111,7 +113,7 @@ export default function HomeMockPage() {
       <section
         ref={setHeroSectionRef}
         className={`relative isolate flex min-w-0 w-full flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
-        style={{ minHeight: waveRect.height + waveRect.backdropExtendBottom }}
+        style={{ minHeight: heroSectionMinHeight(waveRect) }}
       >
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
