@@ -14,7 +14,61 @@ type Props = {
   viewAllLabel: string;
   items: HomeStoryItem[];
   variant?: "featured" | "selects";
+  headerOnly?: boolean;
+  hideHeader?: boolean;
 };
+
+function SectionHeaderRow({
+  title,
+  viewAllHref,
+  viewAllLabel,
+  onScroll,
+  showScrollButton,
+}: {
+  title: string;
+  viewAllHref: string;
+  viewAllLabel: string;
+  onScroll?: () => void;
+  showScrollButton?: boolean;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between gap-4 flex-nowrap w-full"
+      style={MOCKUP_HOME_STYLES.featuredRowWidth}
+    >
+      <div className="flex items-center shrink-0 min-w-0" style={{ gap: framePx(6) }}>
+        <h2
+          className="font-semibold text-white whitespace-nowrap"
+          style={MOCKUP_HOME_STYLES.sectionTitle}
+        >
+          {title}
+        </h2>
+        <IconChevronRight
+          className="text-sky-400 shrink-0 w-[calc(14px*var(--frame-scale))] h-[calc(14px*var(--frame-scale))]"
+        />
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <Link
+          href={viewAllHref}
+          className="text-white/40 hover:text-white/70 transition"
+          style={MOCKUP_HOME_STYLES.viewAllLink}
+        >
+          {viewAllLabel}
+        </Link>
+        {showScrollButton ? (
+          <button
+            type="button"
+            onClick={onScroll}
+            className="w-8 h-8 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 lg:hidden"
+            aria-label="Scroll next"
+          >
+            <IconScrollNext />
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 export default function HomeContentRow({
   title,
@@ -22,6 +76,8 @@ export default function HomeContentRow({
   viewAllLabel,
   items,
   variant = "featured",
+  headerOnly = false,
+  hideHeader = false,
 }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const isFeatured = variant === "featured";
@@ -41,32 +97,27 @@ export default function HomeContentRow({
     gridTemplateColumns: `repeat(${items.length}, ${framePx(cardWidth)})`,
   };
 
+  if (headerOnly) {
+    return (
+      <SectionHeaderRow
+        title={title}
+        viewAllHref={viewAllHref}
+        viewAllLabel={viewAllLabel}
+      />
+    );
+  }
+
   return (
-    <section className="space-y-4 min-w-0 w-full">
-      <div className="flex items-center justify-between gap-4 flex-nowrap">
-        <div className="flex items-center gap-1.5 shrink-0 min-w-0">
-          <h2
-            className="font-semibold text-white whitespace-nowrap"
-            style={MOCKUP_HOME_STYLES.sectionTitle}
-          >
-            {title}
-          </h2>
-          <IconChevronRight className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Link href={viewAllHref} className="text-xs text-white/40 hover:text-white/70 transition">
-            {viewAllLabel}
-          </Link>
-          <button
-            type="button"
-            onClick={scroll}
-            className="w-8 h-8 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 lg:hidden"
-            aria-label="Scroll next"
-          >
-            <IconScrollNext />
-          </button>
-        </div>
-      </div>
+    <section className={`min-w-0 w-full ${hideHeader ? "" : "space-y-4"}`}>
+      {!hideHeader ? (
+        <SectionHeaderRow
+          title={title}
+          viewAllHref={viewAllHref}
+          viewAllLabel={viewAllLabel}
+          onScroll={scroll}
+          showScrollButton
+        />
+      ) : null}
 
       <div className="hidden lg:grid" style={gridStyle}>
         {items.map((item) => (

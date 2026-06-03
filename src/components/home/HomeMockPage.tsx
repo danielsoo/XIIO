@@ -71,8 +71,8 @@ export default function HomeMockPage() {
     <main className={`min-h-screen ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
       <section
         ref={heroSectionRef}
-        className="relative overflow-hidden pb-10 pt-4 lg:pt-6 lg:pr-[calc(76px*var(--frame-scale))]"
-        style={MOCKUP_HOME_STYLES.heroMinHeight}
+        className="relative flex flex-col overflow-hidden -mt-[calc(60px*var(--frame-scale))] pt-[calc(60px*var(--frame-scale))] lg:pr-[calc(76px*var(--frame-scale))]"
+        style={MOCKUP_HOME_STYLES.heroSection}
       >
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
@@ -82,61 +82,78 @@ export default function HomeMockPage() {
           priority
         />
 
-        <div
-          className="relative z-10 w-full lg:grid lg:items-end"
-          style={MOCKUP_HOME_STYLES.heroGrid}
-        >
-          <div ref={heroTextRef} className="flex flex-col justify-end pb-6 lg:pb-10">
-            <h1
-              className="font-sans font-bold leading-[1.08] text-white mb-4 tracking-tight"
-              style={MOCKUP_HOME_STYLES.heroTitle}
+        <div className="relative z-10 flex flex-1 flex-col justify-end" style={MOCKUP_HOME_STYLES.heroContentTop}>
+          <div
+            className="w-full lg:grid lg:items-end"
+            style={MOCKUP_HOME_STYLES.heroGrid}
+          >
+            <div
+              ref={heroTextRef}
+              className="flex flex-col justify-end px-4 lg:px-0"
+              style={MOCKUP_HOME_STYLES.heroTextBottom}
             >
-              {t("home.mock.heroLine1")}{" "}
-              <em className="font-serif italic" style={{ color: MOCKUP_HOME.accentBlue }}>
-                {t("home.mock.heroAccent")}
-              </em>{" "}
-              {t("home.mock.heroLine2")}
-            </h1>
-            <p
-              className="text-white/55 max-w-md mb-7 leading-relaxed"
-              style={MOCKUP_HOME_STYLES.heroSubtitle}
-            >
-              {t("home.mock.heroSubtitle")}
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href={watchHref}
-                className="inline-flex items-center gap-2 rounded-full bg-white text-black px-6 text-sm font-semibold hover:bg-white/90 transition"
-                style={MOCKUP_HOME_STYLES.ctaButton}
+              <h1
+                className="font-serif font-normal leading-[1.08] text-white mb-4 tracking-tight"
+                style={MOCKUP_HOME_STYLES.heroTitle}
               >
-                <IconPlay className="w-3.5 h-3.5" />
-                {t("home.mock.startWatching")}
-              </Link>
-              <Link
-                href="/uploader/upload"
-                className="inline-flex items-center rounded-full border border-white/30 text-white px-6 text-sm font-medium hover:bg-white/[0.06] transition"
-                style={MOCKUP_HOME_STYLES.ctaButton}
+                {t("home.mock.heroLine1")}{" "}
+                <em className="italic" style={{ color: MOCKUP_HOME.accentBlue }}>
+                  {t("home.mock.heroAccent")}
+                </em>{" "}
+                {t("home.mock.heroLine2")}
+              </h1>
+              <p
+                className="text-white/55 mb-7 leading-relaxed"
+                style={MOCKUP_HOME_STYLES.heroSubtitle}
               >
-                {t("home.mock.uploadStory")}
-              </Link>
+                {t("home.mock.heroSubtitle")}
+              </p>
+              <div className="flex flex-wrap items-center" style={MOCKUP_HOME_STYLES.ctaRow}>
+                <Link
+                  href={watchHref}
+                  className="inline-flex items-center gap-2 rounded-full bg-white text-black font-semibold hover:bg-white/90 transition"
+                  style={MOCKUP_HOME_STYLES.ctaButton}
+                >
+                  <IconPlay className="w-[calc(14px*var(--frame-scale))] h-[calc(14px*var(--frame-scale))]" />
+                  {t("home.mock.startWatching")}
+                </Link>
+                <Link
+                  href="/uploader/upload"
+                  className="inline-flex items-center rounded-full border border-white/30 text-white font-medium hover:bg-white/[0.06] transition"
+                  style={MOCKUP_HOME_STYLES.ctaButton}
+                >
+                  {t("home.mock.uploadStory")}
+                </Link>
+              </div>
+            </div>
+
+            <div className="hidden lg:flex flex-col justify-end items-end" style={MOCKUP_HOME_STYLES.heroTextBottom}>
+              <HomeFeaturedStoryPanel
+                label={t("home.mock.featuredLabel")}
+                title={featuredTitle}
+                meta={featuredMeta}
+              />
             </div>
           </div>
 
-          <div className="hidden lg:flex flex-col justify-end items-end pb-6">
+          <div className="lg:hidden relative z-10 mt-8 px-4">
             <HomeFeaturedStoryPanel
               label={t("home.mock.featuredLabel")}
               title={featuredTitle}
               meta={featuredMeta}
             />
           </div>
-        </div>
 
-        <div className="lg:hidden relative z-10 mt-8 px-4">
-          <HomeFeaturedStoryPanel
-            label={t("home.mock.featuredLabel")}
-            title={featuredTitle}
-            meta={featuredMeta}
-          />
+          <div className="relative z-10 px-4 lg:px-0" style={MOCKUP_HOME_STYLES.heroToFeaturedHeader}>
+            <HomeContentRow
+              headerOnly
+              title={t("home.mock.featuredStories")}
+              viewAllHref="/movies"
+              viewAllLabel={t("home.mock.viewAll")}
+              items={FEATURED_STORIES}
+              variant="featured"
+            />
+          </div>
         </div>
       </section>
 
@@ -144,13 +161,16 @@ export default function HomeMockPage() {
         className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} pb-16 flex flex-col lg:pr-[calc(76px*var(--frame-scale))]`}
         style={MOCKUP_HOME_STYLES.sectionGap}
       >
-        <HomeContentRow
+        <div style={MOCKUP_HOME_STYLES.featuredHeaderToCards}>
+          <HomeContentRow
+            hideHeader
           title={t("home.mock.featuredStories")}
           viewAllHref="/movies"
           viewAllLabel={t("home.mock.viewAll")}
           items={FEATURED_STORIES}
           variant="featured"
-        />
+          />
+        </div>
 
         <HomeSurfaceCampusRow
           title={t("home.mock.newToSurface")}

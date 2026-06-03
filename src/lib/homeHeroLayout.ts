@@ -19,7 +19,7 @@ export const HERO_DESIGN = {
   gradAngleDeg: 118,
   gradFlatPercent: 39,
   gradStartOffsetPercent: 5,
-  bottomFeatherStartPercent: 52,
+  bottomFeatherStartPercent: 58,
   heroBlue: DEFAULT_HOME_HERO_THEME.heroHex,
   ctaBlue: DEFAULT_HOME_HERO_THEME.ctaHex,
   ctaBlueHover: DEFAULT_HOME_HERO_THEME.ctaHoverHex,

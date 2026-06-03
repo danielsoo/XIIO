@@ -2,23 +2,45 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { IconBell, IconSearch } from "@/components/icons/MockupIcons";
 import { getUserProfile } from "@/lib/userProfile";
 import { MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
+import { framePx } from "@/lib/mockupLayout";
 import type { UserProfileDoc } from "@/types/user";
 
 type Props = {
   onMenuOpen: () => void;
 };
 
+function MockProfileIcon() {
+  return (
+    <svg
+      className="w-[calc(18px*var(--frame-scale))] h-[calc(18px*var(--frame-scale))] text-white/60"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
+    </svg>
+  );
+}
+
 export default function AppTopBar({ onMenuOpen }: Props) {
   const { t } = useTranslations();
   const { user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isHomeChrome = pathname === "/";
   const [profile, setProfile] = useState<UserProfileDoc | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -49,7 +71,9 @@ export default function AppTopBar({ onMenuOpen }: Props) {
 
   return (
     <header
-      className="sticky top-0 z-30 flex items-center gap-3 px-4 lg:pl-0 lg:pr-[calc(76px*var(--frame-scale))] bg-[#05070A]/90 backdrop-blur-md"
+      className={`sticky top-0 z-30 flex items-center gap-3 px-4 lg:pl-0 lg:pr-[calc(76px*var(--frame-scale))] ${
+        isHomeChrome ? "bg-transparent backdrop-blur-none" : "bg-[#05070A]/90 backdrop-blur-md"
+      }`}
       style={MOCKUP_HOME_STYLES.topBarHeight}
     >
       <button
@@ -63,15 +87,20 @@ export default function AppTopBar({ onMenuOpen }: Props) {
         </svg>
       </button>
 
-      <div className="flex-1 flex justify-center max-w-2xl mx-auto">
-        <label className="relative w-full hidden sm:block">
+      <div className="flex-1 flex justify-center">
+        <label className="relative hidden sm:block" style={MOCKUP_HOME_STYLES.searchBar}>
           <span className="sr-only">{t("topBar.searchLabel")}</span>
-          <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <IconSearch className="absolute top-1/2 -translate-y-1/2 left-[calc(16px*var(--frame-scale))] w-[calc(16px*var(--frame-scale))] h-[calc(16px*var(--frame-scale))] text-white/30" />
           <input
             type="search"
             readOnly
             placeholder={t("topBar.searchPlaceholder")}
-            className="w-full h-10 rounded-full bg-white/[0.04] border border-white/[0.08] py-2 pl-11 pr-4 text-sm text-white placeholder:text-white/30 cursor-default"
+            className="w-full h-full rounded-full bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 cursor-default"
+            style={{
+              fontSize: MOCKUP_HOME_STYLES.searchBar.fontSize,
+              paddingLeft: framePx(40),
+              paddingRight: framePx(16),
+            }}
           />
         </label>
       </div>
@@ -79,7 +108,8 @@ export default function AppTopBar({ onMenuOpen }: Props) {
       <div className="flex items-center gap-1 shrink-0">
         <button
           type="button"
-          className="p-2.5 rounded-full text-white/50 hover:text-white hover:bg-white/5 transition"
+          className="rounded-full text-white/50 hover:text-white hover:bg-white/5 transition"
+          style={{ padding: framePx(10) }}
           aria-label={t("topBar.notifications")}
         >
           <IconBell />
@@ -133,9 +163,11 @@ export default function AppTopBar({ onMenuOpen }: Props) {
         ) : (
           <Link
             href="/login"
-            className="hidden sm:inline-flex text-xs px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-white font-medium"
+            className="rounded-full border border-white/20 flex items-center justify-center hover:bg-white/5 transition"
+            style={{ width: framePx(32), height: framePx(32) }}
+            aria-label={t("common.login")}
           >
-            {t("common.login")}
+            <MockProfileIcon />
           </Link>
         )}
       </div>
