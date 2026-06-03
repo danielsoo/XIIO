@@ -20,6 +20,7 @@ import {
   SURFACE_STORIES,
 } from "@/lib/homeMockData";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
+import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import { HERO_DESIGN } from "@/lib/homeHeroLayout";
 
 export default function HomeMockPage() {
@@ -33,6 +34,7 @@ export default function HomeMockPage() {
   const [gradStart, setGradStart] = useState(
     HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent
   );
+  const [isLg, setIsLg] = useState(false);
 
   const setHeroSectionRef = useCallback(
     (el: HTMLElement | null) => {
@@ -55,6 +57,14 @@ export default function HomeMockPage() {
   const featuredMeta = featuredPromo
     ? `Short Film • promo`
     : `${DEFAULT_FEATURED_STORY.category} • ${DEFAULT_FEATURED_STORY.duration}`;
+
+  useLayoutEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const syncLg = () => setIsLg(mq.matches);
+    syncLg();
+    mq.addEventListener("change", syncLg);
+    return () => mq.removeEventListener("change", syncLg);
+  }, []);
 
   useLayoutEffect(() => {
     const section = heroSectionRef.current;
@@ -87,6 +97,15 @@ export default function HomeMockPage() {
 
   const watchHref = user ? "/movies" : "/login";
 
+  const backdropBandHeight =
+    waveRect.height - waveRect.backdropTop + waveRect.backdropExtendBottom;
+  const heroGridBandStyle = isLg
+    ? {
+        marginTop: waveRect.backdropTop - MOCKUP_MEASURES.topBarHeight,
+        minHeight: backdropBandHeight,
+      }
+    : undefined;
+
   return (
     <main className={`min-h-screen ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
       <section
@@ -106,10 +125,13 @@ export default function HomeMockPage() {
           className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroContentTop}`}
           style={{ minHeight: waveRect.height }}
         >
-          <div className={`flex-1 w-full ${MOCKUP_HOME.heroGrid}`}>
+          <div
+            className={`flex-1 w-full ${MOCKUP_HOME.heroGrid}`}
+            style={heroGridBandStyle}
+          >
             <div
               ref={setHeroTextRef}
-              className={`flex flex-col justify-end px-4 lg:px-0 ${MOCKUP_HOME.heroTextBottom}`}
+              className={`${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
             >
               <h1 className={MOCKUP_HOME.heroTitle}>
                 <span className="block text-white">{t("home.mock.heroLine1")}</span>
