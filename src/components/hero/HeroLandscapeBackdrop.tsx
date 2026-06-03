@@ -15,6 +15,7 @@ import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 import {
   resolveHeroBackground,
   type HeroBackgroundScope,
+  type HeroTopBleed,
 } from "@/lib/heroBackgroundPresets";
 import type { RgbTuple } from "@/lib/homeHeroColors";
 
@@ -96,12 +97,14 @@ function HeroPhotoLayers({
   heroImagePosition,
   stripWidth,
   stripHeightPx,
+  topBleed,
   priority,
 }: {
   heroImage: string;
   heroImagePosition: string;
   stripWidth: string;
   stripHeightPx: number;
+  topBleed: HeroTopBleed;
   priority: boolean;
 }) {
   const imageStyle = { objectPosition: heroImagePosition };
@@ -117,7 +120,7 @@ function HeroPhotoLayers({
         style={imageStyle}
         sizes={stripWidth}
       />
-      <div className="absolute inset-0" style={heroPhotoSharpBandMaskStyle(stripHeightPx)}>
+      <div className="absolute inset-0" style={heroPhotoSharpBandMaskStyle(stripHeightPx, topBleed)}>
         <Image
           src={heroImage}
           alt=""
@@ -127,6 +130,9 @@ function HeroPhotoLayers({
           style={imageStyle}
           sizes={stripWidth}
         />
+        {topBleed === "brightSurface" ? (
+          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-transparent pointer-events-none" />
+        ) : null}
       </div>
     </>
   );
@@ -145,10 +151,11 @@ export default function HeroLandscapeBackdrop({
   const { theme } = useHomeHeroTheme();
   const backgroundId =
     backgroundScope === "home" ? theme.homeBackgroundId : theme.campusBackgroundId;
-  const { src: heroImage, objectPosition: heroImagePosition } = resolveHeroBackground(
-    backgroundScope,
-    backgroundId
-  );
+  const {
+    src: heroImage,
+    objectPosition: heroImagePosition,
+    topBleed = "wave",
+  } = resolveHeroBackground(backgroundScope, backgroundId);
 
   if (variant === "home") {
     const stripWidth = `calc(100% - ${waveRect.insetLeft}px - ${waveRect.insetRight}px)`;
@@ -171,6 +178,7 @@ export default function HeroLandscapeBackdrop({
           heroImagePosition={heroImagePosition}
           stripWidth={stripWidth}
           stripHeightPx={backdropHeight}
+          topBleed={topBleed}
           priority={priority}
         />
         <div className="absolute inset-0" style={heroOverlayContentMaskStyle()}>

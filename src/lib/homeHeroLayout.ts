@@ -5,6 +5,7 @@ import {
   type RgbTuple,
 } from "@/lib/homeHeroColors";
 import { APP_MAIN_BG, MOCKUP_FRAME, MOCKUP_MEASURES } from "@/lib/mockupLayout";
+import type { HeroTopBleed } from "@/lib/heroBackgroundPresets";
 import type { HeroWaveRect } from "@/context/HeroWaveLayoutContext";
 
 /** 1536×1024 목업 기준 — mockupLayout과 동일 px */
@@ -98,10 +99,17 @@ function maskStopPercent(px: number, stripHeightPx: number): number {
   return Math.min(100, Math.max(0, (px / stripHeightPx) * 100));
 }
 
+const HERO_TOP_BLEED_BRIGHT_SURFACE_EXTRA_PX = 56;
+
 /** Sharp band — blur bleed ends at top bar + lg content offset (px), not % of strip */
-export function heroPhotoSharpBandMaskStyle(stripHeightPx: number) {
+export function heroPhotoSharpBandMaskStyle(
+  stripHeightPx: number,
+  topBleed: HeroTopBleed = "wave"
+) {
   const sharpBleedEndPx =
-    MOCKUP_MEASURES.topBarHeight + MOCKUP_MEASURES.heroBackdropTopOffsetLg;
+    MOCKUP_MEASURES.topBarHeight +
+    MOCKUP_MEASURES.heroBackdropTopOffsetLg +
+    (topBleed === "brightSurface" ? HERO_TOP_BLEED_BRIGHT_SURFACE_EXTRA_PX : 0);
   const sharpFullStartPx = sharpBleedEndPx + stripHeightPx * 0.18;
   const sharpFadeStartPx = stripHeightPx * 0.82;
 
