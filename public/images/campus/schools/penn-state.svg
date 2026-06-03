@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#041E42"/>
+  <text x="100" y="82" font-family="Georgia,'Times New Roman',serif" font-size="30" font-weight="900" fill="white" text-anchor="middle" dominant-baseline="middle" letter-spacing="4">PENN</text>
+  <text x="100" y="118" font-family="Georgia,'Times New Roman',serif" font-size="30" font-weight="900" fill="white" text-anchor="middle" dominant-baseline="middle" letter-spacing="4">STATE</text>
+  <line x1="44" y1="100" x2="156" y2="100" stroke="white" stroke-width="1" stroke-opacity="0.3"/>
+</svg>
