@@ -92,7 +92,7 @@ export default function HomeMockPage() {
       <section
         ref={setHeroSectionRef}
         className={`relative isolate flex flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
-        style={{ minHeight: waveRect.height }}
+        style={{ minHeight: waveRect.height + waveRect.backdropExtendBottom }}
       >
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
@@ -104,6 +104,7 @@ export default function HomeMockPage() {
 
         <div
           className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroContentTop}`}
+          style={{ minHeight: waveRect.height }}
         >
           <div className={`flex-1 w-full ${MOCKUP_HOME.heroGrid}`}>
             <div

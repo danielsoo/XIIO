@@ -17,7 +17,12 @@ export type HeroWaveRect = {
   insetLeft: number;
   /** px from hero section right edge (e.g. content padding) */
   insetRight: number;
+  /** Content band height aligned to My List bottom */
   height: number;
+  /** Wave backdrop top offset inside hero section */
+  backdropTop: number;
+  /** Extra wave height below My List band (lg) */
+  backdropExtendBottom: number;
 };
 
 const MIN_WAVE_HEIGHT = 240;
@@ -27,12 +32,16 @@ const LG_FALLBACK: HeroWaveRect = {
   insetLeft: MOCKUP_MEASURES.heroTextColWidth,
   insetRight: 0,
   height: 400,
+  backdropTop: MOCKUP_MEASURES.heroBackdropTopOffsetLg,
+  backdropExtendBottom: MOCKUP_MEASURES.heroBackdropExtendBottomLg,
 };
 
 const MOBILE_FALLBACK: HeroWaveRect = {
   insetLeft: 0,
   insetRight: 0,
   height: 280,
+  backdropTop: 0,
+  backdropExtendBottom: 0,
 };
 
 type ContextValue = {
@@ -76,10 +85,14 @@ export function HeroWaveLayoutProvider({ children }: { children: ReactNode }) {
     const maxInsetLeft = Math.max(0, sectionWidth - MIN_STRIP_WIDTH - insetRight);
     insetLeft = Math.min(insetLeft, maxInsetLeft);
 
+    const height = Math.max(MIN_WAVE_HEIGHT, measuredHeight);
+
     setWaveRect({
       insetLeft,
       insetRight,
-      height: Math.max(MIN_WAVE_HEIGHT, measuredHeight),
+      height,
+      backdropTop: MOCKUP_MEASURES.heroBackdropTopOffsetLg,
+      backdropExtendBottom: MOCKUP_MEASURES.heroBackdropExtendBottomLg,
     });
   }, []);
 

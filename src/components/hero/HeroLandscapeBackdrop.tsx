@@ -95,12 +95,17 @@ export default function HeroLandscapeBackdrop({
   if (variant === "home") {
     const stripWidth = `calc(100% - ${waveRect.insetLeft}px - ${waveRect.insetRight}px)`;
 
+    const backdropHeight =
+      waveRect.height - waveRect.backdropTop + waveRect.backdropExtendBottom;
+
     return (
       <div
-        className={`absolute top-0 bottom-0 z-[1] overflow-hidden pointer-events-none ${className}`}
+        className={`absolute z-[1] overflow-hidden pointer-events-none ${className}`}
         style={{
+          top: waveRect.backdropTop,
           left: waveRect.insetLeft,
           right: waveRect.insetRight,
+          height: backdropHeight,
         }}
         aria-hidden
       >
