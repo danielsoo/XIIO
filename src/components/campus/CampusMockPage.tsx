@@ -318,10 +318,13 @@ export default function CampusMockPage() {
           className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroContentTop}`}
           style={{ minHeight: waveRect.height }}
         >
-          <div className="flex flex-1 w-full flex-col justify-center" style={heroGridBandStyle}>
+          <div
+            className={`flex-1 w-full ${MOCKUP_HOME.heroGrid}`}
+            style={heroGridBandStyle}
+          >
             <div
               ref={setHeroTextRef}
-              className={`max-w-3xl ${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
+              className={`min-w-0 ${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
             >
               <p className={MOCKUP_CAMPUS.heroBadge}>{t("campus.mock.badge")}</p>
               <h1 className={MOCKUP_CAMPUS.heroTitle}>{t("campus.mock.title")}</h1>
