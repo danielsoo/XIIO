@@ -54,6 +54,15 @@ export const MOCKUP_MEASURES = {
   sectionTitleSize: 16,
 } as const;
 
+/** Measured on 002 campus mockup */
+export const MOCKUP_CAMPUS_MEASURES = {
+  themeCardWidth: 280,
+  battleCardMinHeight: 280,
+  brandWashOpacity: 0.1,
+  brandLogoOpacityActive: 0.09,
+  brandLogoOpacityCompact: 0.06,
+} as const;
+
 export function pctOfContent(mockupPx: number): number {
   return (mockupPx / MOCKUP_CONTENT) * 100;
 }

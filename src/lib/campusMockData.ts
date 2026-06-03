@@ -42,9 +42,8 @@ export const ACTIVE_BATTLE = {
 };
 
 export const CURRENT_THEME = {
-  title: "BEYOND THE SURFACE",
-  description: "Show us the stories that lie beneath what we see everyday.",
   gradient: "from-cyan-900 via-blue-950 to-black",
+  image: "/images/campus/theme-beyond-surface.webp",
 };
 
 export const PAST_BATTLES: PastBattle[] = [

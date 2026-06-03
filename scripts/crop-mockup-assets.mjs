@@ -5,6 +5,7 @@ import path from "path";
 const HOME_SRC = path.join(process.cwd(), "KakaoTalk_Photo_2026-06-03-01-21-28 001.png");
 const HERO_SRC = path.join(process.cwd(), "KakaoTalk_Photo_2026-06-03-01-21-28 002.png");
 const HOME_OUT = path.join(process.cwd(), "public/images/home");
+const CAMPUS_OUT = path.join(process.cwd(), "public/images/campus");
 const HERO_OUT = path.join(process.cwd(), "public/images/hero-landscape.webp");
 
 /** Measured on 001 home mockup (1536×1024) — card bodies only, no section headers */
@@ -32,6 +33,9 @@ const HOME_CROPS = [
 const HERO_REF_W = 1491;
 const HERO_REF_H = 1055;
 const HERO_CROP = { left: 850, top: 88, width: 630, height: 300 };
+
+/** Measured on 002 campus mockup — Current Theme card diver thumbnail */
+const CAMPUS_THEME_CROP = { file: "theme-beyond-surface.webp", left: 1080, top: 400, width: 280, height: 340 };
 
 function scaleCrop(ref, refW, refH, imgW, imgH) {
   return {
@@ -70,5 +74,15 @@ const heroCrop = scaleCrop(HERO_CROP, HERO_REF_W, HERO_REF_H, heroW, heroH);
 assertCrop(heroCrop, heroW, heroH, "hero-landscape");
 await sharp(HERO_SRC).extract(heroCrop).webp({ quality: 85 }).toFile(HERO_OUT);
 console.log("hero-landscape.webp", heroCrop);
+
+const { file: campusThemeFile, ...campusThemeRef } = CAMPUS_THEME_CROP;
+const campusThemeCrop = scaleCrop(campusThemeRef, HERO_REF_W, HERO_REF_H, heroW, heroH);
+assertCrop(campusThemeCrop, heroW, heroH, campusThemeFile);
+await mkdir(CAMPUS_OUT, { recursive: true });
+await sharp(HERO_SRC)
+  .extract(campusThemeCrop)
+  .webp({ quality: 85 })
+  .toFile(path.join(CAMPUS_OUT, campusThemeFile));
+console.log("campus", campusThemeFile, campusThemeCrop);
 
 console.log("done", { home: `${homeW}x${homeH}`, hero: `${heroW}x${heroH}` });
