@@ -24,8 +24,9 @@ export const MOCKUP_MEASURES = {
   heroMinHeight: 428,
   heroTextColWidth: 376,
   heroColGap: 96,
-  heroTitleSize: 48,
-  heroSubtitleSize: 14,
+  heroTitleSize: 60,
+  heroSubtitleSize: 15,
+  featuredStoryTitleSize: 18,
   ctaHeight: 40,
   ctaPaddingX: 24,
   ctaGap: 12,
@@ -46,7 +47,7 @@ export const MOCKUP_MEASURES = {
   campusBannerHeight: 190,
   surfaceCampusGap: 24,
   sectionGap: 32,
-  sectionTitleSize: 14,
+  sectionTitleSize: 16,
 } as const;
 
 export function pctOfContent(mockupPx: number): number {
