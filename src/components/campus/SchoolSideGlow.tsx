@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties, ReactNode } from "react";
 import type { BrandEffect } from "@/lib/campusBrandEffects";
 import { rgba } from "@/lib/campusBrandColors";
 import { MOCKUP_CAMPUS_MEASURES } from "@/lib/mockupLayout";
@@ -12,6 +13,41 @@ type Props = {
   intensity?: "active" | "compact";
 };
 
+function GlowBlob({
+  className,
+  style,
+  blurClass,
+}: {
+  className: string;
+  style: CSSProperties;
+  blurClass: string;
+}) {
+  return (
+    <div className={`absolute ${className} ${blurClass} scale-110 opacity-90`}>
+      <div className="h-full w-full" style={style} />
+    </div>
+  );
+}
+
+function SideContainer({
+  side,
+  children,
+}: {
+  side: "left" | "right";
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`pointer-events-none absolute inset-y-0 overflow-visible ${
+        side === "left" ? "left-0 w-[62%]" : "right-0 w-[62%]"
+      }`}
+      aria-hidden
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function SchoolSideGlow({
   side,
   colorPrimary,
@@ -20,126 +56,119 @@ export default function SchoolSideGlow({
   intensity = "active",
 }: Props) {
   const compact = intensity === "compact";
-  const blurLg = compact ? 32 : 64;
-  const blurMd = compact ? 24 : 48;
-  const baseOpacity = compact ? 0.45 : 1;
-  const align = side === "left" ? "left" : "right";
+  const wash = compact
+    ? MOCKUP_CAMPUS_MEASURES.clashGlowOpacityCompact
+    : MOCKUP_CAMPUS_MEASURES.brandWashOpacity;
+  const blurLg = compact ? "blur-2xl" : "blur-3xl";
+  const blurMd = compact ? "blur-xl" : "blur-2xl";
   const origin = side === "left" ? "0% 50%" : "100% 50%";
+  const edgeClass = side === "left" ? "-left-[20%]" : "-right-[20%]";
+  const midClass = side === "left" ? "left-[0%]" : "right-[0%]";
+  const innerClass = side === "left" ? "left-[10%]" : "right-[10%]";
 
-  const primaryA = rgba(colorPrimary, 0.42 * baseOpacity);
-  const secondaryA = rgba(colorSecondary, 0.28 * baseOpacity);
-  const primaryB = rgba(colorPrimary, 0.32 * baseOpacity);
+  const primary = (a: number) => rgba(colorPrimary, a * wash);
+  const secondary = (a: number) => rgba(colorSecondary, a * wash);
 
   if (effect === "nebula") {
     return (
-      <div
-        className={`pointer-events-none absolute inset-y-0 ${side === "left" ? "left-0 w-[58%]" : "right-0 w-[58%]"}`}
-        aria-hidden
-      >
-        <div
-          className="absolute inset-0 mix-blend-screen"
+      <SideContainer side={side}>
+        <GlowBlob
+          blurClass={blurLg}
+          className={`top-1/2 ${edgeClass} h-[130%] w-[90%] -translate-y-1/2`}
           style={{
-            background: `radial-gradient(ellipse 90% 80% at ${origin}, ${primaryA}, transparent 68%)`,
-            filter: `blur(${blurLg}px)`,
+            background: `radial-gradient(ellipse 80% 70% at ${origin}, ${primary(0.85)}, transparent 70%)`,
           }}
         />
-        <div
-          className="absolute inset-0 mix-blend-screen"
+        <GlowBlob
+          blurClass={blurMd}
+          className={`top-[20%] ${midClass} h-[70%] w-[75%]`}
           style={{
-            background: `radial-gradient(ellipse 70% 60% at ${side === "left" ? "25% 40%" : "75% 60%"}, ${secondaryA}, transparent 70%)`,
-            filter: `blur(${blurMd}px)`,
+            background: `radial-gradient(ellipse 70% 65% at ${origin}, ${secondary(0.55)}, transparent 72%)`,
           }}
         />
-        <div
-          className="absolute inset-0 opacity-70 mix-blend-screen"
+        <GlowBlob
+          blurClass={blurMd}
+          className={`bottom-[5%] ${innerClass} h-[50%] w-[60%]`}
           style={{
-            background: `radial-gradient(ellipse 50% 45% at ${side === "left" ? "15% 55%" : "85% 45%"}, ${rgba(colorSecondary, 0.2 * baseOpacity)}, transparent 75%)`,
-            filter: `blur(${blurMd}px)`,
+            background: `radial-gradient(circle at ${origin}, ${primary(0.4)}, transparent 68%)`,
           }}
         />
-      </div>
+      </SideContainer>
     );
   }
 
   if (effect === "ink") {
     return (
-      <div
-        className={`pointer-events-none absolute inset-y-0 ${side === "left" ? "left-0 w-[55%]" : "right-0 w-[55%]"}`}
-        aria-hidden
-      >
-        <div
-          className={`absolute top-[18%] h-[55%] w-[70%] mix-blend-screen ${align === "left" ? "left-[-8%]" : "right-[-8%]"}`}
+      <SideContainer side={side}>
+        <GlowBlob
+          blurClass={blurLg}
+          className={`top-[10%] ${edgeClass} h-[75%] w-[80%]`}
           style={{
             borderRadius: "42% 58% 38% 62% / 48% 42% 58% 52%",
-            background: `linear-gradient(145deg, ${primaryA}, ${secondaryA})`,
-            filter: `blur(${blurMd}px)`,
+            background: `linear-gradient(145deg, ${primary(0.9)}, ${secondary(0.5)})`,
           }}
         />
-        <div
-          className={`absolute bottom-[12%] h-[40%] w-[50%] mix-blend-screen ${align === "left" ? "left-[5%]" : "right-[5%]"}`}
+        <GlowBlob
+          blurClass={blurMd}
+          className={`bottom-[0%] ${midClass} h-[55%] w-[65%]`}
           style={{
             borderRadius: "58% 42% 55% 45% / 40% 55% 45% 60%",
-            background: primaryB,
-            filter: `blur(${blurLg}px)`,
+            background: primary(0.65),
           }}
         />
-      </div>
+      </SideContainer>
     );
   }
 
   if (effect === "electric") {
     return (
-      <div
-        className={`pointer-events-none absolute inset-y-0 ${side === "left" ? "left-0 w-[52%]" : "right-0 w-[52%]"}`}
-        aria-hidden
-      >
-        <div
-          className="absolute inset-0 mix-blend-screen"
+      <SideContainer side={side}>
+        <GlowBlob
+          blurClass={blurMd}
+          className={`top-1/2 ${edgeClass} h-[100%] w-[70%] -translate-y-1/2`}
           style={{
-            background: `conic-gradient(from ${side === "left" ? "200deg" : "20deg"} at ${origin}, transparent, ${primaryA}, transparent 55%)`,
-            filter: `blur(${blurMd}px)`,
+            background: `conic-gradient(from ${side === "left" ? "200deg" : "20deg"} at ${origin}, transparent, ${primary(0.9)}, transparent 50%)`,
           }}
         />
-        <div
-          className={`absolute top-1/2 h-[70%] w-[35%] -translate-y-1/2 mix-blend-plus-lighter ${side === "left" ? "right-0" : "left-0"}`}
+        <GlowBlob
+          blurClass="blur-lg"
+          className={`top-1/2 ${side === "left" ? "right-[5%]" : "left-[5%]"} h-[75%] w-[40%] -translate-y-1/2 opacity-80`}
           style={{
-            background: `repeating-linear-gradient(${side === "left" ? "105deg" : "75deg"}, transparent, transparent 6px, ${rgba(colorSecondary, 0.35 * baseOpacity)} 6px, ${rgba(colorPrimary, 0.15 * baseOpacity)} 7px)`,
-            filter: `blur(${compact ? 8 : 12}px)`,
-            opacity: MOCKUP_CAMPUS_MEASURES.brandWashOpacity * 4,
+            background: `repeating-linear-gradient(${
+              side === "left" ? "105deg" : "75deg"
+            }, transparent, transparent 5px, ${secondary(0.7)} 5px, ${primary(0.35)} 6px)`,
           }}
         />
-        <div
-          className="absolute inset-0 mix-blend-screen"
+        <GlowBlob
+          blurClass={blurLg}
+          className={`top-1/2 ${side === "left" ? "right-[-5%]" : "left-[-5%]"} h-[90%] w-[45%] -translate-y-1/2`}
           style={{
-            background: `radial-gradient(ellipse 40% 90% at ${side === "left" ? "95% 50%" : "5% 50%"}, ${rgba(colorPrimary, 0.55 * baseOpacity)}, transparent 65%)`,
-            filter: `blur(${compact ? 20 : 28}px)`,
+            background: `radial-gradient(ellipse 50% 90% at ${side === "left" ? "100% 50%" : "0% 50%"}, ${primary(0.75)}, transparent 65%)`,
           }}
         />
-      </div>
+      </SideContainer>
     );
   }
 
-  /* ember */
   return (
-    <div
-      className={`pointer-events-none absolute inset-y-0 ${side === "left" ? "left-0 w-[58%]" : "right-0 w-[58%]"}`}
-      aria-hidden
-    >
-      <div
-        className={`absolute inset-0 mix-blend-screen ${compact ? "" : "motion-safe:animate-pulse motion-reduce:animate-none"}`}
+    <SideContainer side={side}>
+      <GlowBlob
+        blurClass={blurLg}
+        className={`top-1/2 ${edgeClass} h-[125%] w-[88%] -translate-y-1/2 ${
+          compact ? "" : "motion-safe:animate-pulse motion-reduce:animate-none"
+        }`}
         style={{
           animationDuration: "5s",
-          background: `radial-gradient(ellipse 85% 75% at ${origin}, ${primaryA}, transparent 65%)`,
-          filter: `blur(${blurLg}px)`,
+          background: `radial-gradient(ellipse 85% 75% at ${origin}, ${primary(0.8)}, transparent 68%)`,
         }}
       />
-      <div
-        className="absolute inset-0 mix-blend-screen"
+      <GlowBlob
+        blurClass={blurMd}
+        className={`top-[25%] ${innerClass} h-[55%] w-[70%]`}
         style={{
-          background: `radial-gradient(ellipse 60% 50% at ${side === "left" ? "30% 65%" : "70% 35%"}, ${rgba(colorSecondary, 0.35 * baseOpacity)}, transparent 72%)`,
-          filter: `blur(${blurMd}px)`,
+          background: `radial-gradient(ellipse 65% 55% at ${origin}, ${secondary(0.6)}, transparent 70%)`,
         }}
       />
-    </div>
+    </SideContainer>
   );
 }

@@ -7,7 +7,8 @@ export const MOCKUP_CAMPUS = {
   sectionDot: "w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0",
   sectionHeaderRow: "flex items-center justify-between mb-5",
   sectionLabelRow: "flex items-center gap-2",
-  battleCard: "relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8",
+  battleCard:
+    "relative overflow-hidden rounded-2xl border border-white/10 bg-[#05070A]/40 min-h-[280px] p-6 sm:p-8",
   vsBadge:
     "flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/20",
   vsText: "text-lg font-black italic tracking-widest text-white/30",
@@ -16,7 +17,8 @@ export const MOCKUP_CAMPUS = {
   countdownUnit: "text-[9px] uppercase tracking-wider text-white/35",
   themeCard: "relative overflow-hidden rounded-2xl border border-white/10 min-h-[280px] flex flex-col",
   themeCardInner: "relative z-10 flex flex-1 flex-col p-5",
-  pastCard: "relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-4 flex flex-col items-center text-center",
+  pastCard:
+    "relative overflow-hidden rounded-xl border border-white/10 bg-[#05070A]/40 p-4 flex flex-col items-center text-center min-h-[160px]",
   aboutCard: "rounded-2xl border border-white/10 bg-white/[0.03] p-6",
   schoolLogoActive: "w-24 h-24",
   schoolLogoPast: "w-11 h-11",

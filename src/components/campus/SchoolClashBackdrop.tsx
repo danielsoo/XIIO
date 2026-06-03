@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import BattleClashSeam from "@/components/campus/BattleClashSeam";
 import SchoolSideGlow from "@/components/campus/SchoolSideGlow";
 import {
@@ -8,8 +7,6 @@ import {
   getRotationEpoch,
   resolveBrandEffect,
 } from "@/lib/campusBrandEffects";
-import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
-import { MOCKUP_CAMPUS_MEASURES } from "@/lib/mockupLayout";
 
 export type ClashSchool = {
   id: string;
@@ -38,11 +35,6 @@ export default function SchoolClashBackdrop({
   const effectB = resolveBrandEffect(buildEffectSeed(schoolB.id, battleId, "right", epoch));
   const clashStrong = effectA !== effectB;
   const isActive = variant === "active";
-  const logoOpacity = isActive
-    ? MOCKUP_CAMPUS_MEASURES.brandLogoOpacityActive
-    : MOCKUP_CAMPUS_MEASURES.brandLogoOpacityCompact;
-  const logoClass = isActive ? MOCKUP_CAMPUS.brandLogoActive : MOCKUP_CAMPUS.brandLogoCompact;
-  const logoSize = isActive ? 240 : 120;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
@@ -67,33 +59,6 @@ export default function SchoolClashBackdrop({
           strong={clashStrong}
         />
       ) : null}
-
-      <div
-        className={`absolute -left-8 top-1/2 -translate-y-1/2 ${logoClass}`}
-        style={{ opacity: logoOpacity }}
-      >
-        <Image
-          src={schoolA.logo}
-          alt=""
-          width={logoSize}
-          height={logoSize}
-          className="h-full w-full object-contain"
-          unoptimized
-        />
-      </div>
-      <div
-        className={`absolute -right-8 top-1/2 -translate-y-1/2 ${logoClass}`}
-        style={{ opacity: logoOpacity }}
-      >
-        <Image
-          src={schoolB.logo}
-          alt=""
-          width={logoSize}
-          height={logoSize}
-          className="h-full w-full object-contain"
-          unoptimized
-        />
-      </div>
     </div>
   );
 }
