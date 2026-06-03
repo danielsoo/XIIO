@@ -71,7 +71,7 @@ export default function HomeMockPage() {
     <main className={`min-h-screen ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
       <section
         ref={heroSectionRef}
-        className={`relative flex flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroSection}`}
+        className={`relative flex flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
       >
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
@@ -81,7 +81,9 @@ export default function HomeMockPage() {
           priority
         />
 
-        <div className={`relative z-10 flex flex-1 flex-col justify-end ${MOCKUP_HOME.heroContentTop}`}>
+        <div
+          className={`relative z-10 flex flex-1 flex-col justify-end ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroContentTop}`}
+        >
           <div className={`w-full ${MOCKUP_HOME.heroGrid}`}>
             <div
               ref={heroTextRef}
