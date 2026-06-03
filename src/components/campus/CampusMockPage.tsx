@@ -48,12 +48,11 @@ function splitSchoolName(name: string): { main: string; sub?: string } {
   return { main: name };
 }
 
-function SchoolNameBlock({ name, align }: { name: string; align: "left" | "right" }) {
+function SchoolNameBlock({ name }: { name: string }) {
   const { main, sub } = splitSchoolName(name);
-  const alignClass = align === "right" ? "text-right" : "text-left";
 
   return (
-    <div className={alignClass}>
+    <div className="text-center">
       <p className={MOCKUP_CAMPUS.schoolNameMain}>{main}</p>
       {sub ? <p className={MOCKUP_CAMPUS.schoolNameSub}>{sub}</p> : null}
     </div>
@@ -128,25 +127,27 @@ function ActiveBattleSchoolSide({
   filmsVotesLabel: string;
 }) {
   const isLeft = side === "left";
-  const rowAlign = isLeft ? "justify-start" : "justify-end";
-  const statsAlign = isLeft ? "text-left" : "text-right";
 
   return (
-    <div className={`flex min-w-0 flex-1 flex-col ${isLeft ? "items-start" : "items-end"}`}>
-      <div className={`${MOCKUP_CAMPUS.activeSchoolRow} ${rowAlign}`}>
+    <div className="flex min-w-0 flex-1 flex-col items-center">
+      <div className={`${MOCKUP_CAMPUS.activeSchoolRow} justify-center`}>
         {isLeft ? (
           <>
-            <SchoolNameBlock name={school.name} align="left" />
+            <SchoolNameBlock name={school.name} />
             <SchoolLogo school={school} size={80} variant="mark" />
           </>
         ) : (
           <>
             <SchoolLogo school={school} size={80} variant="mark" />
-            <SchoolNameBlock name={school.name} align="right" />
+            <SchoolNameBlock name={school.name} />
           </>
         )}
       </div>
-      <p className={`${MOCKUP_CAMPUS.activeSchoolStats} ${statsAlign}`}>{filmsVotesLabel}</p>
+      <p
+        className={`${MOCKUP_CAMPUS.activeSchoolStats} w-full ${isLeft ? "text-left" : "text-right"}`}
+      >
+        {filmsVotesLabel}
+      </p>
     </div>
   );
 }
@@ -336,7 +337,7 @@ export default function CampusMockPage() {
                 variant="active"
               />
               <div className="relative z-10">
-                <div className="flex items-start justify-between gap-3 sm:gap-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <ActiveBattleSchoolSide
                     side="left"
                     school={schoolA}
