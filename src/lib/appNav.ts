@@ -1,8 +1,5 @@
 export const APP_SIDEBAR_WIDTH = "12rem";
 
-/** Horizontal inset for sidebar content (extra space on the right) */
-export const APP_SIDEBAR_CONTENT_CLASS = "pl-4 pr-6";
-
 export const HIDE_APP_SHELL_PATHS = [
   "/login",
   "/signup",

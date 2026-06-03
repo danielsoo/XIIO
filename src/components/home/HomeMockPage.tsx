@@ -122,7 +122,7 @@ export default function HomeMockPage() {
         />
 
         <div
-          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroContentTop}`}
+          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.heroContentTop}`}
           style={{ minHeight: waveRect.height }}
         >
           <div
@@ -182,7 +182,7 @@ export default function HomeMockPage() {
       </section>
 
       <div
-        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} pb-16 flex flex-col ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.sectionGap}`}
+        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
       >
         <HomeContentRow
           title={t("home.mock.featuredStories")}

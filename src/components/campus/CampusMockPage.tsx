@@ -311,7 +311,7 @@ export default function CampusMockPage() {
         />
 
         <div
-          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroContentTop}`}
+          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.heroContentTop}`}
           style={{ minHeight: waveRect.height }}
         >
           <div className="flex flex-1 w-full flex-col justify-center" style={heroGridBandStyle}>
@@ -335,7 +335,7 @@ export default function CampusMockPage() {
       </section>
 
       <div
-        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} pb-16 flex flex-col ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.sectionGap}`}
+        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
       >
         <section>
           <div className={MOCKUP_CAMPUS.sectionHeaderRow}>

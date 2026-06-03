@@ -7,7 +7,6 @@ import { useTranslations } from "@/context/LocaleContext";
 import { AppNavIconSvg } from "@/components/layout/AppNavIcon";
 import SidebarProfileRow from "@/components/layout/SidebarProfileRow";
 import {
-  APP_SIDEBAR_CONTENT_CLASS,
   APP_SIDEBAR_WIDTH,
   PRIMARY_NAV,
   SECONDARY_NAV,
@@ -62,12 +61,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   return (
-    <div className={`flex flex-col h-full ${APP_SIDEBAR_CONTENT_CLASS}`}>
-      <Link href="/" onClick={onNavigate} className="pt-6 pb-0 block">
+    <div className="flex flex-col h-full">
+      <Link href="/" onClick={onNavigate} className="px-4 pt-6 pb-0 block">
         <span className="text-base font-semibold tracking-[0.22em] text-white">XIIO</span>
       </Link>
 
-      <nav className="flex flex-1 flex-col mt-20 min-h-0">
+      <nav className="flex flex-1 flex-col px-2.5 mt-20 min-h-0">
         <div className="flex flex-col gap-0.5">
           {PRIMARY_NAV.map((item) => (
             <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />

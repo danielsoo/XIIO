@@ -47,7 +47,7 @@ export default function SidebarProfileRow({ onNavigate }: { onNavigate?: () => v
       <Link
         href="/login"
         onClick={onNavigate}
-        className="block w-full text-center py-2.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-sm font-semibold"
+        className="block mx-2 text-center py-2.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-sm font-semibold"
       >
         {t("common.login")}
       </Link>
@@ -64,7 +64,7 @@ export default function SidebarProfileRow({ onNavigate }: { onNavigate?: () => v
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative px-2">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -77,7 +77,7 @@ export default function SidebarProfileRow({ onNavigate }: { onNavigate?: () => v
       </button>
 
       {open ? (
-        <div className="absolute bottom-full left-0 right-0 mb-1 py-1 rounded-lg border border-white/10 bg-[#0c0e12] shadow-xl z-50">
+        <div className="absolute bottom-full left-2 right-2 mb-1 py-1 rounded-lg border border-white/10 bg-[#0c0e12] shadow-xl z-50">
           <button
             type="button"
             onClick={() => go("/account")}
