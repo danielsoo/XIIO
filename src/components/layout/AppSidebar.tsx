@@ -39,7 +39,7 @@ function NavLink({
         active ? "bg-white/[0.08] text-white" : "text-white/50 hover:text-white hover:bg-white/[0.04]"
       }`}
     >
-      <AppNavIconSvg icon={item.icon} />
+      <AppNavIconSvg icon={item.icon} active={active} />
       <span className="flex-1 truncate">{t(item.labelKey)}</span>
       {item.badgeKey ? (
         <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-sky-500/20 text-sky-400">
@@ -60,15 +60,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex flex-col h-full">
-      <Link href="/" onClick={onNavigate} className="px-5 py-6 block">
+      <Link href="/" onClick={onNavigate} className="px-5 pt-6 pb-0 block">
         <span className="text-lg font-semibold tracking-[0.25em] text-white">XIIO</span>
       </Link>
 
-      <nav className="flex-1 space-y-0.5 px-3">
+      <nav className="flex-1 space-y-0.5 px-3 mt-10">
         {PRIMARY_NAV.map((item) => (
           <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
         ))}
-        <div className="my-4 border-t border-white/[0.06]" />
+        <div className="my-10 border-t border-white/[0.06]" />
         {SECONDARY_NAV.map((item) => (
           <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
         ))}
