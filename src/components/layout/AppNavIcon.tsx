@@ -49,10 +49,17 @@ export function AppNavIconSvg({ icon, active = false, className = iconClass }: P
     case "campus":
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={sw} d="M4 20h16" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={sw} d="M6 20V11l2-1.5V20M10 20V9l2-1.5V20M14 20V9l2-1.5V20M18 20V11l2-1.5V20" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={sw} d="M5 11 12 6l7 5" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={sw} d="M7 20h2M11 20h2M15 20h2" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.75}
+            d="M4 11 12 5l8 6"
+          />
+          <rect x="5.5" y="11" width="4" height="9" rx="0.5" fill="none" strokeWidth={1.75} />
+          <rect x="10" y="11" width="4" height="9" rx="0.5" fill="none" strokeWidth={1.75} />
+          <rect x="14.5" y="11" width="4" height="9" rx="0.5" fill="none" strokeWidth={1.75} />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 20h16" />
+          <path strokeLinecap="round" strokeWidth={2} d="M6 20h3M11 20h3M16 20h3" />
         </svg>
       );
     case "creators":
