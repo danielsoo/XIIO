@@ -31,7 +31,6 @@ export default function HomeMockPage() {
   const [gradStart, setGradStart] = useState(
     HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent
   );
-  const [waveBoxHeight, setWaveBoxHeight] = useState<number | null>(null);
 
   const featuredPromo = promoItems[0];
   const featuredTitle = featuredPromo?.title ?? DEFAULT_FEATURED_STORY.title;
@@ -66,34 +65,6 @@ export default function HomeMockPage() {
     };
   }, []);
 
-  useLayoutEffect(() => {
-    const section = heroSectionRef.current;
-    if (!section) return;
-
-    const measure = () => {
-      const lg = window.matchMedia("(min-width: 1024px)").matches;
-      const myList = document.querySelector('[data-nav-id="myList"]');
-      if (!lg || !myList) {
-        setWaveBoxHeight(280);
-        return;
-      }
-      const bottom = myList.getBoundingClientRect().bottom;
-      const top = section.getBoundingClientRect().top;
-      setWaveBoxHeight(Math.max(0, Math.round(bottom - top)));
-    };
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(section);
-    const myList = document.querySelector('[data-nav-id="myList"]');
-    if (myList) ro.observe(myList);
-    window.addEventListener("resize", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, []);
-
   const watchHref = user ? "/movies" : "/login";
 
   return (
@@ -107,7 +78,6 @@ export default function HomeMockPage() {
           overlayEnabled={overlayEnabled}
           variant="home"
           gradStartPercent={gradStart}
-          waveBoxHeightPx={waveBoxHeight}
           priority
         />
 
