@@ -20,7 +20,7 @@ export default function HomeStoryCard({ item, variant = "featured" }: Props) {
     return (
       <Link
         href={href}
-        className={`group relative shrink-0 ${widthClass} ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-white/15 transition`}
+        className={`group relative min-w-0 ${widthClass} ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-white/15 transition`}
       >
         <div className="relative aspect-[233/134] w-full">
           <Image
@@ -51,7 +51,7 @@ export default function HomeStoryCard({ item, variant = "featured" }: Props) {
   }
 
   return (
-    <Link href={href} className={`group shrink-0 ${widthClass}`}>
+    <Link href={href} className={`group min-w-0 ${widthClass}`}>
       <div
         className={`relative aspect-[177/111] w-full ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-white/15 transition mb-2`}
       >

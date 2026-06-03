@@ -108,8 +108,8 @@ export default function HomeContentRow({
       ) : null}
 
       <div
-        className={`hidden lg:grid ${MOCKUP_HOME.featuredRowGap} ${rowWidthClass}`}
-        style={{ gridTemplateColumns: `repeat(${items.length}, 233px)` }}
+        className={`hidden lg:grid min-w-0 w-full max-w-full ${MOCKUP_HOME.featuredRowGap} ${rowWidthClass}`}
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
       >
         {items.map((item) => (
           <HomeStoryCard key={item.id} item={item} variant="featured" />

@@ -27,7 +27,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <div className="min-h-screen bg-[#05070A] text-white" style={heroStyle}>
         <AppSidebar mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
         <div
-          className={`${MOCKUP_HOME.contentMainColumnPad} ${MOCKUP_HOME.contentRightMargin}`}
+          className={`${MOCKUP_HOME.contentMainColumnPad} ${MOCKUP_HOME.contentRightMargin} ${MOCKUP_HOME.contentColumnGuard}`}
           style={{
             ["--app-sidebar-width" as string]: APP_SIDEBAR_WIDTH,
             ["--app-content-boundary-inset" as string]: `${APP_CONTENT_BOUNDARY_INSET_PX}px`,

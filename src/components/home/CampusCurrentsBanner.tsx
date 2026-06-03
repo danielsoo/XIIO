@@ -17,7 +17,7 @@ export default function CampusCurrentsBanner({ className = "" }: Props) {
   return (
     <Link
       href="/school-battle"
-      className={`relative shrink-0 ${MOCKUP_HOME.campusBanner} ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-sky-500/25 transition group ${className}`}
+      className={`relative ${MOCKUP_HOME.campusBanner} ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-sky-500/25 transition group ${className}`}
     >
       <Image
         src={CAMPUS_CURRENTS_MAP}

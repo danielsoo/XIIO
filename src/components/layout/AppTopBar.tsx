@@ -70,7 +70,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
 
   return (
     <header
-      className={`sticky top-0 z-30 flex items-center gap-3 px-4 lg:pl-0 ${MOCKUP_HOME.topBarHeight} ${
+      className={`sticky top-0 z-30 flex min-w-0 items-center gap-3 px-4 lg:pl-0 ${MOCKUP_HOME.topBarHeight} ${
         isHomeChrome ? "bg-transparent backdrop-blur-none" : "bg-[#05070A]/90 backdrop-blur-md"
       }`}
     >
@@ -85,7 +85,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
         </svg>
       </button>
 
-      <div className="flex-1 flex justify-center">
+      <div className="flex min-w-0 flex-1 justify-center">
         <label className={`relative hidden sm:block ${MOCKUP_HOME.searchBar}`}>
           <span className="sr-only">{t("topBar.searchLabel")}</span>
           <IconSearch className={`absolute top-1/2 -translate-y-1/2 ${MOCKUP_HOME.searchIconLeft} w-4 h-4 text-white/30`} />
