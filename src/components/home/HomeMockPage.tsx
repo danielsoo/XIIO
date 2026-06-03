@@ -45,13 +45,20 @@ export default function HomeMockPage() {
     const text = heroTextRef.current;
     if (!section || !text) return;
 
-    const findMyList = () =>
-      document.querySelector('aside:not(.lg\\:hidden) [data-nav-id="myList"]') ??
-      document.querySelector('[data-nav-id="myList"]');
+    const findDesktopSidebar = () =>
+      document.querySelector("aside.hidden.lg\\:flex") ??
+      document.querySelector('aside:not(.lg\\:hidden)');
 
-    const findSidebarNav = () =>
-      document.querySelector("aside:not(.lg\\:hidden) nav") ??
-      document.querySelector("aside nav");
+    const findMyListAnchor = () => {
+      const sidebar = findDesktopSidebar();
+      if (!sidebar) return null;
+      return (
+        sidebar.querySelector('[data-nav-id="myList"]') ??
+        sidebar.querySelector("nav > div:first-child")?.lastElementChild
+      );
+    };
+
+    const findSidebarNav = () => findDesktopSidebar()?.querySelector("nav");
 
     const measure = () => {
       const lg = window.matchMedia("(min-width: 1024px)").matches;
@@ -68,9 +75,9 @@ export default function HomeMockPage() {
       setGradStart(Math.min(100, Math.round((base + HERO_DESIGN.gradStartOffsetPercent) * 10) / 10));
       setWaveBoxLeft(Math.round(startPx));
 
-      const myList = findMyList();
-      if (myList) {
-        setWaveBoxHeight(Math.max(0, Math.round(myList.getBoundingClientRect().bottom - sr.top)));
+      const anchor = findMyListAnchor();
+      if (anchor) {
+        setWaveBoxHeight(Math.max(0, Math.round(anchor.getBoundingClientRect().bottom - sr.top)));
       } else {
         setWaveBoxHeight(400);
       }
@@ -78,12 +85,13 @@ export default function HomeMockPage() {
 
     measure();
     requestAnimationFrame(measure);
+    requestAnimationFrame(() => requestAnimationFrame(measure));
 
     const ro = new ResizeObserver(measure);
     ro.observe(section);
     ro.observe(text);
-    const myList = findMyList();
-    if (myList) ro.observe(myList);
+    const anchor = findMyListAnchor();
+    if (anchor) ro.observe(anchor);
     const sidebarNav = findSidebarNav();
     if (sidebarNav) ro.observe(sidebarNav);
     window.addEventListener("resize", measure);

@@ -5,15 +5,15 @@ import {
   heroDiagonalGradient,
   heroFullBleedMaskStyle,
   heroMobileVerticalGradient,
-  heroWaveBoxMaskStyle,
 } from "@/lib/homeHeroLayout";
 import { HERO_LANDSCAPE_IMAGE, HERO_LANDSCAPE_POSITION } from "@/lib/homeHeroBackground";
 import type { RgbTuple } from "@/lib/homeHeroColors";
 
-type MaskVariant = "full" | "waveBox";
+type MaskVariant = "full" | "waveBox" | "none";
 
 function overlayMaskStyle(variant: MaskVariant) {
-  return variant === "waveBox" ? heroWaveBoxMaskStyle() : heroFullBleedMaskStyle();
+  if (variant === "none") return {};
+  return heroFullBleedMaskStyle();
 }
 
 type Props = {
@@ -86,8 +86,6 @@ export default function HeroLandscapeBackdrop({
   waveBoxHeightPx = null,
 }: Props) {
   if (variant === "home") {
-    const waveBoxMask = heroWaveBoxMaskStyle();
-
     return (
       <div
         className={`absolute top-0 right-0 z-0 overflow-hidden pointer-events-none ${className}`}
@@ -114,12 +112,9 @@ export default function HeroLandscapeBackdrop({
           overlayEnabled={overlayEnabled}
           rgbTuple={rgbTuple}
           gradStartPercent={gradStartPercent}
-          maskVariant="waveBox"
+          maskVariant="none"
         />
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-xiio-bg/40"
-          style={waveBoxMask}
-        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-transparent pointer-events-none" />
       </div>
     );
   }

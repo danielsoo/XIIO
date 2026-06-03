@@ -74,13 +74,9 @@ export function heroBottomFeatherMask(): string {
     transparent 100%)`;
 }
 
-/** Home wave box (My List height) — short bottom fade only */
+/** Home wave box — no vertical fade; box bottom is the designed edge (My List) */
 export function heroWaveBoxBottomMask(): string {
-  return `linear-gradient(to bottom,
-    #000 0%,
-    #000 88%,
-    rgba(0, 0, 0, 0.5) 95%,
-    transparent 100%)`;
+  return "linear-gradient(to bottom, #000 0%, #000 100%)";
 }
 
 function maskStyleFromImage(maskImage: string) {
