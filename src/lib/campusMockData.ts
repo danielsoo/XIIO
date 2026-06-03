@@ -65,7 +65,7 @@ export const ACTIVE_BATTLE = {
     colorPrimary: "#041E42",
     colorSecondary: "#FFFFFF",
     initials: "PS",
-    logo: "/images/campus/schools/psu.png",
+    logo: "/images/campus/schools/psu-cutout.png",
   }),
   schoolB: school({
     id: "osu",
@@ -76,7 +76,7 @@ export const ACTIVE_BATTLE = {
     colorPrimary: "#BB0000",
     colorSecondary: "#666666",
     initials: "OS",
-    logo: "/images/campus/schools/osu.webp",
+    logo: "/images/campus/schools/osu-cutout.png",
   }),
   votingEndsAt:
     Date.now() + 2 * 24 * 3600 * 1000 + 14 * 3600 * 1000 + 32 * 60 * 1000 + 7 * 1000,
@@ -96,7 +96,7 @@ export const PAST_BATTLES: PastBattle[] = [
       "UCLA",
       "#2774AE",
       "#FFD100",
-      "/images/campus/schools/ucla.jpg"
+      "/images/campus/schools/ucla-cutout.png"
     ),
     schoolB: pastSchool(
       "usc",
@@ -117,7 +117,7 @@ export const PAST_BATTLES: PastBattle[] = [
       "NYU",
       "#57068C",
       "#FFFFFF",
-      "/images/campus/schools/nyu.webp"
+      "/images/campus/schools/nyu-cutout.png"
     ),
     schoolB: pastSchool(
       "bu",
@@ -125,7 +125,7 @@ export const PAST_BATTLES: PastBattle[] = [
       "BU",
       "#CC0000",
       "#FFFFFF",
-      "/images/campus/schools/bu.png"
+      "/images/campus/schools/bu-cutout.png"
     ),
     winner: "NYU",
     votes: "1.7K",
@@ -138,7 +138,7 @@ export const PAST_BATTLES: PastBattle[] = [
       "CAL",
       "#003262",
       "#FDB515",
-      "/images/campus/schools/berkeley.png"
+      "/images/campus/schools/berkeley-cutout.png"
     ),
     schoolB: pastSchool(
       "stanford",
@@ -146,7 +146,7 @@ export const PAST_BATTLES: PastBattle[] = [
       "SU",
       "#8C1515",
       "#FFFFFF",
-      "/images/campus/schools/stanford.webp"
+      "/images/campus/schools/stanford-cutout.png"
     ),
     winner: "Stanford",
     votes: "2.3K",

@@ -39,15 +39,58 @@ function useCountdown(targetMs: number) {
   return { days, hours, mins, secs };
 }
 
+function splitSchoolName(name: string): { main: string; sub?: string } {
+  if (name.endsWith(" UNIVERSITY")) {
+    return { main: name.slice(0, -" UNIVERSITY".length), sub: "UNIVERSITY" };
+  }
+  return { main: name };
+}
+
+function SchoolNameBlock({ name, align }: { name: string; align: "left" | "right" }) {
+  const { main, sub } = splitSchoolName(name);
+  const alignClass = align === "right" ? "text-right" : "text-left";
+
+  return (
+    <div className={alignClass}>
+      <p className={MOCKUP_CAMPUS.schoolNameMain}>{main}</p>
+      {sub ? <p className={MOCKUP_CAMPUS.schoolNameSub}>{sub}</p> : null}
+    </div>
+  );
+}
+
 function SchoolLogo({
   school,
   size = 96,
+  variant = "badge",
   className = "",
 }: {
   school: Pick<CampusSchool, "logo" | "name" | "colorPrimary" | "colorSecondary">;
   size?: number;
+  variant?: "badge" | "mark";
   className?: string;
 }) {
+  if (variant === "mark") {
+    return (
+      <div
+        className={`relative shrink-0 ${className}`}
+        style={{
+          width: size,
+          height: size,
+          filter: `drop-shadow(0 0 20px ${rgba(school.colorPrimary, 0.35)})`,
+        }}
+      >
+        <Image
+          src={school.logo}
+          alt={school.name}
+          fill
+          className="object-contain"
+          sizes={`${size}px`}
+          unoptimized
+        />
+      </div>
+    );
+  }
+
   const logoPad = size <= 48 ? "p-1.5" : "p-2";
   return (
     <div
@@ -73,24 +116,74 @@ function SchoolLogo({
   );
 }
 
-function SchoolBadge({
+function ActiveBattleSchoolSide({
+  side,
   school,
   filmsVotesLabel,
 }: {
+  side: "left" | "right";
   school: CampusSchool;
   filmsVotesLabel: string;
 }) {
-  const [mainName, ...rest] = school.name.split(" ");
-  const subName = rest.join(" ");
+  const isLeft = side === "left";
+  const rowAlign = isLeft ? "justify-start" : "justify-end";
+  const statsAlign = isLeft ? "text-left" : "text-right";
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-3 text-center">
-      <SchoolLogo school={school} size={96} />
-      <div>
-        <p className={MOCKUP_CAMPUS.schoolNameMain}>{mainName}</p>
-        {subName ? <p className={MOCKUP_CAMPUS.schoolNameSub}>{subName}</p> : null}
+    <div className={`flex min-w-0 flex-1 flex-col ${isLeft ? "items-start" : "items-end"}`}>
+      <div className={`${MOCKUP_CAMPUS.activeSchoolRow} ${rowAlign}`}>
+        {isLeft ? (
+          <>
+            <SchoolNameBlock name={school.name} align="left" />
+            <SchoolLogo school={school} size={80} variant="mark" />
+          </>
+        ) : (
+          <>
+            <SchoolLogo school={school} size={80} variant="mark" />
+            <SchoolNameBlock name={school.name} align="right" />
+          </>
+        )}
       </div>
-      <p className={MOCKUP_CAMPUS.schoolStats}>{filmsVotesLabel}</p>
+      <p className={`${MOCKUP_CAMPUS.activeSchoolStats} ${statsAlign}`}>{filmsVotesLabel}</p>
+    </div>
+  );
+}
+
+function ActiveBattleCountdown({
+  countdown,
+  votingEndsLabel,
+  daysLabel,
+  hrsLabel,
+  minsLabel,
+  secsLabel,
+}: {
+  countdown: { days: number; hours: number; mins: number; secs: number };
+  votingEndsLabel: string;
+  daysLabel: string;
+  hrsLabel: string;
+  minsLabel: string;
+  secsLabel: string;
+}) {
+  return (
+    <div className="flex w-full max-w-[200px] flex-col items-center text-center">
+      <p className={`${MOCKUP_CAMPUS.countdownLabel} mb-2`}>{votingEndsLabel}</p>
+      <div
+        className={`grid w-full grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] items-center gap-1 ${MOCKUP_CAMPUS.countdownDigits} text-xl sm:text-2xl`}
+      >
+        <span className="text-center">{pad(countdown.days)}</span>
+        <span className="text-white/30">:</span>
+        <span className="text-center">{pad(countdown.hours)}</span>
+        <span className="text-white/30">:</span>
+        <span className="text-center">{pad(countdown.mins)}</span>
+        <span className="text-white/30">:</span>
+        <span className="text-center">{pad(countdown.secs)}</span>
+      </div>
+      <div className="mt-1.5 grid w-full grid-cols-4 gap-1">
+        <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>{daysLabel}</span>
+        <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>{hrsLabel}</span>
+        <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>{minsLabel}</span>
+        <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>{secsLabel}</span>
+      </div>
     </div>
   );
 }
@@ -163,39 +256,28 @@ export default function CampusMockPage() {
                 variant="active"
               />
               <div className="relative z-10">
-                <div className="mb-8 flex items-center justify-between gap-4">
-                  <SchoolBadge school={schoolA} filmsVotesLabel={filmsVotesA} />
-                  <BattleVsRadar />
-                  <SchoolBadge school={schoolB} filmsVotesLabel={filmsVotesB} />
-                </div>
-
-                <div className="border-t border-white/10 pt-6 text-center">
-                  <p className={MOCKUP_CAMPUS.countdownLabel}>{t("campus.mock.votingEnds")}</p>
-                  <div
-                    className={`mx-auto grid max-w-md grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] items-center gap-2 sm:gap-3 ${MOCKUP_CAMPUS.countdownDigits}`}
-                  >
-                    <span className="text-center">{pad(countdown.days)}</span>
-                    <span className="text-white/30">:</span>
-                    <span className="text-center">{pad(countdown.hours)}</span>
-                    <span className="text-white/30">:</span>
-                    <span className="text-center">{pad(countdown.mins)}</span>
-                    <span className="text-white/30">:</span>
-                    <span className="text-center">{pad(countdown.secs)}</span>
+                <div className="flex items-start justify-between gap-3 sm:gap-4">
+                  <ActiveBattleSchoolSide
+                    side="left"
+                    school={schoolA}
+                    filmsVotesLabel={filmsVotesA}
+                  />
+                  <div className="flex shrink-0 flex-col items-center gap-4 px-1 pt-1">
+                    <BattleVsRadar />
+                    <ActiveBattleCountdown
+                      countdown={countdown}
+                      votingEndsLabel={t("campus.mock.votingEnds")}
+                      daysLabel={t("campus.mock.days")}
+                      hrsLabel={t("campus.mock.hrs")}
+                      minsLabel={t("campus.mock.mins")}
+                      secsLabel={t("campus.mock.secs")}
+                    />
                   </div>
-                  <div className="mx-auto mt-2 grid max-w-md grid-cols-4 gap-2">
-                    <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>
-                      {t("campus.mock.days")}
-                    </span>
-                    <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>
-                      {t("campus.mock.hrs")}
-                    </span>
-                    <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>
-                      {t("campus.mock.mins")}
-                    </span>
-                    <span className={`text-center ${MOCKUP_CAMPUS.countdownUnit}`}>
-                      {t("campus.mock.secs")}
-                    </span>
-                  </div>
+                  <ActiveBattleSchoolSide
+                    side="right"
+                    school={schoolB}
+                    filmsVotesLabel={filmsVotesB}
+                  />
                 </div>
               </div>
             </div>
@@ -245,9 +327,9 @@ export default function CampusMockPage() {
                   />
                   <div className="relative z-10 flex w-full flex-col items-center text-center">
                     <div className="mb-4 flex items-center gap-3">
-                      <SchoolLogo school={b.schoolA} size={44} />
+                      <SchoolLogo school={b.schoolA} size={44} variant="badge" />
                       <span className="text-[10px] font-bold text-white/25">vs</span>
-                      <SchoolLogo school={b.schoolB} size={44} />
+                      <SchoolLogo school={b.schoolB} size={44} variant="badge" />
                     </div>
                     <p className="mb-1 text-xs font-semibold text-white/70">
                       {b.schoolA.name} vs {b.schoolB.name}
