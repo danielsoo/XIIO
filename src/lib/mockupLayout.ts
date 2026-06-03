@@ -21,9 +21,9 @@ export const MOCKUP_MEASURES = {
   heroContentPaddingTop: 36,
   heroTextPaddingBottom: 40,
   /** lg: wave strip starts below top bar area */
-  heroBackdropTopOffsetLg: 48,
+  heroBackdropTopOffsetLg: 24,
   /** lg: wave extends below My List band into content area */
-  heroBackdropExtendBottomLg: 96,
+  heroBackdropExtendBottomLg: 48,
   heroToFeaturedHeaderGap: 32,
   heroMinHeight: 428,
   heroTextColWidth: 376,
