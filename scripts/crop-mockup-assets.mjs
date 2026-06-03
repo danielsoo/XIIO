@@ -21,10 +21,10 @@ const HOME_CROPS = [
   { file: "surface/everything-somewhere.webp", left: 429, top: 755, width: 177, height: 111 },
   { file: "surface/rooftop-sound.webp", left: 618, top: 755, width: 177, height: 111 },
   { file: "surface/distant-land.webp", left: 807, top: 755, width: 177, height: 111 },
-  { file: "selects/midnight-ferry.webp", left: 239, top: 955, width: 233, height: 65 },
-  { file: "selects/glass-garden.webp", left: 486, top: 955, width: 233, height: 65 },
-  { file: "selects/northbound.webp", left: 733, top: 955, width: 233, height: 65 },
-  { file: "selects/paper-moon.webp", left: 980, top: 955, width: 233, height: 65 },
+  { file: "selects/midnight-ferry.webp", left: 239, top: 924, width: 233, height: 100 },
+  { file: "selects/glass-garden.webp", left: 486, top: 924, width: 233, height: 100 },
+  { file: "selects/northbound.webp", left: 733, top: 924, width: 233, height: 100 },
+  { file: "selects/paper-moon.webp", left: 980, top: 924, width: 233, height: 100 },
   { file: "campus-currents-map.webp", left: 1150, top: 748, width: 380, height: 190 },
 ];
 

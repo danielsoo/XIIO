@@ -4,16 +4,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { IconArrowRight } from "@/components/icons/MockupIcons";
 import { CAMPUS_CURRENTS_MAP } from "@/lib/homeMockData";
-import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
+import { MOCKUP_HOME, MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
 import { useTranslations } from "@/context/LocaleContext";
 
-export default function CampusCurrentsBanner() {
+type Props = {
+  className?: string;
+};
+
+export default function CampusCurrentsBanner({ className = "" }: Props) {
   const { t } = useTranslations();
 
   return (
     <Link
       href="/school-battle"
-      className={`relative shrink-0 w-full ${MOCKUP_HOME.campusBannerWidth} ${MOCKUP_HOME.campusBannerMinH} rounded-xl overflow-hidden border border-white/[0.08] hover:border-sky-500/25 transition group`}
+      className={`relative shrink-0 w-full ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-sky-500/25 transition group ${className}`}
+      style={{
+        ...MOCKUP_HOME_STYLES.campusBannerWidth,
+        ...MOCKUP_HOME_STYLES.campusBannerMinH,
+      }}
     >
       <Image
         src={CAMPUS_CURRENTS_MAP}
@@ -23,7 +31,10 @@ export default function CampusCurrentsBanner() {
         sizes="380px"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#05070A] via-[#05070A]/85 to-transparent" />
-      <div className="relative z-10 p-5 flex flex-col justify-end min-h-[190px] h-full">
+      <div
+        className="relative z-10 p-5 flex flex-col justify-end h-full"
+        style={MOCKUP_HOME_STYLES.campusBannerMinH}
+      >
         <p className="text-[11px] font-semibold tracking-wide text-sky-400 mb-1.5">
           {t("home.mock.campusBannerTitle")}
         </p>

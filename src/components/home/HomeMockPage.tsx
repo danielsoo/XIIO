@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState } from "react";
 import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
-import CampusCurrentsBanner from "@/components/home/CampusCurrentsBanner";
 import HomeContentRow from "@/components/home/HomeContentRow";
 import HomeFeaturedStoryPanel from "@/components/home/HomeFeaturedStoryPanel";
+import HomeSurfaceCampusRow from "@/components/home/HomeSurfaceCampusRow";
 import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
 import { IconPlay } from "@/components/icons/MockupIcons";
 import { useAuth } from "@/context/AuthContext";
@@ -18,7 +18,8 @@ import {
   SELECTS_STORIES,
   SURFACE_STORIES,
 } from "@/lib/homeMockData";
-import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
+import { MOCKUP_HOME, MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
+import { mockupShellStyle } from "@/lib/mockupLayout";
 import { HERO_DESIGN } from "@/lib/homeHeroLayout";
 
 export default function HomeMockPage() {
@@ -66,12 +67,14 @@ export default function HomeMockPage() {
   }, []);
 
   const watchHref = user ? "/movies" : "/login";
+  const shellStyle = { ...heroStyle, ...mockupShellStyle };
 
   return (
-    <main className="min-h-screen" style={heroStyle}>
+    <main className={`min-h-screen ${MOCKUP_HOME.pageShell}`} style={shellStyle}>
       <section
         ref={heroSectionRef}
-        className={`relative overflow-hidden ${MOCKUP_HOME.heroMinHeight} ${MOCKUP_HOME.contentPadX} pb-10 pt-4 lg:pt-6`}
+        className={`relative overflow-hidden ${MOCKUP_HOME.contentPadX} pb-10 pt-4 lg:pt-6`}
+        style={MOCKUP_HOME_STYLES.heroMinHeight}
       >
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
@@ -81,16 +84,25 @@ export default function HomeMockPage() {
           priority
         />
 
-        <div className={`relative z-10 ${MOCKUP_HOME.pageMaxWidth} ${MOCKUP_HOME.heroGrid}`}>
+        <div
+          className="relative z-10 w-full lg:grid lg:items-end"
+          style={MOCKUP_HOME_STYLES.heroGrid}
+        >
           <div ref={heroTextRef} className="flex flex-col justify-end pb-6 lg:pb-10">
-            <h1 className="font-sans font-bold text-[clamp(2.25rem,4.5vw,4rem)] leading-[1.08] text-white mb-4 tracking-tight">
+            <h1
+              className="font-sans font-bold leading-[1.08] text-white mb-4 tracking-tight"
+              style={MOCKUP_HOME_STYLES.heroTitle}
+            >
               {t("home.mock.heroLine1")}{" "}
               <em className="font-serif italic" style={{ color: MOCKUP_HOME.accentBlue }}>
                 {t("home.mock.heroAccent")}
               </em>{" "}
               {t("home.mock.heroLine2")}
             </h1>
-            <p className="text-white/55 text-sm sm:text-[15px] max-w-md mb-7 leading-relaxed">
+            <p
+              className="text-white/55 max-w-md mb-7 leading-relaxed"
+              style={MOCKUP_HOME_STYLES.heroSubtitle}
+            >
               {t("home.mock.heroSubtitle")}
             </p>
             <div className="flex flex-wrap items-center gap-3">
@@ -128,7 +140,10 @@ export default function HomeMockPage() {
         </div>
       </section>
 
-      <div className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.contentPadX} pb-16 ${MOCKUP_HOME.sectionGap} ${MOCKUP_HOME.pageMaxWidth}`}>
+      <div
+        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.contentPadX} ${MOCKUP_HOME.pageShell} pb-16 flex flex-col`}
+        style={MOCKUP_HOME_STYLES.sectionGap}
+      >
         <HomeContentRow
           title={t("home.mock.featuredStories")}
           viewAllHref="/movies"
@@ -137,19 +152,12 @@ export default function HomeMockPage() {
           variant="featured"
         />
 
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
-          <div className="flex-1 min-w-0 w-full">
-            <HomeContentRow
-              title={t("home.mock.newToSurface")}
-              viewAllHref="/movies"
-              viewAllLabel={t("home.mock.viewAll")}
-              items={SURFACE_STORIES}
-              variant="surface"
-              showScrollButton
-            />
-          </div>
-          <CampusCurrentsBanner />
-        </div>
+        <HomeSurfaceCampusRow
+          title={t("home.mock.newToSurface")}
+          viewAllHref="/movies"
+          viewAllLabel={t("home.mock.viewAll")}
+          items={SURFACE_STORIES}
+        />
 
         <HomeContentRow
           title={t("home.mock.xiioSelects")}
