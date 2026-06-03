@@ -82,24 +82,35 @@ export function heroSectionMinHeight(waveRect: HeroWaveRect): number {
   );
 }
 
-/** Long top fade — theme blue extends into transparent header */
-export function heroPhotoTopExtensionFade(rgbTuple: RgbTuple = DEFAULT_HERO_RGB): string {
-  const rgb = heroRgbCss(rgbTuple);
-  return `linear-gradient(to bottom,
-    rgba(${rgb}, 0.65) 0%,
-    rgba(${rgb}, 0.38) 12%,
-    rgba(${rgb}, 0.18) 22%,
-    rgba(${rgb}, 0.08) 30%,
-    transparent 38%)`;
+/** Theme HEX overlay — hero text band only (not header bleed) */
+export function heroOverlayContentMaskStyle() {
+  return maskStyleFromImage(
+    `linear-gradient(to bottom,
+      transparent 0%,
+      transparent 22%,
+      black 35%,
+      black 100%)`
+  );
 }
 
-/** Long bottom fade — into main page background */
-export function heroPhotoBottomExtensionFade(): string {
+/** Sharp photo visible in center; top/bottom reveal blurred photo colors */
+export function heroPhotoSharpBandMaskStyle() {
+  return maskStyleFromImage(
+    `linear-gradient(to bottom,
+      transparent 0%,
+      transparent 20%,
+      black 38%,
+      black 68%,
+      transparent 82%,
+      transparent 100%)`
+  );
+}
+
+/** Bottom edge only — join to main page background */
+export function heroPhotoBottomBodyJoinFade(): string {
   return `linear-gradient(to bottom,
     transparent 0%,
-    transparent 52%,
-    rgba(2, 4, 8, 0.35) 68%,
-    rgba(2, 4, 8, 0.72) 82%,
+    transparent 85%,
     ${APP_MAIN_BG} 100%)`;
 }
 
@@ -133,6 +144,8 @@ function maskStyleFromImage(maskImage: string) {
   return {
     WebkitMaskImage: maskImage,
     maskImage,
+    WebkitMaskSize: "100% 100%",
+    maskSize: "100% 100%",
   } as const;
 }
 

@@ -6,8 +6,9 @@ import {
   heroDiagonalGradient,
   heroFullBleedMaskStyle,
   heroMobileVerticalGradient,
-  heroPhotoBottomExtensionFade,
-  heroPhotoTopExtensionFade,
+  heroOverlayContentMaskStyle,
+  heroPhotoBottomBodyJoinFade,
+  heroPhotoSharpBandMaskStyle,
 } from "@/lib/homeHeroLayout";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
@@ -90,6 +91,45 @@ function OverlayLayers({
   );
 }
 
+function HeroPhotoLayers({
+  heroImage,
+  heroImagePosition,
+  stripWidth,
+  priority,
+}: {
+  heroImage: string;
+  heroImagePosition: string;
+  stripWidth: string;
+  priority: boolean;
+}) {
+  const imageStyle = { objectPosition: heroImagePosition };
+
+  return (
+    <>
+      <Image
+        src={heroImage}
+        alt=""
+        fill
+        priority={priority}
+        className="absolute inset-0 scale-[1.15] object-cover blur-[48px] lg:blur-[56px]"
+        style={imageStyle}
+        sizes={stripWidth}
+      />
+      <div className="absolute inset-0" style={heroPhotoSharpBandMaskStyle()}>
+        <Image
+          src={heroImage}
+          alt=""
+          fill
+          priority={priority}
+          className="object-cover"
+          style={imageStyle}
+          sizes={stripWidth}
+        />
+      </div>
+    </>
+  );
+}
+
 export default function HeroLandscapeBackdrop({
   rgbTuple,
   overlayEnabled = true,
@@ -124,29 +164,24 @@ export default function HeroLandscapeBackdrop({
         }}
         aria-hidden
       >
-        <Image
-          src={heroImage}
-          alt=""
-          fill
+        <HeroPhotoLayers
+          heroImage={heroImage}
+          heroImagePosition={heroImagePosition}
+          stripWidth={stripWidth}
           priority={priority}
-          className="object-cover"
-          style={{ objectPosition: heroImagePosition }}
-          sizes={stripWidth}
         />
-        <OverlayLayers
-          overlayEnabled={overlayEnabled}
-          rgbTuple={rgbTuple}
-          gradStartPercent={gradStartPercent}
-          maskVariant="none"
-          variant="home"
-        />
+        <div className="absolute inset-0" style={heroOverlayContentMaskStyle()}>
+          <OverlayLayers
+            overlayEnabled={overlayEnabled}
+            rgbTuple={rgbTuple}
+            gradStartPercent={gradStartPercent}
+            maskVariant="none"
+            variant="home"
+          />
+        </div>
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: heroPhotoTopExtensionFade(rgbTuple) }}
-        />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: heroPhotoBottomExtensionFade() }}
+          style={{ background: heroPhotoBottomBodyJoinFade() }}
         />
       </div>
     );
