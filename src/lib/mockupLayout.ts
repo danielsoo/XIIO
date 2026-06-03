@@ -10,6 +10,11 @@ export const MOCKUP_CONTENT_INSET = {
   rightMargin: 76,
 } as const;
 
+/** Implemented sidebar width (12rem) — gap after border-r to main content start */
+export const APP_SIDEBAR_IMPLEMENTATION_PX = 192;
+export const APP_CONTENT_BOUNDARY_INSET_PX =
+  MOCKUP_CONTENT_INSET.left - APP_SIDEBAR_IMPLEMENTATION_PX;
+
 /** Measured layout px on 001 mockup */
 export const MOCKUP_MEASURES = {
   topBarHeight: 60,

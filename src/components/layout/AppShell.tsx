@@ -8,6 +8,7 @@ import { HeroWaveLayoutProvider } from "@/context/HeroWaveLayoutContext";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { APP_SIDEBAR_WIDTH, shouldHideAppShell } from "@/lib/appNav";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
+import { APP_CONTENT_BOUNDARY_INSET_PX } from "@/lib/mockupLayout";
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -23,8 +24,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <div className="min-h-screen bg-[#05070A] text-white" style={heroStyle}>
         <AppSidebar mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
         <div
-          className={`lg:pl-[var(--app-sidebar-width)] ${MOCKUP_HOME.contentLeftPad} ${MOCKUP_HOME.contentRightPad}`}
-          style={{ ["--app-sidebar-width" as string]: APP_SIDEBAR_WIDTH }}
+          className={MOCKUP_HOME.contentMainColumnPad}
+          style={{
+            ["--app-sidebar-width" as string]: APP_SIDEBAR_WIDTH,
+            ["--app-content-boundary-inset" as string]: `${APP_CONTENT_BOUNDARY_INSET_PX}px`,
+          }}
         >
           <AppTopBar onMenuOpen={() => setMobileOpen(true)} />
           {children}
