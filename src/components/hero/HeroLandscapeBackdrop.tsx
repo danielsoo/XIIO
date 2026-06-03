@@ -131,7 +131,10 @@ function HeroPhotoLayers({
           sizes={stripWidth}
         />
         {topBleed === "brightSurface" ? (
-          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-transparent pointer-events-none" />
+          <div
+            className="absolute inset-x-0 top-0 h-[22%] bg-gradient-to-b from-black/[0.12] to-transparent pointer-events-none"
+            aria-hidden
+          />
         ) : null}
       </div>
     </>
