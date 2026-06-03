@@ -91,7 +91,7 @@ export default function HomeMockPage() {
     <main className={`min-h-screen ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
       <section
         ref={setHeroSectionRef}
-        className={`relative flex flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
+        className={`relative isolate flex flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
         style={{ minHeight: waveRect.height }}
       >
         <HeroLandscapeBackdrop

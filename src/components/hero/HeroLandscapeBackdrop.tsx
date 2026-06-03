@@ -26,18 +26,29 @@ type Props = {
   className?: string;
 };
 
+const HOME_COLOR_OVERLAY_OPACITY = 0.58;
+const COMPACT_COLOR_OVERLAY_OPACITY = 0.9;
+
 function OverlayLayers({
   overlayEnabled,
   rgbTuple,
   gradStartPercent,
   maskVariant,
+  variant,
 }: {
   overlayEnabled: boolean;
   rgbTuple: RgbTuple;
   gradStartPercent: number;
   maskVariant: MaskVariant;
+  variant: "home" | "compact";
 }) {
   const maskStyle = overlayMaskStyle(maskVariant);
+  const colorOpacity =
+    variant === "home" ? HOME_COLOR_OVERLAY_OPACITY : COMPACT_COLOR_OVERLAY_OPACITY;
+  const vignetteClass =
+    variant === "home"
+      ? "from-black/30 via-black/10 to-transparent lg:from-black/25 lg:via-transparent lg:to-transparent"
+      : "from-black/55 via-black/15 to-transparent lg:from-black/50 lg:via-transparent lg:to-transparent";
 
   if (overlayEnabled) {
     return (
@@ -46,7 +57,7 @@ function OverlayLayers({
           className="absolute inset-0 hidden lg:block"
           style={{
             background: heroDiagonalGradient(gradStartPercent, rgbTuple),
-            opacity: 0.9,
+            opacity: colorOpacity,
             ...maskStyle,
           }}
         />
@@ -54,21 +65,18 @@ function OverlayLayers({
           className="absolute inset-0 lg:hidden"
           style={{
             background: heroMobileVerticalGradient(rgbTuple),
-            opacity: 0.9,
+            opacity: colorOpacity,
             ...maskStyle,
           }}
         />
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent lg:from-black/50 lg:via-transparent lg:to-transparent"
-          style={maskStyle}
-        />
+        <div className={`absolute inset-0 bg-gradient-to-r ${vignetteClass}`} style={maskStyle} />
       </>
     );
   }
 
   return (
     <div
-      className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-transparent"
+      className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent"
       style={maskStyle}
     />
   );
@@ -85,13 +93,14 @@ export default function HeroLandscapeBackdrop({
   const { waveRect } = useHeroWaveLayout();
 
   if (variant === "home") {
+    const stripWidth = `calc(100% - ${waveRect.insetLeft}px - ${waveRect.insetRight}px)`;
+
     return (
       <div
-        className={`fixed z-0 overflow-hidden pointer-events-none ${className}`}
+        className={`absolute top-0 z-[1] overflow-hidden pointer-events-none ${className}`}
         style={{
-          top: waveRect.top,
-          left: waveRect.left,
-          right: waveRect.right,
+          left: waveRect.insetLeft,
+          right: waveRect.insetRight,
           height: waveRect.height,
         }}
         aria-hidden
@@ -103,15 +112,16 @@ export default function HeroLandscapeBackdrop({
           priority={priority}
           className="object-cover"
           style={{ objectPosition: HERO_LANDSCAPE_POSITION }}
-          sizes={`calc(100vw - ${Math.round(waveRect.left)}px - ${Math.round(waveRect.right)}px)`}
+          sizes={stripWidth}
         />
         <OverlayLayers
           overlayEnabled={overlayEnabled}
           rgbTuple={rgbTuple}
           gradStartPercent={gradStartPercent}
           maskVariant="none"
+          variant="home"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20 pointer-events-none" />
       </div>
     );
   }
@@ -135,6 +145,7 @@ export default function HeroLandscapeBackdrop({
         rgbTuple={rgbTuple}
         gradStartPercent={gradStartPercent}
         maskVariant="full"
+        variant="compact"
       />
       <div
         className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-xiio-bg/90"

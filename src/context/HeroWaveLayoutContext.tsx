@@ -13,23 +13,24 @@ import {
 import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 
 export type HeroWaveRect = {
-  top: number;
-  left: number;
-  right: number;
+  /** px from hero section left edge to image strip start */
+  insetLeft: number;
+  /** px from hero section right edge (e.g. content padding) */
+  insetRight: number;
   height: number;
 };
 
+const MIN_WAVE_HEIGHT = 240;
+
 const LG_FALLBACK: HeroWaveRect = {
-  top: 0,
-  left: MOCKUP_MEASURES.heroTextColWidth,
-  right: 0,
+  insetLeft: MOCKUP_MEASURES.heroTextColWidth,
+  insetRight: 0,
   height: 400,
 };
 
 const MOBILE_FALLBACK: HeroWaveRect = {
-  top: 0,
-  left: 0,
-  right: 0,
+  insetLeft: 0,
+  insetRight: 0,
   height: 280,
 };
 
@@ -52,11 +53,7 @@ export function HeroWaveLayoutProvider({ children }: { children: ReactNode }) {
     const section = sectionRef.current;
 
     if (!lg) {
-      const sr = section?.getBoundingClientRect();
-      setWaveRect({
-        ...MOBILE_FALLBACK,
-        top: sr ? Math.round(sr.top) : 0,
-      });
+      setWaveRect(MOBILE_FALLBACK);
       return;
     }
 
@@ -72,15 +69,14 @@ export function HeroWaveLayoutProvider({ children }: { children: ReactNode }) {
       ? text.getBoundingClientRect().right
       : sr.left + MOCKUP_MEASURES.heroTextColWidth;
 
-    const height = myList
-      ? Math.max(0, Math.round(myList.getBoundingClientRect().bottom - sr.top))
+    const measuredHeight = myList
+      ? Math.round(myList.getBoundingClientRect().bottom - sr.top)
       : LG_FALLBACK.height;
 
     setWaveRect({
-      top: Math.round(sr.top),
-      left: Math.round(textRight),
-      right: Math.max(0, Math.round(window.innerWidth - sr.right)),
-      height,
+      insetLeft: Math.max(0, Math.round(textRight - sr.left)),
+      insetRight: Math.max(0, Math.round(window.innerWidth - sr.right)),
+      height: Math.max(MIN_WAVE_HEIGHT, measuredHeight),
     });
   }, []);
 
