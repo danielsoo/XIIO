@@ -682,6 +682,8 @@ export const messages = {
         applySiteWide: "전체 적용",
         applying: "적용 중…",
         applyFailed: "저장에 실패했습니다.",
+        overlayOn: "그라데이션 색상",
+        noOverlay: "그라데이션 없음",
       },
       mock: {
         heroLine1: "Stories",
@@ -2225,6 +2227,8 @@ export const messages = {
         applySiteWide: "Apply site-wide",
         applying: "Applying…",
         applyFailed: "Could not save.",
+        overlayOn: "Gradient color",
+        noOverlay: "No gradient",
       },
       mock: {
         heroLine1: "Stories",

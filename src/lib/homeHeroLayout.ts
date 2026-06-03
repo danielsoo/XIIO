@@ -5,12 +5,12 @@ import {
   type RgbTuple,
 } from "@/lib/homeHeroColors";
 
-/** 1024×712 목업 기준 픽셀 — clamp/% 변환용 */
+/** 1536×1024 목업 기준 픽셀 — clamp/% 변환용 */
 export const HERO_DESIGN = {
-  frameWidth: 1024,
-  frameHeight: 712,
+  frameWidth: 1536,
+  frameHeight: 1024,
   heroMinHeight: 426,
-  padX: 24,
+  padX: 19,
   textColWidth: 376,
   colGap: 96,
   titleSize: 36,

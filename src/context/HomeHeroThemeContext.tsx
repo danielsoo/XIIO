@@ -28,8 +28,10 @@ import { useAdminAccess } from "@/hooks/useAdminAccess";
 type HomeHeroThemeContextValue = {
   theme: HomeHeroTheme;
   rgbTuple: RgbTuple;
+  overlayEnabled: boolean;
   heroStyle: CSSProperties;
   setPreviewHeroHex: (heroHex: string) => void;
+  setPreviewOverlayEnabled: (enabled: boolean) => void;
   clearPreview: () => void;
   hasPreview: boolean;
 };
@@ -51,7 +53,7 @@ function writePreviewToStorage(theme: HomeHeroTheme | null) {
   }
   localStorage.setItem(
     HOME_HERO_PREVIEW_STORAGE_KEY,
-    JSON.stringify({ heroHex: theme.heroHex })
+    JSON.stringify({ heroHex: theme.heroHex, overlayEnabled: theme.overlayEnabled })
   );
 }
 
@@ -130,12 +132,28 @@ export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
   const setPreviewHeroHex = useCallback(
     (heroHex: string) => {
       if (!isAdmin) return;
-      const next = themeFromHeroHex(heroHex);
-      if (!next) return;
-      setPreviewTheme(next);
-      writePreviewToStorage(next);
+      setPreviewTheme((prev) => {
+        const overlayEnabled = prev?.overlayEnabled ?? effectiveTheme.overlayEnabled;
+        const next = themeFromHeroHex(heroHex, overlayEnabled);
+        if (!next) return prev;
+        writePreviewToStorage(next);
+        return next;
+      });
     },
-    [isAdmin]
+    [isAdmin, effectiveTheme.overlayEnabled]
+  );
+
+  const setPreviewOverlayEnabled = useCallback(
+    (enabled: boolean) => {
+      if (!isAdmin) return;
+      setPreviewTheme((prev) => {
+        const base = prev ?? effectiveTheme;
+        const next: HomeHeroTheme = { ...base, overlayEnabled: enabled };
+        writePreviewToStorage(next);
+        return next;
+      });
+    },
+    [isAdmin, effectiveTheme]
   );
 
   const clearPreview = useCallback(() => {
@@ -147,12 +165,23 @@ export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
     (): HomeHeroThemeContextValue => ({
       theme: effectiveTheme,
       rgbTuple,
+      overlayEnabled: effectiveTheme.overlayEnabled,
       heroStyle,
       setPreviewHeroHex,
+      setPreviewOverlayEnabled,
       clearPreview,
       hasPreview: isAdmin && previewTheme !== null,
     }),
-    [effectiveTheme, rgbTuple, heroStyle, setPreviewHeroHex, clearPreview, isAdmin, previewTheme]
+    [
+      effectiveTheme,
+      rgbTuple,
+      heroStyle,
+      setPreviewHeroHex,
+      setPreviewOverlayEnabled,
+      clearPreview,
+      isAdmin,
+      previewTheme,
+    ]
   );
 
   return (

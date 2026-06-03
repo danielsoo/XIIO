@@ -24,7 +24,14 @@ export default function AdminHomeColorPicker() {
   const { t } = useTranslations();
   const { user } = useAuth();
   const { isAdmin, checked } = useAdminAccess();
-  const { theme, setPreviewHeroHex, clearPreview, hasPreview } = useHomeHeroTheme();
+  const {
+    theme,
+    overlayEnabled,
+    setPreviewHeroHex,
+    setPreviewOverlayEnabled,
+    clearPreview,
+    hasPreview,
+  } = useHomeHeroTheme();
 
   const [hexInput, setHexInput] = useState(theme.heroHex);
   const [hsv, setHsv] = useState<HsvColor>(() => hexToHsv(theme.heroHex) ?? { h: 212, s: 76, v: 45 });
@@ -65,8 +72,8 @@ export default function AdminHomeColorPicker() {
   };
 
   const onResetPreview = () => {
-    clearPreview();
-    applyHex(DEFAULT_HOME_HERO_THEME.heroHex);
+    setPreviewHeroHex(DEFAULT_HOME_HERO_THEME.heroHex);
+    setPreviewOverlayEnabled(DEFAULT_HOME_HERO_THEME.overlayEnabled);
     setApplyError(null);
   };
 
@@ -82,7 +89,7 @@ export default function AdminHomeColorPicker() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ heroHex: theme.heroHex }),
+        body: JSON.stringify({ heroHex: theme.heroHex, overlayEnabled: theme.overlayEnabled }),
       });
       const data = (await res.json()) as { message?: string };
       if (!res.ok) {
@@ -129,7 +136,19 @@ export default function AdminHomeColorPicker() {
 
       {!collapsed && (
         <div className="p-3 space-y-3">
-          <div className="flex gap-3">
+          <label className="flex items-center justify-between gap-3 rounded-lg border border-white/10 px-3 py-2 cursor-pointer hover:bg-white/[0.04]">
+            <span className="text-xs text-white/80">
+              {overlayEnabled ? t("home.colorPicker.overlayOn") : t("home.colorPicker.noOverlay")}
+            </span>
+            <input
+              type="checkbox"
+              checked={overlayEnabled}
+              onChange={(e) => setPreviewOverlayEnabled(e.target.checked)}
+              className="h-4 w-4 rounded border-white/30 bg-white/10 accent-sky-500"
+            />
+          </label>
+
+          <div className={`flex gap-3 ${overlayEnabled ? "" : "opacity-40 pointer-events-none"}`}>
             <div
               className="w-10 shrink-0 rounded-md border border-white/20"
               style={{ backgroundColor: theme.heroHex }}
@@ -140,7 +159,7 @@ export default function AdminHomeColorPicker() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${overlayEnabled ? "" : "opacity-40 pointer-events-none"}`}>
             <label className="text-[10px] uppercase tracking-wider text-white/50 shrink-0">
               HEX
             </label>
@@ -152,20 +171,22 @@ export default function AdminHomeColorPicker() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") onHexInputBlur();
               }}
-              className="flex-1 min-w-0 rounded-md bg-white/10 border border-white/15 px-2 py-1.5 text-sm font-mono uppercase"
+              disabled={!overlayEnabled}
+              className="flex-1 min-w-0 rounded-md bg-white/10 border border-white/15 px-2 py-1.5 text-sm font-mono uppercase disabled:opacity-60"
               spellCheck={false}
             />
             <button
               type="button"
               onClick={() => void copyHex()}
-              className="shrink-0 text-xs text-white/60 hover:text-white px-2 py-1.5 rounded-md hover:bg-white/10"
+              disabled={!overlayEnabled}
+              className="shrink-0 text-xs text-white/60 hover:text-white px-2 py-1.5 rounded-md hover:bg-white/10 disabled:opacity-60"
               title={t("home.colorPicker.copyHex")}
             >
               {t("home.colorPicker.copy")}
             </button>
           </div>
 
-          {rgbTuple && (
+          {rgbTuple && overlayEnabled && (
             <div className="grid grid-cols-3 gap-2 text-[10px]">
               <div className="rounded-md bg-white/5 px-2 py-1.5">
                 <p className="text-white/45 uppercase mb-0.5">RGB</p>

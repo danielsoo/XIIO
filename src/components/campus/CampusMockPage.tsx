@@ -62,14 +62,14 @@ function SchoolBadge({
 
 export default function CampusMockPage() {
   const { t } = useTranslations();
-  const { rgbTuple, heroStyle } = useHomeHeroTheme();
+  const { rgbTuple, overlayEnabled, heroStyle } = useHomeHeroTheme();
   const countdown = useCountdown(ACTIVE_BATTLE.votingEndsAt);
   const { schoolA, schoolB } = ACTIVE_BATTLE;
 
   return (
     <main className="min-h-screen pb-16" style={heroStyle}>
       <section className="relative min-h-[320px] flex flex-col justify-end px-4 sm:px-6 lg:px-10 pb-10">
-        <HeroLandscapeBackdrop rgbTuple={rgbTuple} variant="compact" />
+        <HeroLandscapeBackdrop rgbTuple={rgbTuple} overlayEnabled={overlayEnabled} variant="compact" />
         <div className="relative z-10 max-w-3xl">
           <p className="text-xs font-bold tracking-[0.25em] text-sky-400 mb-3">{t("campus.mock.badge")}</p>
           <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white mb-3">

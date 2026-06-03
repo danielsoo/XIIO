@@ -24,7 +24,7 @@ import { HERO_DESIGN } from "@/lib/homeHeroLayout";
 export default function HomeMockPage() {
   const { t } = useTranslations();
   const { user } = useAuth();
-  const { rgbTuple, heroStyle } = useHomeHeroTheme();
+  const { rgbTuple, overlayEnabled, heroStyle } = useHomeHeroTheme();
   const { items: promoItems } = usePromoFeed(true);
   const heroTextRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLElement>(null);
@@ -71,12 +71,18 @@ export default function HomeMockPage() {
     <main className="min-h-screen" style={heroStyle}>
       <section
         ref={heroSectionRef}
-        className={`relative overflow-hidden ${MOCKUP_HOME.heroMinHeight} ${MOCKUP_HOME.pageGutter} pb-10 pt-6 lg:pt-10`}
+        className={`relative overflow-hidden ${MOCKUP_HOME.heroMinHeight} ${MOCKUP_HOME.contentPadX} pb-10 pt-4 lg:pt-6`}
       >
-        <HeroLandscapeBackdrop rgbTuple={rgbTuple} variant="home" gradStartPercent={gradStart} priority />
+        <HeroLandscapeBackdrop
+          rgbTuple={rgbTuple}
+          overlayEnabled={overlayEnabled}
+          variant="home"
+          gradStartPercent={gradStart}
+          priority
+        />
 
         <div className={`relative z-10 ${MOCKUP_HOME.pageMaxWidth} ${MOCKUP_HOME.heroGrid}`}>
-          <div ref={heroTextRef} className="flex flex-col justify-end pb-4 lg:pb-8">
+          <div ref={heroTextRef} className="flex flex-col justify-end pb-6 lg:pb-10">
             <h1 className="font-sans font-bold text-[clamp(2.25rem,4.5vw,4rem)] leading-[1.08] text-white mb-4 tracking-tight">
               {t("home.mock.heroLine1")}{" "}
               <em className="font-serif italic" style={{ color: MOCKUP_HOME.accentBlue }}>
@@ -122,7 +128,7 @@ export default function HomeMockPage() {
         </div>
       </section>
 
-      <div className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageGutter} pb-16 space-y-10 ${MOCKUP_HOME.pageMaxWidth}`}>
+      <div className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.contentPadX} pb-16 ${MOCKUP_HOME.sectionGap} ${MOCKUP_HOME.pageMaxWidth}`}>
         <HomeContentRow
           title={t("home.mock.featuredStories")}
           viewAllHref="/movies"

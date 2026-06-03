@@ -16,6 +16,7 @@ const maskStyle = {
 
 type Props = {
   rgbTuple: RgbTuple;
+  overlayEnabled?: boolean;
   variant?: "home" | "compact";
   gradStartPercent?: number;
   priority?: boolean;
@@ -24,6 +25,7 @@ type Props = {
 
 export default function HeroLandscapeBackdrop({
   rgbTuple,
+  overlayEnabled = true,
   variant = "home",
   gradStartPercent = 44,
   priority = false,
@@ -42,26 +44,35 @@ export default function HeroLandscapeBackdrop({
         style={{ objectPosition: HERO_LANDSCAPE_POSITION }}
         sizes="100vw"
       />
-      <div
-        className="absolute inset-0 hidden lg:block"
-        style={{
-          background: heroDiagonalGradient(gradStartPercent, rgbTuple),
-          opacity: 0.9,
-          ...maskStyle,
-        }}
-      />
-      <div
-        className="absolute inset-0 lg:hidden"
-        style={{
-          background: heroMobileVerticalGradient(rgbTuple),
-          opacity: 0.9,
-          ...maskStyle,
-        }}
-      />
-      <div
-        className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent lg:from-black/50 lg:via-transparent lg:to-transparent"
-        style={maskStyle}
-      />
+      {overlayEnabled ? (
+        <>
+          <div
+            className="absolute inset-0 hidden lg:block"
+            style={{
+              background: heroDiagonalGradient(gradStartPercent, rgbTuple),
+              opacity: 0.9,
+              ...maskStyle,
+            }}
+          />
+          <div
+            className="absolute inset-0 lg:hidden"
+            style={{
+              background: heroMobileVerticalGradient(rgbTuple),
+              opacity: 0.9,
+              ...maskStyle,
+            }}
+          />
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent lg:from-black/50 lg:via-transparent lg:to-transparent"
+            style={maskStyle}
+          />
+        </>
+      ) : (
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-transparent"
+          style={maskStyle}
+        />
+      )}
       <div
         className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-xiio-bg/90"
         style={maskStyle}

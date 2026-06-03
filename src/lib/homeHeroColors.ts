@@ -4,6 +4,7 @@ export type HomeHeroTheme = {
   heroHex: string;
   ctaHex: string;
   ctaHoverHex: string;
+  overlayEnabled: boolean;
 };
 
 const HEX6 = /^#?([0-9a-fA-F]{6})$/;
@@ -13,6 +14,7 @@ export const DEFAULT_HOME_HERO_THEME: HomeHeroTheme = {
   heroHex: "#1C4574",
   ctaHex: "#256195",
   ctaHoverHex: "#2d6fa8",
+  overlayEnabled: true,
 };
 
 export const HOME_HERO_PREVIEW_STORAGE_KEY = "xiio-home-hero-theme-preview";
@@ -109,11 +111,19 @@ export function deriveCtaColors(heroHex: string): Pick<HomeHeroTheme, "ctaHex" |
   return { ctaHex: rgbTupleToHex(cta), ctaHoverHex: rgbTupleToHex(ctaHover) };
 }
 
-export function themeFromHeroHex(heroHex: string): HomeHeroTheme | null {
+export function themeFromHeroHex(
+  heroHex: string,
+  overlayEnabled = DEFAULT_HOME_HERO_THEME.overlayEnabled
+): HomeHeroTheme | null {
   const normalized = normalizeHex(heroHex);
   if (!normalized) return null;
   const derived = deriveCtaColors(normalized);
-  return { heroHex: normalized, ...derived };
+  return { heroHex: normalized, ...derived, overlayEnabled };
+}
+
+function parseOverlayEnabled(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  return DEFAULT_HOME_HERO_THEME.overlayEnabled;
 }
 
 export function hexToRgbTuple(hex: string): RgbTuple | null {
@@ -195,9 +205,10 @@ export function hsvToHex({ h, s, v }: HsvColor): string {
 
 export function parseStoredPreview(raw: string): HomeHeroTheme | null {
   try {
-    const data = JSON.parse(raw) as { heroHex?: string };
+    const data = JSON.parse(raw) as { heroHex?: string; overlayEnabled?: boolean };
     if (!data.heroHex) return null;
-    return themeFromHeroHex(data.heroHex);
+    const theme = themeFromHeroHex(data.heroHex, parseOverlayEnabled(data.overlayEnabled));
+    return theme;
   } catch {
     return null;
   }
@@ -207,12 +218,20 @@ export function parseFirestoreHomeTheme(
   data: Record<string, unknown> | undefined
 ): HomeHeroTheme | null {
   if (!data?.heroHex) return null;
-  const hero = themeFromHeroHex(String(data.heroHex));
+  const hero = themeFromHeroHex(
+    String(data.heroHex),
+    parseOverlayEnabled(data.overlayEnabled)
+  );
   if (!hero) return null;
   const cta = normalizeHex(String(data.ctaHex ?? ""));
   const ctaHover = normalizeHex(String(data.ctaHoverHex ?? ""));
   if (cta && ctaHover) {
-    return { heroHex: hero.heroHex, ctaHex: cta, ctaHoverHex: ctaHover };
+    return {
+      heroHex: hero.heroHex,
+      ctaHex: cta,
+      ctaHoverHex: ctaHover,
+      overlayEnabled: hero.overlayEnabled,
+    };
   }
   return hero;
 }

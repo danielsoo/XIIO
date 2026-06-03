@@ -18,7 +18,7 @@ export default function HomeFeaturedStoryPanel({
   activeIndex = 0,
 }: Props) {
   return (
-    <div className="flex flex-col items-end text-right lg:pb-2">
+    <div className="flex flex-col items-end text-right lg:pb-3">
       <p className="text-[10px] font-semibold tracking-[0.2em] text-white/40 uppercase mb-2">{label}</p>
       <p className="text-sm font-semibold text-white mb-0.5">{title}</p>
       <p className="text-xs text-white/45 mb-4">{meta}</p>

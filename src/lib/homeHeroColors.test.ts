@@ -6,6 +6,7 @@ import {
   hexToHsv,
   hsvToHex,
   normalizeHex,
+  parseFirestoreHomeTheme,
   parseHexColor,
   themeFromHeroHex,
 } from "./homeHeroColors.ts";
@@ -38,5 +39,28 @@ describe("homeHeroColors", () => {
     const heroLum = hero[0] + hero[1] + hero[2];
     const ctaLum = cta[0] + cta[1] + cta[2];
     assert.ok(ctaLum > heroLum);
+  });
+
+  it("parses overlayEnabled from Firestore", () => {
+    const withOverlay = parseFirestoreHomeTheme({
+      heroHex: "#1C4574",
+      overlayEnabled: true,
+    });
+    assert.equal(withOverlay?.overlayEnabled, true);
+
+    const withoutOverlay = parseFirestoreHomeTheme({
+      heroHex: "#1C4574",
+      overlayEnabled: false,
+    });
+    assert.equal(withoutOverlay?.overlayEnabled, false);
+
+    const legacy = parseFirestoreHomeTheme({ heroHex: "#1C4574" });
+    assert.equal(legacy?.overlayEnabled, true);
+  });
+
+  it("themeFromHeroHex respects overlayEnabled flag", () => {
+    const off = themeFromHeroHex("#1C4574", false);
+    assert.ok(off);
+    assert.equal(off.overlayEnabled, false);
   });
 });

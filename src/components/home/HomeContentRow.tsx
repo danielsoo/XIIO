@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import HomeStoryCard from "@/components/home/HomeStoryCard";
 import { IconChevronRight, IconScrollNext } from "@/components/icons/MockupIcons";
+import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import type { HomeStoryItem } from "@/lib/homeMockData";
 
 type Props = {
@@ -24,9 +25,11 @@ export default function HomeContentRow({
   showScrollButton = false,
 }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const isFeatured = variant === "featured";
+  const rowGap = isFeatured ? MOCKUP_HOME.featuredRowGap : MOCKUP_HOME.surfaceRowGap;
 
   const scroll = () => {
-    scrollerRef.current?.scrollBy({ left: 340, behavior: "smooth" });
+    scrollerRef.current?.scrollBy({ left: 260, behavior: "smooth" });
   };
 
   return (
@@ -54,7 +57,7 @@ export default function HomeContentRow({
       </div>
       <div
         ref={scrollerRef}
-        className="flex gap-3 overflow-x-auto pb-1 scrollbar-none"
+        className={`flex ${rowGap} overflow-x-auto pb-1 scrollbar-none`}
         style={{ scrollbarWidth: "none" }}
       >
         {items.map((item) => (

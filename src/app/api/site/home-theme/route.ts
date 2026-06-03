@@ -12,6 +12,7 @@ export async function GET() {
     heroHex: DEFAULT_HOME_HERO_THEME.heroHex,
     ctaHex: DEFAULT_HOME_HERO_THEME.ctaHex,
     ctaHoverHex: DEFAULT_HOME_HERO_THEME.ctaHoverHex,
+    overlayEnabled: DEFAULT_HOME_HERO_THEME.overlayEnabled,
     updatedAt: null as string | null,
   };
 
@@ -36,6 +37,7 @@ export async function GET() {
           heroHex: theme.heroHex,
           ctaHex: theme.ctaHex,
           ctaHoverHex: theme.ctaHoverHex,
+          overlayEnabled: theme.overlayEnabled,
           updatedAt: updatedAtIso,
         }
       : fallback,
