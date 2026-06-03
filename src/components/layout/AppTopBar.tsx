@@ -8,8 +8,7 @@ import { useTranslations } from "@/context/LocaleContext";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { IconBell, IconSearch } from "@/components/icons/MockupIcons";
 import { getUserProfile } from "@/lib/userProfile";
-import { MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
-import { framePx } from "@/lib/mockupLayout";
+import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import type { UserProfileDoc } from "@/types/user";
 
 type Props = {
@@ -19,7 +18,7 @@ type Props = {
 function MockProfileIcon() {
   return (
     <svg
-      className="w-[calc(18px*var(--frame-scale))] h-[calc(18px*var(--frame-scale))] text-white/60"
+      className="w-[18px] h-[18px] text-white/60"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -71,10 +70,9 @@ export default function AppTopBar({ onMenuOpen }: Props) {
 
   return (
     <header
-      className={`sticky top-0 z-30 flex items-center gap-3 px-4 lg:pl-0 lg:pr-[calc(76px*var(--frame-scale))] ${
+      className={`sticky top-0 z-30 flex items-center gap-3 px-4 lg:pl-0 ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.topBarHeight} ${
         isHomeChrome ? "bg-transparent backdrop-blur-none" : "bg-[#05070A]/90 backdrop-blur-md"
       }`}
-      style={MOCKUP_HOME_STYLES.topBarHeight}
     >
       <button
         type="button"
@@ -88,19 +86,14 @@ export default function AppTopBar({ onMenuOpen }: Props) {
       </button>
 
       <div className="flex-1 flex justify-center">
-        <label className="relative hidden sm:block" style={MOCKUP_HOME_STYLES.searchBar}>
+        <label className={`relative hidden sm:block ${MOCKUP_HOME.searchBar}`}>
           <span className="sr-only">{t("topBar.searchLabel")}</span>
-          <IconSearch className="absolute top-1/2 -translate-y-1/2 left-[calc(16px*var(--frame-scale))] w-[calc(16px*var(--frame-scale))] h-[calc(16px*var(--frame-scale))] text-white/30" />
+          <IconSearch className="absolute top-1/2 -translate-y-1/2 left-4 w-4 h-4 text-white/30" />
           <input
             type="search"
             readOnly
             placeholder={t("topBar.searchPlaceholder")}
-            className="w-full h-full rounded-full bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/30 cursor-default"
-            style={{
-              fontSize: MOCKUP_HOME_STYLES.searchBar.fontSize,
-              paddingLeft: framePx(40),
-              paddingRight: framePx(16),
-            }}
+            className="w-full h-full rounded-full bg-white/[0.04] border border-white/[0.08] py-2 pl-11 pr-4 text-white placeholder:text-white/30 cursor-default"
           />
         </label>
       </div>
@@ -108,8 +101,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
       <div className="flex items-center gap-1 shrink-0">
         <button
           type="button"
-          className="rounded-full text-white/50 hover:text-white hover:bg-white/5 transition"
-          style={{ padding: framePx(10) }}
+          className="p-2.5 rounded-full text-white/50 hover:text-white hover:bg-white/5 transition"
           aria-label={t("topBar.notifications")}
         >
           <IconBell />
@@ -163,8 +155,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
         ) : (
           <Link
             href="/login"
-            className="rounded-full border border-white/20 flex items-center justify-center hover:bg-white/5 transition"
-            style={{ width: framePx(32), height: framePx(32) }}
+            className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/5 transition"
             aria-label={t("common.login")}
           >
             <MockProfileIcon />

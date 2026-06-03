@@ -1,6 +1,4 @@
-import type { CSSProperties } from "react";
-
-/** 001 home mockup full frame (1536×1024 PNG) */
+/** 001 home mockup full frame (1536×1024 PNG) — reference constants only */
 export const MOCKUP_FRAME = { width: 1536, height: 1024 } as const;
 
 export const MOCKUP_SIDEBAR = 239;
@@ -51,22 +49,6 @@ export const MOCKUP_MEASURES = {
   sectionTitleSize: 14,
 } as const;
 
-export const FRAME_SCALE_VAR = "--frame-scale";
-export const CAMPUS_WIDTH_VAR = "--campus-w";
-export const SURFACE_CAMPUS_GAP_VAR = "--gap-surface-campus";
-
-export const frameScale = `calc(100vw / ${MOCKUP_FRAME.width})`;
-
 export function pctOfContent(mockupPx: number): number {
   return (mockupPx / MOCKUP_CONTENT) * 100;
 }
-
-export function framePx(mockupPx: number): string {
-  return `calc(${mockupPx}px * var(${FRAME_SCALE_VAR}))`;
-}
-
-export const frameShellStyle: CSSProperties = {
-  [FRAME_SCALE_VAR as string]: frameScale,
-  [CAMPUS_WIDTH_VAR as string]: framePx(MOCKUP_MEASURES.campusBannerWidth),
-  [SURFACE_CAMPUS_GAP_VAR as string]: framePx(MOCKUP_MEASURES.surfaceCampusGap),
-};

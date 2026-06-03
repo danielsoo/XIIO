@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { IconPlus } from "@/components/icons/MockupIcons";
-import { MOCKUP_HOME, MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
+import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import type { HomeStoryItem } from "@/lib/homeMockData";
 
 type Props = {
@@ -14,16 +14,13 @@ type Props = {
 export default function HomeStoryCard({ item, variant = "featured" }: Props) {
   const isFeatured = variant === "featured";
   const href = item.href ?? "/movies";
-  const cardWidthStyle = isFeatured
-    ? MOCKUP_HOME_STYLES.featuredCardWidth
-    : MOCKUP_HOME_STYLES.surfaceCardWidth;
+  const widthClass = isFeatured ? MOCKUP_HOME.featuredCardWidth : MOCKUP_HOME.surfaceCardWidth;
 
   if (isFeatured) {
     return (
       <Link
         href={href}
-        className={`group relative shrink-0 ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-white/15 transition`}
-        style={cardWidthStyle}
+        className={`group relative shrink-0 ${widthClass} ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-white/15 transition`}
       >
         <div className="relative aspect-[233/134] w-full">
           <Image
@@ -54,7 +51,7 @@ export default function HomeStoryCard({ item, variant = "featured" }: Props) {
   }
 
   return (
-    <Link href={href} className="group shrink-0" style={cardWidthStyle}>
+    <Link href={href} className={`group shrink-0 ${widthClass}`}>
       <div
         className={`relative aspect-[177/111] w-full ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-white/15 transition mb-2`}
       >

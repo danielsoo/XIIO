@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { IconArrowRight } from "@/components/icons/MockupIcons";
 import { CAMPUS_CURRENTS_MAP } from "@/lib/homeMockData";
-import { MOCKUP_HOME, MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
+import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { useTranslations } from "@/context/LocaleContext";
 
 type Props = {
@@ -17,11 +17,7 @@ export default function CampusCurrentsBanner({ className = "" }: Props) {
   return (
     <Link
       href="/school-battle"
-      className={`relative shrink-0 ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-sky-500/25 transition group ${className}`}
-      style={{
-        ...MOCKUP_HOME_STYLES.campusBannerWidth,
-        ...MOCKUP_HOME_STYLES.campusBannerMinH,
-      }}
+      className={`relative shrink-0 ${MOCKUP_HOME.campusBanner} ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-sky-500/25 transition group ${className}`}
     >
       <Image
         src={CAMPUS_CURRENTS_MAP}

@@ -18,7 +18,7 @@ import {
   SELECTS_STORIES,
   SURFACE_STORIES,
 } from "@/lib/homeMockData";
-import { MOCKUP_HOME, MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
+import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { HERO_DESIGN } from "@/lib/homeHeroLayout";
 
 export default function HomeMockPage() {
@@ -71,8 +71,7 @@ export default function HomeMockPage() {
     <main className={`min-h-screen ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
       <section
         ref={heroSectionRef}
-        className="relative flex flex-col overflow-hidden -mt-[calc(60px*var(--frame-scale))] pt-[calc(60px*var(--frame-scale))] lg:pr-[calc(76px*var(--frame-scale))]"
-        style={MOCKUP_HOME_STYLES.heroSection}
+        className={`relative flex flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroSection}`}
       >
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
@@ -82,19 +81,14 @@ export default function HomeMockPage() {
           priority
         />
 
-        <div className="relative z-10 flex flex-1 flex-col justify-end" style={MOCKUP_HOME_STYLES.heroContentTop}>
-          <div
-            className="w-full lg:grid lg:items-end"
-            style={MOCKUP_HOME_STYLES.heroGrid}
-          >
+        <div className={`relative z-10 flex flex-1 flex-col justify-end ${MOCKUP_HOME.heroContentTop}`}>
+          <div className={`w-full ${MOCKUP_HOME.heroGrid}`}>
             <div
               ref={heroTextRef}
-              className="flex flex-col justify-end px-4 lg:px-0"
-              style={MOCKUP_HOME_STYLES.heroTextBottom}
+              className={`flex flex-col justify-end px-4 lg:px-0 ${MOCKUP_HOME.heroTextBottom}`}
             >
               <h1
-                className="font-serif font-normal leading-[1.08] text-white mb-4 tracking-tight"
-                style={MOCKUP_HOME_STYLES.heroTitle}
+                className={`${MOCKUP_HOME.heroTitle} leading-[1.08] text-white mb-4 tracking-tight`}
               >
                 {t("home.mock.heroLine1")}{" "}
                 <em className="italic" style={{ color: MOCKUP_HOME.accentBlue }}>
@@ -102,32 +96,29 @@ export default function HomeMockPage() {
                 </em>{" "}
                 {t("home.mock.heroLine2")}
               </h1>
-              <p
-                className="text-white/55 mb-7 leading-relaxed"
-                style={MOCKUP_HOME_STYLES.heroSubtitle}
-              >
+              <p className={`text-white/55 mb-7 leading-relaxed ${MOCKUP_HOME.heroSubtitle}`}>
                 {t("home.mock.heroSubtitle")}
               </p>
-              <div className="flex flex-wrap items-center" style={MOCKUP_HOME_STYLES.ctaRow}>
+              <div className={`flex flex-wrap items-center ${MOCKUP_HOME.ctaRow}`}>
                 <Link
                   href={watchHref}
-                  className="inline-flex items-center gap-2 rounded-full bg-white text-black font-semibold hover:bg-white/90 transition"
-                  style={MOCKUP_HOME_STYLES.ctaButton}
+                  className={`inline-flex items-center gap-2 rounded-full bg-white text-black font-semibold hover:bg-white/90 transition ${MOCKUP_HOME.ctaButton}`}
                 >
-                  <IconPlay className="w-[calc(14px*var(--frame-scale))] h-[calc(14px*var(--frame-scale))]" />
+                  <IconPlay className="w-3.5 h-3.5" />
                   {t("home.mock.startWatching")}
                 </Link>
                 <Link
                   href="/uploader/upload"
-                  className="inline-flex items-center rounded-full border border-white/30 text-white font-medium hover:bg-white/[0.06] transition"
-                  style={MOCKUP_HOME_STYLES.ctaButton}
+                  className={`inline-flex items-center rounded-full border border-white/30 text-white font-medium hover:bg-white/[0.06] transition ${MOCKUP_HOME.ctaButton}`}
                 >
                   {t("home.mock.uploadStory")}
                 </Link>
               </div>
             </div>
 
-            <div className="hidden lg:flex flex-col justify-end items-end" style={MOCKUP_HOME_STYLES.heroTextBottom}>
+            <div
+              className={`hidden lg:flex flex-col justify-end items-end ${MOCKUP_HOME.heroTextBottom}`}
+            >
               <HomeFeaturedStoryPanel
                 label={t("home.mock.featuredLabel")}
                 title={featuredTitle}
@@ -144,7 +135,7 @@ export default function HomeMockPage() {
             />
           </div>
 
-          <div className="relative z-10 px-4 lg:px-0" style={MOCKUP_HOME_STYLES.heroToFeaturedHeader}>
+          <div className={`relative z-10 px-4 lg:px-0 ${MOCKUP_HOME.heroToFeaturedHeader}`}>
             <HomeContentRow
               headerOnly
               title={t("home.mock.featuredStories")}
@@ -158,17 +149,16 @@ export default function HomeMockPage() {
       </section>
 
       <div
-        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} pb-16 flex flex-col lg:pr-[calc(76px*var(--frame-scale))]`}
-        style={MOCKUP_HOME_STYLES.sectionGap}
+        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} pb-16 flex flex-col ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.sectionGap}`}
       >
-        <div style={MOCKUP_HOME_STYLES.featuredHeaderToCards}>
+        <div className={MOCKUP_HOME.featuredHeaderToCards}>
           <HomeContentRow
             hideHeader
-          title={t("home.mock.featuredStories")}
-          viewAllHref="/movies"
-          viewAllLabel={t("home.mock.viewAll")}
-          items={FEATURED_STORIES}
-          variant="featured"
+            title={t("home.mock.featuredStories")}
+            viewAllHref="/movies"
+            viewAllLabel={t("home.mock.viewAll")}
+            items={FEATURED_STORIES}
+            variant="featured"
           />
         </div>
 

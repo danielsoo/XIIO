@@ -5,8 +5,8 @@ import { useRef } from "react";
 import CampusCurrentsBanner from "@/components/home/CampusCurrentsBanner";
 import HomeStoryCard from "@/components/home/HomeStoryCard";
 import { IconChevronRight, IconScrollNext } from "@/components/icons/MockupIcons";
-import { MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
-import { framePx, MOCKUP_MEASURES, SURFACE_CAMPUS_GAP_VAR } from "@/lib/mockupLayout";
+import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
+import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import type { HomeStoryItem } from "@/lib/homeMockData";
 
 type Props = {
@@ -30,16 +30,13 @@ function SectionHeader({
   return (
     <div className="flex items-center justify-between gap-4 flex-nowrap min-w-0">
       <div className="flex items-center gap-1.5 shrink-0">
-        <h2
-          className="font-semibold text-white whitespace-nowrap"
-          style={MOCKUP_HOME_STYLES.sectionTitle}
-        >
+        <h2 className={`font-semibold text-white whitespace-nowrap ${MOCKUP_HOME.sectionTitle}`}>
           {title}
         </h2>
-        <IconChevronRight className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+        <IconChevronRight className={`text-sky-400 shrink-0 ${MOCKUP_HOME.sectionChevron}`} />
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <Link href={viewAllHref} className="text-xs text-white/40 hover:text-white/70 transition">
+        <Link href={viewAllHref} className={`text-white/40 hover:text-white/70 transition ${MOCKUP_HOME.viewAllLink}`}>
           {viewAllLabel}
         </Link>
         <button
@@ -70,19 +67,9 @@ export default function HomeSurfaceCampusRow({
     });
   };
 
-  const gridStyle = {
-    gridTemplateColumns: `${framePx(MOCKUP_MEASURES.surfaceRowWidth)} ${framePx(MOCKUP_MEASURES.campusBannerWidth)}`,
-    gap: `var(${SURFACE_CAMPUS_GAP_VAR})`,
-  };
-
-  const surfaceGridStyle = {
-    ...MOCKUP_HOME_STYLES.surfaceRowGap,
-    gridTemplateColumns: `repeat(${items.length}, ${framePx(MOCKUP_MEASURES.surfaceCardWidth)})`,
-  };
-
   return (
     <section className="min-w-0 w-full">
-      <div className="mb-4 hidden lg:grid" style={gridStyle}>
+      <div className="mb-4 hidden lg:grid lg:grid-cols-[744px_380px] lg:gap-6">
         <SectionHeader
           title={title}
           viewAllHref={viewAllHref}
@@ -101,8 +88,11 @@ export default function HomeSurfaceCampusRow({
         />
       </div>
 
-      <div className="hidden lg:grid items-stretch" style={gridStyle}>
-        <div className="grid" style={surfaceGridStyle}>
+      <div className="hidden lg:grid lg:grid-cols-[744px_380px] lg:gap-6 items-stretch">
+        <div
+          className={`grid ${MOCKUP_HOME.surfaceRowGap}`}
+          style={{ gridTemplateColumns: `repeat(${items.length}, 177px)` }}
+        >
           {items.map((item) => (
             <HomeStoryCard key={item.id} item={item} variant="surface" />
           ))}
@@ -112,11 +102,8 @@ export default function HomeSurfaceCampusRow({
 
       <div
         ref={scrollerRef}
-        className="flex overflow-x-auto pb-1 scrollbar-none min-w-0 lg:hidden"
-        style={{
-          ...MOCKUP_HOME_STYLES.surfaceRowGap,
-          scrollbarWidth: "none",
-        }}
+        className={`flex overflow-x-auto pb-1 scrollbar-none min-w-0 lg:hidden ${MOCKUP_HOME.surfaceRowGap}`}
+        style={{ scrollbarWidth: "none" }}
       >
         {items.map((item) => (
           <HomeStoryCard key={item.id} item={item} variant="surface" />

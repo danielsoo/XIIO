@@ -1,9 +1,4 @@
-import { MOCKUP_CONTENT, MOCKUP_SIDEBAR } from "@/lib/mockupLayout";
-
-/** 001 PNG sidebar zone (0–239px) scaled with viewport */
-export const APP_SIDEBAR_WIDTH = `calc(${MOCKUP_SIDEBAR}px * var(--frame-scale))`;
-/** Main content column (239–1536px in mockup) */
-export const APP_MAIN_WIDTH = `calc(${MOCKUP_CONTENT}px * var(--frame-scale))`;
+export const APP_SIDEBAR_WIDTH = "14rem";
 
 export const HIDE_APP_SHELL_PATHS = [
   "/login",

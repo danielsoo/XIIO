@@ -4,7 +4,7 @@ import {
   rgbTupleToCssVar,
   type RgbTuple,
 } from "@/lib/homeHeroColors";
-import { framePx, MOCKUP_FRAME, MOCKUP_MEASURES } from "@/lib/mockupLayout";
+import { MOCKUP_FRAME, MOCKUP_MEASURES } from "@/lib/mockupLayout";
 
 /** 1536×1024 목업 기준 — mockupLayout과 동일 px */
 export const HERO_DESIGN = {
@@ -74,8 +74,8 @@ export function heroBottomFeatherMask(): string {
     transparent 100%)`;
 }
 
-/** HomePageContent legacy hero — frame-scale col gap */
+/** HomePageContent legacy hero */
 export const HERO_SECTION_STYLE = {
-  ["--hero-pad-x" as string]: framePx(0),
-  ["--hero-col-gap" as string]: framePx(MOCKUP_MEASURES.heroColGap),
+  ["--hero-pad-x" as string]: "0px",
+  ["--hero-col-gap" as string]: "96px",
 } as const;
