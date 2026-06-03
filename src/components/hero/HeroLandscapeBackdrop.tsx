@@ -42,7 +42,7 @@ export default function HeroLandscapeBackdrop({
         priority={priority}
         className="object-cover"
         style={{ objectPosition: HERO_LANDSCAPE_POSITION }}
-        sizes="(max-width: 1024px) 100vw, calc(100vw - 14rem)"
+        sizes="(max-width: 1024px) 100vw, calc(100vw - 12rem)"
       />
       {overlayEnabled ? (
         <>

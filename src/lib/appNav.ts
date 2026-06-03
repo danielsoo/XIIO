@@ -1,4 +1,4 @@
-export const APP_SIDEBAR_WIDTH = "14rem";
+export const APP_SIDEBAR_WIDTH = "12rem";
 
 export const HIDE_APP_SHELL_PATHS = [
   "/login",

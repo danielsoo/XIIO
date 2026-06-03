@@ -35,7 +35,7 @@ function NavLink({
     <Link
       href={href}
       onClick={onNavigate}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors ${
+      className={`flex items-center gap-2.5 px-2.5 py-3 rounded-lg text-[13px] font-medium transition-colors ${
         active ? "bg-white/[0.08] text-white" : "text-white/50 hover:text-white hover:bg-white/[0.04]"
       }`}
     >
@@ -60,11 +60,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex flex-col h-full">
-      <Link href="/" onClick={onNavigate} className="px-5 pt-6 pb-0 block">
-        <span className="text-lg font-semibold tracking-[0.25em] text-white">XIIO</span>
+      <Link href="/" onClick={onNavigate} className="px-4 pt-6 pb-0 block">
+        <span className="text-base font-semibold tracking-[0.22em] text-white">XIIO</span>
       </Link>
 
-      <nav className="flex flex-1 flex-col px-3 mt-20 min-h-0">
+      <nav className="flex flex-1 flex-col px-2.5 mt-20 min-h-0">
         <div className="flex flex-col gap-0.5">
           {PRIMARY_NAV.map((item) => (
             <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
