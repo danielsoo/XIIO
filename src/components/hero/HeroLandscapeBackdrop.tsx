@@ -46,7 +46,7 @@ export default function HeroLandscapeBackdrop({
         className="absolute inset-0 hidden lg:block"
         style={{
           background: heroDiagonalGradient(gradStartPercent, rgbTuple),
-          opacity: 0.72,
+          opacity: 0.9,
           ...maskStyle,
         }}
       />
@@ -54,9 +54,13 @@ export default function HeroLandscapeBackdrop({
         className="absolute inset-0 lg:hidden"
         style={{
           background: heroMobileVerticalGradient(rgbTuple),
-          opacity: 0.72,
+          opacity: 0.9,
           ...maskStyle,
         }}
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/15 to-transparent lg:from-black/50 lg:via-transparent lg:to-transparent"
+        style={maskStyle}
       />
       <div
         className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-xiio-bg/90"

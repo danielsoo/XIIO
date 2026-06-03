@@ -71,7 +71,7 @@ export default function HomeMockPage() {
     <main className="min-h-screen" style={heroStyle}>
       <section
         ref={heroSectionRef}
-        className={`relative ${MOCKUP_HOME.heroMinHeight} ${MOCKUP_HOME.pageGutter} pb-10 pt-6 lg:pt-10`}
+        className={`relative overflow-hidden ${MOCKUP_HOME.heroMinHeight} ${MOCKUP_HOME.pageGutter} pb-10 pt-6 lg:pt-10`}
       >
         <HeroLandscapeBackdrop rgbTuple={rgbTuple} variant="home" gradStartPercent={gradStart} priority />
 
@@ -122,7 +122,7 @@ export default function HomeMockPage() {
         </div>
       </section>
 
-      <div className={`${MOCKUP_HOME.pageGutter} pb-16 space-y-10 ${MOCKUP_HOME.pageMaxWidth}`}>
+      <div className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageGutter} pb-16 space-y-10 ${MOCKUP_HOME.pageMaxWidth}`}>
         <HomeContentRow
           title={t("home.mock.featuredStories")}
           viewAllHref="/movies"
