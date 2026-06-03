@@ -64,7 +64,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-lg font-semibold tracking-[0.25em] text-white">XIIO</span>
       </Link>
 
-      <nav className="flex-1 space-y-20 px-3 mt-20">
+      <nav className="flex-1 space-y-0.5 px-3 mt-20">
         {PRIMARY_NAV.map((item) => (
           <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
         ))}
