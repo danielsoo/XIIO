@@ -99,8 +99,8 @@ function maskStopPercent(px: number, stripHeightPx: number): number {
   return Math.min(100, Math.max(0, (px / stripHeightPx) * 100));
 }
 
-/** Modest extra top blur for bright-surface assets (not wave-length bleed) */
-const HERO_TOP_BLEED_BRIGHT_SURFACE_EXTRA_PX = 20;
+/** Extra top blur — hide sharp white god rays on bright-surface assets */
+const HERO_TOP_BLEED_BRIGHT_SURFACE_EXTRA_PX = 84;
 
 /** Sharp band — blur bleed ends at top bar + lg content offset (px), not % of strip */
 export function heroPhotoSharpBandMaskStyle(
@@ -111,7 +111,8 @@ export function heroPhotoSharpBandMaskStyle(
     MOCKUP_MEASURES.topBarHeight +
     MOCKUP_MEASURES.heroBackdropTopOffsetLg +
     (topBleed === "brightSurface" ? HERO_TOP_BLEED_BRIGHT_SURFACE_EXTRA_PX : 0);
-  const sharpFullStartPx = sharpBleedEndPx + stripHeightPx * 0.18;
+  const sharpFadeInPercent = topBleed === "brightSurface" ? 0.24 : 0.18;
+  const sharpFullStartPx = sharpBleedEndPx + stripHeightPx * sharpFadeInPercent;
   const sharpFadeStartPx = stripHeightPx * 0.82;
 
   const blurEnd = maskStopPercent(sharpBleedEndPx, stripHeightPx);

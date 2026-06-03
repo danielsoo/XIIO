@@ -95,6 +95,7 @@ function OverlayLayers({
 function HeroPhotoLayers({
   heroImage,
   heroImagePosition,
+  photoFilter,
   stripWidth,
   stripHeightPx,
   topBleed,
@@ -102,12 +103,16 @@ function HeroPhotoLayers({
 }: {
   heroImage: string;
   heroImagePosition: string;
+  photoFilter?: string;
   stripWidth: string;
   stripHeightPx: number;
   topBleed: HeroTopBleed;
   priority: boolean;
 }) {
-  const imageStyle = { objectPosition: heroImagePosition };
+  const imageStyle = {
+    objectPosition: heroImagePosition,
+    ...(photoFilter ? { filter: photoFilter } : {}),
+  };
 
   return (
     <>
@@ -130,12 +135,6 @@ function HeroPhotoLayers({
           style={imageStyle}
           sizes={stripWidth}
         />
-        {topBleed === "brightSurface" ? (
-          <div
-            className="absolute inset-x-0 top-0 h-[22%] bg-gradient-to-b from-black/[0.12] to-transparent pointer-events-none"
-            aria-hidden
-          />
-        ) : null}
       </div>
     </>
   );
@@ -158,6 +157,7 @@ export default function HeroLandscapeBackdrop({
     src: heroImage,
     objectPosition: heroImagePosition,
     topBleed = "wave",
+    photoFilter,
   } = resolveHeroBackground(backgroundScope, backgroundId);
 
   if (variant === "home") {
@@ -179,6 +179,7 @@ export default function HeroLandscapeBackdrop({
         <HeroPhotoLayers
           heroImage={heroImage}
           heroImagePosition={heroImagePosition}
+          photoFilter={photoFilter}
           stripWidth={stripWidth}
           stripHeightPx={backdropHeight}
           topBleed={topBleed}
