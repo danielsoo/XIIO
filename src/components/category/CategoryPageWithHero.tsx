@@ -26,7 +26,12 @@ export default function CategoryPageWithHero({
   return (
     <main className="min-h-screen pb-16" style={heroStyle}>
       <section className="relative min-h-[200px] px-4 sm:px-6 lg:px-10 pb-8 pt-4">
-        <HeroLandscapeBackdrop rgbTuple={rgbTuple} overlayEnabled={overlayEnabled} variant="compact" />
+        <HeroLandscapeBackdrop
+          rgbTuple={rgbTuple}
+          overlayEnabled={overlayEnabled}
+          backgroundScope="home"
+          variant="compact"
+        />
         <header className="relative z-10 pt-4">
           {badgeKey ? (
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/15 border border-sky-500/30 text-sky-400 text-xs font-semibold mb-3">

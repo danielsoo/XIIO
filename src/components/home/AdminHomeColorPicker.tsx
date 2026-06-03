@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { HsvColorPicker } from "react-colorful";
@@ -7,6 +8,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useTranslations } from "@/context/LocaleContext";
+import {
+  CAMPUS_BACKGROUND_IDS,
+  HERO_BACKGROUND_PRESETS,
+  HOME_BACKGROUND_IDS,
+  type CampusBackgroundId,
+  type HomeBackgroundId,
+} from "@/lib/heroBackgroundPresets";
 import {
   DEFAULT_HOME_HERO_THEME,
   formatHsl,
@@ -19,6 +27,55 @@ import {
   type HsvColor,
 } from "@/lib/homeHeroColors";
 
+function HeroBackgroundToggle<T extends string>({
+  ids,
+  selectedId,
+  onSelect,
+  labelFor,
+}: {
+  ids: readonly T[];
+  selectedId: T;
+  onSelect: (id: T) => void;
+  labelFor: (id: T) => string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {ids.map((id) => {
+        const preset = HERO_BACKGROUND_PRESETS[id as keyof typeof HERO_BACKGROUND_PRESETS];
+        const selected = id === selectedId;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSelect(id)}
+            className={`flex flex-col items-center gap-1 rounded-lg border p-1.5 transition ${
+              selected
+                ? "border-sky-400 bg-sky-400/10"
+                : "border-white/15 hover:border-white/30 hover:bg-white/[0.04]"
+            }`}
+            aria-pressed={selected}
+          >
+            <span className="relative block h-12 w-[4.5rem] overflow-hidden rounded-md bg-black/40">
+              <Image
+                src={preset.src}
+                alt=""
+                fill
+                className="object-cover"
+                style={{ objectPosition: preset.objectPosition }}
+                sizes="72px"
+                unoptimized
+              />
+            </span>
+            <span className="text-[9px] text-white/70 leading-tight text-center max-w-[4.5rem]">
+              {labelFor(id)}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function AdminHomeColorPicker() {
   const pathname = usePathname();
   const { t } = useTranslations();
@@ -29,9 +86,15 @@ export default function AdminHomeColorPicker() {
     overlayEnabled,
     setPreviewHeroHex,
     setPreviewOverlayEnabled,
+    setPreviewHomeBackground,
+    setPreviewCampusBackground,
     clearPreview,
     hasPreview,
   } = useHomeHeroTheme();
+
+  const isHomePage = pathname === "/";
+  const isCampusPage = pathname === "/school-battle";
+  const showPanel = isHomePage || isCampusPage;
 
   const [hexInput, setHexInput] = useState(theme.heroHex);
   const [hsv, setHsv] = useState<HsvColor>(() => hexToHsv(theme.heroHex) ?? { h: 212, s: 76, v: 45 });
@@ -74,6 +137,8 @@ export default function AdminHomeColorPicker() {
   const onResetPreview = () => {
     setPreviewHeroHex(DEFAULT_HOME_HERO_THEME.heroHex);
     setPreviewOverlayEnabled(DEFAULT_HOME_HERO_THEME.overlayEnabled);
+    setPreviewHomeBackground(DEFAULT_HOME_HERO_THEME.homeBackgroundId);
+    setPreviewCampusBackground(DEFAULT_HOME_HERO_THEME.campusBackgroundId);
     setApplyError(null);
   };
 
@@ -89,7 +154,12 @@ export default function AdminHomeColorPicker() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ heroHex: theme.heroHex, overlayEnabled: theme.overlayEnabled }),
+        body: JSON.stringify({
+          heroHex: theme.heroHex,
+          overlayEnabled: theme.overlayEnabled,
+          homeBackgroundId: theme.homeBackgroundId,
+          campusBackgroundId: theme.campusBackgroundId,
+        }),
       });
       const data = (await res.json()) as { message?: string };
       if (!res.ok) {
@@ -112,18 +182,21 @@ export default function AdminHomeColorPicker() {
     }
   };
 
-  if (!checked || !isAdmin || pathname !== "/") return null;
+  if (!checked || !isAdmin || !showPanel) return null;
 
   const rgbTuple = hexToRgbTuple(theme.heroHex);
+  const panelTitle = isCampusPage
+    ? t("home.colorPicker.titleCampus")
+    : t("home.colorPicker.title");
 
   return (
     <div
       className="fixed bottom-4 right-4 z-50 w-[min(100vw-2rem,320px)] rounded-xl border border-white/15 bg-[#1a1a1a] shadow-2xl text-white"
       role="region"
-      aria-label={t("home.colorPicker.title")}
+      aria-label={panelTitle}
     >
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/10">
-        <p className="text-xs font-semibold text-white/90">{t("home.colorPicker.title")}</p>
+        <p className="text-xs font-semibold text-white/90">{panelTitle}</p>
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
@@ -148,59 +221,93 @@ export default function AdminHomeColorPicker() {
             />
           </label>
 
-          <div className={`flex gap-3 ${overlayEnabled ? "" : "opacity-40 pointer-events-none"}`}>
-            <div
-              className="w-10 shrink-0 rounded-md border border-white/20"
-              style={{ backgroundColor: theme.heroHex }}
-              aria-hidden
-            />
-            <div className="min-w-0 flex-1 admin-home-color-picker">
-              <HsvColorPicker color={hsv} onChange={onHsvChange} />
+          {isHomePage && (
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase tracking-wider text-white/50">
+                {t("home.colorPicker.backgroundHome")}
+              </p>
+              <HeroBackgroundToggle<HomeBackgroundId>
+                ids={HOME_BACKGROUND_IDS}
+                selectedId={theme.homeBackgroundId}
+                onSelect={setPreviewHomeBackground}
+                labelFor={(id) => t(`home.colorPicker.background.${id}`)}
+              />
             </div>
-          </div>
+          )}
 
-          <div className={`flex items-center gap-2 ${overlayEnabled ? "" : "opacity-40 pointer-events-none"}`}>
-            <label className="text-[10px] uppercase tracking-wider text-white/50 shrink-0">
-              HEX
-            </label>
-            <input
-              type="text"
-              value={hexInput}
-              onChange={(e) => setHexInput(e.target.value)}
-              onBlur={onHexInputBlur}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onHexInputBlur();
-              }}
-              disabled={!overlayEnabled}
-              className="flex-1 min-w-0 rounded-md bg-white/10 border border-white/15 px-2 py-1.5 text-sm font-mono uppercase disabled:opacity-60"
-              spellCheck={false}
-            />
-            <button
-              type="button"
-              onClick={() => void copyHex()}
-              disabled={!overlayEnabled}
-              className="shrink-0 text-xs text-white/60 hover:text-white px-2 py-1.5 rounded-md hover:bg-white/10 disabled:opacity-60"
-              title={t("home.colorPicker.copyHex")}
-            >
-              {t("home.colorPicker.copy")}
-            </button>
-          </div>
-
-          {rgbTuple && overlayEnabled && (
-            <div className="grid grid-cols-3 gap-2 text-[10px]">
-              <div className="rounded-md bg-white/5 px-2 py-1.5">
-                <p className="text-white/45 uppercase mb-0.5">RGB</p>
-                <p className="font-mono text-white/85">{formatRgb(rgbTuple)}</p>
-              </div>
-              <div className="rounded-md bg-white/5 px-2 py-1.5">
-                <p className="text-white/45 uppercase mb-0.5">HSV</p>
-                <p className="font-mono text-white/85">{formatHsv(theme.heroHex)}</p>
-              </div>
-              <div className="rounded-md bg-white/5 px-2 py-1.5">
-                <p className="text-white/45 uppercase mb-0.5">HSL</p>
-                <p className="font-mono text-white/85">{formatHsl(theme.heroHex)}</p>
-              </div>
+          {isCampusPage && (
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase tracking-wider text-white/50">
+                {t("home.colorPicker.backgroundCampus")}
+              </p>
+              <HeroBackgroundToggle<CampusBackgroundId>
+                ids={CAMPUS_BACKGROUND_IDS}
+                selectedId={theme.campusBackgroundId}
+                onSelect={setPreviewCampusBackground}
+                labelFor={(id) => t(`home.colorPicker.background.${id}`)}
+              />
             </div>
+          )}
+
+          {isHomePage && (
+            <>
+              <div className={`flex gap-3 ${overlayEnabled ? "" : "opacity-40 pointer-events-none"}`}>
+                <div
+                  className="w-10 shrink-0 rounded-md border border-white/20"
+                  style={{ backgroundColor: theme.heroHex }}
+                  aria-hidden
+                />
+                <div className="min-w-0 flex-1 admin-home-color-picker">
+                  <HsvColorPicker color={hsv} onChange={onHsvChange} />
+                </div>
+              </div>
+
+              <div
+                className={`flex items-center gap-2 ${overlayEnabled ? "" : "opacity-40 pointer-events-none"}`}
+              >
+                <label className="text-[10px] uppercase tracking-wider text-white/50 shrink-0">
+                  HEX
+                </label>
+                <input
+                  type="text"
+                  value={hexInput}
+                  onChange={(e) => setHexInput(e.target.value)}
+                  onBlur={onHexInputBlur}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") onHexInputBlur();
+                  }}
+                  disabled={!overlayEnabled}
+                  className="flex-1 min-w-0 rounded-md bg-white/10 border border-white/15 px-2 py-1.5 text-sm font-mono uppercase disabled:opacity-60"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  onClick={() => void copyHex()}
+                  disabled={!overlayEnabled}
+                  className="shrink-0 text-xs text-white/60 hover:text-white px-2 py-1.5 rounded-md hover:bg-white/10 disabled:opacity-60"
+                  title={t("home.colorPicker.copyHex")}
+                >
+                  {t("home.colorPicker.copy")}
+                </button>
+              </div>
+
+              {rgbTuple && overlayEnabled && (
+                <div className="grid grid-cols-3 gap-2 text-[10px]">
+                  <div className="rounded-md bg-white/5 px-2 py-1.5">
+                    <p className="text-white/45 uppercase mb-0.5">RGB</p>
+                    <p className="font-mono text-white/85">{formatRgb(rgbTuple)}</p>
+                  </div>
+                  <div className="rounded-md bg-white/5 px-2 py-1.5">
+                    <p className="text-white/45 uppercase mb-0.5">HSV</p>
+                    <p className="font-mono text-white/85">{formatHsv(theme.heroHex)}</p>
+                  </div>
+                  <div className="rounded-md bg-white/5 px-2 py-1.5">
+                    <p className="text-white/45 uppercase mb-0.5">HSL</p>
+                    <p className="font-mono text-white/85">{formatHsl(theme.heroHex)}</p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {hasPreview && (

@@ -20,9 +20,11 @@ import {
   parseStoredPreview,
   rgbTupleToCssVar,
   themeFromHeroHex,
+  mergeHeroTheme,
   type HomeHeroTheme,
   type RgbTuple,
 } from "@/lib/homeHeroColors";
+import type { CampusBackgroundId, HomeBackgroundId } from "@/lib/heroBackgroundPresets";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 
 type HomeHeroThemeContextValue = {
@@ -32,6 +34,8 @@ type HomeHeroThemeContextValue = {
   heroStyle: CSSProperties;
   setPreviewHeroHex: (heroHex: string) => void;
   setPreviewOverlayEnabled: (enabled: boolean) => void;
+  setPreviewHomeBackground: (id: HomeBackgroundId) => void;
+  setPreviewCampusBackground: (id: CampusBackgroundId) => void;
   clearPreview: () => void;
   hasPreview: boolean;
 };
@@ -53,7 +57,12 @@ function writePreviewToStorage(theme: HomeHeroTheme | null) {
   }
   localStorage.setItem(
     HOME_HERO_PREVIEW_STORAGE_KEY,
-    JSON.stringify({ heroHex: theme.heroHex, overlayEnabled: theme.overlayEnabled })
+    JSON.stringify({
+      heroHex: theme.heroHex,
+      overlayEnabled: theme.overlayEnabled,
+      homeBackgroundId: theme.homeBackgroundId,
+      campusBackgroundId: theme.campusBackgroundId,
+    })
   );
 }
 
@@ -156,6 +165,30 @@ export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
     [isAdmin, effectiveTheme]
   );
 
+  const setPreviewHomeBackground = useCallback(
+    (id: HomeBackgroundId) => {
+      if (!isAdmin) return;
+      setPreviewTheme((prev) => {
+        const next = mergeHeroTheme(prev ?? effectiveTheme, { homeBackgroundId: id });
+        writePreviewToStorage(next);
+        return next;
+      });
+    },
+    [isAdmin, effectiveTheme]
+  );
+
+  const setPreviewCampusBackground = useCallback(
+    (id: CampusBackgroundId) => {
+      if (!isAdmin) return;
+      setPreviewTheme((prev) => {
+        const next = mergeHeroTheme(prev ?? effectiveTheme, { campusBackgroundId: id });
+        writePreviewToStorage(next);
+        return next;
+      });
+    },
+    [isAdmin, effectiveTheme]
+  );
+
   const clearPreview = useCallback(() => {
     setPreviewTheme(null);
     writePreviewToStorage(null);
@@ -169,6 +202,8 @@ export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
       heroStyle,
       setPreviewHeroHex,
       setPreviewOverlayEnabled,
+      setPreviewHomeBackground,
+      setPreviewCampusBackground,
       clearPreview,
       hasPreview: isAdmin && previewTheme !== null,
     }),
@@ -178,6 +213,8 @@ export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
       heroStyle,
       setPreviewHeroHex,
       setPreviewOverlayEnabled,
+      setPreviewHomeBackground,
+      setPreviewCampusBackground,
       clearPreview,
       isAdmin,
       previewTheme,

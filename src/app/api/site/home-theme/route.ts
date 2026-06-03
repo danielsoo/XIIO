@@ -13,6 +13,8 @@ export async function GET() {
     ctaHex: DEFAULT_HOME_HERO_THEME.ctaHex,
     ctaHoverHex: DEFAULT_HOME_HERO_THEME.ctaHoverHex,
     overlayEnabled: DEFAULT_HOME_HERO_THEME.overlayEnabled,
+    homeBackgroundId: DEFAULT_HOME_HERO_THEME.homeBackgroundId,
+    campusBackgroundId: DEFAULT_HOME_HERO_THEME.campusBackgroundId,
     updatedAt: null as string | null,
   };
 
@@ -38,6 +40,8 @@ export async function GET() {
           ctaHex: theme.ctaHex,
           ctaHoverHex: theme.ctaHoverHex,
           overlayEnabled: theme.overlayEnabled,
+          homeBackgroundId: theme.homeBackgroundId,
+          campusBackgroundId: theme.campusBackgroundId,
           updatedAt: updatedAtIso,
         }
       : fallback,

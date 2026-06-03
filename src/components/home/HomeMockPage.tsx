@@ -116,6 +116,7 @@ export default function HomeMockPage() {
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
           overlayEnabled={overlayEnabled}
+          backgroundScope="home"
           variant="home"
           gradStartPercent={gradStart}
           priority

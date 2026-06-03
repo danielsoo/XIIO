@@ -1,3 +1,17 @@
+export type HomeBackgroundId = "home_wave" | "home_under_water";
+export type CampusBackgroundId = "campus_wave1" | "campus_wave2" | "campus_wave3";
+
+export const DEFAULT_HOME_BACKGROUND_ID: HomeBackgroundId = "home_wave";
+export const DEFAULT_CAMPUS_BACKGROUND_ID: CampusBackgroundId = "campus_wave1";
+
+export function isValidHomeBackgroundId(id: string): id is HomeBackgroundId {
+  return id === "home_wave" || id === "home_under_water";
+}
+
+export function isValidCampusBackgroundId(id: string): id is CampusBackgroundId {
+  return id === "campus_wave1" || id === "campus_wave2" || id === "campus_wave3";
+}
+
 export type RgbTuple = readonly [number, number, number];
 
 export type HomeHeroTheme = {
@@ -5,6 +19,8 @@ export type HomeHeroTheme = {
   ctaHex: string;
   ctaHoverHex: string;
   overlayEnabled: boolean;
+  homeBackgroundId: HomeBackgroundId;
+  campusBackgroundId: CampusBackgroundId;
 };
 
 const HEX6 = /^#?([0-9a-fA-F]{6})$/;
@@ -15,6 +31,8 @@ export const DEFAULT_HOME_HERO_THEME: HomeHeroTheme = {
   ctaHex: "#256195",
   ctaHoverHex: "#2d6fa8",
   overlayEnabled: true,
+  homeBackgroundId: DEFAULT_HOME_BACKGROUND_ID,
+  campusBackgroundId: DEFAULT_CAMPUS_BACKGROUND_ID,
 };
 
 export const HOME_HERO_PREVIEW_STORAGE_KEY = "xiio-home-hero-theme-preview";
@@ -113,12 +131,55 @@ export function deriveCtaColors(heroHex: string): Pick<HomeHeroTheme, "ctaHex" |
 
 export function themeFromHeroHex(
   heroHex: string,
-  overlayEnabled = DEFAULT_HOME_HERO_THEME.overlayEnabled
+  overlayEnabled = DEFAULT_HOME_HERO_THEME.overlayEnabled,
+  backgrounds?: Partial<Pick<HomeHeroTheme, "homeBackgroundId" | "campusBackgroundId">>
 ): HomeHeroTheme | null {
   const normalized = normalizeHex(heroHex);
   if (!normalized) return null;
   const derived = deriveCtaColors(normalized);
-  return { heroHex: normalized, ...derived, overlayEnabled };
+  return mergeHeroTheme(
+    { heroHex: normalized, ...derived, overlayEnabled },
+    backgrounds
+  );
+}
+
+export function mergeHeroTheme(
+  base: Partial<HomeHeroTheme>,
+  overrides?: Partial<HomeHeroTheme>
+): HomeHeroTheme {
+  const homeBackgroundId =
+    overrides?.homeBackgroundId ??
+    (base.homeBackgroundId && isValidHomeBackgroundId(base.homeBackgroundId)
+      ? base.homeBackgroundId
+      : DEFAULT_HOME_BACKGROUND_ID);
+  const campusBackgroundId =
+    overrides?.campusBackgroundId ??
+    (base.campusBackgroundId && isValidCampusBackgroundId(base.campusBackgroundId)
+      ? base.campusBackgroundId
+      : DEFAULT_CAMPUS_BACKGROUND_ID);
+
+  return {
+    heroHex: base.heroHex ?? DEFAULT_HOME_HERO_THEME.heroHex,
+    ctaHex: base.ctaHex ?? DEFAULT_HOME_HERO_THEME.ctaHex,
+    ctaHoverHex: base.ctaHoverHex ?? DEFAULT_HOME_HERO_THEME.ctaHoverHex,
+    overlayEnabled: base.overlayEnabled ?? DEFAULT_HOME_HERO_THEME.overlayEnabled,
+    homeBackgroundId: isValidHomeBackgroundId(homeBackgroundId)
+      ? homeBackgroundId
+      : DEFAULT_HOME_BACKGROUND_ID,
+    campusBackgroundId: isValidCampusBackgroundId(campusBackgroundId)
+      ? campusBackgroundId
+      : DEFAULT_CAMPUS_BACKGROUND_ID,
+  };
+}
+
+function parseHomeBackgroundId(value: unknown): HomeBackgroundId {
+  if (typeof value === "string" && isValidHomeBackgroundId(value)) return value;
+  return DEFAULT_HOME_BACKGROUND_ID;
+}
+
+function parseCampusBackgroundId(value: unknown): CampusBackgroundId {
+  if (typeof value === "string" && isValidCampusBackgroundId(value)) return value;
+  return DEFAULT_CAMPUS_BACKGROUND_ID;
 }
 
 function parseOverlayEnabled(value: unknown): boolean {
@@ -205,9 +266,17 @@ export function hsvToHex({ h, s, v }: HsvColor): string {
 
 export function parseStoredPreview(raw: string): HomeHeroTheme | null {
   try {
-    const data = JSON.parse(raw) as { heroHex?: string; overlayEnabled?: boolean };
+    const data = JSON.parse(raw) as {
+      heroHex?: string;
+      overlayEnabled?: boolean;
+      homeBackgroundId?: string;
+      campusBackgroundId?: string;
+    };
     if (!data.heroHex) return null;
-    const theme = themeFromHeroHex(data.heroHex, parseOverlayEnabled(data.overlayEnabled));
+    const theme = themeFromHeroHex(data.heroHex, parseOverlayEnabled(data.overlayEnabled), {
+      homeBackgroundId: parseHomeBackgroundId(data.homeBackgroundId),
+      campusBackgroundId: parseCampusBackgroundId(data.campusBackgroundId),
+    });
     return theme;
   } catch {
     return null;
@@ -226,12 +295,17 @@ export function parseFirestoreHomeTheme(
   const cta = normalizeHex(String(data.ctaHex ?? ""));
   const ctaHover = normalizeHex(String(data.ctaHoverHex ?? ""));
   if (cta && ctaHover) {
-    return {
+    return mergeHeroTheme({
       heroHex: hero.heroHex,
       ctaHex: cta,
       ctaHoverHex: ctaHover,
       overlayEnabled: hero.overlayEnabled,
-    };
+      homeBackgroundId: parseHomeBackgroundId(data.homeBackgroundId),
+      campusBackgroundId: parseCampusBackgroundId(data.campusBackgroundId),
+    });
   }
-  return hero;
+  return mergeHeroTheme(hero, {
+    homeBackgroundId: parseHomeBackgroundId(data.homeBackgroundId),
+    campusBackgroundId: parseCampusBackgroundId(data.campusBackgroundId),
+  });
 }

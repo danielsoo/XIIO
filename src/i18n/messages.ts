@@ -673,6 +673,7 @@ export const messages = {
       promoWatch: "{title} 보기",
       colorPicker: {
         title: "홈 히어로 색상",
+        titleCampus: "캠퍼스 히어로",
         expand: "펼치기",
         collapse: "접기",
         copy: "복사",
@@ -684,6 +685,15 @@ export const messages = {
         applyFailed: "저장에 실패했습니다.",
         overlayOn: "그라데이션 색상",
         noOverlay: "그라데이션 없음",
+        backgroundHome: "홈 배경",
+        backgroundCampus: "캠퍼스 배경",
+        background: {
+          home_wave: "웨이브",
+          home_under_water: "수중",
+          campus_wave1: "웨이브 1",
+          campus_wave2: "웨이브 2",
+          campus_wave3: "웨이브 3",
+        },
       },
       mock: {
         heroLine1: "Stories",
@@ -2221,6 +2231,7 @@ export const messages = {
       promoEmpty: "No approved promo shorts yet.",
       colorPicker: {
         title: "Home hero color",
+        titleCampus: "Campus hero",
         expand: "Expand",
         collapse: "Collapse",
         copy: "Copy",
@@ -2232,6 +2243,15 @@ export const messages = {
         applyFailed: "Could not save.",
         overlayOn: "Gradient color",
         noOverlay: "No gradient",
+        backgroundHome: "Home background",
+        backgroundCampus: "Campus background",
+        background: {
+          home_wave: "Wave",
+          home_under_water: "Underwater",
+          campus_wave1: "Wave 1",
+          campus_wave2: "Wave 2",
+          campus_wave3: "Wave 3",
+        },
       },
       mock: {
         heroLine1: "Stories",

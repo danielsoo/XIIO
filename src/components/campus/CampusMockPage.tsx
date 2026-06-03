@@ -6,6 +6,7 @@ import Link from "next/link";
 import BattleVsRadar from "@/components/campus/BattleVsRadar";
 import CampusSectionLabel from "@/components/campus/CampusSectionLabel";
 import SchoolClashBackdrop from "@/components/campus/SchoolClashBackdrop";
+import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
 import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
 import { IconPlay } from "@/components/icons/MockupIcons";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
@@ -309,6 +310,7 @@ export default function CampusMockPage() {
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
           overlayEnabled={overlayEnabled}
+          backgroundScope="campus"
           variant="home"
           gradStartPercent={gradStart}
           priority
@@ -468,6 +470,7 @@ export default function CampusMockPage() {
           </div>
         </section>
       </div>
+      <AdminHomeColorPicker />
     </main>
   );
 }

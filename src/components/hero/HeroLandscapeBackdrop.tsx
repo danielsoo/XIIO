@@ -6,9 +6,13 @@ import {
   heroFullBleedMaskStyle,
   heroMobileVerticalGradient,
 } from "@/lib/homeHeroLayout";
-import { HERO_LANDSCAPE_IMAGE, HERO_LANDSCAPE_POSITION } from "@/lib/homeHeroBackground";
-import type { RgbTuple } from "@/lib/homeHeroColors";
+import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
+import {
+  resolveHeroBackground,
+  type HeroBackgroundScope,
+} from "@/lib/heroBackgroundPresets";
+import type { RgbTuple } from "@/lib/homeHeroColors";
 
 type MaskVariant = "full" | "none";
 
@@ -20,6 +24,7 @@ function overlayMaskStyle(variant: MaskVariant) {
 type Props = {
   rgbTuple: RgbTuple;
   overlayEnabled?: boolean;
+  backgroundScope: HeroBackgroundScope;
   variant?: "home" | "compact";
   gradStartPercent?: number;
   priority?: boolean;
@@ -85,12 +90,20 @@ function OverlayLayers({
 export default function HeroLandscapeBackdrop({
   rgbTuple,
   overlayEnabled = true,
+  backgroundScope,
   variant = "home",
   gradStartPercent = 44,
   priority = false,
   className = "",
 }: Props) {
   const { waveRect } = useHeroWaveLayout();
+  const { theme } = useHomeHeroTheme();
+  const backgroundId =
+    backgroundScope === "home" ? theme.homeBackgroundId : theme.campusBackgroundId;
+  const { src: heroImage, objectPosition: heroImagePosition } = resolveHeroBackground(
+    backgroundScope,
+    backgroundId
+  );
 
   if (variant === "home") {
     const stripWidth = `calc(100% - ${waveRect.insetLeft}px - ${waveRect.insetRight}px)`;
@@ -110,12 +123,12 @@ export default function HeroLandscapeBackdrop({
         aria-hidden
       >
         <Image
-          src={HERO_LANDSCAPE_IMAGE}
+          src={heroImage}
           alt=""
           fill
           priority={priority}
           className="object-cover"
-          style={{ objectPosition: HERO_LANDSCAPE_POSITION }}
+          style={{ objectPosition: heroImagePosition }}
           sizes={stripWidth}
         />
         <OverlayLayers
@@ -136,12 +149,12 @@ export default function HeroLandscapeBackdrop({
   return (
     <div className={`absolute inset-0 z-0 pointer-events-none overflow-hidden ${minH} ${className}`} aria-hidden>
       <Image
-        src={HERO_LANDSCAPE_IMAGE}
+        src={heroImage}
         alt=""
         fill
         priority={priority}
         className="object-cover"
-        style={{ objectPosition: HERO_LANDSCAPE_POSITION }}
+        style={{ objectPosition: heroImagePosition }}
         sizes="100vw"
       />
       <OverlayLayers

@@ -63,4 +63,24 @@ describe("homeHeroColors", () => {
     assert.ok(off);
     assert.equal(off.overlayEnabled, false);
   });
+
+  it("parses background ids from Firestore", () => {
+    const parsed = parseFirestoreHomeTheme({
+      heroHex: "#1C4574",
+      homeBackgroundId: "home_under_water",
+      campusBackgroundId: "campus_wave2",
+    });
+    assert.equal(parsed?.homeBackgroundId, "home_under_water");
+    assert.equal(parsed?.campusBackgroundId, "campus_wave2");
+  });
+
+  it("defaults invalid background ids", () => {
+    const parsed = parseFirestoreHomeTheme({
+      heroHex: "#1C4574",
+      homeBackgroundId: "invalid",
+      campusBackgroundId: "invalid",
+    });
+    assert.equal(parsed?.homeBackgroundId, DEFAULT_HOME_HERO_THEME.homeBackgroundId);
+    assert.equal(parsed?.campusBackgroundId, DEFAULT_HOME_HERO_THEME.campusBackgroundId);
+  });
 });
