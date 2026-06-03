@@ -63,7 +63,7 @@ export const MOCKUP_MEASURES = {
 /** Measured on 002 campus mockup */
 export const MOCKUP_CAMPUS_MEASURES = {
   themeCardWidth: 280,
-  battleCardMinHeight: 280,
+  battleCardMinHeight: 220,
   brandWashOpacity: 0.55,
   clashGlowOpacityCompact: 0.35,
   brandLogoOpacityActive: 0.12,

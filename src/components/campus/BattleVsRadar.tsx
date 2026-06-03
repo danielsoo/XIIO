@@ -9,7 +9,7 @@ type Props = {
 export default function BattleVsRadar({ size = "default" }: Props) {
   const boxClass =
     size === "active"
-      ? "h-[88px] w-[88px] sm:h-[96px] sm:w-[96px]"
+      ? "h-[72px] w-[72px] sm:h-[80px] sm:w-[80px]"
       : "h-[72px] w-[72px] sm:h-[88px] sm:w-[88px]";
 
   return (

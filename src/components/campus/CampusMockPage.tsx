@@ -149,11 +149,11 @@ function ActiveBattleSchoolCluster({
         {isLeft ? (
           <>
             <SchoolNameBlock name={school.name} variant="active" align="right" />
-            <SchoolLogo school={school} size={128} variant="mark" />
+            <SchoolLogo school={school} size={104} variant="mark" />
           </>
         ) : (
           <>
-            <SchoolLogo school={school} size={128} variant="mark" />
+            <SchoolLogo school={school} size={104} variant="mark" />
             <SchoolNameBlock name={school.name} variant="active" align="left" />
           </>
         )}
@@ -430,7 +430,7 @@ export default function CampusMockPage() {
                     variant="compact"
                   />
                   <div className="relative z-10 flex w-full flex-col items-center text-center">
-                    <div className="mb-4 flex items-center gap-3">
+                    <div className="mb-2.5 flex items-center gap-3">
                       <SchoolLogo school={b.schoolA} size={44} variant="badge" />
                       <span className="text-[10px] font-bold text-white/25">vs</span>
                       <SchoolLogo school={b.schoolB} size={44} variant="badge" />
@@ -450,10 +450,10 @@ export default function CampusMockPage() {
             </div>
 
             <div className={MOCKUP_CAMPUS.aboutCard}>
-              <h3 className="text-xs font-bold tracking-[0.15em] uppercase mb-3">
+              <h3 className="text-xs font-bold tracking-[0.15em] uppercase mb-2">
                 {t("campus.mock.aboutTitle")}
               </h3>
-              <p className="text-sm text-white/55 leading-relaxed mb-4">{t("campus.mock.aboutBody")}</p>
+              <p className="text-sm text-white/55 leading-relaxed mb-3">{t("campus.mock.aboutBody")}</p>
               <Link href="/about#campus" className="text-sm text-sky-400 hover:text-sky-300">
                 {t("campus.mock.learnMore")} →
               </Link>
