@@ -1,0 +1,99 @@
+"use client";
+
+import Image from "next/image";
+import BattleClashSeam from "@/components/campus/BattleClashSeam";
+import SchoolSideGlow from "@/components/campus/SchoolSideGlow";
+import {
+  buildEffectSeed,
+  getRotationEpoch,
+  resolveBrandEffect,
+} from "@/lib/campusBrandEffects";
+import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
+import { MOCKUP_CAMPUS_MEASURES } from "@/lib/mockupLayout";
+
+export type ClashSchool = {
+  id: string;
+  name: string;
+  logo: string;
+  colorPrimary: string;
+  colorSecondary: string;
+};
+
+type Props = {
+  schoolA: ClashSchool;
+  schoolB: ClashSchool;
+  battleId: string;
+  variant?: "active" | "compact";
+};
+
+export default function SchoolClashBackdrop({
+  schoolA,
+  schoolB,
+  battleId,
+  variant = "active",
+}: Props) {
+  const intensity = variant;
+  const epoch = getRotationEpoch("week");
+  const effectA = resolveBrandEffect(buildEffectSeed(schoolA.id, battleId, "left", epoch));
+  const effectB = resolveBrandEffect(buildEffectSeed(schoolB.id, battleId, "right", epoch));
+  const clashStrong = effectA !== effectB;
+  const isActive = variant === "active";
+  const logoOpacity = isActive
+    ? MOCKUP_CAMPUS_MEASURES.brandLogoOpacityActive
+    : MOCKUP_CAMPUS_MEASURES.brandLogoOpacityCompact;
+  const logoClass = isActive ? MOCKUP_CAMPUS.brandLogoActive : MOCKUP_CAMPUS.brandLogoCompact;
+  const logoSize = isActive ? 240 : 120;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+      <SchoolSideGlow
+        side="left"
+        colorPrimary={schoolA.colorPrimary}
+        colorSecondary={schoolA.colorSecondary}
+        effect={effectA}
+        intensity={intensity}
+      />
+      <SchoolSideGlow
+        side="right"
+        colorPrimary={schoolB.colorPrimary}
+        colorSecondary={schoolB.colorSecondary}
+        effect={effectB}
+        intensity={intensity}
+      />
+      {isActive ? (
+        <BattleClashSeam
+          colorLeft={schoolA.colorPrimary}
+          colorRight={schoolB.colorPrimary}
+          strong={clashStrong}
+        />
+      ) : null}
+
+      <div
+        className={`absolute -left-8 top-1/2 -translate-y-1/2 ${logoClass}`}
+        style={{ opacity: logoOpacity }}
+      >
+        <Image
+          src={schoolA.logo}
+          alt=""
+          width={logoSize}
+          height={logoSize}
+          className="h-full w-full object-contain"
+          unoptimized
+        />
+      </div>
+      <div
+        className={`absolute -right-8 top-1/2 -translate-y-1/2 ${logoClass}`}
+        style={{ opacity: logoOpacity }}
+      >
+        <Image
+          src={schoolB.logo}
+          alt=""
+          width={logoSize}
+          height={logoSize}
+          className="h-full w-full object-contain"
+          unoptimized
+        />
+      </div>
+    </div>
+  );
+}

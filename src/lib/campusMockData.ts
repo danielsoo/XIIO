@@ -1,44 +1,85 @@
-export type CampusSchool = {
+export type CampusSchoolBrand = {
   id: string;
   name: string;
   shortName: string;
   films: number;
   votes: string;
+  colorPrimary: string;
+  colorSecondary: string;
+  /** @deprecated use colorPrimary */
   color: string;
   initials: string;
   logo: string;
 };
 
+export type CampusSchool = CampusSchoolBrand;
+
+export type PastBattleSchool = {
+  id: string;
+  name: string;
+  initials: string;
+  colorPrimary: string;
+  colorSecondary: string;
+  color: string;
+  logo: string;
+};
+
 export type PastBattle = {
   id: string;
-  schoolA: { name: string; initials: string; color: string; logo: string };
-  schoolB: { name: string; initials: string; color: string; logo: string };
+  schoolA: PastBattleSchool;
+  schoolB: PastBattleSchool;
   winner: string;
   votes: string;
 };
 
+function school(
+  partial: Omit<CampusSchoolBrand, "color"> & { color?: string }
+): CampusSchoolBrand {
+  const colorPrimary = partial.colorPrimary ?? partial.color ?? "#ffffff";
+  return {
+    ...partial,
+    colorPrimary,
+    colorSecondary: partial.colorSecondary,
+    color: colorPrimary,
+  };
+}
+
+function pastSchool(
+  id: string,
+  name: string,
+  initials: string,
+  colorPrimary: string,
+  colorSecondary: string,
+  logo: string
+): PastBattleSchool {
+  return { id, name, initials, colorPrimary, colorSecondary, color: colorPrimary, logo };
+}
+
 export const ACTIVE_BATTLE = {
-  schoolA: {
+  schoolA: school({
     id: "psu",
     name: "PENN STATE UNIVERSITY",
     shortName: "Penn State",
     films: 8,
     votes: "2.4K",
-    color: "#041E42",
+    colorPrimary: "#041E42",
+    colorSecondary: "#FFFFFF",
     initials: "PS",
-    logo: "/images/campus/schools/penn-state.svg",
-  } satisfies CampusSchool,
-  schoolB: {
+    logo: "/images/campus/schools/psu.png",
+  }),
+  schoolB: school({
     id: "osu",
     name: "OHIO STATE UNIVERSITY",
     shortName: "Ohio State",
     films: 7,
     votes: "2.1K",
-    color: "#BB0000",
+    colorPrimary: "#BB0000",
+    colorSecondary: "#666666",
     initials: "OS",
-    logo: "/images/campus/schools/ohio-state.svg",
-  } satisfies CampusSchool,
-  votingEndsAt: Date.now() + 2 * 24 * 3600 * 1000 + 14 * 3600 * 1000 + 32 * 60 * 1000 + 7 * 1000,
+    logo: "/images/campus/schools/osu.webp",
+  }),
+  votingEndsAt:
+    Date.now() + 2 * 24 * 3600 * 1000 + 14 * 3600 * 1000 + 32 * 60 * 1000 + 7 * 1000,
 };
 
 export const CURRENT_THEME = {
@@ -49,22 +90,64 @@ export const CURRENT_THEME = {
 export const PAST_BATTLES: PastBattle[] = [
   {
     id: "1",
-    schoolA: { name: "UCLA", initials: "UCLA", color: "#2774AE", logo: "/images/campus/schools/ucla.svg" },
-    schoolB: { name: "USC", initials: "USC", color: "#990000", logo: "/images/campus/schools/usc.svg" },
+    schoolA: pastSchool(
+      "ucla",
+      "UCLA",
+      "UCLA",
+      "#2774AE",
+      "#FFD100",
+      "/images/campus/schools/ucla.jpg"
+    ),
+    schoolB: pastSchool(
+      "usc",
+      "USC",
+      "USC",
+      "#990000",
+      "#FFCC00",
+      "/images/campus/schools/usc.svg"
+    ),
     winner: "UCLA",
     votes: "1.9K",
   },
   {
     id: "2",
-    schoolA: { name: "NYU", initials: "NYU", color: "#57068C", logo: "/images/campus/schools/nyu.svg" },
-    schoolB: { name: "Boston U", initials: "BU", color: "#CC0000", logo: "/images/campus/schools/boston-u.svg" },
+    schoolA: pastSchool(
+      "nyu",
+      "NYU",
+      "NYU",
+      "#57068C",
+      "#FFFFFF",
+      "/images/campus/schools/nyu.webp"
+    ),
+    schoolB: pastSchool(
+      "bu",
+      "Boston U",
+      "BU",
+      "#CC0000",
+      "#FFFFFF",
+      "/images/campus/schools/bu.png"
+    ),
     winner: "NYU",
     votes: "1.7K",
   },
   {
     id: "3",
-    schoolA: { name: "Berkeley", initials: "CAL", color: "#003262", logo: "/images/campus/schools/berkeley.svg" },
-    schoolB: { name: "Stanford", initials: "SU", color: "#8C1515", logo: "/images/campus/schools/stanford.svg" },
+    schoolA: pastSchool(
+      "berkeley",
+      "Berkeley",
+      "CAL",
+      "#003262",
+      "#FDB515",
+      "/images/campus/schools/berkeley.png"
+    ),
+    schoolB: pastSchool(
+      "stanford",
+      "Stanford",
+      "SU",
+      "#8C1515",
+      "#FFFFFF",
+      "/images/campus/schools/stanford.webp"
+    ),
     winner: "Stanford",
     votes: "2.3K",
   },

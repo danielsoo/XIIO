@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import BattleVsRadar from "@/components/campus/BattleVsRadar";
 import CampusSectionLabel from "@/components/campus/CampusSectionLabel";
-import SchoolBrandBackdrop from "@/components/campus/SchoolBrandBackdrop";
+import SchoolClashBackdrop from "@/components/campus/SchoolClashBackdrop";
 import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
 import { IconPlay } from "@/components/icons/MockupIcons";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { rgba } from "@/lib/campusBrandColors";
 import {
   ACTIVE_BATTLE,
   CURRENT_THEME,
@@ -44,20 +46,25 @@ function SchoolLogo({
   size = 96,
   className = "",
 }: {
-  school: Pick<CampusSchool, "logo" | "name">;
+  school: Pick<CampusSchool, "logo" | "name" | "colorPrimary">;
   size?: number;
   className?: string;
 }) {
+  const pad = size <= 48 ? "p-1.5" : "p-2";
   return (
     <div
-      className={`relative shrink-0 overflow-hidden rounded-full border-2 border-white/10 ${className}`}
-      style={{ width: size, height: size }}
+      className={`relative shrink-0 overflow-hidden rounded-full border-2 border-white/15 bg-[#05070A]/60 ${pad} ${className}`}
+      style={{
+        width: size,
+        height: size,
+        boxShadow: `0 0 28px ${rgba(school.colorPrimary, 0.35)}, 0 0 8px ${rgba(school.colorPrimary, 0.2)}`,
+      }}
     >
       <Image
         src={school.logo}
         alt={school.name}
         fill
-        className="object-cover"
+        className="object-contain"
         sizes={`${size}px`}
         unoptimized
       />
@@ -227,13 +234,16 @@ export default function CampusMockPage() {
 
           <div className={MOCKUP_CAMPUS.activeGrid}>
             <div className={MOCKUP_CAMPUS.battleCard}>
-              <SchoolBrandBackdrop schoolA={schoolA} schoolB={schoolB} variant="active" />
+              <SchoolClashBackdrop
+                schoolA={schoolA}
+                schoolB={schoolB}
+                battleId="active"
+                variant="active"
+              />
               <div className="relative z-10">
                 <div className="mb-8 flex items-center justify-between gap-4">
                   <SchoolBadge school={schoolA} filmsVotesLabel={filmsVotesA} />
-                  <div className={MOCKUP_CAMPUS.vsBadge}>
-                    <span className={MOCKUP_CAMPUS.vsText}>VS</span>
-                  </div>
+                  <BattleVsRadar />
                   <SchoolBadge school={schoolB} filmsVotesLabel={filmsVotesB} />
                 </div>
 
@@ -305,9 +315,10 @@ export default function CampusMockPage() {
             <div className={MOCKUP_CAMPUS.pastCardsGrid}>
               {PAST_BATTLES.map((b) => (
                 <div key={b.id} className={MOCKUP_CAMPUS.pastCard}>
-                  <SchoolBrandBackdrop
-                    schoolA={{ ...b.schoolA, name: b.schoolA.name }}
-                    schoolB={{ ...b.schoolB, name: b.schoolB.name }}
+                  <SchoolClashBackdrop
+                    schoolA={b.schoolA}
+                    schoolB={b.schoolB}
+                    battleId={b.id}
                     variant="compact"
                   />
                   <div className="relative z-10 flex w-full flex-col items-center text-center">
