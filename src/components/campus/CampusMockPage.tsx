@@ -432,21 +432,25 @@ export default function CampusMockPage() {
                     battleId={b.id}
                     variant="compact"
                   />
-                  <div className="relative z-10 flex w-full flex-col items-center text-center">
-                    <div className="mb-2.5 flex items-center gap-3">
-                      <SchoolLogo school={b.schoolA} size={44} variant="badge" />
-                      <span className="text-[10px] font-bold text-white/25">vs</span>
-                      <SchoolLogo school={b.schoolB} size={44} variant="badge" />
+                  <div className={MOCKUP_CAMPUS.pastCardInner}>
+                    <div className={MOCKUP_CAMPUS.pastLogoRow}>
+                      <SchoolLogo school={b.schoolA} size={104} variant="mark" />
+                      <SchoolLogo school={b.schoolB} size={104} variant="mark" />
                     </div>
-                    <p className="mb-1 text-xs font-semibold text-white/70">
+                    <p className={MOCKUP_CAMPUS.pastMatchupTitle}>
                       {b.schoolA.name} vs {b.schoolB.name}
                     </p>
-                    <p className="text-[11px] text-sky-400">
-                      {t("campus.mock.winner")} {b.winner}
-                    </p>
-                    <p className="mt-1 text-[11px] text-white/40">
-                      {b.votes} {t("campus.mock.votes")}
-                    </p>
+                    <div className={MOCKUP_CAMPUS.pastCardFooter}>
+                      <p>
+                        <span className={MOCKUP_CAMPUS.pastWinnerLabel}>
+                          {t("campus.mock.winner")}
+                        </span>
+                        <span className={MOCKUP_CAMPUS.pastWinnerName}>{b.winner}</span>
+                      </p>
+                      <p className={MOCKUP_CAMPUS.pastVotesText}>
+                        {b.votes} {t("campus.mock.votes")}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
