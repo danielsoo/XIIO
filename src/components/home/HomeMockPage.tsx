@@ -35,8 +35,8 @@ export default function HomeMockPage() {
   const featuredPromo = promoItems[0];
   const featuredTitle = featuredPromo?.title ?? DEFAULT_FEATURED_STORY.title;
   const featuredMeta = featuredPromo
-    ? `Short Film · promo`
-    : `${DEFAULT_FEATURED_STORY.category} · ${DEFAULT_FEATURED_STORY.duration}`;
+    ? `Short Film • promo`
+    : `${DEFAULT_FEATURED_STORY.category} • ${DEFAULT_FEATURED_STORY.duration}`;
 
   useLayoutEffect(() => {
     const section = heroSectionRef.current;
@@ -82,36 +82,34 @@ export default function HomeMockPage() {
         />
 
         <div
-          className={`relative z-10 flex flex-1 flex-col justify-end ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroContentTop}`}
+          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroContentTop}`}
         >
-          <div className={`w-full ${MOCKUP_HOME.heroGrid}`}>
+          <div className={`flex-1 w-full ${MOCKUP_HOME.heroGrid}`}>
             <div
               ref={heroTextRef}
               className={`flex flex-col justify-end px-4 lg:px-0 ${MOCKUP_HOME.heroTextBottom}`}
             >
-              <h1
-                className={`${MOCKUP_HOME.heroTitle} leading-[1.08] text-white mb-4 tracking-tight`}
-              >
-                {t("home.mock.heroLine1")}{" "}
-                <em className="italic" style={{ color: MOCKUP_HOME.accentBlue }}>
-                  {t("home.mock.heroAccent")}
-                </em>{" "}
-                {t("home.mock.heroLine2")}
+              <h1 className={MOCKUP_HOME.heroTitle}>
+                <span className="block text-white">{t("home.mock.heroLine1")}</span>
+                <span className="block text-white">
+                  <em className="italic" style={{ color: MOCKUP_HOME.accentBlue }}>
+                    {t("home.mock.heroAccent")}
+                  </em>{" "}
+                  {t("home.mock.heroLine2")}
+                </span>
               </h1>
-              <p className={`text-white/55 mb-7 leading-relaxed ${MOCKUP_HOME.heroSubtitle}`}>
-                {t("home.mock.heroSubtitle")}
-              </p>
+              <p className={MOCKUP_HOME.heroSubtitle}>{t("home.mock.heroSubtitle")}</p>
               <div className={`flex flex-wrap items-center ${MOCKUP_HOME.ctaRow}`}>
                 <Link
                   href={watchHref}
-                  className={`inline-flex items-center gap-2 rounded-full bg-white text-black font-semibold hover:bg-white/90 transition ${MOCKUP_HOME.ctaButton}`}
+                  className={`inline-flex items-center gap-2 bg-white text-black font-semibold hover:bg-white/90 transition ${MOCKUP_HOME.ctaButton}`}
                 >
                   <IconPlay className="w-3.5 h-3.5" />
                   {t("home.mock.startWatching")}
                 </Link>
                 <Link
                   href="/uploader/upload"
-                  className={`inline-flex items-center rounded-full border border-white/30 text-white font-medium hover:bg-white/[0.06] transition ${MOCKUP_HOME.ctaButton}`}
+                  className={`inline-flex items-center border border-white/30 text-white font-medium hover:bg-white/[0.06] transition ${MOCKUP_HOME.ctaButton}`}
                 >
                   {t("home.mock.uploadStory")}
                 </Link>

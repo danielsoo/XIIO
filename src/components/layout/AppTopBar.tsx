@@ -88,7 +88,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
       <div className="flex-1 flex justify-center">
         <label className={`relative hidden sm:block ${MOCKUP_HOME.searchBar}`}>
           <span className="sr-only">{t("topBar.searchLabel")}</span>
-          <IconSearch className="absolute top-1/2 -translate-y-1/2 left-4 w-4 h-4 text-white/30" />
+          <IconSearch className={`absolute top-1/2 -translate-y-1/2 ${MOCKUP_HOME.searchIconLeft} w-4 h-4 text-white/30`} />
           <input
             type="search"
             readOnly
