@@ -5,7 +5,7 @@ import Link from "next/link";
 import HomeStoryCard from "@/components/home/HomeStoryCard";
 import { IconChevronRight, IconScrollNext } from "@/components/icons/MockupIcons";
 import { MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
-import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
+import { framePx, MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import type { HomeStoryItem } from "@/lib/homeMockData";
 
 type Props = {
@@ -13,8 +13,7 @@ type Props = {
   viewAllHref: string;
   viewAllLabel: string;
   items: HomeStoryItem[];
-  variant?: "featured" | "surface";
-  showScrollButton?: boolean;
+  variant?: "featured" | "selects";
 };
 
 export default function HomeContentRow({
@@ -23,22 +22,23 @@ export default function HomeContentRow({
   viewAllLabel,
   items,
   variant = "featured",
-  showScrollButton = false,
 }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const isFeatured = variant === "featured";
-  const rowGapStyle = isFeatured
-    ? MOCKUP_HOME_STYLES.featuredRowGap
-    : MOCKUP_HOME_STYLES.surfaceRowGap;
-  const scrollerMinH = isFeatured
-    ? MOCKUP_MEASURES.featuredCardWidth * (10 / 16)
-    : MOCKUP_MEASURES.surfaceCardWidth * (10 / 16);
+  const rowWidthStyle = isFeatured
+    ? MOCKUP_HOME_STYLES.featuredRowWidth
+    : MOCKUP_HOME_STYLES.selectsRowWidth;
+  const cardWidth = MOCKUP_MEASURES.featuredCardWidth;
+  const cardGap = MOCKUP_MEASURES.featuredCardGap;
 
   const scroll = () => {
-    const step = isFeatured
-      ? MOCKUP_MEASURES.featuredCardWidth + MOCKUP_MEASURES.featuredCardGap
-      : MOCKUP_MEASURES.surfaceCardWidth + MOCKUP_MEASURES.surfaceCardGap;
-    scrollerRef.current?.scrollBy({ left: step, behavior: "smooth" });
+    scrollerRef.current?.scrollBy({ left: cardWidth + cardGap, behavior: "smooth" });
+  };
+
+  const gridStyle = {
+    ...rowWidthStyle,
+    ...MOCKUP_HOME_STYLES.featuredRowGap,
+    gridTemplateColumns: `repeat(${items.length}, ${framePx(cardWidth)})`,
   };
 
   return (
@@ -57,29 +57,33 @@ export default function HomeContentRow({
           <Link href={viewAllHref} className="text-xs text-white/40 hover:text-white/70 transition">
             {viewAllLabel}
           </Link>
-          {showScrollButton ? (
-            <button
-              type="button"
-              onClick={scroll}
-              className="w-8 h-8 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5"
-              aria-label="Scroll next"
-            >
-              <IconScrollNext />
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={scroll}
+            className="w-8 h-8 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 lg:hidden"
+            aria-label="Scroll next"
+          >
+            <IconScrollNext />
+          </button>
         </div>
       </div>
+
+      <div className="hidden lg:grid" style={gridStyle}>
+        {items.map((item) => (
+          <HomeStoryCard key={item.id} item={item} variant="featured" />
+        ))}
+      </div>
+
       <div
         ref={scrollerRef}
-        className="flex overflow-x-auto pb-1 scrollbar-none"
+        className="flex overflow-x-auto pb-1 scrollbar-none lg:hidden"
         style={{
-          ...rowGapStyle,
+          ...MOCKUP_HOME_STYLES.featuredRowGap,
           scrollbarWidth: "none",
-          minHeight: `calc(${scrollerMinH}px * var(--mockup-scale))`,
         }}
       >
         {items.map((item) => (
-          <HomeStoryCard key={item.id} item={item} variant={variant} />
+          <HomeStoryCard key={item.id} item={item} variant="featured" />
         ))}
       </div>
     </section>

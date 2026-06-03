@@ -31,7 +31,7 @@ export default function HeroLandscapeBackdrop({
   priority = false,
   className = "",
 }: Props) {
-  const minH = variant === "home" ? "min-h-[clamp(380px,52vh,520px)]" : "min-h-[220px]";
+  const minH = variant === "compact" ? "min-h-[220px]" : "";
 
   return (
     <div className={`absolute inset-0 z-0 pointer-events-none overflow-hidden ${minH} ${className}`} aria-hidden>

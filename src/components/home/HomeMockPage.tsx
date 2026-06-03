@@ -19,7 +19,6 @@ import {
   SURFACE_STORIES,
 } from "@/lib/homeMockData";
 import { MOCKUP_HOME, MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
-import { mockupShellStyle } from "@/lib/mockupLayout";
 import { HERO_DESIGN } from "@/lib/homeHeroLayout";
 
 export default function HomeMockPage() {
@@ -67,13 +66,12 @@ export default function HomeMockPage() {
   }, []);
 
   const watchHref = user ? "/movies" : "/login";
-  const shellStyle = { ...heroStyle, ...mockupShellStyle };
 
   return (
-    <main className={`min-h-screen ${MOCKUP_HOME.pageShell}`} style={shellStyle}>
+    <main className={`min-h-screen ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
       <section
         ref={heroSectionRef}
-        className={`relative overflow-hidden ${MOCKUP_HOME.contentPadX} pb-10 pt-4 lg:pt-6`}
+        className="relative overflow-hidden pb-10 pt-4 lg:pt-6 lg:pr-[calc(76px*var(--frame-scale))]"
         style={MOCKUP_HOME_STYLES.heroMinHeight}
       >
         <HeroLandscapeBackdrop
@@ -108,14 +106,16 @@ export default function HomeMockPage() {
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href={watchHref}
-                className="inline-flex items-center gap-2 rounded-full bg-white text-black px-6 py-2.5 text-sm font-semibold hover:bg-white/90 transition"
+                className="inline-flex items-center gap-2 rounded-full bg-white text-black px-6 text-sm font-semibold hover:bg-white/90 transition"
+                style={MOCKUP_HOME_STYLES.ctaButton}
               >
                 <IconPlay className="w-3.5 h-3.5" />
                 {t("home.mock.startWatching")}
               </Link>
               <Link
                 href="/uploader/upload"
-                className="inline-flex items-center rounded-full border border-white/30 text-white px-6 py-2.5 text-sm font-medium hover:bg-white/[0.06] transition"
+                className="inline-flex items-center rounded-full border border-white/30 text-white px-6 text-sm font-medium hover:bg-white/[0.06] transition"
+                style={MOCKUP_HOME_STYLES.ctaButton}
               >
                 {t("home.mock.uploadStory")}
               </Link>
@@ -131,7 +131,7 @@ export default function HomeMockPage() {
           </div>
         </div>
 
-        <div className="lg:hidden relative z-10 mt-8 px-0">
+        <div className="lg:hidden relative z-10 mt-8 px-4">
           <HomeFeaturedStoryPanel
             label={t("home.mock.featuredLabel")}
             title={featuredTitle}
@@ -141,7 +141,7 @@ export default function HomeMockPage() {
       </section>
 
       <div
-        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.contentPadX} ${MOCKUP_HOME.pageShell} pb-16 flex flex-col`}
+        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} pb-16 flex flex-col lg:pr-[calc(76px*var(--frame-scale))]`}
         style={MOCKUP_HOME_STYLES.sectionGap}
       >
         <HomeContentRow
@@ -164,7 +164,7 @@ export default function HomeMockPage() {
           viewAllHref="/series"
           viewAllLabel={t("home.mock.viewAll")}
           items={SELECTS_STORIES}
-          variant="featured"
+          variant="selects"
         />
       </div>
 

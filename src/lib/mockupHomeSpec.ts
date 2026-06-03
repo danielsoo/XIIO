@@ -1,8 +1,7 @@
 import type { CSSProperties } from "react";
-import { MOCKUP_MEASURES, scaledPx } from "@/lib/mockupLayout";
+import { framePx, MOCKUP_CONTENT_INSET, MOCKUP_MEASURES } from "@/lib/mockupLayout";
 
 export const MOCKUP_HOME = {
-  contentPadX: "px-[15px]",
   pageShell: "w-full",
   cardRadius: "rounded-xl",
   accentBlue: "#7EC8E3",
@@ -11,21 +10,30 @@ export const MOCKUP_HOME = {
 } as const;
 
 export const MOCKUP_HOME_STYLES = {
-  heroMinHeight: { minHeight: scaledPx(MOCKUP_MEASURES.heroMinHeight) } satisfies CSSProperties,
+  topBarHeight: { height: framePx(MOCKUP_MEASURES.topBarHeight) } satisfies CSSProperties,
+  contentRightPad: { paddingRight: framePx(MOCKUP_CONTENT_INSET.rightMargin) } satisfies CSSProperties,
+  heroMinHeight: { minHeight: framePx(MOCKUP_MEASURES.heroMinHeight) } satisfies CSSProperties,
   heroGrid: {
-    gridTemplateColumns: `minmax(0, ${scaledPx(MOCKUP_MEASURES.heroTextColWidth)}) 1fr`,
-    gap: scaledPx(MOCKUP_MEASURES.heroColGap),
+    gridTemplateColumns: `${framePx(MOCKUP_MEASURES.heroTextColWidth)} 1fr`,
+    gap: framePx(MOCKUP_MEASURES.heroColGap),
   } satisfies CSSProperties,
-  heroTitle: { fontSize: scaledPx(MOCKUP_MEASURES.heroTitleSize) } satisfies CSSProperties,
-  heroSubtitle: { fontSize: scaledPx(MOCKUP_MEASURES.heroSubtitleSize) } satisfies CSSProperties,
-  sectionTitle: { fontSize: scaledPx(MOCKUP_MEASURES.sectionTitleSize) } satisfies CSSProperties,
-  sectionGap: { gap: scaledPx(MOCKUP_MEASURES.sectionGap) } satisfies CSSProperties,
-  featuredCardWidth: { width: scaledPx(MOCKUP_MEASURES.featuredCardWidth) } satisfies CSSProperties,
-  surfaceCardWidth: { width: scaledPx(MOCKUP_MEASURES.surfaceCardWidth) } satisfies CSSProperties,
-  featuredRowGap: { gap: scaledPx(MOCKUP_MEASURES.featuredCardGap) } satisfies CSSProperties,
-  surfaceRowGap: { gap: scaledPx(MOCKUP_MEASURES.surfaceCardGap) } satisfies CSSProperties,
-  campusBannerWidth: { width: scaledPx(MOCKUP_MEASURES.campusBannerWidth) } satisfies CSSProperties,
-  campusBannerMinH: { minHeight: scaledPx(MOCKUP_MEASURES.campusBannerHeight) } satisfies CSSProperties,
+  heroTitle: { fontSize: framePx(MOCKUP_MEASURES.heroTitleSize) } satisfies CSSProperties,
+  heroSubtitle: { fontSize: framePx(MOCKUP_MEASURES.heroSubtitleSize) } satisfies CSSProperties,
+  ctaButton: { height: framePx(MOCKUP_MEASURES.ctaHeight) } satisfies CSSProperties,
+  sectionTitle: { fontSize: framePx(MOCKUP_MEASURES.sectionTitleSize) } satisfies CSSProperties,
+  sectionGap: { gap: framePx(MOCKUP_MEASURES.sectionGap) } satisfies CSSProperties,
+  featuredCardWidth: { width: framePx(MOCKUP_MEASURES.featuredCardWidth) } satisfies CSSProperties,
+  surfaceCardWidth: { width: framePx(MOCKUP_MEASURES.surfaceCardWidth) } satisfies CSSProperties,
+  featuredRowWidth: { width: framePx(MOCKUP_MEASURES.featuredRowWidth) } satisfies CSSProperties,
+  selectsRowWidth: { width: framePx(MOCKUP_MEASURES.selectsRowWidth) } satisfies CSSProperties,
+  featuredRowGap: { gap: framePx(MOCKUP_MEASURES.featuredCardGap) } satisfies CSSProperties,
+  surfaceRowGap: { gap: framePx(MOCKUP_MEASURES.surfaceCardGap) } satisfies CSSProperties,
+  campusBannerWidth: { width: framePx(MOCKUP_MEASURES.campusBannerWidth) } satisfies CSSProperties,
+  campusBannerMinH: { minHeight: framePx(MOCKUP_MEASURES.campusBannerHeight) } satisfies CSSProperties,
+  featuredPanelLabel: { fontSize: framePx(10) } satisfies CSSProperties,
+  featuredPanelTitle: { fontSize: framePx(14) } satisfies CSSProperties,
+  featuredPanelMeta: { fontSize: framePx(12) } satisfies CSSProperties,
+  featuredPanelPlay: { width: framePx(40), height: framePx(40) } satisfies CSSProperties,
 } as const;
 
 export const HOME_IMAGE_BASE = "/images/home";

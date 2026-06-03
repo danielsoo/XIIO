@@ -17,7 +17,7 @@ export default function CampusCurrentsBanner({ className = "" }: Props) {
   return (
     <Link
       href="/school-battle"
-      className={`relative shrink-0 w-full ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-sky-500/25 transition group ${className}`}
+      className={`relative shrink-0 ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-sky-500/25 transition group ${className}`}
       style={{
         ...MOCKUP_HOME_STYLES.campusBannerWidth,
         ...MOCKUP_HOME_STYLES.campusBannerMinH,
@@ -31,10 +31,7 @@ export default function CampusCurrentsBanner({ className = "" }: Props) {
         sizes="380px"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#05070A] via-[#05070A]/85 to-transparent" />
-      <div
-        className="relative z-10 p-5 flex flex-col justify-end h-full"
-        style={MOCKUP_HOME_STYLES.campusBannerMinH}
-      >
+      <div className="relative z-10 p-5 flex flex-col justify-end h-full min-h-[inherit]">
         <p className="text-[11px] font-semibold tracking-wide text-sky-400 mb-1.5">
           {t("home.mock.campusBannerTitle")}
         </p>

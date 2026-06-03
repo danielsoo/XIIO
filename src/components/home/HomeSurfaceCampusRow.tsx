@@ -6,7 +6,7 @@ import CampusCurrentsBanner from "@/components/home/CampusCurrentsBanner";
 import HomeStoryCard from "@/components/home/HomeStoryCard";
 import { IconChevronRight, IconScrollNext } from "@/components/icons/MockupIcons";
 import { MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
-import { MOCKUP_MEASURES, scaledPx, SURFACE_CAMPUS_GAP_VAR } from "@/lib/mockupLayout";
+import { framePx, MOCKUP_MEASURES, SURFACE_CAMPUS_GAP_VAR } from "@/lib/mockupLayout";
 import type { HomeStoryItem } from "@/lib/homeMockData";
 
 type Props = {
@@ -45,7 +45,7 @@ function SectionHeader({
         <button
           type="button"
           onClick={onScroll}
-          className="w-8 h-8 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5"
+          className="w-8 h-8 rounded-full border border-white/15 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 lg:hidden"
           aria-label="Scroll next"
         >
           <IconScrollNext />
@@ -70,43 +70,57 @@ export default function HomeSurfaceCampusRow({
     });
   };
 
-  const gridCols = `minmax(0, 1fr) ${scaledPx(MOCKUP_MEASURES.campusBannerWidth)}`;
-  const gridGap = `var(${SURFACE_CAMPUS_GAP_VAR})`;
-  const scrollerStyle = {
+  const gridStyle = {
+    gridTemplateColumns: `${framePx(MOCKUP_MEASURES.surfaceRowWidth)} ${framePx(MOCKUP_MEASURES.campusBannerWidth)}`,
+    gap: `var(${SURFACE_CAMPUS_GAP_VAR})`,
+  };
+
+  const surfaceGridStyle = {
     ...MOCKUP_HOME_STYLES.surfaceRowGap,
-    scrollbarWidth: "none" as const,
-    minHeight: scaledPx(MOCKUP_MEASURES.surfaceCardWidth * (10 / 16)),
+    gridTemplateColumns: `repeat(${items.length}, ${framePx(MOCKUP_MEASURES.surfaceCardWidth)})`,
   };
 
   return (
     <section className="min-w-0 w-full">
-      <div
-        className="mb-4 lg:grid"
-        style={{ gridTemplateColumns: gridCols, gap: gridGap }}
-      >
+      <div className="mb-4 hidden lg:grid" style={gridStyle}>
         <SectionHeader
           title={title}
           viewAllHref={viewAllHref}
           viewAllLabel={viewAllLabel}
           onScroll={scroll}
         />
-        <div className="hidden lg:block" aria-hidden />
+        <div aria-hidden />
       </div>
 
-      <div
-        className="lg:grid items-stretch"
-        style={{ gridTemplateColumns: gridCols, gap: gridGap }}
-      >
-        <div
-          ref={scrollerRef}
-          className="flex overflow-x-auto pb-1 scrollbar-none min-w-0 col-start-1"
-          style={scrollerStyle}
-        >
+      <div className="mb-4 lg:hidden">
+        <SectionHeader
+          title={title}
+          viewAllHref={viewAllHref}
+          viewAllLabel={viewAllLabel}
+          onScroll={scroll}
+        />
+      </div>
+
+      <div className="hidden lg:grid items-stretch" style={gridStyle}>
+        <div className="grid" style={surfaceGridStyle}>
           {items.map((item) => (
             <HomeStoryCard key={item.id} item={item} variant="surface" />
           ))}
         </div>
-        <CampusCurrentsBanner className="hidden lg:block shrink-0 self-stretch col-start-2" />
+        <CampusCurrentsBanner className="shrink-0 self-stretch" />
+      </div>
+
+      <div
+        ref={scrollerRef}
+        className="flex overflow-x-auto pb-1 scrollbar-none min-w-0 lg:hidden"
+        style={{
+          ...MOCKUP_HOME_STYLES.surfaceRowGap,
+          scrollbarWidth: "none",
+        }}
+      >
+        {items.map((item) => (
+          <HomeStoryCard key={item.id} item={item} variant="surface" />
+        ))}
       </div>
 
       <div className="mt-4 lg:hidden">

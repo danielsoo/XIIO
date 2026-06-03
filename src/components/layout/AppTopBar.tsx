@@ -8,6 +8,7 @@ import { useTranslations } from "@/context/LocaleContext";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { IconBell, IconSearch } from "@/components/icons/MockupIcons";
 import { getUserProfile } from "@/lib/userProfile";
+import { MOCKUP_HOME_STYLES } from "@/lib/mockupHomeSpec";
 import type { UserProfileDoc } from "@/types/user";
 
 type Props = {
@@ -47,7 +48,10 @@ export default function AppTopBar({ onMenuOpen }: Props) {
   const displayName = profile?.displayName?.trim() || user?.displayName || user?.email || "";
 
   return (
-    <header className="sticky top-0 z-30 h-14 lg:h-[60px] flex items-center gap-3 px-4 lg:px-[15px] bg-[#05070A]/90 backdrop-blur-md">
+    <header
+      className="sticky top-0 z-30 flex items-center gap-3 px-4 lg:pl-0 lg:pr-[calc(76px*var(--frame-scale))] bg-[#05070A]/90 backdrop-blur-md"
+      style={MOCKUP_HOME_STYLES.topBarHeight}
+    >
       <button
         type="button"
         className="lg:hidden p-2 -ml-1 text-white/70 hover:text-white"

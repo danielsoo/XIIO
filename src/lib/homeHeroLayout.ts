@@ -4,23 +4,21 @@ import {
   rgbTupleToCssVar,
   type RgbTuple,
 } from "@/lib/homeHeroColors";
+import { framePx, MOCKUP_FRAME, MOCKUP_MEASURES } from "@/lib/mockupLayout";
 
-/** 1536×1024 목업 기준 픽셀 — clamp/% 변환용 */
+/** 1536×1024 목업 기준 — mockupLayout과 동일 px */
 export const HERO_DESIGN = {
-  frameWidth: 1536,
-  frameHeight: 1024,
-  heroMinHeight: 426,
-  padX: 19,
-  textColWidth: 376,
-  colGap: 96,
-  titleSize: 36,
-  subtitleSize: 12,
-  buttonHeight: 40,
+  frameWidth: MOCKUP_FRAME.width,
+  frameHeight: MOCKUP_FRAME.height,
+  heroMinHeight: MOCKUP_MEASURES.heroMinHeight,
+  textColWidth: MOCKUP_MEASURES.heroTextColWidth,
+  colGap: MOCKUP_MEASURES.heroColGap,
+  titleSize: MOCKUP_MEASURES.heroTitleSize,
+  subtitleSize: MOCKUP_MEASURES.heroSubtitleSize,
+  buttonHeight: MOCKUP_MEASURES.ctaHeight,
   gradAngleDeg: 118,
   gradFlatPercent: 39,
-  /** flat zone을 텍스트 끝보다 조금 더 오른쪽까지 확장 */
   gradStartOffsetPercent: 5,
-  /** mask feather — 이 % 위까지 파랑 레이어 fully visible */
   bottomFeatherStartPercent: 52,
   heroBlue: DEFAULT_HOME_HERO_THEME.heroHex,
   ctaBlue: DEFAULT_HOME_HERO_THEME.ctaHex,
@@ -65,7 +63,6 @@ export function heroMobileVerticalGradient(rgbTuple: RgbTuple = DEFAULT_HERO_RGB
     transparent 100%)`;
 }
 
-/** 하단 feather — mask alpha 1→0 (검정 덧칠 아님, main 검정 비침) */
 export function heroBottomFeatherMask(): string {
   const start = HERO_DESIGN.bottomFeatherStartPercent;
   return `linear-gradient(to bottom,
@@ -77,8 +74,8 @@ export function heroBottomFeatherMask(): string {
     transparent 100%)`;
 }
 
-/** section inline style — 목업 비율 CSS 변수 */
+/** HomePageContent legacy hero — frame-scale col gap */
 export const HERO_SECTION_STYLE = {
-  ["--hero-pad-x" as string]: `clamp(12px, ${heroPercentOfWidth(HERO_DESIGN.padX)}vw, 32px)`,
-  ["--hero-col-gap" as string]: `clamp(40px, ${heroPercentOfWidth(HERO_DESIGN.colGap)}vw, 96px)`,
+  ["--hero-pad-x" as string]: framePx(0),
+  ["--hero-col-gap" as string]: framePx(MOCKUP_MEASURES.heroColGap),
 } as const;
