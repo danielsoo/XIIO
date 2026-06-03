@@ -2,8 +2,9 @@ export const MOCKUP_HOME = {
   pageShell: "w-full",
   contentMainColumnPad:
     "lg:pl-[calc(var(--app-sidebar-width)+var(--app-content-boundary-inset))]",
-  contentRightMargin: "lg:pr-[var(--app-content-right-margin)]",
-  contentColumnGuard: "min-w-0 max-w-full overflow-x-clip",
+  contentRightPad: "lg:pr-[76px]",
+  contentColumnGuard: "min-w-0 max-w-full",
+  contentBodyGuard: "min-w-0 max-w-full overflow-x-clip",
   topBarHeight: "h-[60px]",
   searchBar: "w-full max-w-[520px] min-w-0 h-[40px] text-[14px]",
   searchIconLeft: "left-[16px]",
