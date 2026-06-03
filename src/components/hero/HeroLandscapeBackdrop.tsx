@@ -2,17 +2,19 @@
 
 import Image from "next/image";
 import {
-  heroBottomFeatherMask,
   heroDiagonalGradient,
+  heroFullBleedMaskStyle,
   heroMobileVerticalGradient,
+  heroWaveBoxMaskStyle,
 } from "@/lib/homeHeroLayout";
 import { HERO_LANDSCAPE_IMAGE, HERO_LANDSCAPE_POSITION } from "@/lib/homeHeroBackground";
 import type { RgbTuple } from "@/lib/homeHeroColors";
 
-const maskStyle = {
-  WebkitMaskImage: heroBottomFeatherMask(),
-  maskImage: heroBottomFeatherMask(),
-} as const;
+type MaskVariant = "full" | "waveBox";
+
+function overlayMaskStyle(variant: MaskVariant) {
+  return variant === "waveBox" ? heroWaveBoxMaskStyle() : heroFullBleedMaskStyle();
+}
 
 type Props = {
   rgbTuple: RgbTuple;
@@ -29,11 +31,15 @@ function OverlayLayers({
   overlayEnabled,
   rgbTuple,
   gradStartPercent,
+  maskVariant,
 }: {
   overlayEnabled: boolean;
   rgbTuple: RgbTuple;
   gradStartPercent: number;
+  maskVariant: MaskVariant;
 }) {
+  const maskStyle = overlayMaskStyle(maskVariant);
+
   if (overlayEnabled) {
     return (
       <>
@@ -80,6 +86,8 @@ export default function HeroLandscapeBackdrop({
   waveBoxHeightPx = null,
 }: Props) {
   if (variant === "home") {
+    const waveBoxMask = heroWaveBoxMaskStyle();
+
     return (
       <div
         className={`absolute top-0 right-0 z-0 overflow-hidden pointer-events-none ${className}`}
@@ -106,16 +114,18 @@ export default function HeroLandscapeBackdrop({
           overlayEnabled={overlayEnabled}
           rgbTuple={rgbTuple}
           gradStartPercent={gradStartPercent}
+          maskVariant="waveBox"
         />
         <div
-          className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-xiio-bg/90"
-          style={maskStyle}
+          className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-xiio-bg/40"
+          style={waveBoxMask}
         />
       </div>
     );
   }
 
   const minH = "min-h-[220px]";
+  const fullBleedMask = heroFullBleedMaskStyle();
 
   return (
     <div className={`absolute inset-0 z-0 pointer-events-none overflow-hidden ${minH} ${className}`} aria-hidden>
@@ -132,10 +142,11 @@ export default function HeroLandscapeBackdrop({
         overlayEnabled={overlayEnabled}
         rgbTuple={rgbTuple}
         gradStartPercent={gradStartPercent}
+        maskVariant="full"
       />
       <div
         className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-xiio-bg/90"
-        style={maskStyle}
+        style={fullBleedMask}
       />
     </div>
   );

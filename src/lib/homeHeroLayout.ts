@@ -74,6 +74,30 @@ export function heroBottomFeatherMask(): string {
     transparent 100%)`;
 }
 
+/** Home wave box (My List height) — short bottom fade only */
+export function heroWaveBoxBottomMask(): string {
+  return `linear-gradient(to bottom,
+    #000 0%,
+    #000 88%,
+    rgba(0, 0, 0, 0.5) 95%,
+    transparent 100%)`;
+}
+
+function maskStyleFromImage(maskImage: string) {
+  return {
+    WebkitMaskImage: maskImage,
+    maskImage,
+  } as const;
+}
+
+export function heroFullBleedMaskStyle() {
+  return maskStyleFromImage(heroBottomFeatherMask());
+}
+
+export function heroWaveBoxMaskStyle() {
+  return maskStyleFromImage(heroWaveBoxBottomMask());
+}
+
 /** HomePageContent legacy hero */
 export const HERO_SECTION_STYLE = {
   ["--hero-pad-x" as string]: "0px",
