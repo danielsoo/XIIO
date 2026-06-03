@@ -64,14 +64,18 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-lg font-semibold tracking-[0.25em] text-white">XIIO</span>
       </Link>
 
-      <nav className="flex-1 space-y-0.5 px-3 mt-20">
-        {PRIMARY_NAV.map((item) => (
-          <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
-        ))}
-        <div className="my-20 border-t border-white/[0.06]" />
-        {SECONDARY_NAV.map((item) => (
-          <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
-        ))}
+      <nav className="flex flex-1 flex-col px-3 mt-20 min-h-0">
+        <div className="flex flex-col gap-0.5">
+          {PRIMARY_NAV.map((item) => (
+            <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
+          ))}
+        </div>
+        <div className="h-20 shrink-0 border-t border-white/[0.06]" aria-hidden />
+        <div className="flex flex-col gap-0.5">
+          {SECONDARY_NAV.map((item) => (
+            <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
+          ))}
+        </div>
       </nav>
 
       <div className="mt-auto pb-5 pt-3 border-t border-white/[0.06]">
