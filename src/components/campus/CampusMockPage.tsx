@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import BattleVsRadar from "@/components/campus/BattleVsRadar";
@@ -8,6 +8,7 @@ import CampusSectionLabel from "@/components/campus/CampusSectionLabel";
 import SchoolClashBackdrop from "@/components/campus/SchoolClashBackdrop";
 import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
 import { IconPlay } from "@/components/icons/MockupIcons";
+import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { rgba } from "@/lib/campusBrandColors";
@@ -18,6 +19,7 @@ import {
   type CampusSchool,
 } from "@/lib/campusMockData";
 import { HERO_DESIGN } from "@/lib/homeHeroLayout";
+import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
 
@@ -191,11 +193,77 @@ function ActiveBattleCountdown({
 export default function CampusMockPage() {
   const { t } = useTranslations();
   const { rgbTuple, overlayEnabled, heroStyle } = useHomeHeroTheme();
+  const { waveRect, registerHeroSection, registerHeroText } = useHeroWaveLayout();
   const countdown = useCountdown(ACTIVE_BATTLE.votingEndsAt);
   const { schoolA, schoolB } = ACTIVE_BATTLE;
+  const heroTextRef = useRef<HTMLDivElement>(null);
+  const heroSectionRef = useRef<HTMLElement>(null);
+  const [gradStart, setGradStart] = useState(
+    HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent
+  );
+  const [isLg, setIsLg] = useState(false);
 
-  const gradStart =
-    HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent;
+  const setHeroSectionRef = useCallback(
+    (el: HTMLElement | null) => {
+      heroSectionRef.current = el;
+      registerHeroSection(el);
+    },
+    [registerHeroSection]
+  );
+
+  const setHeroTextRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      heroTextRef.current = el;
+      registerHeroText(el);
+    },
+    [registerHeroText]
+  );
+
+  useLayoutEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const syncLg = () => setIsLg(mq.matches);
+    syncLg();
+    mq.addEventListener("change", syncLg);
+    return () => mq.removeEventListener("change", syncLg);
+  }, []);
+
+  useLayoutEffect(() => {
+    const section = heroSectionRef.current;
+    const text = heroTextRef.current;
+    if (!section || !text) return;
+
+    const measure = () => {
+      const lg = window.matchMedia("(min-width: 1024px)").matches;
+      if (!lg) {
+        setGradStart(HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent);
+        return;
+      }
+      const sr = section.getBoundingClientRect();
+      const tr = text.getBoundingClientRect();
+      const startPx = Math.max(0, tr.right - sr.left);
+      const base = sr.width > 0 ? (startPx / sr.width) * 100 : HERO_DESIGN.gradFlatPercent;
+      setGradStart(Math.min(100, Math.round((base + HERO_DESIGN.gradStartOffsetPercent) * 10) / 10));
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(section);
+    ro.observe(text);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
+  const backdropBandHeight =
+    waveRect.height - waveRect.backdropTop + waveRect.backdropExtendBottom;
+  const heroGridBandStyle = isLg
+    ? {
+        marginTop: waveRect.backdropTop - MOCKUP_MEASURES.topBarHeight,
+        minHeight: backdropBandHeight,
+      }
+    : undefined;
 
   const filmsVotesA = t("campus.mock.filmsVotes", {
     films: schoolA.films,
@@ -208,28 +276,40 @@ export default function CampusMockPage() {
 
   return (
     <main className={`min-h-screen ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
-      <section className="relative min-h-[320px] flex flex-col justify-center overflow-hidden -mt-[60px] pt-[60px]">
+      <section
+        ref={setHeroSectionRef}
+        className={`relative isolate flex flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
+        style={{ minHeight: waveRect.height + waveRect.backdropExtendBottom }}
+      >
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
           overlayEnabled={overlayEnabled}
-          variant="compact"
+          variant="home"
           gradStartPercent={gradStart}
           priority
         />
 
         <div
-          className={`relative z-10 max-w-3xl px-4 lg:px-0 ${MOCKUP_HOME.contentRightPad}`}
+          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroContentTop}`}
+          style={{ minHeight: waveRect.height }}
         >
-          <p className={MOCKUP_CAMPUS.heroBadge}>{t("campus.mock.badge")}</p>
-          <h1 className={MOCKUP_CAMPUS.heroTitle}>{t("campus.mock.title")}</h1>
-          <p className={MOCKUP_CAMPUS.heroSubtitle}>{t("campus.mock.subtitle")}</p>
-          <Link
-            href="/about#campus"
-            className={`inline-flex items-center gap-2 border border-white/30 text-white font-medium hover:bg-white/[0.06] transition ${MOCKUP_HOME.ctaButton}`}
-          >
-            <IconPlay className="w-3.5 h-3.5" />
-            {t("campus.mock.howItWorks")}
-          </Link>
+          <div className="flex flex-1 w-full flex-col justify-center" style={heroGridBandStyle}>
+            <div
+              ref={setHeroTextRef}
+              className={`max-w-3xl ${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
+            >
+              <p className={MOCKUP_CAMPUS.heroBadge}>{t("campus.mock.badge")}</p>
+              <h1 className={MOCKUP_CAMPUS.heroTitle}>{t("campus.mock.title")}</h1>
+              <p className={MOCKUP_CAMPUS.heroSubtitle}>{t("campus.mock.subtitle")}</p>
+              <Link
+                href="/about#campus"
+                className={`inline-flex items-center gap-2 border border-white/30 text-white font-medium hover:bg-white/[0.06] transition ${MOCKUP_HOME.ctaButton}`}
+              >
+                <IconPlay className="w-3.5 h-3.5" />
+                {t("campus.mock.howItWorks")}
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
