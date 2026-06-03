@@ -26,7 +26,7 @@ export default function HomeMockPage() {
   const { t } = useTranslations();
   const { user } = useAuth();
   const { rgbTuple, overlayEnabled, heroStyle } = useHomeHeroTheme();
-  const { registerHeroSection, registerHeroText } = useHeroWaveLayout();
+  const { waveRect, registerHeroSection, registerHeroText } = useHeroWaveLayout();
   const { items: promoItems } = usePromoFeed(true);
   const heroTextRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLElement>(null);
@@ -92,6 +92,7 @@ export default function HomeMockPage() {
       <section
         ref={setHeroSectionRef}
         className={`relative flex flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
+        style={{ minHeight: waveRect.height }}
       >
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
@@ -154,33 +155,19 @@ export default function HomeMockPage() {
               meta={featuredMeta}
             />
           </div>
-
-          <div className={`relative z-10 px-4 lg:px-0 ${MOCKUP_HOME.heroToFeaturedHeader}`}>
-            <HomeContentRow
-              headerOnly
-              title={t("home.mock.featuredStories")}
-              viewAllHref="/movies"
-              viewAllLabel={t("home.mock.viewAll")}
-              items={FEATURED_STORIES}
-              variant="featured"
-            />
-          </div>
         </div>
       </section>
 
       <div
         className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} pb-16 flex flex-col ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.sectionGap}`}
       >
-        <div className={MOCKUP_HOME.featuredHeaderToCards}>
-          <HomeContentRow
-            hideHeader
-            title={t("home.mock.featuredStories")}
-            viewAllHref="/movies"
-            viewAllLabel={t("home.mock.viewAll")}
-            items={FEATURED_STORIES}
-            variant="featured"
-          />
-        </div>
+        <HomeContentRow
+          title={t("home.mock.featuredStories")}
+          viewAllHref="/movies"
+          viewAllLabel={t("home.mock.viewAll")}
+          items={FEATURED_STORIES}
+          variant="featured"
+        />
 
         <HomeSurfaceCampusRow
           title={t("home.mock.newToSurface")}
