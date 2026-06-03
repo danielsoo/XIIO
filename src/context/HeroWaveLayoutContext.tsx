@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 
 export type HeroWaveRect = {
@@ -53,6 +54,7 @@ type ContextValue = {
 const HeroWaveLayoutContext = createContext<ContextValue | null>(null);
 
 export function HeroWaveLayoutProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const sectionRef = useRef<HTMLElement | null>(null);
   const textRef = useRef<HTMLElement | null>(null);
   const observerRef = useRef<ResizeObserver | null>(null);
@@ -139,6 +141,12 @@ export function HeroWaveLayoutProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("resize", measure);
     };
   }, [measure, bindObserver]);
+
+  useLayoutEffect(() => {
+    measure();
+    const id = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(id);
+  }, [pathname, measure]);
 
   const value = useMemo(
     (): ContextValue => ({

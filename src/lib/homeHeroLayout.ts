@@ -93,15 +93,28 @@ export function heroOverlayContentMaskStyle() {
   );
 }
 
-/** Sharp photo visible in center; top/bottom reveal blurred photo colors */
-export function heroPhotoSharpBandMaskStyle() {
+function maskStopPercent(px: number, stripHeightPx: number): number {
+  if (stripHeightPx <= 0) return 0;
+  return Math.min(100, Math.max(0, (px / stripHeightPx) * 100));
+}
+
+/** Sharp band — blur bleed ends at top bar + lg content offset (px), not % of strip */
+export function heroPhotoSharpBandMaskStyle(stripHeightPx: number) {
+  const sharpBleedEndPx =
+    MOCKUP_MEASURES.topBarHeight + MOCKUP_MEASURES.heroBackdropTopOffsetLg;
+  const sharpFullStartPx = sharpBleedEndPx + stripHeightPx * 0.18;
+  const sharpFadeStartPx = stripHeightPx * 0.82;
+
+  const blurEnd = maskStopPercent(sharpBleedEndPx, stripHeightPx);
+  const sharpFull = maskStopPercent(sharpFullStartPx, stripHeightPx);
+  const sharpFade = maskStopPercent(sharpFadeStartPx, stripHeightPx);
+
   return maskStyleFromImage(
     `linear-gradient(to bottom,
       transparent 0%,
-      transparent 20%,
-      black 38%,
-      black 68%,
-      transparent 82%,
+      transparent ${blurEnd}%,
+      black ${sharpFull}%,
+      black ${sharpFade}%,
       transparent 100%)`
   );
 }

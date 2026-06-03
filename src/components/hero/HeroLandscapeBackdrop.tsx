@@ -95,11 +95,13 @@ function HeroPhotoLayers({
   heroImage,
   heroImagePosition,
   stripWidth,
+  stripHeightPx,
   priority,
 }: {
   heroImage: string;
   heroImagePosition: string;
   stripWidth: string;
+  stripHeightPx: number;
   priority: boolean;
 }) {
   const imageStyle = { objectPosition: heroImagePosition };
@@ -115,7 +117,7 @@ function HeroPhotoLayers({
         style={imageStyle}
         sizes={stripWidth}
       />
-      <div className="absolute inset-0" style={heroPhotoSharpBandMaskStyle()}>
+      <div className="absolute inset-0" style={heroPhotoSharpBandMaskStyle(stripHeightPx)}>
         <Image
           src={heroImage}
           alt=""
@@ -168,6 +170,7 @@ export default function HeroLandscapeBackdrop({
           heroImage={heroImage}
           heroImagePosition={heroImagePosition}
           stripWidth={stripWidth}
+          stripHeightPx={backdropHeight}
           priority={priority}
         />
         <div className="absolute inset-0" style={heroOverlayContentMaskStyle()}>
