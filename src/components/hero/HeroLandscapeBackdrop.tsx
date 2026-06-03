@@ -97,11 +97,10 @@ export default function HeroLandscapeBackdrop({
 
     return (
       <div
-        className={`absolute top-0 z-[1] overflow-hidden pointer-events-none ${className}`}
+        className={`absolute top-0 bottom-0 z-[1] overflow-hidden pointer-events-none ${className}`}
         style={{
           left: waveRect.insetLeft,
           right: waveRect.insetRight,
-          height: waveRect.height,
         }}
         aria-hidden
       >

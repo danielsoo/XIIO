@@ -21,6 +21,7 @@ export type HeroWaveRect = {
 };
 
 const MIN_WAVE_HEIGHT = 240;
+const MIN_STRIP_WIDTH = 200;
 
 const LG_FALLBACK: HeroWaveRect = {
   insetLeft: MOCKUP_MEASURES.heroTextColWidth,
@@ -73,9 +74,17 @@ export function HeroWaveLayoutProvider({ children }: { children: ReactNode }) {
       ? Math.round(myList.getBoundingClientRect().bottom - sr.top)
       : LG_FALLBACK.height;
 
+    const sectionWidth = Math.round(sr.width);
+    let insetLeft = Math.max(0, Math.round(textRight - sr.left));
+    let insetRight = 0;
+    const maxInsetLeft = Math.max(0, sectionWidth - MIN_STRIP_WIDTH - insetRight);
+    insetLeft = Math.min(insetLeft, maxInsetLeft);
+    const maxInsetRight = Math.max(0, sectionWidth - insetLeft - MIN_STRIP_WIDTH);
+    insetRight = Math.min(insetRight, maxInsetRight);
+
     setWaveRect({
-      insetLeft: Math.max(0, Math.round(textRight - sr.left)),
-      insetRight: Math.max(0, Math.round(window.innerWidth - sr.right)),
+      insetLeft,
+      insetRight,
       height: Math.max(MIN_WAVE_HEIGHT, measuredHeight),
     });
   }, []);
