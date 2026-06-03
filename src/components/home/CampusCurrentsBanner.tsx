@@ -26,7 +26,7 @@ export default function CampusCurrentsBanner({ className = "" }: Props) {
         className="object-cover object-right"
         sizes="380px"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#05070A] via-[#05070A]/85 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-xiio-bg via-xiio-bg/85 to-transparent" />
       <div className="relative z-10 p-5 flex flex-col justify-end h-full min-h-[inherit]">
         <p className="text-[11px] font-semibold tracking-wide text-sky-400 mb-1.5">
           {t("home.mock.campusBannerTitle")}
@@ -42,12 +42,12 @@ export default function CampusCurrentsBanner({ className = "" }: Props) {
           {["PS", "NY", "LA"].map((l) => (
             <span
               key={l}
-              className="w-8 h-8 rounded-full bg-white/10 border-2 border-[#05070A] flex items-center justify-center text-[9px] font-bold text-white/70"
+              className="w-8 h-8 rounded-full bg-white/10 border-2 border-xiio-bg flex items-center justify-center text-[9px] font-bold text-white/70"
             >
               {l}
             </span>
           ))}
-          <span className="w-8 h-8 rounded-full bg-sky-500/25 border-2 border-[#05070A] flex items-center justify-center text-[10px] font-semibold text-sky-300">
+          <span className="w-8 h-8 rounded-full bg-sky-500/25 border-2 border-xiio-bg flex items-center justify-center text-[10px] font-semibold text-sky-300">
             +12
           </span>
         </div>

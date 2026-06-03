@@ -12,7 +12,8 @@ const config: Config = {
     extend: {
       colors: {
         xiio: {
-          bg: "#0a0a0a",
+          bg: "#020408",
+          sidebar: "#02070B",
           surface: "#141414",
           card: "#1a1a2e",
           accent: "#6C63FF",

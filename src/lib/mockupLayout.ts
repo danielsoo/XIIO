@@ -16,6 +16,10 @@ export const APP_CONTENT_BOUNDARY_INSET_PX =
   MOCKUP_CONTENT_INSET.left - APP_SIDEBAR_IMPLEMENTATION_PX;
 export const APP_CONTENT_RIGHT_MARGIN_PX = MOCKUP_CONTENT_INSET.rightMargin;
 
+/** App chrome — sidebar vs main column (photos excluded) */
+export const APP_SIDEBAR_BG = "#02070B";
+export const APP_MAIN_BG = "#020408";
+
 /** Measured layout px on 001 mockup */
 export const MOCKUP_MEASURES = {
   topBarHeight: 60,

@@ -183,7 +183,7 @@ export default function HomeMockPage() {
       </section>
 
       <div
-        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
+        className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
       >
         <HomeContentRow
           title={t("home.mock.featuredStories")}

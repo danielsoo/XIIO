@@ -110,7 +110,7 @@ function SchoolLogo({
   const logoPad = size <= 48 ? "p-1.5" : "p-2";
   return (
     <div
-      className={`relative shrink-0 overflow-hidden rounded-full bg-[#05070A]/70 ${logoPad} ${className}`}
+      className={`relative shrink-0 overflow-hidden rounded-full bg-xiio-bg/70 ${logoPad} ${className}`}
       style={{
         width: size,
         height: size,
@@ -344,7 +344,7 @@ export default function CampusMockPage() {
       </section>
 
       <div
-        className={`relative z-10 bg-[#05070A] ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
+        className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
       >
         <section>
           <div className={MOCKUP_CAMPUS.sectionHeaderRow}>

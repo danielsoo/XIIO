@@ -93,7 +93,7 @@ export default function AppSidebar({ mobileOpen = false, onNavigate }: Props) {
   return (
     <>
       <aside
-        className="hidden lg:flex flex-col fixed top-0 left-0 bottom-0 z-40 border-r border-white/[0.06] bg-[#05070A]"
+        className="hidden lg:flex flex-col fixed top-0 left-0 bottom-0 z-40 border-r border-white/[0.06] bg-xiio-sidebar"
         style={{ width: APP_SIDEBAR_WIDTH }}
       >
         <SidebarContent />
@@ -103,7 +103,7 @@ export default function AppSidebar({ mobileOpen = false, onNavigate }: Props) {
         <>
           <div className="lg:hidden fixed inset-0 z-40 bg-black/60" onClick={onNavigate} aria-hidden />
           <aside
-            className="lg:hidden fixed top-0 left-0 bottom-0 z-50 border-r border-white/[0.06] bg-[#05070A] flex flex-col"
+            className="lg:hidden fixed top-0 left-0 bottom-0 z-50 border-r border-white/[0.06] bg-xiio-sidebar flex flex-col"
             style={{ width: APP_SIDEBAR_WIDTH }}
           >
             <SidebarContent onNavigate={onNavigate} />

@@ -1,3 +1,5 @@
+import { APP_MAIN_BG } from "@/lib/mockupLayout";
+
 export const MOCKUP_HOME = {
   pageShell: "w-full",
   contentMainColumnPad:
@@ -41,7 +43,7 @@ export const MOCKUP_HOME = {
   cardRadius: "rounded-xl",
   accentBlue: "#7EC8E3",
   accentBlueBright: "#6EB5FF",
-  bg: "#05070A",
+  bg: APP_MAIN_BG,
 } as const;
 
 export const HOME_IMAGE_BASE = "/images/home";

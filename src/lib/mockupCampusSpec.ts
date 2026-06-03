@@ -8,7 +8,7 @@ export const MOCKUP_CAMPUS = {
   sectionHeaderRow: "flex items-center justify-between mb-5",
   sectionLabelRow: "flex items-center gap-2",
   battleCard:
-    "relative overflow-hidden rounded-2xl border border-white/10 bg-[#05070A]/40 min-h-[220px] p-4 sm:p-5 flex flex-col",
+    "relative overflow-hidden rounded-2xl border border-white/10 bg-xiio-bg/40 min-h-[220px] p-4 sm:p-5 flex flex-col",
   vsBadge:
     "flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/20",
   vsText: "text-lg font-black italic tracking-widest text-white/30",
@@ -20,7 +20,7 @@ export const MOCKUP_CAMPUS = {
   themeCard: "relative overflow-hidden rounded-2xl border border-white/10 min-h-0 flex flex-col",
   themeCardInner: "relative z-10 flex flex-1 flex-col p-4",
   pastCard:
-    "relative overflow-hidden rounded-xl border border-white/10 bg-[#05070A]/40 p-4 flex flex-col min-h-[200px]",
+    "relative overflow-hidden rounded-xl border border-white/10 bg-xiio-bg/40 p-4 flex flex-col min-h-[200px]",
   pastCardInner: "relative z-10 flex w-full flex-1 flex-col",
   pastLogoRow: "flex items-center justify-center gap-4 mb-3",
   pastMatchupTitle: "text-sm font-bold text-white mb-3",

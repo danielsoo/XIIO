@@ -21,7 +21,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <HeroWaveLayoutProvider>
-      <div className="min-h-screen bg-[#05070A] text-white" style={heroStyle}>
+      <div className="min-h-screen bg-xiio-bg text-white" style={heroStyle}>
         <AppSidebar mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
         <div
           className={`${MOCKUP_HOME.contentMainColumnPad} ${MOCKUP_HOME.contentColumnGuard}`}
