@@ -64,23 +64,17 @@ export function HeroWaveLayoutProvider({ children }: { children: ReactNode }) {
     }
 
     const sr = section.getBoundingClientRect();
-    const text = textRef.current;
     const myList = document.getElementById("app-nav-my-list");
-    const textRight = text
-      ? text.getBoundingClientRect().right
-      : sr.left + MOCKUP_MEASURES.heroTextColWidth;
 
     const measuredHeight = myList
       ? Math.round(myList.getBoundingClientRect().bottom - sr.top)
       : LG_FALLBACK.height;
 
     const sectionWidth = Math.round(sr.width);
-    let insetLeft = Math.max(0, Math.round(textRight - sr.left));
-    let insetRight = 0;
+    let insetLeft: number = MOCKUP_MEASURES.heroTextColWidth;
+    const insetRight = 0;
     const maxInsetLeft = Math.max(0, sectionWidth - MIN_STRIP_WIDTH - insetRight);
     insetLeft = Math.min(insetLeft, maxInsetLeft);
-    const maxInsetRight = Math.max(0, sectionWidth - insetLeft - MIN_STRIP_WIDTH);
-    insetRight = Math.min(insetRight, maxInsetRight);
 
     setWaveRect({
       insetLeft,
