@@ -23,7 +23,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <div className="min-h-screen bg-[#05070A] text-white" style={heroStyle}>
         <AppSidebar mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
         <div
-          className={`lg:pl-[var(--app-sidebar-width)] ${MOCKUP_HOME.contentRightPad}`}
+          className={`lg:pl-[var(--app-sidebar-width)] ${MOCKUP_HOME.contentLeftPad} ${MOCKUP_HOME.contentRightPad}`}
           style={{ ["--app-sidebar-width" as string]: APP_SIDEBAR_WIDTH }}
         >
           <AppTopBar onMenuOpen={() => setMobileOpen(true)} />

@@ -1,5 +1,6 @@
 export const MOCKUP_HOME = {
   pageShell: "w-full",
+  contentLeftPad: "lg:pl-12",
   contentRightPad: "lg:pr-[76px]",
   topBarHeight: "h-[60px]",
   searchBar: "w-[520px] h-[40px] text-[14px]",

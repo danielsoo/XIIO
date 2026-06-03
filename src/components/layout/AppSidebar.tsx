@@ -37,8 +37,10 @@ function NavLink({
       onClick={onNavigate}
       id={item.id === "myList" ? "app-nav-my-list" : undefined}
       data-nav-id={item.id}
-      className={`flex items-center gap-2.5 px-2.5 py-3 rounded-lg text-[13px] font-medium transition-colors ${
-        active ? "bg-white/[0.08] text-white" : "text-white/50 hover:text-white hover:bg-white/[0.04]"
+      className={`flex w-full items-center gap-2.5 py-3 text-[13px] font-medium transition-colors ${
+        active
+          ? "pl-4 pr-0 rounded-l-lg rounded-r-none bg-white/[0.08] text-white"
+          : "px-2.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.04]"
       }`}
     >
       <AppNavIconSvg icon={item.icon} active={active} />
@@ -66,7 +68,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-base font-semibold tracking-[0.22em] text-white">XIIO</span>
       </Link>
 
-      <nav className="flex flex-1 flex-col px-2.5 mt-20 min-h-0">
+      <nav className="flex flex-1 flex-col pl-2.5 pr-0 mt-20 min-h-0">
         <div className="flex flex-col gap-0.5">
           {PRIMARY_NAV.map((item) => (
             <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
