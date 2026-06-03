@@ -35,6 +35,7 @@ function NavLink({
     <Link
       href={href}
       onClick={onNavigate}
+      id={item.id === "myList" ? "app-nav-my-list" : undefined}
       data-nav-id={item.id}
       className={`flex items-center gap-2.5 px-2.5 py-3 rounded-lg text-[13px] font-medium transition-colors ${
         active ? "bg-white/[0.08] text-white" : "text-white/50 hover:text-white hover:bg-white/[0.04]"

@@ -8,8 +8,9 @@ import {
 } from "@/lib/homeHeroLayout";
 import { HERO_LANDSCAPE_IMAGE, HERO_LANDSCAPE_POSITION } from "@/lib/homeHeroBackground";
 import type { RgbTuple } from "@/lib/homeHeroColors";
+import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 
-type MaskVariant = "full" | "waveBox" | "none";
+type MaskVariant = "full" | "none";
 
 function overlayMaskStyle(variant: MaskVariant) {
   if (variant === "none") return {};
@@ -23,8 +24,6 @@ type Props = {
   gradStartPercent?: number;
   priority?: boolean;
   className?: string;
-  waveBoxLeftPx?: number | null;
-  waveBoxHeightPx?: number | null;
 };
 
 function OverlayLayers({
@@ -82,16 +81,18 @@ export default function HeroLandscapeBackdrop({
   gradStartPercent = 44,
   priority = false,
   className = "",
-  waveBoxLeftPx = null,
-  waveBoxHeightPx = null,
 }: Props) {
+  const { waveRect } = useHeroWaveLayout();
+
   if (variant === "home") {
     return (
       <div
-        className={`absolute top-0 right-0 z-0 overflow-hidden pointer-events-none ${className}`}
+        className={`fixed z-0 overflow-hidden pointer-events-none ${className}`}
         style={{
-          left: waveBoxLeftPx ?? undefined,
-          height: waveBoxHeightPx ?? undefined,
+          top: waveRect.top,
+          left: waveRect.left,
+          right: waveRect.right,
+          height: waveRect.height,
         }}
         aria-hidden
       >
@@ -102,11 +103,7 @@ export default function HeroLandscapeBackdrop({
           priority={priority}
           className="object-cover"
           style={{ objectPosition: HERO_LANDSCAPE_POSITION }}
-          sizes={
-            waveBoxLeftPx != null
-              ? `calc(100vw - 12rem - ${Math.round(waveBoxLeftPx)}px)`
-              : "100vw"
-          }
+          sizes={`calc(100vw - ${Math.round(waveRect.left)}px - ${Math.round(waveRect.right)}px)`}
         />
         <OverlayLayers
           overlayEnabled={overlayEnabled}

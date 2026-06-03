@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
 import HomeContentRow from "@/components/home/HomeContentRow";
 import HomeFeaturedStoryPanel from "@/components/home/HomeFeaturedStoryPanel";
@@ -9,6 +9,7 @@ import HomeSurfaceCampusRow from "@/components/home/HomeSurfaceCampusRow";
 import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
 import { IconPlay } from "@/components/icons/MockupIcons";
 import { useAuth } from "@/context/AuthContext";
+import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { usePromoFeed } from "@/hooks/usePromoFeed";
@@ -25,14 +26,29 @@ export default function HomeMockPage() {
   const { t } = useTranslations();
   const { user } = useAuth();
   const { rgbTuple, overlayEnabled, heroStyle } = useHomeHeroTheme();
+  const { registerHeroSection, registerHeroText } = useHeroWaveLayout();
   const { items: promoItems } = usePromoFeed(true);
   const heroTextRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLElement>(null);
   const [gradStart, setGradStart] = useState(
     HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent
   );
-  const [waveBoxLeft, setWaveBoxLeft] = useState<number | null>(null);
-  const [waveBoxHeight, setWaveBoxHeight] = useState<number | null>(null);
+
+  const setHeroSectionRef = useCallback(
+    (el: HTMLElement | null) => {
+      heroSectionRef.current = el;
+      registerHeroSection(el);
+    },
+    [registerHeroSection]
+  );
+
+  const setHeroTextRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      heroTextRef.current = el;
+      registerHeroText(el);
+    },
+    [registerHeroText]
+  );
 
   const featuredPromo = promoItems[0];
   const featuredTitle = featuredPromo?.title ?? DEFAULT_FEATURED_STORY.title;
@@ -45,27 +61,10 @@ export default function HomeMockPage() {
     const text = heroTextRef.current;
     if (!section || !text) return;
 
-    const findDesktopSidebar = () =>
-      document.querySelector("aside.hidden.lg\\:flex") ??
-      document.querySelector('aside:not(.lg\\:hidden)');
-
-    const findMyListAnchor = () => {
-      const sidebar = findDesktopSidebar();
-      if (!sidebar) return null;
-      return (
-        sidebar.querySelector('[data-nav-id="myList"]') ??
-        sidebar.querySelector("nav > div:first-child")?.lastElementChild
-      );
-    };
-
-    const findSidebarNav = () => findDesktopSidebar()?.querySelector("nav");
-
     const measure = () => {
       const lg = window.matchMedia("(min-width: 1024px)").matches;
       if (!lg) {
         setGradStart(HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent);
-        setWaveBoxLeft(0);
-        setWaveBoxHeight(280);
         return;
       }
       const sr = section.getBoundingClientRect();
@@ -73,27 +72,12 @@ export default function HomeMockPage() {
       const startPx = Math.max(0, tr.right - sr.left);
       const base = sr.width > 0 ? (startPx / sr.width) * 100 : HERO_DESIGN.gradFlatPercent;
       setGradStart(Math.min(100, Math.round((base + HERO_DESIGN.gradStartOffsetPercent) * 10) / 10));
-      setWaveBoxLeft(Math.round(startPx));
-
-      const anchor = findMyListAnchor();
-      if (anchor) {
-        setWaveBoxHeight(Math.max(0, Math.round(anchor.getBoundingClientRect().bottom - sr.top)));
-      } else {
-        setWaveBoxHeight(400);
-      }
     };
 
     measure();
-    requestAnimationFrame(measure);
-    requestAnimationFrame(() => requestAnimationFrame(measure));
-
     const ro = new ResizeObserver(measure);
     ro.observe(section);
     ro.observe(text);
-    const anchor = findMyListAnchor();
-    if (anchor) ro.observe(anchor);
-    const sidebarNav = findSidebarNav();
-    if (sidebarNav) ro.observe(sidebarNav);
     window.addEventListener("resize", measure);
     return () => {
       ro.disconnect();
@@ -106,7 +90,7 @@ export default function HomeMockPage() {
   return (
     <main className={`min-h-screen ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
       <section
-        ref={heroSectionRef}
+        ref={setHeroSectionRef}
         className={`relative flex flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
       >
         <HeroLandscapeBackdrop
@@ -114,8 +98,6 @@ export default function HomeMockPage() {
           overlayEnabled={overlayEnabled}
           variant="home"
           gradStartPercent={gradStart}
-          waveBoxLeftPx={waveBoxLeft}
-          waveBoxHeightPx={waveBoxHeight}
           priority
         />
 
@@ -124,7 +106,7 @@ export default function HomeMockPage() {
         >
           <div className={`flex-1 w-full ${MOCKUP_HOME.heroGrid}`}>
             <div
-              ref={heroTextRef}
+              ref={setHeroTextRef}
               className={`flex flex-col justify-end px-4 lg:px-0 ${MOCKUP_HOME.heroTextBottom}`}
             >
               <h1 className={MOCKUP_HOME.heroTitle}>

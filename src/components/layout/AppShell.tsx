@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import AppSidebar from "@/components/layout/AppSidebar";
 import AppTopBar from "@/components/layout/AppTopBar";
+import { HeroWaveLayoutProvider } from "@/context/HeroWaveLayoutContext";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { APP_SIDEBAR_WIDTH, shouldHideAppShell } from "@/lib/appNav";
 
@@ -17,15 +18,17 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#05070A] text-white" style={heroStyle}>
-      <AppSidebar mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
-      <div
-        className="lg:pl-[var(--app-sidebar-width)]"
-        style={{ ["--app-sidebar-width" as string]: APP_SIDEBAR_WIDTH }}
-      >
-        <AppTopBar onMenuOpen={() => setMobileOpen(true)} />
-        {children}
+    <HeroWaveLayoutProvider>
+      <div className="min-h-screen bg-[#05070A] text-white" style={heroStyle}>
+        <AppSidebar mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
+        <div
+          className="lg:pl-[var(--app-sidebar-width)]"
+          style={{ ["--app-sidebar-width" as string]: APP_SIDEBAR_WIDTH }}
+        >
+          <AppTopBar onMenuOpen={() => setMobileOpen(true)} />
+          {children}
+        </div>
       </div>
-    </div>
+    </HeroWaveLayoutProvider>
   );
 }
