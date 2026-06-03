@@ -31,6 +31,8 @@ export default function HomeMockPage() {
   const [gradStart, setGradStart] = useState(
     HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent
   );
+  const [waveBoxLeft, setWaveBoxLeft] = useState<number | null>(null);
+  const [waveBoxHeight, setWaveBoxHeight] = useState<number | null>(null);
 
   const featuredPromo = promoItems[0];
   const featuredTitle = featuredPromo?.title ?? DEFAULT_FEATURED_STORY.title;
@@ -46,6 +48,8 @@ export default function HomeMockPage() {
       const lg = window.matchMedia("(min-width: 1024px)").matches;
       if (!lg) {
         setGradStart(HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent);
+        setWaveBoxLeft(0);
+        setWaveBoxHeight(280);
         return;
       }
       const sr = section.getBoundingClientRect();
@@ -53,11 +57,19 @@ export default function HomeMockPage() {
       const startPx = Math.max(0, tr.right - sr.left);
       const base = sr.width > 0 ? (startPx / sr.width) * 100 : HERO_DESIGN.gradFlatPercent;
       setGradStart(Math.min(100, Math.round((base + HERO_DESIGN.gradStartOffsetPercent) * 10) / 10));
+      setWaveBoxLeft(Math.round(startPx));
+
+      const myList = document.querySelector('[data-nav-id="myList"]');
+      if (myList) {
+        setWaveBoxHeight(Math.max(0, Math.round(myList.getBoundingClientRect().bottom - sr.top)));
+      }
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(section);
     ro.observe(text);
+    const myList = document.querySelector('[data-nav-id="myList"]');
+    if (myList) ro.observe(myList);
     window.addEventListener("resize", measure);
     return () => {
       ro.disconnect();
@@ -78,6 +90,8 @@ export default function HomeMockPage() {
           overlayEnabled={overlayEnabled}
           variant="home"
           gradStartPercent={gradStart}
+          waveBoxLeftPx={waveBoxLeft}
+          waveBoxHeightPx={waveBoxHeight}
           priority
         />
 
