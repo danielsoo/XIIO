@@ -91,42 +91,54 @@ function OverlayLayers({
   );
 }
 
+function heroPhotoOffsetWrapperStyle(offsetYPx?: number) {
+  if (!offsetYPx) return undefined;
+  return { transform: `translateY(${offsetYPx}px)` } as const;
+}
+
 function HeroPhotoLayers({
   heroImage,
   heroImagePosition,
+  offsetYPx,
   stripWidth,
   stripHeightPx,
   priority,
 }: {
   heroImage: string;
   heroImagePosition: string;
+  offsetYPx?: number;
   stripWidth: string;
   stripHeightPx: number;
   priority: boolean;
 }) {
   const imageStyle = { objectPosition: heroImagePosition };
+  const offsetWrapperStyle = heroPhotoOffsetWrapperStyle(offsetYPx);
 
   return (
     <>
-      <Image
-        src={heroImage}
-        alt=""
-        fill
-        priority={priority}
-        className="absolute inset-0 scale-[1.15] object-cover blur-[48px] lg:blur-[56px]"
-        style={imageStyle}
-        sizes={stripWidth}
-      />
-      <div className="absolute inset-0" style={heroPhotoSharpBandMaskStyle(stripHeightPx)}>
+      <div className="absolute inset-0" style={offsetWrapperStyle}>
         <Image
           src={heroImage}
           alt=""
           fill
           priority={priority}
-          className="object-cover"
+          className="absolute inset-0 scale-[1.15] object-cover blur-[48px] lg:blur-[56px]"
           style={imageStyle}
           sizes={stripWidth}
         />
+      </div>
+      <div className="absolute inset-0" style={heroPhotoSharpBandMaskStyle(stripHeightPx)}>
+        <div className="absolute inset-0" style={offsetWrapperStyle}>
+          <Image
+            src={heroImage}
+            alt=""
+            fill
+            priority={priority}
+            className="object-cover"
+            style={imageStyle}
+            sizes={stripWidth}
+          />
+        </div>
       </div>
     </>
   );
@@ -145,10 +157,11 @@ export default function HeroLandscapeBackdrop({
   const { theme } = useHomeHeroTheme();
   const backgroundId =
     backgroundScope === "home" ? theme.homeBackgroundId : theme.campusBackgroundId;
-  const { src: heroImage, objectPosition: heroImagePosition } = resolveHeroBackground(
-    backgroundScope,
-    backgroundId
-  );
+  const {
+    src: heroImage,
+    objectPosition: heroImagePosition,
+    offsetYPx,
+  } = resolveHeroBackground(backgroundScope, backgroundId);
 
   if (variant === "home") {
     const stripWidth = `calc(100% - ${waveRect.insetLeft}px - ${waveRect.insetRight}px)`;
@@ -169,6 +182,7 @@ export default function HeroLandscapeBackdrop({
         <HeroPhotoLayers
           heroImage={heroImage}
           heroImagePosition={heroImagePosition}
+          offsetYPx={offsetYPx}
           stripWidth={stripWidth}
           stripHeightPx={backdropHeight}
           priority={priority}

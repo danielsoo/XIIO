@@ -104,14 +104,15 @@ export const HERO_REFERENCE_BACKDROP_STRIP_PX =
   MOCKUP_MEASURES.topBarHeight +
   MOCKUP_MEASURES.heroBackdropExtendBottomLg;
 
-/** Top blur→sharp fade band as % of strip (end of heroPhotoSharpBandMaskStyle top ramp) */
-export function heroPhotoTopFadeBandPercent(
+/** Top blur→sharp fade band height in px (matches heroPhotoSharpBandMaskStyle ramp end) */
+export function heroPhotoTopFadeBandPx(
   stripHeightPx: number = HERO_REFERENCE_BACKDROP_STRIP_PX
 ): number {
-  const sharpBleedEndPx =
-    MOCKUP_MEASURES.topBarHeight + MOCKUP_MEASURES.heroBackdropTopOffsetLg;
-  const sharpFullStartPx = sharpBleedEndPx + stripHeightPx * 0.18;
-  return maskStopPercent(sharpFullStartPx, stripHeightPx);
+  return (
+    MOCKUP_MEASURES.topBarHeight +
+    MOCKUP_MEASURES.heroBackdropTopOffsetLg +
+    stripHeightPx * 0.18
+  );
 }
 
 /** Sharp band — blur bleed ends at top bar + lg content offset (px), not % of strip */

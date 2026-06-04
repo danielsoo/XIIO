@@ -6,7 +6,7 @@ import {
   type CampusBackgroundId,
   type HomeBackgroundId,
 } from "./homeHeroColors";
-import { heroPhotoTopFadeBandPercent } from "./homeHeroLayout";
+import { heroPhotoTopFadeBandPx } from "./homeHeroLayout";
 
 export type HeroBackgroundScope = "home" | "campus";
 
@@ -19,17 +19,15 @@ export { isValidHomeBackgroundId, isValidCampusBackgroundId };
 /** Home wave — matches campus vertical anchor */
 const HOME_WAVE_OBJECT_POSITION = "right 38%";
 
-/** Underwater — prior tune (52%) + one top fade band (blur→sharp mask height) */
-const HOME_UNDER_WATER_Y_PERCENT = Math.min(
-  100,
-  Math.round(52 + heroPhotoTopFadeBandPercent())
-);
-const HOME_UNDER_WATER_OBJECT_POSITION = `right ${HOME_UNDER_WATER_Y_PERCENT}%`;
+/** Underwater — same anchor as wave; shift photo down by top fade band (lg reference strip) */
+const HOME_UNDER_WATER_OFFSET_Y_PX = Math.round(heroPhotoTopFadeBandPx());
 
 type HeroBackgroundPreset = {
   scope: HeroBackgroundScope;
   src: string;
   objectPosition: string;
+  /** lg home photo layers only — vertical shift in px (overflow clips bottom) */
+  offsetYPx?: number;
 };
 
 /** Campus `/school-battle` vertical anchor — home presets match this start height */
@@ -44,7 +42,8 @@ export const HERO_BACKGROUND_PRESETS: Record<HeroBackgroundId, HeroBackgroundPre
   home_under_water: {
     scope: "home",
     src: "/images/hero/home-under-water.png",
-    objectPosition: HOME_UNDER_WATER_OBJECT_POSITION,
+    objectPosition: HOME_WAVE_OBJECT_POSITION,
+    offsetYPx: HOME_UNDER_WATER_OFFSET_Y_PX,
   },
   campus_wave1: {
     scope: "campus",
