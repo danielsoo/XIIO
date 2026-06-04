@@ -107,17 +107,27 @@ export function heroPhotoSharpBandMaskStyle(
   stripHeightPx: number,
   topBleed: HeroTopBleed = "wave"
 ) {
+  const sharpFadeStartPx = stripHeightPx * 0.82;
+  const sharpFade = maskStopPercent(sharpFadeStartPx, stripHeightPx);
+
+  if (topBleed === "fullSharp") {
+    return maskStyleFromImage(
+      `linear-gradient(to bottom,
+        black 0%,
+        black ${sharpFade}%,
+        transparent 100%)`
+    );
+  }
+
   const sharpBleedEndPx =
     MOCKUP_MEASURES.topBarHeight +
     MOCKUP_MEASURES.heroBackdropTopOffsetLg +
     (topBleed === "brightSurface" ? HERO_TOP_BLEED_BRIGHT_SURFACE_EXTRA_PX : 0);
   const sharpFadeInPercent = topBleed === "brightSurface" ? 0.24 : 0.18;
   const sharpFullStartPx = sharpBleedEndPx + stripHeightPx * sharpFadeInPercent;
-  const sharpFadeStartPx = stripHeightPx * 0.82;
 
   const blurEnd = maskStopPercent(sharpBleedEndPx, stripHeightPx);
   const sharpFull = maskStopPercent(sharpFullStartPx, stripHeightPx);
-  const sharpFade = maskStopPercent(sharpFadeStartPx, stripHeightPx);
 
   return maskStyleFromImage(
     `linear-gradient(to bottom,

@@ -15,7 +15,8 @@ export type HeroBackgroundId = HomeBackgroundId | CampusBackgroundId;
 export { DEFAULT_HOME_BACKGROUND_ID, DEFAULT_CAMPUS_BACKGROUND_ID };
 export { isValidHomeBackgroundId, isValidCampusBackgroundId };
 
-export type HeroTopBleed = "wave" | "brightSurface";
+/** wave: blur under header; fullSharp: sharp photo to top edge (no header blur band) */
+export type HeroTopBleed = "wave" | "brightSurface" | "fullSharp";
 
 type HeroBackgroundPreset = {
   scope: HeroBackgroundScope;
@@ -43,7 +44,7 @@ export const HERO_BACKGROUND_PRESETS: Record<HeroBackgroundId, HeroBackgroundPre
     scope: "home",
     src: "/images/hero/home-under-water.png",
     objectPosition: "center 22%",
-    topBleed: "wave",
+    topBleed: "fullSharp",
     themeOverlay: false,
   },
   campus_wave1: {
