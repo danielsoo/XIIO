@@ -1,5 +1,6 @@
 "use client";
 
+import BattleBrandLogos from "@/components/campus/BattleBrandLogos";
 import BattleClashSeam from "@/components/campus/BattleClashSeam";
 import SchoolSideGlow from "@/components/campus/SchoolSideGlow";
 import {
@@ -52,6 +53,7 @@ export default function SchoolClashBackdrop({
         effect={effectB}
         intensity={intensity}
       />
+      <BattleBrandLogos schoolA={schoolA} schoolB={schoolB} variant={variant} />
       {isActive ? (
         <BattleClashSeam
           colorLeft={schoolA.colorPrimary}

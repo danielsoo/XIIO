@@ -22,7 +22,6 @@ export const MOCKUP_CAMPUS = {
   pastCard:
     "relative overflow-hidden rounded-xl border border-white/10 bg-xiio-bg/40 p-4 flex flex-col min-h-[200px]",
   pastCardInner: "relative z-10 flex w-full flex-1 flex-col",
-  pastLogoRow: "flex items-center justify-center gap-4 mb-3",
   pastMatchupTitle: "text-sm font-bold text-white mb-3",
   pastCardFooter: "flex w-full items-end justify-between gap-2 mt-auto",
   pastWinnerLabel: "text-[11px] text-white/40",

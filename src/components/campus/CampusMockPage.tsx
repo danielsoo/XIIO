@@ -437,11 +437,7 @@ export default function CampusMockPage() {
                     battleId={b.id}
                     variant="compact"
                   />
-                  <div className={MOCKUP_CAMPUS.pastCardInner}>
-                    <div className={MOCKUP_CAMPUS.pastLogoRow}>
-                      <SchoolLogo school={b.schoolA} size={104} variant="mark" />
-                      <SchoolLogo school={b.schoolB} size={104} variant="mark" />
-                    </div>
+                  <div className={`${MOCKUP_CAMPUS.pastCardInner} justify-end pt-16`}>
                     <p className={MOCKUP_CAMPUS.pastMatchupTitle}>
                       {b.schoolA.name} vs {b.schoolB.name}
                     </p>
