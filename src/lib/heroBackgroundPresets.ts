@@ -24,6 +24,8 @@ type HeroBackgroundPreset = {
   topBleed?: HeroTopBleed;
   /** CSS filter on blur + sharp layers (highlight rolloff) */
   photoFilter?: string;
+  /** When false, skip theme HEX / vignette overlays (photo only) */
+  themeOverlay?: boolean;
 };
 
 /** Campus `/school-battle` vertical anchor — home presets match this start height */
@@ -42,6 +44,7 @@ export const HERO_BACKGROUND_PRESETS: Record<HeroBackgroundId, HeroBackgroundPre
     src: "/images/hero/home-under-water.png",
     objectPosition: "center 22%",
     topBleed: "wave",
+    themeOverlay: false,
   },
   campus_wave1: {
     scope: "campus",

@@ -158,7 +158,10 @@ export default function HeroLandscapeBackdrop({
     objectPosition: heroImagePosition,
     topBleed = "wave",
     photoFilter,
+    themeOverlay = true,
   } = resolveHeroBackground(backgroundScope, backgroundId);
+
+  const showThemeOverlay = overlayEnabled && themeOverlay;
 
   if (variant === "home") {
     const stripWidth = `calc(100% - ${waveRect.insetLeft}px - ${waveRect.insetRight}px)`;
@@ -185,15 +188,17 @@ export default function HeroLandscapeBackdrop({
           topBleed={topBleed}
           priority={priority}
         />
-        <div className="absolute inset-0" style={heroOverlayContentMaskStyle()}>
-          <OverlayLayers
-            overlayEnabled={overlayEnabled}
-            rgbTuple={rgbTuple}
-            gradStartPercent={gradStartPercent}
-            maskVariant="none"
-            variant="home"
-          />
-        </div>
+        {showThemeOverlay ? (
+          <div className="absolute inset-0" style={heroOverlayContentMaskStyle()}>
+            <OverlayLayers
+              overlayEnabled
+              rgbTuple={rgbTuple}
+              gradStartPercent={gradStartPercent}
+              maskVariant="none"
+              variant="home"
+            />
+          </div>
+        ) : null}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ background: heroPhotoBottomBodyJoinFade() }}
