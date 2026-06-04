@@ -47,5 +47,5 @@ export const MOCKUP_CAMPUS = {
   pastGrid: "grid lg:grid-cols-[1fr_300px] gap-4 lg:items-start",
   pastCardsGrid: "grid sm:grid-cols-3 gap-3",
   brandLogoActive: "w-[240px] h-[240px]",
-  brandLogoCompact: "w-[120px] h-[120px]",
+  brandLogoCompact: "w-[152px] h-[152px]",
 } as const;

@@ -77,8 +77,8 @@ export const MOCKUP_CAMPUS_MEASURES = {
   battleCardMinHeight: 220,
   brandWashOpacity: 0.55,
   clashGlowOpacityCompact: 0.35,
-  brandLogoOpacityActive: 0.12,
-  brandLogoOpacityCompact: 0.08,
+  brandLogoOpacityActive: 0.18,
+  brandLogoOpacityCompact: 0.26,
 } as const;
 
 export function pctOfContent(mockupPx: number): number {
