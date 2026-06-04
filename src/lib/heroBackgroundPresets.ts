@@ -7,6 +7,7 @@ import {
   type HomeBackgroundId,
 } from "./homeHeroColors";
 import { heroPhotoTopFadeBandPx } from "./homeHeroLayout";
+import { MOCKUP_MEASURES } from "./mockupLayout";
 
 export type HeroBackgroundScope = "home" | "campus";
 
@@ -20,7 +21,13 @@ export { isValidHomeBackgroundId, isValidCampusBackgroundId };
 const HOME_WAVE_OBJECT_POSITION = "right 38%";
 
 /** Underwater — top fade band offset minus 90px raise from prior tune */
-const HOME_UNDER_WATER_OFFSET_Y_PX = Math.round(heroPhotoTopFadeBandPx()) - 90;
+const HOME_UNDER_WATER_OFFSET_Y_PX =
+  Math.round(
+    heroPhotoTopFadeBandPx(
+      undefined,
+      MOCKUP_MEASURES.heroUnderWaterTopFadeBandPercent
+    )
+  ) - 90;
 
 type HeroBackgroundPreset = {
   scope: HeroBackgroundScope;

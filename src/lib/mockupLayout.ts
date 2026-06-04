@@ -43,8 +43,8 @@ export const MOCKUP_MEASURES = {
   heroPhotoBlurBleedPx: 24,
   /** lg: top blur→sharp fade band as % of photo strip height */
   heroPhotoTopFadeBandPercent: 0.18,
-  /** home_under_water: header ramp alpha scale (30% of default) */
-  heroUnderWaterHeaderGradientStrength: 0.3,
+  /** home_under_water: thinner top fade (30% of default band height) */
+  heroUnderWaterTopFadeBandPercent: 0.054,
   heroToFeaturedHeaderGap: 32,
   heroMinHeight: 428,
   heroTextColWidth: 376,

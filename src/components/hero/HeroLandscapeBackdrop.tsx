@@ -47,21 +47,18 @@ function OverlayLayers({
   gradStartPercent,
   maskVariant,
   variant,
-  underWaterHeaderGradient,
 }: {
   overlayEnabled: boolean;
   rgbTuple: RgbTuple;
   gradStartPercent: number;
   maskVariant: MaskVariant;
   variant: "home" | "compact";
-  underWaterHeaderGradient?: boolean;
 }) {
   const maskStyle = overlayMaskStyle(maskVariant);
   const colorOpacity =
     variant === "home" ? HOME_COLOR_OVERLAY_OPACITY : COMPACT_COLOR_OVERLAY_OPACITY;
-  const vignetteClass = underWaterHeaderGradient
-    ? "from-black/[0.09] via-black/[0.03] to-transparent lg:from-black/[0.075] lg:via-transparent lg:to-transparent"
-    : variant === "home"
+  const vignetteClass =
+    variant === "home"
       ? "from-black/30 via-black/10 to-transparent lg:from-black/25 lg:via-transparent lg:to-transparent"
       : "from-black/55 via-black/15 to-transparent lg:from-black/50 lg:via-transparent lg:to-transparent";
 
@@ -109,7 +106,7 @@ function HeroPhotoLayers({
   stripWidth,
   stripHeightPx,
   priority,
-  headerGradientStrength,
+  topFadeBandPercent,
 }: {
   heroImage: string;
   heroImagePosition: string;
@@ -117,7 +114,7 @@ function HeroPhotoLayers({
   stripWidth: string;
   stripHeightPx: number;
   priority: boolean;
-  headerGradientStrength?: number;
+  topFadeBandPercent?: number;
 }) {
   const imageStyle = { objectPosition: heroImagePosition };
   const offsetWrapperStyle = heroPhotoOffsetWrapperStyle(offsetYPx);
@@ -141,7 +138,7 @@ function HeroPhotoLayers({
       </div>
       <div
         className="absolute inset-0"
-        style={heroPhotoSharpBandMaskStyle(stripHeightPx, { headerGradientStrength })}
+        style={heroPhotoSharpBandMaskStyle(stripHeightPx, { topFadeBandPercent })}
       >
         <div className="absolute inset-0" style={offsetWrapperStyle}>
           <Image
@@ -180,8 +177,8 @@ export default function HeroLandscapeBackdrop({
 
   const isHomeUnderWater =
     backgroundScope === "home" && (backgroundId as HomeBackgroundId) === "home_under_water";
-  const underWaterHeaderGradientStrength = isHomeUnderWater
-    ? MOCKUP_MEASURES.heroUnderWaterHeaderGradientStrength
+  const topFadeBandPercent = isHomeUnderWater
+    ? MOCKUP_MEASURES.heroUnderWaterTopFadeBandPercent
     : undefined;
 
   if (variant === "home") {
@@ -208,7 +205,7 @@ export default function HeroLandscapeBackdrop({
             stripWidth={stripWidth}
             stripHeightPx={backdropHeight}
             priority={priority}
-            headerGradientStrength={underWaterHeaderGradientStrength}
+            topFadeBandPercent={topFadeBandPercent}
           />
         </div>
         {overlayEnabled ? (
@@ -219,7 +216,6 @@ export default function HeroLandscapeBackdrop({
               gradStartPercent={gradStartPercent}
               maskVariant="none"
               variant="home"
-              underWaterHeaderGradient={isHomeUnderWater}
             />
           </div>
         ) : null}
