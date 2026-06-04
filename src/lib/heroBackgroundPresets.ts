@@ -15,10 +15,11 @@ export type HeroBackgroundId = HomeBackgroundId | CampusBackgroundId;
 export { DEFAULT_HOME_BACKGROUND_ID, DEFAULT_CAMPUS_BACKGROUND_ID };
 export { isValidHomeBackgroundId, isValidCampusBackgroundId };
 
-/** Shared home hero layer settings (wave + underwater use identical pipeline) */
-const HOME_WAVE_LAYER_SETTINGS = {
-  objectPosition: "right 38%",
-} as const;
+/** Home wave — matches campus vertical anchor */
+const HOME_WAVE_OBJECT_POSITION = "right 38%";
+
+/** Underwater — god rays sit top-center; lower anchor than wave so surface reads below header */
+const HOME_UNDER_WATER_OBJECT_POSITION = "right 52%";
 
 type HeroBackgroundPreset = {
   scope: HeroBackgroundScope;
@@ -33,12 +34,12 @@ export const HERO_BACKGROUND_PRESETS: Record<HeroBackgroundId, HeroBackgroundPre
   home_wave: {
     scope: "home",
     src: "/images/hero/home-wave.png",
-    objectPosition: HOME_WAVE_LAYER_SETTINGS.objectPosition,
+    objectPosition: HOME_WAVE_OBJECT_POSITION,
   },
   home_under_water: {
     scope: "home",
     src: "/images/hero/home-under-water.png",
-    objectPosition: HOME_WAVE_LAYER_SETTINGS.objectPosition,
+    objectPosition: HOME_UNDER_WATER_OBJECT_POSITION,
   },
   campus_wave1: {
     scope: "campus",
