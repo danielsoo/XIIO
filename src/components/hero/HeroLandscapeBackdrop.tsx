@@ -9,6 +9,7 @@ import {
   heroOverlayContentMaskStyle,
   heroPhotoBottomBodyJoinFade,
   heroPhotoSharpBandMaskStyle,
+  heroPhotoStripEdgeMaskStyle,
 } from "@/lib/homeHeroLayout";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
@@ -179,14 +180,16 @@ export default function HeroLandscapeBackdrop({
         }}
         aria-hidden
       >
-        <HeroPhotoLayers
-          heroImage={heroImage}
-          heroImagePosition={heroImagePosition}
-          offsetYPx={offsetYPx}
-          stripWidth={stripWidth}
-          stripHeightPx={backdropHeight}
-          priority={priority}
-        />
+        <div className="absolute inset-0" style={heroPhotoStripEdgeMaskStyle(backdropHeight)}>
+          <HeroPhotoLayers
+            heroImage={heroImage}
+            heroImagePosition={heroImagePosition}
+            offsetYPx={offsetYPx}
+            stripWidth={stripWidth}
+            stripHeightPx={backdropHeight}
+            priority={priority}
+          />
+        </div>
         {overlayEnabled ? (
           <div className="absolute inset-0" style={heroOverlayContentMaskStyle()}>
             <OverlayLayers

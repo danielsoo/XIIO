@@ -137,12 +137,28 @@ export function heroPhotoSharpBandMaskStyle(stripHeightPx: number) {
   );
 }
 
-/** Bottom edge only — join to main page background */
+/** Bottom edge only — join to main page background (after strip edge mask) */
 export function heroPhotoBottomBodyJoinFade(): string {
+  const start = MOCKUP_MEASURES.heroStripFeatherBottomSolidPercent;
   return `linear-gradient(to bottom,
     transparent 0%,
-    transparent 85%,
+    transparent ${start}%,
     ${APP_MAIN_BG} 100%)`;
+}
+
+/** lg home/campus photo strip — soften left/right/bottom box edges (not top) */
+export function heroPhotoStripEdgeMaskStyle(_stripHeightPx: number) {
+  const left = MOCKUP_MEASURES.heroStripFeatherLeftPx;
+  const right = MOCKUP_MEASURES.heroStripFeatherRightPx;
+  const bottomSolid = MOCKUP_MEASURES.heroStripFeatherBottomSolidPercent;
+
+  const maskImage = `linear-gradient(to right, transparent 0, black ${left}px), linear-gradient(to left, transparent 0, black ${right}px), linear-gradient(to bottom, black 0, black ${bottomSolid}%, transparent 100%)`;
+
+  return {
+    ...maskStyleFromImage(maskImage),
+    maskComposite: "intersect",
+    WebkitMaskComposite: "source-in",
+  } as const;
 }
 
 export function heroMobileVerticalGradient(rgbTuple: RgbTuple = DEFAULT_HERO_RGB): string {

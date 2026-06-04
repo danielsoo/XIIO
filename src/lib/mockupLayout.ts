@@ -34,6 +34,10 @@ export const MOCKUP_MEASURES = {
   heroBackdropTopOffsetLg: 24,
   /** lg: wave extends below My List band into content area */
   heroBackdropExtendBottomLg: 48,
+  /** lg: photo strip edge feather into page background (all 5 hero backgrounds) */
+  heroStripFeatherLeftPx: 72,
+  heroStripFeatherRightPx: 48,
+  heroStripFeatherBottomSolidPercent: 82,
   heroToFeaturedHeaderGap: 32,
   heroMinHeight: 428,
   heroTextColWidth: 376,
