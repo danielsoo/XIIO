@@ -110,15 +110,6 @@ export function heroPhotoSharpBandMaskStyle(
   const sharpFadeStartPx = stripHeightPx * 0.82;
   const sharpFade = maskStopPercent(sharpFadeStartPx, stripHeightPx);
 
-  if (topBleed === "fullSharp") {
-    return maskStyleFromImage(
-      `linear-gradient(to bottom,
-        black 0%,
-        black ${sharpFade}%,
-        transparent 100%)`
-    );
-  }
-
   const sharpBleedEndPx =
     MOCKUP_MEASURES.topBarHeight +
     MOCKUP_MEASURES.heroBackdropTopOffsetLg +
