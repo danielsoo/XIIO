@@ -11,7 +11,42 @@ type Props = {
   variant?: "active" | "compact";
 };
 
-/** Large watermark logos behind battle card copy (002 mockup) */
+function BrandLogoCell({
+  src,
+  alt,
+  align,
+  frameClass,
+  imageSizes,
+  opacity,
+}: {
+  src: string;
+  alt: string;
+  align: "left" | "right";
+  frameClass: string;
+  imageSizes: string;
+  opacity: number;
+}) {
+  return (
+    <div
+      className={`relative flex h-full min-w-0 flex-1 max-w-[48%] items-center ${
+        align === "left" ? "justify-start" : "justify-end"
+      }`}
+    >
+      <div className={`relative h-full ${frameClass}`} style={{ opacity }}>
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          className="object-contain object-center"
+          sizes={imageSizes}
+          unoptimized
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Large watermark logos behind battle card copy — left/right in upper band (002 mockup) */
 export default function BattleBrandLogos({
   schoolA,
   schoolB,
@@ -21,34 +56,32 @@ export default function BattleBrandLogos({
   const logoOpacity = compact
     ? MOCKUP_CAMPUS_MEASURES.brandLogoOpacityCompact
     : MOCKUP_CAMPUS_MEASURES.brandLogoOpacityActive;
-  const sizeClass = compact ? MOCKUP_CAMPUS.brandLogoCompact : MOCKUP_CAMPUS.brandLogoActive;
+  const frameClass = compact
+    ? MOCKUP_CAMPUS.brandLogoCompactFrame
+    : MOCKUP_CAMPUS.brandLogoActiveFrame;
+  const bandBottom = compact ? "bottom-[42%]" : "bottom-[50%]";
+  const imageSizes = compact ? "140px" : "220px";
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden" aria-hidden>
       <div
-        className={`relative absolute top-[8%] left-[4%] ${sizeClass}`}
-        style={{ opacity: logoOpacity }}
+        className={`absolute inset-x-3 top-3 ${bandBottom} flex items-center justify-between gap-1`}
       >
-        <Image
+        <BrandLogoCell
           src={schoolA.logo}
           alt=""
-          fill
-          className="object-contain object-left"
-          sizes={compact ? "152px" : "240px"}
-          unoptimized
+          align="left"
+          frameClass={frameClass}
+          imageSizes={imageSizes}
+          opacity={logoOpacity}
         />
-      </div>
-      <div
-        className={`relative absolute top-[8%] right-[4%] ${sizeClass}`}
-        style={{ opacity: logoOpacity }}
-      >
-        <Image
+        <BrandLogoCell
           src={schoolB.logo}
           alt=""
-          fill
-          className="object-contain object-right"
-          sizes={compact ? "152px" : "240px"}
-          unoptimized
+          align="right"
+          frameClass={frameClass}
+          imageSizes={imageSizes}
+          opacity={logoOpacity}
         />
       </div>
     </div>
