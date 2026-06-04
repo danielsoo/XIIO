@@ -5,7 +5,6 @@ import {
   type RgbTuple,
 } from "@/lib/homeHeroColors";
 import { APP_MAIN_BG, MOCKUP_FRAME, MOCKUP_MEASURES } from "@/lib/mockupLayout";
-import type { HeroTopBleed } from "@/lib/heroBackgroundPresets";
 import type { HeroWaveRect } from "@/context/HeroWaveLayoutContext";
 
 /** 1536×1024 목업 기준 — mockupLayout과 동일 px */
@@ -99,23 +98,14 @@ function maskStopPercent(px: number, stripHeightPx: number): number {
   return Math.min(100, Math.max(0, (px / stripHeightPx) * 100));
 }
 
-/** Extra top blur — hide sharp white god rays on bright-surface assets */
-const HERO_TOP_BLEED_BRIGHT_SURFACE_EXTRA_PX = 84;
-
 /** Sharp band — blur bleed ends at top bar + lg content offset (px), not % of strip */
-export function heroPhotoSharpBandMaskStyle(
-  stripHeightPx: number,
-  topBleed: HeroTopBleed = "wave"
-) {
+export function heroPhotoSharpBandMaskStyle(stripHeightPx: number) {
   const sharpFadeStartPx = stripHeightPx * 0.82;
   const sharpFade = maskStopPercent(sharpFadeStartPx, stripHeightPx);
 
   const sharpBleedEndPx =
-    MOCKUP_MEASURES.topBarHeight +
-    MOCKUP_MEASURES.heroBackdropTopOffsetLg +
-    (topBleed === "brightSurface" ? HERO_TOP_BLEED_BRIGHT_SURFACE_EXTRA_PX : 0);
-  const sharpFadeInPercent = topBleed === "brightSurface" ? 0.24 : 0.18;
-  const sharpFullStartPx = sharpBleedEndPx + stripHeightPx * sharpFadeInPercent;
+    MOCKUP_MEASURES.topBarHeight + MOCKUP_MEASURES.heroBackdropTopOffsetLg;
+  const sharpFullStartPx = sharpBleedEndPx + stripHeightPx * 0.18;
 
   const blurEnd = maskStopPercent(sharpBleedEndPx, stripHeightPx);
   const sharpFull = maskStopPercent(sharpFullStartPx, stripHeightPx);

@@ -15,7 +15,6 @@ import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 import {
   resolveHeroBackground,
   type HeroBackgroundScope,
-  type HeroTopBleed,
 } from "@/lib/heroBackgroundPresets";
 import type { RgbTuple } from "@/lib/homeHeroColors";
 
@@ -95,24 +94,17 @@ function OverlayLayers({
 function HeroPhotoLayers({
   heroImage,
   heroImagePosition,
-  photoFilter,
   stripWidth,
   stripHeightPx,
-  topBleed,
   priority,
 }: {
   heroImage: string;
   heroImagePosition: string;
-  photoFilter?: string;
   stripWidth: string;
   stripHeightPx: number;
-  topBleed: HeroTopBleed;
   priority: boolean;
 }) {
-  const imageStyle = {
-    objectPosition: heroImagePosition,
-    ...(photoFilter ? { filter: photoFilter } : {}),
-  };
+  const imageStyle = { objectPosition: heroImagePosition };
 
   return (
     <>
@@ -125,7 +117,7 @@ function HeroPhotoLayers({
         style={imageStyle}
         sizes={stripWidth}
       />
-      <div className="absolute inset-0" style={heroPhotoSharpBandMaskStyle(stripHeightPx, topBleed)}>
+      <div className="absolute inset-0" style={heroPhotoSharpBandMaskStyle(stripHeightPx)}>
         <Image
           src={heroImage}
           alt=""
@@ -153,15 +145,10 @@ export default function HeroLandscapeBackdrop({
   const { theme } = useHomeHeroTheme();
   const backgroundId =
     backgroundScope === "home" ? theme.homeBackgroundId : theme.campusBackgroundId;
-  const {
-    src: heroImage,
-    objectPosition: heroImagePosition,
-    topBleed = "wave",
-    photoFilter,
-    themeOverlay = true,
-  } = resolveHeroBackground(backgroundScope, backgroundId);
-
-  const showThemeOverlay = overlayEnabled && themeOverlay;
+  const { src: heroImage, objectPosition: heroImagePosition } = resolveHeroBackground(
+    backgroundScope,
+    backgroundId
+  );
 
   if (variant === "home") {
     const stripWidth = `calc(100% - ${waveRect.insetLeft}px - ${waveRect.insetRight}px)`;
@@ -182,13 +169,11 @@ export default function HeroLandscapeBackdrop({
         <HeroPhotoLayers
           heroImage={heroImage}
           heroImagePosition={heroImagePosition}
-          photoFilter={photoFilter}
           stripWidth={stripWidth}
           stripHeightPx={backdropHeight}
-          topBleed={topBleed}
           priority={priority}
         />
-        {showThemeOverlay ? (
+        {overlayEnabled ? (
           <div className="absolute inset-0" style={heroOverlayContentMaskStyle()}>
             <OverlayLayers
               overlayEnabled

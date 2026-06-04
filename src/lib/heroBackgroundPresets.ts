@@ -15,18 +15,15 @@ export type HeroBackgroundId = HomeBackgroundId | CampusBackgroundId;
 export { DEFAULT_HOME_BACKGROUND_ID, DEFAULT_CAMPUS_BACKGROUND_ID };
 export { isValidHomeBackgroundId, isValidCampusBackgroundId };
 
-/** wave: blur under header; brightSurface: longer top blur for bright surface assets */
-export type HeroTopBleed = "wave" | "brightSurface";
+/** Shared home hero layer settings (wave + underwater use identical pipeline) */
+const HOME_WAVE_LAYER_SETTINGS = {
+  objectPosition: "right 38%",
+} as const;
 
 type HeroBackgroundPreset = {
   scope: HeroBackgroundScope;
   src: string;
   objectPosition: string;
-  topBleed?: HeroTopBleed;
-  /** CSS filter on blur + sharp layers (highlight rolloff) */
-  photoFilter?: string;
-  /** When false, skip theme HEX / vignette overlays (photo only) */
-  themeOverlay?: boolean;
 };
 
 /** Campus `/school-battle` vertical anchor — home presets match this start height */
@@ -36,15 +33,12 @@ export const HERO_BACKGROUND_PRESETS: Record<HeroBackgroundId, HeroBackgroundPre
   home_wave: {
     scope: "home",
     src: "/images/hero/home-wave.png",
-    // Taller asset (643px) vs campus 576px — lower Y aligns wave crest with campus_wave1
-    objectPosition: "right 38%",
-    topBleed: "wave",
+    objectPosition: HOME_WAVE_LAYER_SETTINGS.objectPosition,
   },
   home_under_water: {
     scope: "home",
     src: "/images/hero/home-under-water.png",
-    objectPosition: "right 38%",
-    topBleed: "wave",
+    objectPosition: HOME_WAVE_LAYER_SETTINGS.objectPosition,
   },
   campus_wave1: {
     scope: "campus",
