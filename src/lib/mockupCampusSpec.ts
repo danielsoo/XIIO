@@ -21,9 +21,9 @@ export const MOCKUP_CAMPUS = {
   themeCardInner: "relative z-10 flex flex-1 flex-col p-4",
   pastCard:
     "relative overflow-hidden rounded-xl border border-white/10 bg-xiio-bg/40 p-4 flex flex-col min-h-[200px]",
-  pastCardInner: "relative z-10 flex w-full flex-1 flex-col",
-  pastMatchupTitle: "text-sm font-bold text-white mb-3",
-  pastCardFooter: "flex w-full items-end justify-between gap-2 mt-auto",
+  pastCardInner: "relative z-10 flex w-full flex-1 flex-col min-h-0",
+  pastMatchupTitle: "text-sm font-bold text-white mb-2",
+  pastCardFooter: "flex w-full items-end justify-between gap-2",
   pastWinnerLabel: "text-[11px] text-white/40",
   pastWinnerName: "text-[11px] text-white ml-1",
   pastVotesText: "text-[11px] text-white/40 tabular-nums shrink-0",

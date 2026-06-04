@@ -437,20 +437,23 @@ export default function CampusMockPage() {
                     battleId={b.id}
                     variant="compact"
                   />
-                  <div className={`${MOCKUP_CAMPUS.pastCardInner} justify-end pt-16`}>
-                    <p className={MOCKUP_CAMPUS.pastMatchupTitle}>
-                      {b.schoolA.name} vs {b.schoolB.name}
-                    </p>
-                    <div className={MOCKUP_CAMPUS.pastCardFooter}>
-                      <p>
-                        <span className={MOCKUP_CAMPUS.pastWinnerLabel}>
-                          {t("campus.mock.winner")}
-                        </span>
-                        <span className={MOCKUP_CAMPUS.pastWinnerName}>{b.winner}</span>
+                  <div className={MOCKUP_CAMPUS.pastCardInner}>
+                    <div className="min-h-0 flex-1" aria-hidden />
+                    <div className="shrink-0">
+                      <p className={MOCKUP_CAMPUS.pastMatchupTitle}>
+                        {b.schoolA.name} vs {b.schoolB.name}
                       </p>
-                      <p className={MOCKUP_CAMPUS.pastVotesText}>
-                        {b.votes} {t("campus.mock.votes")}
-                      </p>
+                      <div className={MOCKUP_CAMPUS.pastCardFooter}>
+                        <p>
+                          <span className={MOCKUP_CAMPUS.pastWinnerLabel}>
+                            {t("campus.mock.winner")}
+                          </span>
+                          <span className={MOCKUP_CAMPUS.pastWinnerName}>{b.winner}</span>
+                        </p>
+                        <p className={MOCKUP_CAMPUS.pastVotesText}>
+                          {b.votes} {t("campus.mock.votes")}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
