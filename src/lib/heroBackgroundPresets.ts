@@ -19,8 +19,8 @@ export { isValidHomeBackgroundId, isValidCampusBackgroundId };
 /** Home wave — matches campus vertical anchor */
 const HOME_WAVE_OBJECT_POSITION = "right 38%";
 
-/** Underwater — same anchor as wave; shift photo down by top fade band (lg reference strip) */
-const HOME_UNDER_WATER_OFFSET_Y_PX = Math.round(heroPhotoTopFadeBandPx());
+/** Underwater — top fade band offset minus 90px raise from prior tune */
+const HOME_UNDER_WATER_OFFSET_Y_PX = Math.round(heroPhotoTopFadeBandPx()) - 90;
 
 type HeroBackgroundPreset = {
   scope: HeroBackgroundScope;
