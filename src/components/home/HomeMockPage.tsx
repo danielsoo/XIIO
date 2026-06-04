@@ -134,11 +134,11 @@ export default function HomeMockPage() {
           >
             <div
               ref={setHeroTextRef}
-              className={`min-w-0 ${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
+              className={`${MOCKUP_HOME.heroTextColumnWide} ${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
             >
               <h1 className={MOCKUP_HOME.heroTitle}>
                 <span className="block text-white">{t("home.mock.heroLine1")}</span>
-                <span className="block text-white">
+                <span className="block text-white lg:whitespace-nowrap">
                   <em
                     className="italic mr-[0.35em]"
                     style={{ color: MOCKUP_HOME.accentBlue }}

@@ -16,10 +16,13 @@ export const MOCKUP_HOME = {
   heroTextBottom: "pb-[40px] lg:pb-0",
   heroTextColumn: "flex flex-col justify-end px-4 lg:px-0 lg:justify-center lg:self-center",
   heroGrid:
-    "lg:grid lg:items-end lg:grid-cols-[minmax(0,376px)_minmax(0,1fr)] lg:gap-[clamp(1rem,4vw,6rem)]",
+    "lg:grid lg:items-end lg:grid-cols-[minmax(0,min(560px,52vw))_minmax(0,1fr)] lg:gap-[clamp(1rem,4vw,6rem)] lg:overflow-visible",
   heroTitle:
-    "font-serif text-[clamp(2rem,4vw,60px)] font-normal leading-[1.12] tracking-tight mb-8 max-w-full",
-  heroSubtitle: "text-[15px] leading-[1.55] max-w-[376px] text-white/55 mb-7",
+    "font-serif text-[clamp(2.25rem,4.5vw,68px)] font-normal leading-[1.12] tracking-tight mb-4 max-w-full",
+  heroSubtitle:
+    "text-[15px] leading-[1.55] max-w-[min(100%,560px)] text-white/55 mb-7",
+  heroTextColumnWide:
+    "relative z-10 min-w-0 lg:max-w-none",
   ctaRow: "gap-[12px]",
   ctaButton: "h-[40px] px-6 text-[14px] rounded-full",
   featuredLabel:
