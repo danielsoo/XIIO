@@ -699,8 +699,8 @@ export const messages = {
         heroLine1: "Stories",
         heroAccent: "drift",
         heroLine2: "here first.",
-        heroSubtitle:
-          "신진 영화·시리즈·크리에이터를 위한 무료 스트리밍 플랫폼.",
+        heroSubtitleLine1: "신진 영화·시리즈·크리에이터를 위한",
+        heroSubtitleLine2: "무료 스트리밍 플랫폼.",
         startWatching: "Start Watching",
         uploadStory: "Upload Your Story",
         featuredLabel: "FEATURED STORY",
@@ -2257,8 +2257,8 @@ export const messages = {
         heroLine1: "Stories",
         heroAccent: "drift",
         heroLine2: "here first.",
-        heroSubtitle:
-          "A free streaming platform for emerging films, series, and creators.",
+        heroSubtitleLine1: "A free streaming platform for emerging",
+        heroSubtitleLine2: "films, series, and creators.",
         startWatching: "Start Watching",
         uploadStory: "Upload Your Story",
         featuredLabel: "FEATURED STORY",

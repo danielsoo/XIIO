@@ -145,7 +145,10 @@ export default function HomeMockPage() {
                   {t("home.mock.heroLine2")}
                 </span>
               </h1>
-              <p className={MOCKUP_HOME.heroSubtitle}>{t("home.mock.heroSubtitle")}</p>
+              <p className={MOCKUP_HOME.heroSubtitle}>
+                <span className="block">{t("home.mock.heroSubtitleLine1")}</span>
+                <span className="block">{t("home.mock.heroSubtitleLine2")}</span>
+              </p>
               <div className={`flex flex-wrap items-center ${MOCKUP_HOME.ctaRow}`}>
                 <Link
                   href={watchHref}

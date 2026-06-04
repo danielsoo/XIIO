@@ -46,6 +46,7 @@ export const MOCKUP_MEASURES = {
   heroTextColWidth: 376,
   heroColGap: 96,
   heroTitleSize: 60,
+  heroTitleToSubtitleGap: 32,
   heroSubtitleSize: 15,
   featuredStoryTitleSize: 18,
   ctaHeight: 40,

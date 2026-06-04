@@ -18,8 +18,8 @@ export const MOCKUP_HOME = {
   heroGrid:
     "lg:grid lg:items-end lg:grid-cols-[minmax(0,376px)_minmax(0,1fr)] lg:gap-[clamp(1rem,4vw,6rem)]",
   heroTitle:
-    "font-serif text-[clamp(2rem,4vw,60px)] font-normal leading-[1.08] tracking-tight mb-3 max-w-full",
-  heroSubtitle: "text-[15px] leading-[1.5] max-w-[376px] text-white/55 mb-7",
+    "font-serif text-[clamp(2rem,4vw,60px)] font-normal leading-[1.12] tracking-tight mb-8 max-w-full",
+  heroSubtitle: "text-[15px] leading-[1.55] max-w-[376px] text-white/55 mb-7",
   ctaRow: "gap-[12px]",
   ctaButton: "h-[40px] px-6 text-[14px] rounded-full",
   featuredLabel:
@@ -41,7 +41,7 @@ export const MOCKUP_HOME = {
   surfaceRowGap: "gap-3",
   campusBanner: "w-full max-w-[380px] min-w-0 min-h-[190px]",
   cardRadius: "rounded-xl",
-  accentBlue: "#7EC8E3",
+  accentBlue: "#89A5CF",
   accentBlueBright: "#6EB5FF",
   bg: APP_MAIN_BG,
 } as const;
