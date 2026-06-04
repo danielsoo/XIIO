@@ -111,31 +111,38 @@ export function heroPhotoTopFadeBandPx(
   return (
     MOCKUP_MEASURES.topBarHeight +
     MOCKUP_MEASURES.heroBackdropTopOffsetLg +
-    stripHeightPx * 0.18
+    stripHeightPx * MOCKUP_MEASURES.heroPhotoTopFadeBandPercent
   );
 }
 
 /** Sharp band — blur bleed ends at top bar + lg content offset (px), not % of strip */
-export function heroPhotoSharpBandMaskStyle(stripHeightPx: number) {
+export function heroPhotoSharpBandMaskStyle(
+  stripHeightPx: number,
+  options?: { headerGradientStrength?: number }
+) {
+  const strength = options?.headerGradientStrength ?? 1;
+  const topFadeBand = MOCKUP_MEASURES.heroPhotoTopFadeBandPercent;
   const sharpFadeStartPx = stripHeightPx * 0.82;
   const sharpFade = maskStopPercent(sharpFadeStartPx, stripHeightPx);
 
   const sharpBleedEndPx =
     MOCKUP_MEASURES.topBarHeight + MOCKUP_MEASURES.heroBackdropTopOffsetLg;
-  const sharpFullStartPx = sharpBleedEndPx + stripHeightPx * 0.18;
+  const sharpFullStartPx = sharpBleedEndPx + stripHeightPx * topFadeBand;
 
   const blurEnd = maskStopPercent(sharpBleedEndPx, stripHeightPx);
   const sharpFull = maskStopPercent(sharpFullStartPx, stripHeightPx);
   const rampSpan = Math.max(0, sharpFull - blurEnd);
   const sharpMid1 = blurEnd + rampSpan * 0.35;
   const sharpMid2 = blurEnd + rampSpan * 0.7;
+  const midAlpha1 = 0.25 * strength;
+  const midAlpha2 = 0.55 * strength;
 
   return maskStyleFromImage(
     `linear-gradient(to bottom,
       transparent 0%,
       transparent ${blurEnd}%,
-      rgba(0, 0, 0, 0.25) ${sharpMid1}%,
-      rgba(0, 0, 0, 0.55) ${sharpMid2}%,
+      rgba(0, 0, 0, ${midAlpha1}) ${sharpMid1}%,
+      rgba(0, 0, 0, ${midAlpha2}) ${sharpMid2}%,
       black ${sharpFull}%,
       black ${sharpFade}%,
       transparent 100%)`
