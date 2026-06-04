@@ -28,8 +28,8 @@ function BrandLogoCell({
 }) {
   return (
     <div
-      className={`relative flex h-full min-w-0 flex-1 max-w-[48%] items-center ${
-        align === "left" ? "justify-start" : "justify-end"
+      className={`relative flex h-full shrink-0 items-center ${
+        align === "left" ? "justify-end" : "justify-start"
       }`}
     >
       <div className={`relative h-full ${frameClass}`} style={{ opacity }}>
@@ -60,12 +60,13 @@ export default function BattleBrandLogos({
     ? MOCKUP_CAMPUS.brandLogoCompactFrame
     : MOCKUP_CAMPUS.brandLogoActiveFrame;
   const bandBottom = compact ? "bottom-[36%]" : "bottom-[50%]";
+  const bandGap = compact ? "gap-4" : "gap-6";
   const imageSizes = compact ? "98px" : "154px";
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden" aria-hidden>
       <div
-        className={`absolute inset-x-3 top-3 ${bandBottom} flex items-center justify-between gap-1`}
+        className={`absolute inset-x-3 top-3 ${bandBottom} flex items-center justify-center ${bandGap}`}
       >
         <BrandLogoCell
           src={schoolA.logo}
