@@ -6,6 +6,7 @@ import {
   type CampusBackgroundId,
   type HomeBackgroundId,
 } from "./homeHeroColors";
+import { heroPhotoTopFadeBandPercent } from "./homeHeroLayout";
 
 export type HeroBackgroundScope = "home" | "campus";
 
@@ -18,8 +19,12 @@ export { isValidHomeBackgroundId, isValidCampusBackgroundId };
 /** Home wave — matches campus vertical anchor */
 const HOME_WAVE_OBJECT_POSITION = "right 38%";
 
-/** Underwater — god rays sit top-center; lower anchor than wave so surface reads below header */
-const HOME_UNDER_WATER_OBJECT_POSITION = "right 52%";
+/** Underwater — prior tune (52%) + one top fade band (blur→sharp mask height) */
+const HOME_UNDER_WATER_Y_PERCENT = Math.min(
+  100,
+  Math.round(52 + heroPhotoTopFadeBandPercent())
+);
+const HOME_UNDER_WATER_OBJECT_POSITION = `right ${HOME_UNDER_WATER_Y_PERCENT}%`;
 
 type HeroBackgroundPreset = {
   scope: HeroBackgroundScope;
