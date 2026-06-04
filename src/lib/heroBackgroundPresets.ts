@@ -40,7 +40,7 @@ export const HERO_BACKGROUND_PRESETS: Record<HeroBackgroundId, HeroBackgroundPre
   home_under_water: {
     scope: "home",
     src: "/images/hero/home-under-water.png",
-    objectPosition: "right 38%",
+    objectPosition: "center 22%",
     topBleed: "wave",
   },
   campus_wave1: {
