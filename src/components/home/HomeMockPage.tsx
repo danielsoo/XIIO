@@ -139,9 +139,12 @@ export default function HomeMockPage() {
               <h1 className={MOCKUP_HOME.heroTitle}>
                 <span className="block text-white">{t("home.mock.heroLine1")}</span>
                 <span className="block text-white">
-                  <em className="italic" style={{ color: MOCKUP_HOME.accentBlue }}>
+                  <em
+                    className="italic mr-[0.35em]"
+                    style={{ color: MOCKUP_HOME.accentBlue }}
+                  >
                     {t("home.mock.heroAccent")}
-                  </em>{" "}
+                  </em>
                   {t("home.mock.heroLine2")}
                 </span>
               </h1>
