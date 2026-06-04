@@ -11,37 +11,29 @@ type Props = {
   variant?: "active" | "compact";
 };
 
-function BrandLogoCell({
+function BrandLogoFrame({
   src,
   alt,
-  align,
   frameClass,
   imageSizes,
   opacity,
 }: {
   src: string;
   alt: string;
-  align: "left" | "right";
   frameClass: string;
   imageSizes: string;
   opacity: number;
 }) {
   return (
-    <div
-      className={`relative flex h-full shrink-0 items-center ${
-        align === "left" ? "justify-end" : "justify-start"
-      }`}
-    >
-      <div className={`relative h-full ${frameClass}`} style={{ opacity }}>
-        <Image
-          src={src}
-          alt={alt}
-          fill
-          className="object-contain object-center"
-          sizes={imageSizes}
-          unoptimized
-        />
-      </div>
+    <div className={`relative h-full shrink-0 ${frameClass}`} style={{ opacity }}>
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className="object-contain object-center"
+        sizes={imageSizes}
+        unoptimized
+      />
     </div>
   );
 }
@@ -60,30 +52,31 @@ export default function BattleBrandLogos({
     ? MOCKUP_CAMPUS.brandLogoCompactFrame
     : MOCKUP_CAMPUS.brandLogoActiveFrame;
   const bandBottom = compact ? "bottom-[36%]" : "bottom-[50%]";
-  const bandGap = compact ? "gap-4" : "gap-6";
   const imageSizes = compact ? "98px" : "154px";
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden" aria-hidden>
       <div
-        className={`absolute inset-x-3 top-3 ${bandBottom} flex items-center justify-center ${bandGap}`}
+        className={`absolute inset-x-3 top-3 ${bandBottom} grid grid-cols-2 items-center`}
       >
-        <BrandLogoCell
-          src={schoolA.logo}
-          alt=""
-          align="left"
-          frameClass={frameClass}
-          imageSizes={imageSizes}
-          opacity={logoOpacity}
-        />
-        <BrandLogoCell
-          src={schoolB.logo}
-          alt=""
-          align="right"
-          frameClass={frameClass}
-          imageSizes={imageSizes}
-          opacity={logoOpacity}
-        />
+        <div className="flex h-full items-center justify-center">
+          <BrandLogoFrame
+            src={schoolA.logo}
+            alt=""
+            frameClass={frameClass}
+            imageSizes={imageSizes}
+            opacity={logoOpacity}
+          />
+        </div>
+        <div className="flex h-full items-center justify-center">
+          <BrandLogoFrame
+            src={schoolB.logo}
+            alt=""
+            frameClass={frameClass}
+            imageSizes={imageSizes}
+            opacity={logoOpacity}
+          />
+        </div>
       </div>
     </div>
   );
