@@ -7,7 +7,7 @@ import {
   heroFullBleedMaskStyle,
   heroMobileVerticalGradient,
   heroOverlayContentMaskStyle,
-  heroPhotoBottomBodyJoinFade,
+  heroPhotoBlurBleedInsetStyle,
   heroPhotoSharpBandMaskStyle,
   heroPhotoStripEdgeMaskStyle,
 } from "@/lib/homeHeroLayout";
@@ -114,16 +114,20 @@ function HeroPhotoLayers({
 }) {
   const imageStyle = { objectPosition: heroImagePosition };
   const offsetWrapperStyle = heroPhotoOffsetWrapperStyle(offsetYPx);
+  const blurBleedInset = heroPhotoBlurBleedInsetStyle();
 
   return (
     <>
-      <div className="absolute inset-0" style={offsetWrapperStyle}>
+      <div
+        className="absolute"
+        style={{ ...blurBleedInset, ...offsetWrapperStyle }}
+      >
         <Image
           src={heroImage}
           alt=""
           fill
           priority={priority}
-          className="absolute inset-0 scale-[1.15] object-cover blur-[48px] lg:blur-[56px]"
+          className="absolute inset-0 scale-[1.2] object-cover blur-[48px] lg:blur-[56px]"
           style={imageStyle}
           sizes={stripWidth}
         />
@@ -201,10 +205,6 @@ export default function HeroLandscapeBackdrop({
             />
           </div>
         ) : null}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: heroPhotoBottomBodyJoinFade() }}
-        />
       </div>
     );
   }

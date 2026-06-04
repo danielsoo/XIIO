@@ -35,9 +35,12 @@ export const MOCKUP_MEASURES = {
   /** lg: wave extends below My List band into content area */
   heroBackdropExtendBottomLg: 48,
   /** lg: photo strip edge feather into page background (all 5 hero backgrounds) */
-  heroStripFeatherLeftPx: 72,
-  heroStripFeatherRightPx: 48,
-  heroStripFeatherBottomSolidPercent: 82,
+  heroStripFeatherLeftPx: 112,
+  heroStripFeatherRightPx: 96,
+  /** bottom fade zone height as % of strip (multi-stop to transparent) */
+  heroStripFeatherBottomFadePercent: 22,
+  /** blur layer extends past clip box for edge tone */
+  heroPhotoBlurBleedPx: 24,
   heroToFeaturedHeaderGap: 32,
   heroMinHeight: 428,
   heroTextColWidth: 376,

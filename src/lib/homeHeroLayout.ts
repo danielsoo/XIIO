@@ -4,7 +4,7 @@ import {
   rgbTupleToCssVar,
   type RgbTuple,
 } from "@/lib/homeHeroColors";
-import { APP_MAIN_BG, MOCKUP_FRAME, MOCKUP_MEASURES } from "@/lib/mockupLayout";
+import { MOCKUP_FRAME, MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import type { HeroWaveRect } from "@/context/HeroWaveLayoutContext";
 
 /** 1536×1024 목업 기준 — mockupLayout과 동일 px */
@@ -126,39 +126,74 @@ export function heroPhotoSharpBandMaskStyle(stripHeightPx: number) {
 
   const blurEnd = maskStopPercent(sharpBleedEndPx, stripHeightPx);
   const sharpFull = maskStopPercent(sharpFullStartPx, stripHeightPx);
+  const rampSpan = Math.max(0, sharpFull - blurEnd);
+  const sharpMid1 = blurEnd + rampSpan * 0.35;
+  const sharpMid2 = blurEnd + rampSpan * 0.7;
 
   return maskStyleFromImage(
     `linear-gradient(to bottom,
       transparent 0%,
       transparent ${blurEnd}%,
+      rgba(0, 0, 0, 0.25) ${sharpMid1}%,
+      rgba(0, 0, 0, 0.55) ${sharpMid2}%,
       black ${sharpFull}%,
       black ${sharpFade}%,
       transparent 100%)`
   );
 }
 
-/** Bottom edge only — join to main page background (after strip edge mask) */
-export function heroPhotoBottomBodyJoinFade(): string {
-  const start = MOCKUP_MEASURES.heroStripFeatherBottomSolidPercent;
-  return `linear-gradient(to bottom,
-    transparent 0%,
-    transparent ${start}%,
-    ${APP_MAIN_BG} 100%)`;
+/** Multi-stop horizontal feather (heroBottomFeatherMask-style) */
+function heroStripHorizontalFeatherGradient(
+  direction: "to right" | "to left",
+  featherPx: number
+): string {
+  const w = featherPx;
+  const a = (f: number) => `${Math.round(w * f)}px`;
+  return `linear-gradient(${direction},
+    transparent 0,
+    rgba(0, 0, 0, 0.18) ${a(0.25)},
+    rgba(0, 0, 0, 0.5) ${a(0.5)},
+    rgba(0, 0, 0, 0.88) ${a(0.75)},
+    black ${w}px)`;
 }
 
-/** lg home/campus photo strip — soften left/right/bottom box edges (not top) */
+/** Bottom feather for photo strip — last N% of height fades to transparent */
+function heroStripBottomFeatherGradient(): string {
+  const fade = MOCKUP_MEASURES.heroStripFeatherBottomFadePercent;
+  const solidEnd = 100 - fade;
+  const step = fade / 4;
+  return `linear-gradient(to bottom,
+    black 0%,
+    black ${solidEnd}%,
+    rgba(0, 0, 0, 0.88) ${solidEnd + step}%,
+    rgba(0, 0, 0, 0.5) ${solidEnd + step * 2}%,
+    rgba(0, 0, 0, 0.18) ${solidEnd + step * 3}%,
+    transparent 100%)`;
+}
+
+/** lg home/campus photo strip — multi-stop edge feather (not top) */
 export function heroPhotoStripEdgeMaskStyle(_stripHeightPx: number) {
   const left = MOCKUP_MEASURES.heroStripFeatherLeftPx;
   const right = MOCKUP_MEASURES.heroStripFeatherRightPx;
-  const bottomSolid = MOCKUP_MEASURES.heroStripFeatherBottomSolidPercent;
 
-  const maskImage = `linear-gradient(to right, transparent 0, black ${left}px), linear-gradient(to left, transparent 0, black ${right}px), linear-gradient(to bottom, black 0, black ${bottomSolid}%, transparent 100%)`;
+  const maskImage = `${heroStripHorizontalFeatherGradient("to right", left)}, ${heroStripHorizontalFeatherGradient("to left", right)}, ${heroStripBottomFeatherGradient()}`;
 
   return {
     ...maskStyleFromImage(maskImage),
     maskComposite: "intersect",
     WebkitMaskComposite: "source-in",
   } as const;
+}
+
+/** Blur layer wrapper — extends past clip for edge bleed */
+export function heroPhotoBlurBleedInsetStyle(): {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+} {
+  const bleed = MOCKUP_MEASURES.heroPhotoBlurBleedPx;
+  return { top: -bleed, right: -bleed, bottom: -bleed, left: -bleed };
 }
 
 export function heroMobileVerticalGradient(rgbTuple: RgbTuple = DEFAULT_HERO_RGB): string {
