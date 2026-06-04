@@ -8,6 +8,7 @@ import {
   heroMobileVerticalGradient,
   heroOverlayContentMaskStyle,
   heroPhotoBlurBleedInsetStyle,
+  heroPhotoFlatMaskStyle,
   heroPhotoSharpBandMaskStyle,
   heroPhotoStripEdgeMaskStyle,
 } from "@/lib/homeHeroLayout";
@@ -18,7 +19,6 @@ import {
   type HeroBackgroundScope,
   type HomeBackgroundId,
 } from "@/lib/heroBackgroundPresets";
-import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import type { RgbTuple } from "@/lib/homeHeroColors";
 
 type MaskVariant = "full" | "none";
@@ -107,6 +107,7 @@ function HeroPhotoLayers({
   stripHeightPx,
   priority,
   topFadeBandPercent,
+  flatPhoto,
 }: {
   heroImage: string;
   heroImagePosition: string;
@@ -115,9 +116,32 @@ function HeroPhotoLayers({
   stripHeightPx: number;
   priority: boolean;
   topFadeBandPercent?: number;
+  flatPhoto?: boolean;
 }) {
   const imageStyle = { objectPosition: heroImagePosition };
   const offsetWrapperStyle = heroPhotoOffsetWrapperStyle(offsetYPx);
+
+  if (flatPhoto) {
+    return (
+      <div
+        className="absolute inset-0"
+        style={heroPhotoFlatMaskStyle(stripHeightPx)}
+      >
+        <div className="absolute inset-0" style={offsetWrapperStyle}>
+          <Image
+            src={heroImage}
+            alt=""
+            fill
+            priority={priority}
+            className="object-cover"
+            style={imageStyle}
+            sizes={stripWidth}
+          />
+        </div>
+      </div>
+    );
+  }
+
   const blurBleedInset = heroPhotoBlurBleedInsetStyle();
 
   return (
@@ -177,9 +201,6 @@ export default function HeroLandscapeBackdrop({
 
   const isHomeUnderWater =
     backgroundScope === "home" && (backgroundId as HomeBackgroundId) === "home_under_water";
-  const topFadeBandPercent = isHomeUnderWater
-    ? MOCKUP_MEASURES.heroUnderWaterTopFadeBandPercent
-    : undefined;
 
   if (variant === "home") {
     const stripWidth = `calc(100% - ${waveRect.insetLeft}px - ${waveRect.insetRight}px)`;
@@ -205,10 +226,10 @@ export default function HeroLandscapeBackdrop({
             stripWidth={stripWidth}
             stripHeightPx={backdropHeight}
             priority={priority}
-            topFadeBandPercent={topFadeBandPercent}
+            flatPhoto={isHomeUnderWater}
           />
         </div>
-        {overlayEnabled ? (
+        {overlayEnabled && !isHomeUnderWater ? (
           <div className="absolute inset-0" style={heroOverlayContentMaskStyle()}>
             <OverlayLayers
               overlayEnabled

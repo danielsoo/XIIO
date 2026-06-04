@@ -116,6 +116,19 @@ export function heroPhotoTopFadeBandPx(
   );
 }
 
+/** Underwater — sharp photo only; bottom fade matches strip edge mask */
+export function heroPhotoFlatMaskStyle(stripHeightPx: number) {
+  const sharpFadeStartPx = stripHeightPx * 0.82;
+  const sharpFade = maskStopPercent(sharpFadeStartPx, stripHeightPx);
+
+  return maskStyleFromImage(
+    `linear-gradient(to bottom,
+      black 0%,
+      black ${sharpFade}%,
+      transparent 100%)`
+  );
+}
+
 /** Sharp band — blur bleed ends at top bar + lg content offset (px), not % of strip */
 export function heroPhotoSharpBandMaskStyle(
   stripHeightPx: number,
