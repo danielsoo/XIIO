@@ -60,7 +60,7 @@ export default function BattleBrandLogos({
     ? MOCKUP_CAMPUS.brandLogoCompactFrame
     : MOCKUP_CAMPUS.brandLogoActiveFrame;
   const bandBottom = compact ? "bottom-[36%]" : "bottom-[50%]";
-  const imageSizes = compact ? "140px" : "220px";
+  const imageSizes = compact ? "98px" : "154px";
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden" aria-hidden>

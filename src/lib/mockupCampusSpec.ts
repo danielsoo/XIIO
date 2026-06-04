@@ -46,6 +46,6 @@ export const MOCKUP_CAMPUS = {
   activeGrid: "grid lg:grid-cols-[1fr_280px] gap-4 lg:items-start",
   pastGrid: "grid lg:grid-cols-[1fr_300px] gap-4 lg:items-start",
   pastCardsGrid: "grid sm:grid-cols-3 gap-3",
-  brandLogoActiveFrame: "max-h-[180px] max-w-[220px] w-full aspect-square",
-  brandLogoCompactFrame: "max-h-[112px] max-w-[140px] w-full aspect-square",
+  brandLogoActiveFrame: "max-h-[126px] max-w-[154px] w-full aspect-square",
+  brandLogoCompactFrame: "max-h-[78px] max-w-[98px] w-full aspect-square",
 } as const;
