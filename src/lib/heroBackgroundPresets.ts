@@ -72,8 +72,12 @@ export const CAMPUS_BACKGROUND_IDS = Object.entries(HERO_BACKGROUND_PRESETS)
 
 export function resolveHeroBackground(
   scope: HeroBackgroundScope,
-  id: HomeBackgroundId | CampusBackgroundId
+  id: HomeBackgroundId | CampusBackgroundId,
+  overrideId?: HeroBackgroundId
 ): HeroBackgroundPreset {
+  if (overrideId && HERO_BACKGROUND_PRESETS[overrideId]) {
+    return HERO_BACKGROUND_PRESETS[overrideId];
+  }
   const preset = HERO_BACKGROUND_PRESETS[id as HeroBackgroundId];
   if (preset && preset.scope === scope) return preset;
   const fallbackId = scope === "home" ? DEFAULT_HOME_BACKGROUND_ID : DEFAULT_CAMPUS_BACKGROUND_ID;

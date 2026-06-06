@@ -1,11 +1,5 @@
-import CategoryPageWithHero from "@/components/category/CategoryPageWithHero";
+import CategoryMockPage from "@/components/category/CategoryMockPage";
 
 export default function MoviesPage() {
-  return (
-    <CategoryPageWithHero
-      section="movies"
-      titleKey="category.moviesTitle"
-      subtitleKey="category.filmsSubtitle"
-    />
-  );
+  return <CategoryMockPage variant="films" />;
 }

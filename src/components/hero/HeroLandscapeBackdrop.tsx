@@ -16,8 +16,8 @@ import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 import {
   resolveHeroBackground,
+  type HeroBackgroundId,
   type HeroBackgroundScope,
-  type HomeBackgroundId,
 } from "@/lib/heroBackgroundPresets";
 import type { RgbTuple } from "@/lib/homeHeroColors";
 
@@ -36,6 +36,8 @@ type Props = {
   gradStartPercent?: number;
   priority?: boolean;
   className?: string;
+  /** Page-fixed hero PNG — bypasses theme background id (any preset id) */
+  presetOverride?: HeroBackgroundId;
 };
 
 const HOME_COLOR_OVERLAY_OPACITY = 0.58;
@@ -188,19 +190,20 @@ export default function HeroLandscapeBackdrop({
   gradStartPercent = 44,
   priority = false,
   className = "",
+  presetOverride,
 }: Props) {
   const { waveRect } = useHeroWaveLayout();
   const { theme } = useHomeHeroTheme();
-  const backgroundId =
+  const themeBackgroundId =
     backgroundScope === "home" ? theme.homeBackgroundId : theme.campusBackgroundId;
+  const effectiveBackgroundId = presetOverride ?? themeBackgroundId;
   const {
     src: heroImage,
     objectPosition: heroImagePosition,
     offsetYPx,
-  } = resolveHeroBackground(backgroundScope, backgroundId);
+  } = resolveHeroBackground(backgroundScope, themeBackgroundId, presetOverride);
 
-  const isHomeUnderWater =
-    backgroundScope === "home" && (backgroundId as HomeBackgroundId) === "home_under_water";
+  const isHomeUnderWater = effectiveBackgroundId === "home_under_water";
 
   if (variant === "home") {
     const stripWidth = `calc(100% - ${waveRect.insetLeft}px - ${waveRect.insetRight}px)`;
