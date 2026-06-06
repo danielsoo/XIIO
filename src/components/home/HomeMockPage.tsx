@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback } from "react";
 import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
 import HomeContentRow from "@/components/home/HomeContentRow";
 import HomeFeaturedStoryPanel from "@/components/home/HomeFeaturedStoryPanel";
@@ -21,7 +21,6 @@ import {
 } from "@/lib/homeMockData";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import {
-  HERO_DESIGN,
   heroSectionMinHeight,
   heroTextBandMarginTop,
   heroTextBandMinHeight,
@@ -30,19 +29,19 @@ import {
 export default function HomeMockPage() {
   const { t } = useTranslations();
   const { user } = useAuth();
-  const { rgbTuple, overlayEnabled, heroStyle } = useHomeHeroTheme();
-  const { waveRect, registerHeroSection, registerHeroText } = useHeroWaveLayout();
+  const { rgbTuple, overlayEnabled, heroStyle, themeReady } = useHomeHeroTheme();
+  const {
+    waveRect,
+    gradStartPercent,
+    layoutReady,
+    isLgViewport,
+    registerHeroSection,
+    registerHeroText,
+  } = useHeroWaveLayout();
   const { items: promoItems } = usePromoFeed(true);
-  const heroTextRef = useRef<HTMLDivElement>(null);
-  const heroSectionRef = useRef<HTMLElement>(null);
-  const [gradStart, setGradStart] = useState(
-    HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent
-  );
-  const [isLg, setIsLg] = useState(false);
 
   const setHeroSectionRef = useCallback(
     (el: HTMLElement | null) => {
-      heroSectionRef.current = el;
       registerHeroSection(el);
     },
     [registerHeroSection]
@@ -50,11 +49,12 @@ export default function HomeMockPage() {
 
   const setHeroTextRef = useCallback(
     (el: HTMLDivElement | null) => {
-      heroTextRef.current = el;
       registerHeroText(el);
     },
     [registerHeroText]
   );
+
+  const visualReady = themeReady && layoutReady;
 
   const featuredPromo = promoItems[0];
   const featuredTitle = featuredPromo?.title ?? DEFAULT_FEATURED_STORY.title;
@@ -62,46 +62,9 @@ export default function HomeMockPage() {
     ? `Short Film • promo`
     : `${DEFAULT_FEATURED_STORY.category} • ${DEFAULT_FEATURED_STORY.duration}`;
 
-  useLayoutEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const syncLg = () => setIsLg(mq.matches);
-    syncLg();
-    mq.addEventListener("change", syncLg);
-    return () => mq.removeEventListener("change", syncLg);
-  }, []);
-
-  useLayoutEffect(() => {
-    const section = heroSectionRef.current;
-    const text = heroTextRef.current;
-    if (!section || !text) return;
-
-    const measure = () => {
-      const lg = window.matchMedia("(min-width: 1024px)").matches;
-      if (!lg) {
-        setGradStart(HERO_DESIGN.gradFlatPercent + HERO_DESIGN.gradStartOffsetPercent);
-        return;
-      }
-      const sr = section.getBoundingClientRect();
-      const tr = text.getBoundingClientRect();
-      const startPx = Math.max(0, tr.right - sr.left);
-      const base = sr.width > 0 ? (startPx / sr.width) * 100 : HERO_DESIGN.gradFlatPercent;
-      setGradStart(Math.min(100, Math.round((base + HERO_DESIGN.gradStartOffsetPercent) * 10) / 10));
-    };
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(section);
-    ro.observe(text);
-    window.addEventListener("resize", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, []);
-
   const watchHref = user ? "/movies" : "/login";
 
-  const heroGridBandStyle = isLg
+  const heroGridBandStyle = isLgViewport
     ? {
         marginTop: heroTextBandMarginTop(),
         minHeight: heroTextBandMinHeight(waveRect),
@@ -120,7 +83,8 @@ export default function HomeMockPage() {
           overlayEnabled={overlayEnabled}
           backgroundScope="home"
           variant="home"
-          gradStartPercent={gradStart}
+          gradStartPercent={gradStartPercent}
+          visualReady={visualReady}
           priority
         />
 

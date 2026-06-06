@@ -38,6 +38,8 @@ type Props = {
   className?: string;
   /** Page-fixed hero PNG — bypasses theme background id (any preset id) */
   presetOverride?: HeroBackgroundId;
+  /** When false, hide photo/overlay until theme + layout measured (avoids refresh flash) */
+  visualReady?: boolean;
 };
 
 const HOME_COLOR_OVERLAY_OPACITY = 0.58;
@@ -191,6 +193,7 @@ export default function HeroLandscapeBackdrop({
   priority = false,
   className = "",
   presetOverride,
+  visualReady = true,
 }: Props) {
   const { waveRect } = useHeroWaveLayout();
   const { theme } = useHomeHeroTheme();
@@ -212,7 +215,9 @@ export default function HeroLandscapeBackdrop({
 
     return (
       <div
-        className={`absolute z-[1] overflow-hidden pointer-events-none ${className}`}
+        className={`absolute z-[1] overflow-hidden pointer-events-none transition-opacity duration-0 ${className} ${
+          visualReady ? "opacity-100" : "opacity-0"
+        }`}
         style={{
           top: waveRect.backdropTop,
           left: waveRect.insetLeft,

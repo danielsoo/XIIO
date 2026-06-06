@@ -9,13 +9,20 @@ import ProfileGuard from "@/components/ProfileGuard";
 import MemberGuard from "@/components/MemberGuard";
 import VisitRecorder from "@/components/VisitRecorder";
 import ProfileLocaleSync from "@/components/ProfileLocaleSync";
+import type { HomeHeroTheme } from "@/lib/homeHeroColors";
 
-export default function Providers({ children }: { children: ReactNode }) {
+export default function Providers({
+  children,
+  initialHomeTheme,
+}: {
+  children: ReactNode;
+  initialHomeTheme?: HomeHeroTheme;
+}) {
   return (
     <LocaleProvider>
       <AuthProvider>
         <ProfileProvider>
-          <HomeHeroThemeProvider>
+          <HomeHeroThemeProvider initialTheme={initialHomeTheme}>
             <ProfileLocaleSync />
             <VisitRecorder />
             <MemberGuard />

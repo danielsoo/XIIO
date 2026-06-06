@@ -32,6 +32,7 @@ type HomeHeroThemeContextValue = {
   rgbTuple: RgbTuple;
   overlayEnabled: boolean;
   heroStyle: CSSProperties;
+  themeReady: boolean;
   setPreviewHeroHex: (heroHex: string) => void;
   setPreviewOverlayEnabled: (enabled: boolean) => void;
   setPreviewHomeBackground: (id: HomeBackgroundId) => void;
@@ -66,20 +67,26 @@ function writePreviewToStorage(theme: HomeHeroTheme | null) {
   );
 }
 
-export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
-  const { isAdmin } = useAdminAccess();
-  const [firestoreTheme, setFirestoreTheme] = useState<HomeHeroTheme | null>(null);
-  const [previewTheme, setPreviewTheme] = useState<HomeHeroTheme | null>(null);
-  const [previewLoaded, setPreviewLoaded] = useState(false);
+export function HomeHeroThemeProvider({
+  children,
+  initialTheme,
+}: {
+  children: ReactNode;
+  initialTheme?: HomeHeroTheme;
+}) {
+  const { isAdmin, checked: adminChecked } = useAdminAccess();
+  const [firestoreTheme, setFirestoreTheme] = useState<HomeHeroTheme | null>(
+    initialTheme ?? null
+  );
+  const [previewTheme, setPreviewTheme] = useState<HomeHeroTheme | null>(() =>
+    readPreviewFromStorage()
+  );
+  const [themeReady, setThemeReady] = useState(() => initialTheme != null);
 
   useEffect(() => {
     if (!isAdmin) {
       setPreviewTheme(null);
-      setPreviewLoaded(true);
-      return;
     }
-    setPreviewTheme(readPreviewFromStorage());
-    setPreviewLoaded(true);
   }, [isAdmin]);
 
   useEffect(() => {
@@ -87,11 +94,15 @@ export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
       void fetch("/api/site/home-theme")
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (!data?.heroHex) return;
+          if (!data?.heroHex) {
+            setThemeReady(true);
+            return;
+          }
           const parsed = parseFirestoreHomeTheme(data as Record<string, unknown>);
           if (parsed) setFirestoreTheme(parsed);
+          setThemeReady(true);
         })
-        .catch(() => {});
+        .catch(() => setThemeReady(true));
       return;
     }
 
@@ -100,11 +111,12 @@ export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
       (snap) => {
         if (!snap.exists()) {
           setFirestoreTheme(null);
-          return;
+        } else {
+          setFirestoreTheme(
+            parseFirestoreHomeTheme(snap.data() as Record<string, unknown>)
+          );
         }
-        setFirestoreTheme(
-          parseFirestoreHomeTheme(snap.data() as Record<string, unknown>)
-        );
+        setThemeReady(true);
       },
       () => {
         void fetch("/api/site/home-theme")
@@ -114,15 +126,16 @@ export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
             const parsed = parseFirestoreHomeTheme(data as Record<string, unknown>);
             if (parsed) setFirestoreTheme(parsed);
           })
-          .catch(() => {});
+          .catch(() => {})
+          .finally(() => setThemeReady(true));
       }
     );
   }, []);
 
   const effectiveTheme = useMemo(() => {
-    if (isAdmin && previewLoaded && previewTheme) return previewTheme;
-    return firestoreTheme ?? DEFAULT_HOME_HERO_THEME;
-  }, [isAdmin, previewLoaded, previewTheme, firestoreTheme]);
+    if (previewTheme && (isAdmin || !adminChecked)) return previewTheme;
+    return firestoreTheme ?? initialTheme ?? DEFAULT_HOME_HERO_THEME;
+  }, [isAdmin, adminChecked, previewTheme, firestoreTheme, initialTheme]);
 
   const rgbTuple = useMemo(
     () => hexToRgbTuple(effectiveTheme.heroHex) ?? hexToRgbTuple(DEFAULT_HOME_HERO_THEME.heroHex)!,
@@ -200,6 +213,7 @@ export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
       rgbTuple,
       overlayEnabled: effectiveTheme.overlayEnabled,
       heroStyle,
+      themeReady,
       setPreviewHeroHex,
       setPreviewOverlayEnabled,
       setPreviewHomeBackground,
@@ -211,6 +225,7 @@ export function HomeHeroThemeProvider({ children }: { children: ReactNode }) {
       effectiveTheme,
       rgbTuple,
       heroStyle,
+      themeReady,
       setPreviewHeroHex,
       setPreviewOverlayEnabled,
       setPreviewHomeBackground,
