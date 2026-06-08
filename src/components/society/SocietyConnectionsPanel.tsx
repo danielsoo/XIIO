@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import SocietyCreatorRow from "@/components/society/SocietyCreatorRow";
+import SocietySelfProfileSection from "@/components/society/SocietySelfProfileSection";
 import {
   MOCK_INTEREST_TAGS,
   MOCK_SCHOOLS,
@@ -16,7 +17,7 @@ import {
 import type { SocietyPerson } from "@/lib/societyTypes";
 import type { ProfileRoleTag } from "@/types/portfolio";
 
-type TabId = "discover" | "connections" | "requests" | "sent";
+export type SocietyTabId = "discover" | "connections" | "requests" | "sent" | "works";
 
 const ROLE_OPTIONS: { value: "" | ProfileRoleTag; labelKey: string }[] = [
   { value: "", labelKey: "society.filterAllRoles" },
@@ -62,10 +63,15 @@ function DropdownSelect({
   );
 }
 
-export default function SocietyConnectionsPanel() {
+type Props = {
+  activeTab: SocietyTabId;
+  onTabChange: (tab: SocietyTabId) => void;
+};
+
+export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Props) {
   const { user } = useAuth();
   const { t } = useTranslations();
-  const [tab, setTab] = useState<TabId>("discover");
+  const tab = activeTab;
   const [role, setRole] = useState<"" | ProfileRoleTag>("");
   const [school, setSchool] = useState("");
   const [interest, setInterest] = useState("");
@@ -95,7 +101,7 @@ export default function SocietyConnectionsPanel() {
   }, [user]);
 
   const load = useCallback(async () => {
-    if (tab === "requests" || tab === "sent") {
+    if (tab === "requests" || tab === "sent" || tab === "works") {
       setLoading(false);
       setPeople([]);
       setErr(null);
@@ -161,11 +167,12 @@ export default function SocietyConnectionsPanel() {
     return list;
   }, [people, school, interest, sort]);
 
-  const tabs: { id: TabId; labelKey: string }[] = [
+  const tabs: { id: SocietyTabId; labelKey: string }[] = [
     { id: "discover", labelKey: "society.tabDiscover" },
     { id: "connections", labelKey: "society.tabConnections" },
     { id: "requests", labelKey: "society.tabRequests" },
     { id: "sent", labelKey: "society.tabSent" },
+    { id: "works", labelKey: "society.tabWorks" },
   ];
 
   const handleConnect = async (person: SocietyPerson) => {
@@ -225,7 +232,7 @@ export default function SocietyConnectionsPanel() {
           <button
             key={item.id}
             type="button"
-            onClick={() => setTab(item.id)}
+            onClick={() => onTabChange(item.id)}
             className={`relative shrink-0 px-1 pb-3 text-sm font-medium transition ${
               tab === item.id ? "text-white" : "text-white/45 hover:text-white/70"
             }`}
@@ -241,7 +248,7 @@ export default function SocietyConnectionsPanel() {
         ))}
       </nav>
 
-      {tab !== "requests" && tab !== "sent" ? (
+      {tab !== "requests" && tab !== "sent" && tab !== "works" ? (
         <div className="mt-5 flex flex-wrap items-center gap-2">
           <DropdownSelect
             label={t("society.filterAllRoles")}
@@ -275,34 +282,49 @@ export default function SocietyConnectionsPanel() {
         </div>
       ) : null}
 
-      <div className="mt-6 divide-y divide-white/10">
-        {!user && tab !== "requests" && tab !== "sent" ? (
-          <p className="text-sm text-white/50">
-            {t("society.loginRequired")}{" "}
-            <Link href="/login" className="text-xiio-accent hover:underline">
-              {t("common.login")}
-            </Link>
-          </p>
-        ) : null}
+      {tab === "works" ? (
+        <div className="mt-6">
+          {!user ? (
+            <p className="text-sm text-white/50">
+              {t("society.loginRequired")}{" "}
+              <Link href="/login" className="text-xiio-accent hover:underline">
+                {t("common.login")}
+              </Link>
+            </p>
+          ) : (
+            <SocietySelfProfileSection />
+          )}
+        </div>
+      ) : (
+        <div className="mt-6 divide-y divide-white/10">
+          {!user && tab !== "requests" && tab !== "sent" ? (
+            <p className="text-sm text-white/50">
+              {t("society.loginRequired")}{" "}
+              <Link href="/login" className="text-xiio-accent hover:underline">
+                {t("common.login")}
+              </Link>
+            </p>
+          ) : null}
 
-        {loading ? <p className="text-sm text-white/45">{t("common.loading")}</p> : null}
-        {err ? <p className="text-sm text-red-400">{err}</p> : null}
+          {loading ? <p className="text-sm text-white/45">{t("common.loading")}</p> : null}
+          {err ? <p className="text-sm text-red-400">{err}</p> : null}
 
-        {!loading && !err && filteredPeople.length === 0 ? (
-          <p className="text-sm text-white/45">{emptyMessage}</p>
-        ) : null}
+          {!loading && !err && filteredPeople.length === 0 ? (
+            <p className="text-sm text-white/45">{emptyMessage}</p>
+          ) : null}
 
-        {!loading &&
-          filteredPeople.map((person) => (
-            <SocietyCreatorRow
-              key={person.uid}
-              person={person}
-              connected={tab === "connections" || connectedUids.has(person.uid)}
-              connectBusy={busyUid === person.uid}
-              onConnect={() => void handleConnect(person)}
-            />
-          ))}
-      </div>
+          {!loading &&
+            filteredPeople.map((person) => (
+              <SocietyCreatorRow
+                key={person.uid}
+                person={person}
+                connected={tab === "connections" || connectedUids.has(person.uid)}
+                connectBusy={busyUid === person.uid}
+                onConnect={() => void handleConnect(person)}
+              />
+            ))}
+        </div>
+      )}
     </div>
   );
 }
