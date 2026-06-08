@@ -1,6 +1,6 @@
 import type { Firestore } from "firebase-admin/firestore";
 import { parseUserProfileDoc } from "@/lib/userAccess";
-import { getUsersOnlineStatus } from "@/lib/server/user-activity";
+import { getUsersActivityStatus } from "@/lib/server/user-activity";
 import type { ProfileRoleTag } from "@/types/portfolio";
 
 export type DiscoverPersonCard = {
@@ -16,6 +16,7 @@ export type DiscoverPersonCard = {
   collaborationNote?: string;
   followerCount: number;
   isOnline: boolean;
+  lastSeenAt: string | null;
 };
 
 export async function listDiscoverablePeople(
@@ -74,13 +75,18 @@ export async function listDiscoverablePeople(
       collaborationNote: profile.collaborationNote,
       followerCount: profile.followerCount ?? 0,
       isOnline: false,
+      lastSeenAt: null,
     });
     if (cards.length >= limit) break;
   }
 
-  const onlineByUid = await getUsersOnlineStatus(cards.map((c) => c.uid));
-  return cards.map((card) => ({
-    ...card,
-    isOnline: onlineByUid[card.uid] === true,
-  }));
+  const activityByUid = await getUsersActivityStatus(cards.map((c) => c.uid));
+  return cards.map((card) => {
+    const activity = activityByUid[card.uid];
+    return {
+      ...card,
+      isOnline: activity?.isOnline === true,
+      lastSeenAt: activity?.lastSeenAt ?? null,
+    };
+  });
 }

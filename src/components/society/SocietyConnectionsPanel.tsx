@@ -149,6 +149,14 @@ export default function SocietyConnectionsPanel() {
     }
     if (sort === "name") {
       list.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    } else if (sort === "recent") {
+      list.sort((a, b) => {
+        const aMs = a.lastSeenAt ? Date.parse(a.lastSeenAt) : 0;
+        const bMs = b.lastSeenAt ? Date.parse(b.lastSeenAt) : 0;
+        const aTime = Number.isNaN(aMs) ? 0 : aMs;
+        const bTime = Number.isNaN(bMs) ? 0 : bMs;
+        return bTime - aTime;
+      });
     }
     return list;
   }, [people, school, interest, sort]);
@@ -212,19 +220,23 @@ export default function SocietyConnectionsPanel() {
 
   return (
     <div className="min-w-0 flex-1">
-      <nav className="flex gap-6 overflow-x-auto border-b border-white/10" aria-label="Connections tabs">
+      <nav className="flex gap-8 overflow-x-auto border-b border-white/10 sm:gap-10" aria-label="Connections tabs">
         {tabs.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
-            className={`shrink-0 pb-3 text-sm font-medium transition ${
-              tab === item.id
-                ? "border-b-2 border-xiio-accent text-white"
-                : "text-white/45 hover:text-white/70"
+            className={`relative shrink-0 px-1 pb-3 text-sm font-medium transition ${
+              tab === item.id ? "text-white" : "text-white/45 hover:text-white/70"
             }`}
           >
             {t(item.labelKey)}
+            {tab === item.id ? (
+              <span
+                className="absolute bottom-0 left-1/2 h-0.5 w-[calc(100%+1rem)] -translate-x-1/2 bg-xiio-accent"
+                aria-hidden
+              />
+            ) : null}
           </button>
         ))}
       </nav>

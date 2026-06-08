@@ -12,4 +12,5 @@ export type SocietyPerson = {
   collaborationNote?: string;
   followerCount: number;
   isOnline?: boolean;
+  lastSeenAt?: string | null;
 };

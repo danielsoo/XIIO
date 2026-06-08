@@ -30,14 +30,6 @@ export const POPULAR_INTERESTS = [
   { tag: "Editing", count: "487" },
 ] as const;
 
-export const MOCK_ACTIVE_AGO = [
-  "Active 2h ago",
-  "Active 5h ago",
-  "Active 1d ago",
-  "Active 2d ago",
-  "Active 3d ago",
-] as const;
-
 export type SocietySortId = "recent" | "name";
 
 export const SOCIETY_SORT_OPTIONS: { id: SocietySortId; labelKey: string }[] = [
@@ -53,10 +45,6 @@ function hashSeed(input: string): number {
 
 export function mockSchoolForUid(uid: string): string {
   return MOCK_SCHOOLS[hashSeed(uid) % MOCK_SCHOOLS.length]!;
-}
-
-export function mockActiveAgoForUid(uid: string): string {
-  return MOCK_ACTIVE_AGO[hashSeed(`${uid}:active`) % MOCK_ACTIVE_AGO.length]!;
 }
 
 export function mockTagsForPerson(

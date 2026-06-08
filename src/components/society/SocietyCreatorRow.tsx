@@ -3,8 +3,8 @@
 import Link from "next/link";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useTranslations } from "@/context/LocaleContext";
+import { formatLastActive } from "@/lib/formatLastActive";
 import {
-  mockActiveAgoForUid,
   mockSchoolForUid,
   mockTagsForPerson,
   primaryRoleLabelKey,
@@ -24,7 +24,7 @@ export default function SocietyCreatorRow({
   connectBusy,
   onConnect,
 }: Props) {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const school = mockSchoolForUid(person.uid);
   const tags = mockTagsForPerson(person.uid, person.roleTags, person.headline);
   const roleKey = primaryRoleLabelKey(person.roleTags);
@@ -34,7 +34,7 @@ export default function SocietyCreatorRow({
     person.collaborationNote?.trim() ||
     person.bio?.trim()?.slice(0, 120) ||
     "";
-  const activeTime = mockActiveAgoForUid(person.uid);
+  const activeLabel = formatLastActive(person.lastSeenAt, locale);
 
   return (
     <article className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:gap-6 lg:gap-8">
@@ -105,9 +105,11 @@ export default function SocietyCreatorRow({
               ? t("society.connected")
               : t("society.connect")}
         </button>
-        <p className="text-center text-xs text-white/35 sm:text-right">
-          {t("society.activeAgo", { time: activeTime })}
-        </p>
+        {activeLabel ? (
+          <p className="text-center text-xs text-white/35 sm:text-right">
+            {t("society.activeAgo", { time: activeLabel })}
+          </p>
+        ) : null}
       </div>
     </article>
   );

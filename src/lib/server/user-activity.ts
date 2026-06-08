@@ -16,6 +16,17 @@ function activityTimestampToMillis(value: unknown): number | null {
   return null;
 }
 
+function activityTimestampToIso(value: unknown): string | null {
+  const ms = activityTimestampToMillis(value);
+  if (ms == null) return null;
+  return new Date(ms).toISOString();
+}
+
+export type UserActivityStatus = {
+  isOnline: boolean;
+  lastSeenAt: string | null;
+};
+
 export function isUserOnline(lastSeenAt: unknown, now = Date.now()): boolean {
   const ms = activityTimestampToMillis(lastSeenAt);
   if (ms == null) return false;
@@ -77,15 +88,31 @@ export async function getUserActivity(uid: string): Promise<{
   };
 }
 
-export async function getUsersOnlineStatus(uids: string[]): Promise<Record<string, boolean>> {
+export async function getUsersActivityStatus(
+  uids: string[]
+): Promise<Record<string, UserActivityStatus>> {
   if (uids.length === 0) return {};
 
   const now = Date.now();
   const entries = await Promise.all(
     uids.map(async (uid) => {
       const activity = await getUserActivity(uid);
-      return [uid, isUserOnline(activity.lastSeenAt, now)] as const;
+      const lastSeenAt = activityTimestampToIso(activity.lastSeenAt);
+      return [
+        uid,
+        {
+          isOnline: isUserOnline(activity.lastSeenAt, now),
+          lastSeenAt,
+        },
+      ] as const;
     })
   );
   return Object.fromEntries(entries);
+}
+
+export async function getUsersOnlineStatus(uids: string[]): Promise<Record<string, boolean>> {
+  const statusByUid = await getUsersActivityStatus(uids);
+  return Object.fromEntries(
+    uids.map((uid) => [uid, statusByUid[uid]?.isOnline === true] as const)
+  );
 }
