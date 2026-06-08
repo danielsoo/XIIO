@@ -41,11 +41,12 @@
         color: #fff;
         line-height: 1;
         --xiio-cap: calc((0.72em + 0.1em) / sqrt(2));
-        /* X↔II, II↔O 그룹 간격 — 앱은 XiioWordmark.tsx 의 XIIO_GAP 과 맞출 것 */
+        /* X↔II, II↔O — XiioWordmark.tsx 의 XIIO_GAP */
         --xiio-gap: 0.80em;
+        /* II 두 막대 사이 — XiioWordmark.tsx 의 XIIO_II_GAP */
+        --xiio-ii-gap: 0.36em;
       }
       .logo-x {
-        position: relative;
         display: inline-flex;
         width: var(--xiio-cap);
         height: var(--xiio-cap);
@@ -54,22 +55,15 @@
         margin-right: var(--xiio-gap);
         flex-shrink: 0;
       }
-      .logo-x-bar {
-        position: absolute;
-        width: 0.1em;
-        height: 0.72em;
-        background: currentColor;
-      }
-      .logo-x-bar-a {
-        transform: rotate(45deg);
-      }
-      .logo-x-bar-b {
-        transform: rotate(-45deg);
+      .logo-x svg {
+        width: 100%;
+        height: 100%;
+        fill: currentColor;
       }
       .logo-ii {
         display: inline-flex;
         align-items: center;
-        gap: 0.21em;
+        gap: var(--xiio-ii-gap);
         height: var(--xiio-cap);
         flex-shrink: 0;
       }
@@ -112,8 +106,10 @@
         <a class="logo-link" href="#" aria-label="XIIO 홈으로">
           <span class="logo">
             <span class="logo-x" aria-hidden="true">
-              <span class="logo-x-bar logo-x-bar-a"></span>
-              <span class="logo-x-bar logo-x-bar-b"></span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <polygon points="7,5 11,5 17,19 13,19" />
+                <polygon points="13,5 17,5 11,19 7,19" />
+              </svg>
             </span>
             <span class="logo-ii" aria-hidden="true">
               <span class="logo-ii-bar"></span>
@@ -124,12 +120,12 @@
         </a>
       </aside>
       <main class="main">
-        <p>사이드바 로고 미리보기 — 자간은 <code>--xiio-gap</code> 한 곳에서 조절</p>
+        <p>사이드바 로고 미리보기 — <code>--xiio-gap</code>(그룹), <code>--xiio-ii-gap</code>(II 내부)</p>
         <div class="hint">
-          <strong>자간이 안 바뀌는 경우</strong><br />
-          <code>npm run dev</code>(localhost:3000)는 이 HTML이 아니라
-          <code>src/components/layout/XiioWordmark.tsx</code>의 <code>XIIO_GAP</code>을 씁니다.<br /><br />
-          <strong>이 미리보기만 보려면</strong><br />
+          <strong>실제 앱</strong><br />
+          <code>npm run dev</code> → <code>XiioWordmark.tsx</code>의
+          <code>XIIO_GAP</code>, <code>XIIO_II_GAP</code> 사용<br /><br />
+          <strong>이 미리보기만</strong><br />
           터미널: <code>npm run preview:sidebar</code><br />
           브라우저: <code>http://localhost:3456/sidebar-logo.html</code> (저장 후 새로고침)
         </div>
