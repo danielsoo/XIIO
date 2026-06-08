@@ -31,6 +31,33 @@ export function AppNavIconSvg({ icon, active = false, className = iconClass }: P
           />
         </svg>
       );
+    case "discover":
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <circle cx="11" cy="11" r="6.5" strokeWidth={sw} />
+          <path strokeLinecap="round" strokeWidth={sw} d="M16.5 16.5L20 20" />
+        </svg>
+      );
+    case "society":
+      if (active) {
+        return (
+          <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M9 11a3 3 0 100-6 3 3 0 000 6zm8 0a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM3 19.5v-.75A4.5 4.5 0 019 14.5h.5a4.6 4.6 0 013.5 1.6 4.6 4.6 0 013.5-1.6h.5a4.5 4.5 0 014.5 4.5v.75H3zm10 0v-.5a3.5 3.5 0 013.5-3.5h.5a3 3 0 013 2.2V19.5H13z" />
+          </svg>
+        );
+      }
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <circle cx="9" cy="8" r="3" strokeWidth={sw} />
+          <circle cx="17" cy="9" r="2.5" strokeWidth={sw} />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={sw}
+            d="M4 19.5v-.5a4 4 0 014-4h2a4 4 0 014 4v.5M14 19.5v-.25a3 3 0 013-3h1"
+          />
+        </svg>
+      );
     case "series":
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
