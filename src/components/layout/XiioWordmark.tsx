@@ -3,6 +3,9 @@ type Props = {
 };
 
 const XIIO_CAP = "calc((0.72em + 0.1em) / sqrt(2))";
+const XIIO_STROKE = "0.1em";
+/** O 외곽 직경 — II cap + 스트로크 1회분 */
+const XIIO_O_SIZE = `calc(var(--xiio-cap) + ${XIIO_STROKE})`;
 /** X↔II, II↔O 그룹 간격 */
 const XIIO_GAP = "0.80em";
 /** II 두 막대 사이 간격 */
@@ -30,6 +33,7 @@ export default function XiioWordmark({ className = "" }: Props) {
         ["--xiio-gap" as string]: XIIO_GAP,
         ["--xiio-ii-gap" as string]: XIIO_II_GAP,
         ["--xiio-x-arm" as string]: XIIO_X_ARM,
+        ["--xiio-o-size" as string]: XIIO_O_SIZE,
       }}
       aria-hidden
     >
@@ -47,7 +51,7 @@ export default function XiioWordmark({ className = "" }: Props) {
         <span className="w-[0.1em] h-full bg-current" />
         <span className="w-[0.1em] h-full bg-current" />
       </span>
-      <span className="ml-[var(--xiio-gap)] shrink-0 size-[var(--xiio-cap)] rounded-full border-[0.1em] border-current box-border" />
+      <span className="ml-[var(--xiio-gap)] shrink-0 size-[var(--xiio-o-size)] rounded-full border-[0.1em] border-current box-border" />
     </span>
   );
 }

@@ -86,8 +86,9 @@
       }
       .logo-o {
         margin-left: var(--xiio-gap);
-        width: var(--xiio-cap);
-        height: var(--xiio-cap);
+        /* XiioWordmark.tsx XIIO_O_SIZE — II cap + 0.1em */
+        width: calc(var(--xiio-cap) + 0.1em);
+        height: calc(var(--xiio-cap) + 0.1em);
         border-radius: 9999px;
         border: 0.1em solid currentColor;
         flex-shrink: 0;
