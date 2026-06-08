@@ -4,7 +4,17 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
-import { profileInputClass } from "@/lib/profileFormStyles";
+import {
+  getHandleErrorMessage,
+  getHandleValidationError,
+  mapHandleApiError,
+  sanitizeHandleInput,
+} from "@/lib/handle";
+import {
+  profileFieldErrorClass,
+  profileInputClass,
+  profileInputErrorClass,
+} from "@/lib/profileFormStyles";
 import type { DirectorNameChangeRequest } from "@/types/user";
 
 type Kind = "displayName" | "handle";
@@ -78,6 +88,7 @@ export default function ProfileIdentityChangePanel({
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const isPending = pendingRequest?.status === "pending";
@@ -91,7 +102,18 @@ export default function ProfileIdentityChangePanel({
     if (!trimmed) return;
     setBusy(true);
     setError(null);
+    setFieldError(null);
     setSuccess(false);
+
+    if (kind === "handle") {
+      const validationErr = getHandleValidationError(trimmed, t);
+      if (validationErr) {
+        setFieldError(validationErr);
+        setBusy(false);
+        return;
+      }
+    }
+
     try {
       const token = await user.getIdToken();
       const res = await fetch(copy.apiPath, {
@@ -109,6 +131,13 @@ export default function ProfileIdentityChangePanel({
         Record<string, unknown> & { message?: string; error?: string }
       >(res);
       if (!res.ok) {
+        if (kind === "handle") {
+          const handleCode = mapHandleApiError(body.error);
+          if (handleCode) {
+            setFieldError(getHandleErrorMessage(handleCode, t));
+            return;
+          }
+        }
         setError(formatApiError(t, res.status, { ...body, message: body.message ?? raw.slice(0, 500) }));
         return;
       }
@@ -156,12 +185,25 @@ export default function ProfileIdentityChangePanel({
           <input
             type="text"
             value={requested}
-            onChange={(e) => setRequested(e.target.value.replace(/^@/, ""))}
+            onChange={(e) => {
+              const next =
+                kind === "handle"
+                  ? sanitizeHandleInput(e.target.value)
+                  : e.target.value.replace(/^@/, "");
+              setRequested(next);
+              if (kind === "handle") setFieldError(null);
+            }}
             disabled={busy || isPending}
             placeholder={copy.inputPlaceholder}
-            className={profileInputClass}
+            className={`${profileInputClass}${fieldError ? ` ${profileInputErrorClass}` : ""}`}
             maxLength={120}
           />
+          {kind === "handle" && fieldError && (
+            <p className={profileFieldErrorClass}>{fieldError}</p>
+          )}
+          {kind === "handle" && !fieldError && (
+            <p className="text-xs text-xiio-muted mt-1">{t("profile.edit.handleHint")}</p>
+          )}
         </div>
         <div>
           <label className="block text-xs text-xiio-muted mb-1">

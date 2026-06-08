@@ -11,7 +11,10 @@ import {
 import type { WorkDoc } from "@/types/work";
 import { parseWorkDoc, worksCol } from "@/lib/server/works";
 
-const HANDLE_REGEX = /^[a-z0-9_]{3,30}$/;
+import { normalizeHandle } from "@/lib/handle";
+
+export { normalizeHandle };
+
 const CREDIT_CHARACTER_NAME_MAX = 120;
 
 /** creditIndex·CreditRolePill 호환 — 표시명 스냅샷 */
@@ -52,12 +55,6 @@ export function normalizeWorkCreditInput(input: WorkCreditInput): WorkCreditInpu
   };
   const characterName = normalizeCreditCharacterName(input.characterName);
   return characterName ? { ...base, characterName } : base;
-}
-
-export function normalizeHandle(raw: string): string | null {
-  const h = raw.trim().toLowerCase().replace(/^@/, "");
-  if (!HANDLE_REGEX.test(h)) return null;
-  return h;
 }
 
 export function isWorkCreditRole(v: string): v is WorkCreditRole {

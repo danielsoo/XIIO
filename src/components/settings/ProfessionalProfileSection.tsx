@@ -4,10 +4,18 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import {
+  getHandleErrorMessage,
+  getHandleValidationError,
+  mapHandleApiError,
+  sanitizeHandleInput,
+} from "@/lib/handle";
+import {
+  profileFieldErrorClass,
+  profileInputClass,
+  profileInputErrorClass,
+} from "@/lib/profileFormStyles";
 import { PROFESSIONAL_FIELDS, type ProfessionalField } from "@/types/portfolio";
-
-const inputClass =
-  "w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-xiio-muted/60 focus:outline-none focus:ring-2 focus:ring-xiio-accent/40";
 
 export default function ProfessionalProfileSection() {
   const { user } = useAuth();
@@ -19,6 +27,7 @@ export default function ProfessionalProfileSection() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [handleError, setHandleError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -48,6 +57,17 @@ export default function ProfessionalProfileSection() {
     setBusy(true);
     setErr(null);
     setMsg(null);
+    setHandleError(null);
+
+    if (handle.trim()) {
+      const validationErr = getHandleValidationError(handle, t);
+      if (validationErr) {
+        setHandleError(validationErr);
+        setBusy(false);
+        return;
+      }
+    }
+
     try {
       const token = await user.getIdToken();
       const res = await fetch("/api/me/professional-profile", {
@@ -65,7 +85,12 @@ export default function ProfessionalProfileSection() {
       });
       const data = (await res.json()) as { message?: string; error?: string };
       if (!res.ok) {
-        setErr(data.message ?? data.error ?? t("network.profile.saveError"));
+        const handleCode = mapHandleApiError(data.error);
+        if (handleCode) {
+          setHandleError(getHandleErrorMessage(handleCode, t));
+        } else {
+          setErr(data.message ?? data.error ?? t("network.profile.saveError"));
+        }
         return;
       }
       setMsg(t("network.profile.saved"));
@@ -88,16 +113,23 @@ export default function ProfessionalProfileSection() {
           <input
             type="text"
             value={handle}
-            onChange={(e) => setHandle(e.target.value.replace(/^@/, ""))}
+            onChange={(e) => {
+              setHandle(sanitizeHandleInput(e.target.value));
+              setHandleError(null);
+            }}
             placeholder="your_name"
-            className={inputClass}
+            className={`${profileInputClass}${handleError ? ` ${profileInputErrorClass}` : ""}`}
           />
-          {handle && (
+          {handleError ? (
+            <p className={profileFieldErrorClass}>{handleError}</p>
+          ) : handle ? (
             <p className="text-xs text-xiio-muted mt-1">
               <Link href={`/people/${handle}`} className="text-xiio-accent hover:underline">
                 /people/{handle}
               </Link>
             </p>
+          ) : (
+            <p className="text-xs text-xiio-muted mt-1">{t("profile.edit.handleHint")}</p>
           )}
         </div>
         <div>
@@ -106,7 +138,7 @@ export default function ProfessionalProfileSection() {
             type="text"
             value={headline}
             onChange={(e) => setHeadline(e.target.value)}
-            className={inputClass}
+            className={profileInputClass}
           />
         </div>
         <div>
@@ -115,7 +147,7 @@ export default function ProfessionalProfileSection() {
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={4}
-            className={inputClass}
+            className={profileInputClass}
           />
         </div>
         <div>
@@ -123,7 +155,7 @@ export default function ProfessionalProfileSection() {
           <select
             value={primaryField}
             onChange={(e) => setPrimaryField(e.target.value as ProfessionalField | "")}
-            className={inputClass}
+            className={profileInputClass}
           >
             <option value="">{t("network.profile.fieldUnset")}</option>
             {PROFESSIONAL_FIELDS.map((f) => (

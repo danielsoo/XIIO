@@ -4,11 +4,16 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "@/context/LocaleContext";
 import { useProfessionalProfileSave } from "@/hooks/useProfessionalProfileSave";
-import { profileInputClass } from "@/lib/profileFormStyles";
+import { sanitizeHandleInput } from "@/lib/handle";
+import {
+  profileFieldErrorClass,
+  profileInputClass,
+  profileInputErrorClass,
+} from "@/lib/profileFormStyles";
 
 export default function ProProfileEditor() {
   const { t } = useTranslations();
-  const { fields, applyFields, load, save, busy, msg, err } = useProfessionalProfileSave({
+  const { fields, applyFields, load, save, busy, msg, err, fieldErrors } = useProfessionalProfileSave({
     includeDiscoverable: true,
   });
 
@@ -39,16 +44,20 @@ export default function ProProfileEditor() {
               <input
                 type="text"
                 value={fields.handle}
-                onChange={(e) => applyFields({ handle: e.target.value.replace(/^@/, "") })}
+                onChange={(e) => applyFields({ handle: sanitizeHandleInput(e.target.value) })}
                 placeholder="your_name"
-                className={profileInputClass}
+                className={`${profileInputClass}${fieldErrors.handle ? ` ${profileInputErrorClass}` : ""}`}
               />
-              {handle && (
+              {fieldErrors.handle ? (
+                <p className={profileFieldErrorClass}>{fieldErrors.handle}</p>
+              ) : handle ? (
                 <p className="text-xs text-xiio-muted mt-1">
                   <Link href={`/people/${handle}`} className="text-xiio-accent hover:underline">
                     /people/{handle}
                   </Link>
                 </p>
+              ) : (
+                <p className="text-xs text-xiio-muted mt-1">{t("profile.edit.handleHint")}</p>
               )}
             </div>
             <div>

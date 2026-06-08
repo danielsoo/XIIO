@@ -332,6 +332,11 @@ export const messages = {
         saved: "저장했습니다.",
         saveError: "저장에 실패했습니다.",
         cancel: "취소",
+        handleInvalid:
+          "아이디는 3~30자의 영문, 숫자, 밑줄(_), 마침표(.)만 사용할 수 있습니다. 앞뒤·연속 마침표는 불가합니다.",
+        handleTaken: "이미 사용 중인 아이디입니다.",
+        handleLocked: "아이디는 설정 후 직접 변경할 수 없습니다. 변경 신청을 이용해 주세요.",
+        handleHint: "영문, 숫자, _, . 만 사용 (3~30자)",
         editProfile: "프로필 수정",
         publicEditHint: "공개 프로필은 아래 링크에서 바로 수정·미리보기할 수 있습니다.",
         accountSettingsLink: "포트폴리오 제출 링크·사람 찾기 노출 설정",
@@ -1913,6 +1918,11 @@ export const messages = {
         saved: "Saved.",
         saveError: "Could not save.",
         cancel: "Cancel",
+        handleInvalid:
+          "Handle must be 3–30 characters using letters, numbers, underscores (_), and periods (.). No leading, trailing, or consecutive periods.",
+        handleTaken: "This handle is already taken.",
+        handleLocked: "Your handle cannot be changed directly after it is set. Use a change request instead.",
+        handleHint: "Letters, numbers, _, . only (3–30 chars)",
         editProfile: "Edit profile",
         publicEditHint: "Edit your public profile live at",
         accountSettingsLink: "Portfolio links & Discover visibility",

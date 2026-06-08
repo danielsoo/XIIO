@@ -3,6 +3,11 @@
 import { useCallback, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import {
+  getHandleErrorMessage,
+  getHandleValidationError,
+  mapHandleApiError,
+} from "@/lib/handle";
 
 export type ProfessionalProfileFields = {
   handle: string;
@@ -21,6 +26,10 @@ export type ProfessionalProfileSaved = {
   openToCollaborate: boolean;
   collaborationNote: string | null;
 };
+
+export type ProfessionalProfileFieldErrors = Partial<
+  Record<keyof ProfessionalProfileFields, string>
+>;
 
 const emptyFields: ProfessionalProfileFields = {
   handle: "",
@@ -57,9 +66,17 @@ export function useProfessionalProfileSave(options: Options = {}) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<ProfessionalProfileFieldErrors>({});
 
   const applyFields = useCallback((next: Partial<ProfessionalProfileFields>) => {
     setFields((prev) => ({ ...prev, ...next }));
+    if ("handle" in next) {
+      setFieldErrors((prev) => {
+        if (!prev.handle) return prev;
+        const { handle: _, ...rest } = prev;
+        return rest;
+      });
+    }
   }, []);
 
   const load = useCallback(async () => {
@@ -78,6 +95,18 @@ export function useProfessionalProfileSave(options: Options = {}) {
     setBusy(true);
     setErr(null);
     setMsg(null);
+    setFieldErrors({});
+
+    const willSendHandle = !handleLocked && fields.handle.trim();
+    if (willSendHandle) {
+      const handleErr = getHandleValidationError(fields.handle, t);
+      if (handleErr) {
+        setFieldErrors({ handle: handleErr });
+        setBusy(false);
+        return null;
+      }
+    }
+
     try {
       const token = await user.getIdToken();
       const body: Record<string, unknown> = {
@@ -88,7 +117,7 @@ export function useProfessionalProfileSave(options: Options = {}) {
         openToCollaborate: fields.openToCollaborate,
         collaborationNote: fields.collaborationNote,
       };
-      if (!handleLocked && fields.handle.trim()) {
+      if (willSendHandle) {
         body.handle = fields.handle.trim();
       }
       if (includeDiscoverable) {
@@ -107,7 +136,12 @@ export function useProfessionalProfileSave(options: Options = {}) {
         error?: string;
       };
       if (!res.ok) {
-        setErr(data.message ?? data.error ?? t("profile.edit.saveError"));
+        const handleCode = mapHandleApiError(data.error);
+        if (handleCode) {
+          setFieldErrors({ handle: getHandleErrorMessage(handleCode, t) });
+        } else {
+          setErr(data.message ?? data.error ?? t("profile.edit.saveError"));
+        }
         return null;
       }
       const saved: ProfessionalProfileSaved = {
@@ -132,6 +166,7 @@ export function useProfessionalProfileSave(options: Options = {}) {
   const clearMessages = useCallback(() => {
     setMsg(null);
     setErr(null);
+    setFieldErrors({});
   }, []);
 
   return {
@@ -143,6 +178,7 @@ export function useProfessionalProfileSave(options: Options = {}) {
     busy,
     msg,
     err,
+    fieldErrors,
     clearMessages,
   };
 }

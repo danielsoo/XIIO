@@ -49,7 +49,11 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const newHandle = normalizeHandle(req.requestedName);
   if (!newHandle) {
-    return jsonError("handle_invalid", "유효하지 않은 handle입니다.", 400);
+    return jsonError(
+      "handle_invalid",
+      "handle은 3~30자의 영문 소문자, 숫자, 밑줄(_), 마침표(.)만 사용할 수 있습니다. 앞뒤·연속 마침표는 불가합니다.",
+      400
+    );
   }
 
   const now = FieldValue.serverTimestamp();

@@ -134,7 +134,7 @@ export async function PATCH(request: Request) {
         const msg =
           result.code === "handle_taken"
             ? "이미 사용 중인 handle입니다."
-            : "handle은 3~30자의 영문 소문자, 숫자, 밑줄만 사용할 수 있습니다.";
+            : "handle은 3~30자의 영문 소문자, 숫자, 밑줄(_), 마침표(.)만 사용할 수 있습니다. 앞뒤·연속 마침표는 불가합니다.";
         return jsonError(result.code, msg, result.code === "handle_taken" ? 409 : 400);
       }
     }

@@ -6,7 +6,12 @@ import {
   useProfessionalProfileSave,
   type ProfessionalProfileSaved,
 } from "@/hooks/useProfessionalProfileSave";
-import { profileInputClass } from "@/lib/profileFormStyles";
+import { sanitizeHandleInput } from "@/lib/handle";
+import {
+  profileFieldErrorClass,
+  profileInputClass,
+  profileInputErrorClass,
+} from "@/lib/profileFormStyles";
 import { useTranslations } from "@/context/LocaleContext";
 
 type Props = {
@@ -17,7 +22,8 @@ type Props = {
 
 export default function ProfileAboutForm({ profile, handleLocked, onSaved }: Props) {
   const { t } = useTranslations();
-  const { fields, applyFields, save, busy, err, msg, clearMessages } = useProfessionalProfileSave({
+  const { fields, applyFields, save, busy, err, msg, fieldErrors, clearMessages } =
+    useProfessionalProfileSave({
     handleLocked,
   });
 
@@ -71,10 +77,15 @@ export default function ProfileAboutForm({ profile, handleLocked, onSaved }: Pro
           <input
             type="text"
             value={fields.handle}
-            onChange={(e) => applyFields({ handle: e.target.value.replace(/^@/, "") })}
+            onChange={(e) => applyFields({ handle: sanitizeHandleInput(e.target.value) })}
             placeholder="your_name"
-            className={profileInputClass}
+            className={`${profileInputClass}${fieldErrors.handle ? ` ${profileInputErrorClass}` : ""}`}
           />
+          {fieldErrors.handle ? (
+            <p className={profileFieldErrorClass}>{fieldErrors.handle}</p>
+          ) : (
+            <p className="text-xs text-xiio-muted mt-1">{t("profile.edit.handleHint")}</p>
+          )}
         </div>
       )}
       {!canSetHandleOnce && viewHandle && (
