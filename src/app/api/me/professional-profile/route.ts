@@ -5,6 +5,7 @@ import { normalizeHandle } from "@/lib/server/credits";
 import { claimHandle } from "@/lib/server/handles";
 import { normalizeRoleTagsInput } from "@/lib/roleTags";
 import { getDbOrNull } from "@/lib/server/works";
+import { parseProfileLink } from "@/lib/profileLink";
 import { parseSocietyBannerBackgroundId } from "@/lib/societyBannerBackground";
 import { parseUserProfileDoc } from "@/lib/userAccess";
 
@@ -46,6 +47,7 @@ export async function GET(request: Request) {
     followerCount: profile.followerCount ?? 0,
     followingCount: profile.followingCount ?? 0,
     societyBannerBackgroundId: profile.societyBannerBackgroundId ?? null,
+    profileLink: profile.profileLink ?? null,
   });
 }
 
@@ -67,6 +69,7 @@ export async function PATCH(request: Request) {
     collaborationNote?: string;
     avatarUrl?: string | null;
     societyBannerBackgroundId?: string | null;
+    profileLink?: string | null;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -126,6 +129,17 @@ export async function PATCH(request: Request) {
       updates.societyBannerBackgroundId = parsed;
     }
   }
+  if (body.profileLink !== undefined) {
+    if (body.profileLink === null || body.profileLink.trim() === "") {
+      updates.profileLink = null;
+    } else {
+      const parsed = parseProfileLink(body.profileLink);
+      if (!parsed) {
+        return jsonError("invalid_profile_link", "유효하지 않은 링크 URL입니다.", 400);
+      }
+      updates.profileLink = parsed;
+    }
+  }
 
   const profileMerge =
     Object.keys(updates).length > 1
@@ -169,5 +183,6 @@ export async function PATCH(request: Request) {
     collaborationNote: profile.collaborationNote ?? null,
     avatarUrl: profile.avatarUrl ?? null,
     societyBannerBackgroundId: profile.societyBannerBackgroundId ?? null,
+    profileLink: profile.profileLink ?? null,
   });
 }

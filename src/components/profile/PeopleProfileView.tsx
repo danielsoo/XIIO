@@ -29,6 +29,7 @@ export type PeopleProfilePayload = {
     bio?: string;
     openToCollaborate?: boolean;
     collaborationNote?: string;
+    profileLink?: string | null;
     followerCount?: number;
     followingCount?: number;
   };
@@ -93,6 +94,7 @@ export default function PeopleProfileView({ handle }: Props) {
           bio: saved.bio ?? undefined,
           openToCollaborate: saved.openToCollaborate,
           collaborationNote: saved.collaborationNote ?? undefined,
+          profileLink: saved.profileLink ?? undefined,
         },
       };
     });

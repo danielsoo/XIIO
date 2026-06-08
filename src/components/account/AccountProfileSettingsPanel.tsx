@@ -82,6 +82,7 @@ export default function AccountProfileSettingsPanel({
             ...prev.profile,
             headline: saved.headline ?? undefined,
             bio: saved.bio ?? undefined,
+            profileLink: saved.profileLink ?? undefined,
             openToCollaborate: saved.openToCollaborate,
             collaborationNote: saved.collaborationNote ?? undefined,
           },

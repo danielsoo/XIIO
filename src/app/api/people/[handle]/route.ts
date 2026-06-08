@@ -87,6 +87,7 @@ export async function GET(request: Request, { params }: Params) {
       defaultDirectorName: profile.defaultDirectorName,
       followerCount: profile.followerCount ?? 0,
       followingCount: profile.followingCount ?? 0,
+      profileLink: profile.profileLink ?? null,
     },
     viewer: viewerUid
       ? { uid: viewerUid, isSelf, isFollowing: following }

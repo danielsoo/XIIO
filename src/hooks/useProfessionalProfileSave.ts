@@ -8,11 +8,13 @@ import {
   getHandleValidationError,
   mapHandleApiError,
 } from "@/lib/handle";
+import { isValidProfileLinkInput, parseProfileLink } from "@/lib/profileLink";
 
 export type ProfessionalProfileFields = {
   handle: string;
   headline: string;
   bio: string;
+  profileLink: string;
   isDiscoverable: boolean;
   openToCollaborate: boolean;
   collaborationNote: string;
@@ -22,6 +24,7 @@ export type ProfessionalProfileSaved = {
   handle: string | null;
   headline: string | null;
   bio: string | null;
+  profileLink: string | null;
   isDiscoverable: boolean;
   openToCollaborate: boolean;
   collaborationNote: string | null;
@@ -35,16 +38,19 @@ const emptyFields: ProfessionalProfileFields = {
   handle: "",
   headline: "",
   bio: "",
+  profileLink: "",
   isDiscoverable: true,
   openToCollaborate: false,
   collaborationNote: "",
 };
 
 function parseApiProfile(data: Record<string, unknown>): ProfessionalProfileFields {
+  const storedLink = data.profileLink ? String(data.profileLink) : "";
   return {
     handle: data.handle ? String(data.handle) : "",
     headline: data.headline ? String(data.headline) : "",
     bio: data.bio ? String(data.bio) : "",
+    profileLink: storedLink ? (parseProfileLink(storedLink) ?? storedLink) : "",
     isDiscoverable: data.isDiscoverable !== false,
     openToCollaborate: data.openToCollaborate === true,
     collaborationNote: data.collaborationNote ? String(data.collaborationNote) : "",
@@ -107,11 +113,21 @@ export function useProfessionalProfileSave(options: Options = {}) {
       }
     }
 
+    if (fields.profileLink.trim() && !isValidProfileLinkInput(fields.profileLink)) {
+      setFieldErrors({ profileLink: t("profile.edit.profileLinkInvalid") });
+      setBusy(false);
+      return null;
+    }
+
     try {
       const token = await user.getIdToken();
+      const parsedLink = fields.profileLink.trim()
+        ? parseProfileLink(fields.profileLink.trim())
+        : null;
       const body: Record<string, unknown> = {
         headline: fields.headline,
         bio: fields.bio,
+        profileLink: parsedLink,
         roleTags: [],
         crewRoles: [],
         openToCollaborate: fields.openToCollaborate,
@@ -148,6 +164,7 @@ export function useProfessionalProfileSave(options: Options = {}) {
         handle: data.handle ?? null,
         headline: data.headline ?? null,
         bio: data.bio ?? null,
+        profileLink: data.profileLink ?? null,
         isDiscoverable: data.isDiscoverable !== false,
         openToCollaborate: data.openToCollaborate === true,
         collaborationNote: data.collaborationNote ?? null,

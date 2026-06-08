@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { formatCompactStat } from "@/lib/formatStat";
 import type { HeroBackgroundId } from "@/lib/heroBackgroundPresets";
+import { displayProfileLink } from "@/lib/profileLink";
 import {
   DEFAULT_SOCIETY_BANNER_ID,
   parseSocietyBannerBackgroundId,
@@ -23,6 +24,7 @@ type HeroData = {
   bio: string | null;
   avatarUrl: string | null;
   schoolName: string | null;
+  profileLink: string | null;
   societyBannerBackgroundId: HeroBackgroundId;
   stories: number;
   followers: number;
@@ -32,15 +34,15 @@ type HeroData = {
 
 function StatCell({ value, label }: { value: string; label: string }) {
   return (
-    <div className="flex flex-col gap-0.5 px-4 first:pl-0 sm:px-6">
-      <span className="text-lg font-semibold tabular-nums text-white sm:text-xl">{value}</span>
-      <span className="text-xs text-white/45 sm:text-sm">{label}</span>
+    <div className="flex flex-col items-start gap-0.5 px-5 first:pl-0 sm:px-8">
+      <span className="text-xl font-semibold tabular-nums text-white">{value}</span>
+      <span className="text-xs text-white/45">{label}</span>
     </div>
   );
 }
 
 function StatDivider() {
-  return <div className="hidden h-10 w-px shrink-0 bg-white/15 sm:block" aria-hidden />;
+  return <div className="h-10 w-px shrink-0 bg-white/15" aria-hidden />;
 }
 
 function SchoolIcon({ className }: { className?: string }) {
@@ -51,6 +53,19 @@ function SchoolIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={1.5}
         d="M12 3L2 9l10 6 10-6-10-6zM4 10.5V18a1 1 0 00.553.894L12 22l7.447-3.106A1 1 0 0020 18v-7.5M12 15v7"
+      />
+    </svg>
+  );
+}
+
+function LinkIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M10 13a5 5 0 007.54.54l2.92-2.92a5 5 0 00-7.07-7.07l-1.17 1.17M14 11a5 5 0 00-7.54-.54L3.54 13.4a5 5 0 007.07 7.07l1.17-1.17"
       />
     </svg>
   );
@@ -114,6 +129,7 @@ export default function SocietyProfileHero() {
               bio?: string | null;
               displayName?: string;
               avatarUrl?: string | null;
+              profileLink?: string | null;
               followerCount?: number;
               followingCount?: number;
               societyBannerBackgroundId?: HeroBackgroundId | null;
@@ -156,6 +172,7 @@ export default function SocietyProfileHero() {
           bio: pro?.bio?.trim() || null,
           avatarUrl: pro?.avatarUrl ?? profileDoc?.avatarUrl ?? null,
           schoolName: profileDoc?.schoolName?.trim() || null,
+          profileLink: pro?.profileLink ?? profileDoc?.profileLink ?? null,
           societyBannerBackgroundId: bannerId,
           stories,
           followers: pro?.followerCount ?? 0,
@@ -171,6 +188,7 @@ export default function SocietyProfileHero() {
             bio: null,
             avatarUrl: null,
             schoolName: null,
+            profileLink: null,
             societyBannerBackgroundId: DEFAULT_SOCIETY_BANNER_ID,
             stories: 0,
             followers: 0,
@@ -210,26 +228,26 @@ export default function SocietyProfileHero() {
 
   return (
     <section
-      className="relative mb-8 min-h-[200px] overflow-hidden rounded-2xl border border-white/10 sm:min-h-[220px] sm:mb-10"
+      className="relative mb-8 min-h-[240px] overflow-hidden rounded-xl border border-white/5 sm:min-h-[260px] sm:mb-10"
       aria-busy={loading}
     >
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0a1628] via-[#060a12] to-black"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0a1628] via-[#060a12] to-[#030508]"
         aria-hidden
       />
 
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-[55%] sm:w-[48%]" aria-hidden>
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-[50%]" aria-hidden>
         <Image
           src={bannerPreset.src}
           alt=""
           fill
           className="object-cover opacity-90"
           style={{ objectPosition: bannerPreset.objectPosition }}
-          sizes="(max-width: 768px) 55vw, 48vw"
+          sizes="50vw"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#060a12] via-[#060a12]/80 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#060a12] via-[#060a12]/75 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
       </div>
 
       {data ? (
@@ -241,22 +259,22 @@ export default function SocietyProfileHero() {
         />
       ) : null}
 
-      <div className="relative z-10 flex min-h-[200px] flex-col justify-between p-5 sm:min-h-[220px] sm:p-6 md:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
+      <div className="relative z-10 flex min-h-[240px] flex-col justify-between p-6 md:p-8 sm:min-h-[260px]">
+        <div className="flex flex-row items-start gap-5 sm:gap-6">
           <ProfileAvatar
             displayName={data?.displayName ?? title}
             avatarUrl={data?.avatarUrl}
-            className="mx-auto h-20 w-20 shrink-0 overflow-hidden rounded-full bg-xiio-accent/20 ring-2 ring-white/20 sm:mx-0 sm:h-24 sm:w-24 flex items-center justify-center text-2xl font-bold text-white"
+            className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-xiio-accent/20 ring-2 ring-white/20 sm:h-28 sm:w-28 flex items-center justify-center text-2xl font-bold text-white"
           />
 
-          <div className="min-w-0 flex-1 text-center sm:text-left">
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start sm:gap-3">
-              <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
+          <div className="min-w-0 flex-1 text-left">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
                 {loading && !data ? "…" : title}
               </h1>
               <Link
                 href="/account?tab=profile&section=about"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1 text-xs font-medium text-white/80 transition hover:border-white/35 hover:bg-white/5 sm:text-sm"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/25 px-3 py-1.5 text-sm font-medium text-white/85 transition hover:border-white/40 hover:bg-white/5"
               >
                 <EditIcon className="h-3.5 w-3.5" />
                 {t("society.hero.editProfile")}
@@ -264,21 +282,35 @@ export default function SocietyProfileHero() {
             </div>
 
             {tagline ? (
-              <p className="mt-2 text-sm text-white/70 sm:text-base">{tagline}</p>
+              <p className="mt-1 text-base text-white/85">{tagline}</p>
             ) : loading ? (
-              <p className="mt-2 text-sm text-white/30">{t("common.loading")}</p>
+              <p className="mt-1 text-sm text-white/30">{t("common.loading")}</p>
             ) : null}
 
             {data?.schoolName ? (
-              <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-white/50 sm:justify-start">
+              <p className="mt-2 flex items-center gap-1.5 text-sm text-white/50">
                 <SchoolIcon className="h-4 w-4 shrink-0" />
                 <span>{data.schoolName}</span>
+              </p>
+            ) : null}
+
+            {data?.profileLink ? (
+              <p className="mt-1.5 flex items-center gap-1.5 text-sm">
+                <LinkIcon className="h-4 w-4 shrink-0 text-sky-400/80" />
+                <a
+                  href={data.profileLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sky-400 hover:underline"
+                >
+                  {displayProfileLink(data.profileLink)}
+                </a>
               </p>
             ) : null}
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-y-3 sm:mt-8 sm:justify-start">
+        <div className="mt-6 flex flex-wrap items-center border-t border-white/10 pt-5 sm:mt-8">
           {stats.map((stat, i) => (
             <div key={stat.label} className="flex items-center">
               {i > 0 ? <StatDivider /> : null}

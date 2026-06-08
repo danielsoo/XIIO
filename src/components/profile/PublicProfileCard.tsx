@@ -13,6 +13,7 @@ export type PublicProfileData = {
   bio?: string;
   openToCollaborate?: boolean;
   collaborationNote?: string;
+  profileLink?: string | null;
   followerCount?: number;
   followingCount?: number;
 };

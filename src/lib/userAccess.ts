@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n";
+import { parseProfileLink } from "@/lib/profileLink";
 import { parseSocietyBannerBackgroundId } from "@/lib/societyBannerBackground";
 import { resolveRoleTags } from "@/lib/roleTags";
 import type { ProfileRoleTag } from "@/types/portfolio";
@@ -124,6 +125,7 @@ export function parseUserProfileDoc(data: Record<string, unknown>): UserProfileD
         ? data.followingCount
         : 0,
     societyBannerBackgroundId: parseSocietyBannerBackgroundId(data.societyBannerBackgroundId),
+    profileLink: parseProfileLink(data.profileLink),
     accountStatus: data.accountStatus === "deleted" ? "deleted" : "active",
     deletedAt: data.deletedAt,
     createdAt: data.createdAt,

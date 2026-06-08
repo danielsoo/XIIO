@@ -35,6 +35,7 @@ export default function ProfileAboutForm({ profile, handleLocked, onSaved }: Pro
       handle: profile.handle,
       headline: profile.headline ?? "",
       bio: profile.bio ?? "",
+      profileLink: profile.profileLink ?? "",
       openToCollaborate: profile.openToCollaborate === true,
       collaborationNote: profile.collaborationNote ?? "",
     });
@@ -43,6 +44,7 @@ export default function ProfileAboutForm({ profile, handleLocked, onSaved }: Pro
     profile.handle,
     profile.headline,
     profile.bio,
+    profile.profileLink,
     profile.openToCollaborate,
     profile.collaborationNote,
     applyFields,
@@ -60,6 +62,7 @@ export default function ProfileAboutForm({ profile, handleLocked, onSaved }: Pro
       handle: profile.handle,
       headline: profile.headline ?? "",
       bio: profile.bio ?? "",
+      profileLink: profile.profileLink ?? "",
       openToCollaborate: profile.openToCollaborate === true,
       collaborationNote: profile.collaborationNote ?? "",
     });
@@ -110,6 +113,21 @@ export default function ProfileAboutForm({ profile, handleLocked, onSaved }: Pro
           placeholder={t("profile.edit.bioPlaceholder")}
           className={profileInputClass}
         />
+      </div>
+      <div>
+        <label className="block text-xs text-xiio-muted mb-1">{t("profile.edit.profileLink")}</label>
+        <input
+          type="url"
+          value={fields.profileLink}
+          onChange={(e) => applyFields({ profileLink: e.target.value })}
+          placeholder="https://linktr.ee/yourname"
+          className={`${profileInputClass}${fieldErrors.profileLink ? ` ${profileInputErrorClass}` : ""}`}
+        />
+        {fieldErrors.profileLink ? (
+          <p className={profileFieldErrorClass}>{fieldErrors.profileLink}</p>
+        ) : (
+          <p className="text-xs text-xiio-muted mt-1">{t("profile.edit.profileLinkHint")}</p>
+        )}
       </div>
       <label className="flex items-center gap-2 text-sm text-white">
         <input

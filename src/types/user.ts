@@ -75,6 +75,8 @@ export interface UserProfileDoc {
   followingCount?: number;
   /** Society 프로필 배너 배경 프리셋 */
   societyBannerBackgroundId?: HeroBackgroundId;
+  /** Society 배너·공개 프로필 외부 링크 */
+  profileLink?: string;
   accountStatus?: AccountStatus;
   deletedAt?: unknown;
   createdAt?: unknown;
