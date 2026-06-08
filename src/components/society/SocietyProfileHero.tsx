@@ -318,7 +318,7 @@ export default function SocietyProfileHero() {
                 </p>
               ) : null}
 
-              <div className="mt-5 flex flex-wrap items-center border-t border-white/10 pt-5 sm:mt-6">
+              <div className="mt-5 flex flex-wrap items-center sm:mt-6">
                 {stats.map((stat, i) => (
                   <div key={stat.label} className="flex items-center">
                     {i > 0 ? <StatDivider /> : null}
