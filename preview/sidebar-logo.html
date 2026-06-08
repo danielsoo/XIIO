@@ -61,12 +61,17 @@
       }
       .logo-ii-bar {
         width: 0.1em;
-        height: 0.78em;
+        height: 100%;
         background: currentColor;
-        border-radius: 1px;
+        border-radius: 9999px;
       }
       .logo-o {
         margin-left: 0.32em;
+        width: 1em;
+        height: 1em;
+        border-radius: 9999px;
+        border: 0.1em solid currentColor;
+        flex-shrink: 0;
       }
       .main {
         flex: 1;
@@ -98,7 +103,7 @@
               <span class="logo-ii-bar"></span>
               <span class="logo-ii-bar"></span>
             </span>
-            <span class="logo-cap logo-o">O</span>
+            <span class="logo-o" aria-hidden="true"></span>
           </span>
         </a>
       </aside>

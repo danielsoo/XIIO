@@ -73,18 +73,19 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       >
         <span className="inline-flex items-center text-[28px] font-semibold text-white leading-none">
           <span className="inline-flex size-[1em] items-center justify-center mr-[0.32em] shrink-0">
-            X
+            <span className="leading-none">X</span>
           </span>
           <span
             className="inline-flex h-[1em] items-center gap-[0.21em] shrink-0"
             aria-hidden
           >
-            <span className="w-[0.1em] h-[0.78em] bg-current rounded-[1px]" />
-            <span className="w-[0.1em] h-[0.78em] bg-current rounded-[1px]" />
+            <span className="w-[0.1em] h-full bg-current rounded-full" />
+            <span className="w-[0.1em] h-full bg-current rounded-full" />
           </span>
-          <span className="inline-flex size-[1em] items-center justify-center ml-[0.32em] shrink-0">
-            O
-          </span>
+          <span
+            className="ml-[0.32em] shrink-0 size-[1em] rounded-full border-[0.1em] border-current box-border"
+            aria-hidden
+          />
         </span>
       </Link>
 
