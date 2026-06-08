@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useTranslations } from "@/context/LocaleContext";
 import {
   mockActiveAgoForUid,
@@ -36,62 +37,63 @@ export default function SocietyCreatorRow({
   const activeTime = mockActiveAgoForUid(person.uid);
 
   return (
-    <article className="flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 flex-1 gap-4">
+    <article className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:gap-6 lg:gap-8">
+      <div className="flex items-center gap-4 sm:contents">
         <Link
           href={`/people/${person.handle}`}
           className="relative shrink-0"
           aria-label={person.displayName}
         >
-          <div
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-xiio-accent/20 text-lg font-bold text-white ring-2 ring-white/10"
-            aria-hidden
-          >
-            {(person.displayName || "?").slice(0, 1).toUpperCase()}
-          </div>
-          {person.openToCollaborate ? (
-            <span
-              className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#0a0b0e] bg-emerald-400"
-              aria-hidden
-            />
-          ) : null}
+          <ProfileAvatar
+            displayName={person.displayName}
+            avatarUrl={person.avatarUrl}
+            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-xiio-accent/20 text-lg font-bold text-white ring-2 ring-white/10"
+            imgClassName="h-full w-full object-cover"
+          />
         </Link>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <div className="min-w-0 w-full shrink-0 sm:w-[160px] lg:w-[180px]">
+          <div className="flex items-center gap-2">
             <Link
               href={`/people/${person.handle}`}
-              className="truncate text-base font-semibold text-white hover:text-xiio-accent transition"
+              className="truncate text-base font-semibold text-white transition hover:text-xiio-accent"
             >
               {person.displayName}
             </Link>
-            <span className="text-sm text-white/45">·</span>
-            <span className="text-sm text-white/60">{roleLabel}</span>
-            <span className="text-sm text-white/45">·</span>
-            <span className="truncate text-sm text-white/45">{school}</span>
-          </div>
-          {quote ? (
-            <p className="mt-2 text-sm italic text-white/55 line-clamp-2">&ldquo;{quote}&rdquo;</p>
-          ) : null}
-          <div className="mt-3 flex flex-wrap gap-2">
-            {tags.map((tag) => (
+            {person.openToCollaborate ? (
               <span
-                key={tag}
-                className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70"
-              >
-                {tag}
-              </span>
-            ))}
+                className="h-2 w-2 shrink-0 rounded-full bg-emerald-400"
+                aria-hidden
+              />
+            ) : null}
           </div>
+          <p className="mt-0.5 text-sm text-white/50">{roleLabel}</p>
+          <p className="mt-0.5 truncate text-sm text-white/50">{school}</p>
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end sm:min-w-[140px]">
+      <div className="min-w-0 flex-1">
+        {quote ? (
+          <p className="text-sm leading-relaxed text-white/55 line-clamp-2">{quote}</p>
+        ) : null}
+        <div className={`flex flex-wrap gap-2 ${quote ? "mt-3" : ""}`}>
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/60"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex shrink-0 flex-col items-stretch gap-1.5 sm:min-w-[120px] sm:items-end">
         <button
           type="button"
           disabled={connectBusy || connected}
           onClick={onConnect}
-          className={`rounded-full px-5 py-2 text-sm font-medium transition disabled:opacity-50 ${
+          className={`rounded-lg px-5 py-2 text-sm font-medium transition disabled:opacity-50 ${
             connected
               ? "border border-white/20 bg-white/5 text-white/60"
               : "border border-xiio-accent text-xiio-accent hover:bg-xiio-accent/10"

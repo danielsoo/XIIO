@@ -6,6 +6,7 @@ export type DiscoverPersonCard = {
   uid: string;
   handle: string;
   displayName: string;
+  avatarUrl?: string | null;
   headline?: string;
   bio?: string;
   roleTags: ProfileRoleTag[];
@@ -62,6 +63,7 @@ export async function listDiscoverablePeople(
       uid: doc.id,
       handle,
       displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
       headline: profile.headline,
       bio: profile.bio,
       roleTags: profile.roleTags ?? [],

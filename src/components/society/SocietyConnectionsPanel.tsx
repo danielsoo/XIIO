@@ -255,7 +255,7 @@ export default function SocietyConnectionsPanel() {
         </div>
       ) : null}
 
-      <div className="mt-6 space-y-4">
+      <div className="mt-6 divide-y divide-white/10">
         {!user && tab !== "requests" && tab !== "sent" ? (
           <p className="text-sm text-white/50">
             {t("society.loginRequired")}{" "}
