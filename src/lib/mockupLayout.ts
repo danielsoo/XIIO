@@ -20,6 +20,13 @@ export const APP_CONTENT_RIGHT_MARGIN_PX = MOCKUP_CONTENT_INSET.rightMargin;
 export const APP_SIDEBAR_BG = "#02070B";
 export const APP_MAIN_BG = "#020408";
 
+/** Section headers — All Films style (dot + xs bold caps) */
+export const MOCKUP_SECTION_LABEL = {
+  row: "flex items-center gap-2",
+  dot: "w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0",
+  text: "text-xs font-bold tracking-[0.2em] uppercase text-white",
+} as const;
+
 /** Measured layout px on 001 mockup */
 export const MOCKUP_MEASURES = {
   topBarHeight: 60,

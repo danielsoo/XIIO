@@ -73,7 +73,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       >
         <span className="inline-flex items-baseline text-[2rem] font-semibold text-white">
           <span className="mr-[0.32em]">X</span>
-          <span className="inline-flex gap-[0.42em]">
+          <span className="inline-flex gap-[0.21em]">
             <span>I</span>
             <span>I</span>
           </span>

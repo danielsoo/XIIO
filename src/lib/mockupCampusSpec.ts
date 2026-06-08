@@ -1,12 +1,14 @@
+import { MOCKUP_SECTION_LABEL } from "@/lib/mockupLayout";
+
 /** Campus (002) mockup — page-specific tokens; shared shell from MOCKUP_HOME */
 export const MOCKUP_CAMPUS = {
   heroBadge: "text-xs font-bold tracking-[0.25em] text-sky-400 mb-3",
   heroTitle: "text-[48px] sm:text-[52px] font-black tracking-tight text-white uppercase leading-[1.05] mb-3",
   heroSubtitle: "text-[15px] leading-[1.5] max-w-[376px] text-white/55 mb-7",
-  sectionLabel: "text-xs font-bold tracking-[0.2em] uppercase text-white",
-  sectionDot: "w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0",
+  sectionLabel: MOCKUP_SECTION_LABEL.text,
+  sectionDot: MOCKUP_SECTION_LABEL.dot,
   sectionHeaderRow: "flex items-center justify-between mb-5",
-  sectionLabelRow: "flex items-center gap-2",
+  sectionLabelRow: MOCKUP_SECTION_LABEL.row,
   battleCard:
     "relative overflow-hidden rounded-2xl border border-white/10 bg-xiio-bg/40 min-h-[220px] p-4 sm:p-5 flex flex-col",
   vsBadge:

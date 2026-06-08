@@ -6,6 +6,7 @@ import ContentCard from "@/components/ContentCard";
 import HomeContentRow from "@/components/home/HomeContentRow";
 import HomeFeaturedStoryPanel from "@/components/home/HomeFeaturedStoryPanel";
 import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
+import SectionLabel from "@/components/layout/SectionLabel";
 import { IconPlay } from "@/components/icons/MockupIcons";
 import { useAuth } from "@/context/AuthContext";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
@@ -178,10 +179,7 @@ export default function CategoryMockPage({ variant }: { variant: CategoryVariant
 
         <section>
           <div className={MOCKUP_CAMPUS.sectionHeaderRow}>
-            <div className={MOCKUP_CAMPUS.sectionLabelRow}>
-              <span className={MOCKUP_CAMPUS.sectionDot} aria-hidden />
-              <h2 className={MOCKUP_CAMPUS.sectionLabel}>{t(`${i18n}.allTitle`)}</h2>
-            </div>
+            <SectionLabel>{t(`${i18n}.allTitle`)}</SectionLabel>
           </div>
 
           {loading ? (

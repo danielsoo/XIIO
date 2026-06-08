@@ -3,7 +3,8 @@
 import { useRef } from "react";
 import Link from "next/link";
 import HomeStoryCard from "@/components/home/HomeStoryCard";
-import { IconChevronRight, IconScrollNext } from "@/components/icons/MockupIcons";
+import SectionLabel from "@/components/layout/SectionLabel";
+import { IconScrollNext } from "@/components/icons/MockupIcons";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import type { HomeStoryItem } from "@/lib/homeMockData";
@@ -35,11 +36,8 @@ function SectionHeaderRow({
 }) {
   return (
     <div className={`flex items-center justify-between gap-4 flex-nowrap ${rowWidthClass}`}>
-      <div className="flex items-center gap-1.5 shrink-0 min-w-0">
-        <h2 className={`font-semibold text-white whitespace-nowrap ${MOCKUP_HOME.sectionTitle}`}>
-          {title}
-        </h2>
-        <IconChevronRight className={`text-sky-400 shrink-0 ${MOCKUP_HOME.sectionChevron}`} />
+      <div className="shrink-0 min-w-0">
+        <SectionLabel>{title}</SectionLabel>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <Link

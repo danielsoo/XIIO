@@ -5,6 +5,7 @@ export const MOCKUP_HOME = {
   contentMainColumnPad:
     "lg:pl-[calc(var(--app-sidebar-width)+var(--app-content-boundary-inset))]",
   contentRightPad: "lg:pr-[76px]",
+  topBarRightPad: "lg:pr-4",
   contentColumnGuard: "min-w-0 max-w-full",
   contentBodyGuard: "min-w-0 max-w-full overflow-x-clip",
   topBarHeight: "h-[60px]",
@@ -31,8 +32,6 @@ export const MOCKUP_HOME = {
   featuredMeta: "text-[12px] text-white/45 mb-3",
   featuredPlay:
     "shrink-0 w-10 h-10 rounded-full border border-white/25 flex items-center justify-center text-white/90 hover:bg-white/10 transition",
-  sectionTitle: "text-[16px]",
-  sectionChevron: "w-3.5 h-3.5",
   viewAllLink: "text-xs",
   featuredHeaderToCards: "mt-3.5",
   sectionGap: "gap-8",

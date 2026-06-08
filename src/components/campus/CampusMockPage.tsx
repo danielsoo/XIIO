@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import BattleVsRadar from "@/components/campus/BattleVsRadar";
 import CampusSectionLabel from "@/components/campus/CampusSectionLabel";
+import { MOCKUP_SECTION_LABEL } from "@/lib/mockupLayout";
 import SchoolClashBackdrop from "@/components/campus/SchoolClashBackdrop";
 import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
 import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
@@ -372,7 +373,7 @@ export default function CampusMockPage() {
                 </div>
               ) : null}
               <div className={MOCKUP_CAMPUS.themeCardInner}>
-                <p className="text-[10px] font-bold tracking-[0.2em] text-sky-300 uppercase mb-1">
+                <p className={`${MOCKUP_SECTION_LABEL.text} mb-1`}>
                   {t("campus.mock.currentTheme")}
                 </p>
                 <h3 className="text-lg font-bold text-white mb-3">{t("campus.mock.themeTitle")}</h3>
@@ -425,7 +426,7 @@ export default function CampusMockPage() {
             </div>
 
             <div className={MOCKUP_CAMPUS.aboutCard}>
-              <h3 className="text-xs font-bold tracking-[0.15em] uppercase mb-2">
+              <h3 className={`${MOCKUP_SECTION_LABEL.text} mb-2`}>
                 {t("campus.mock.aboutTitle")}
               </h3>
               <p className="text-sm text-white/55 leading-relaxed mb-3">{t("campus.mock.aboutBody")}</p>
