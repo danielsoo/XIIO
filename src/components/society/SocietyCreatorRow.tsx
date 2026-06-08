@@ -56,7 +56,7 @@ export default function SocietyCreatorRow({
           <div className="flex items-center gap-2">
             <Link
               href={`/people/${person.handle}`}
-              className="truncate text-base font-semibold text-white transition hover:text-xiio-accent"
+              className="truncate text-lg font-semibold text-white transition hover:text-xiio-accent"
             >
               {person.displayName}
             </Link>
