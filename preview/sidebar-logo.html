@@ -47,6 +47,7 @@
         --xiio-ii-gap: 0.36em;
       }
       .logo-x {
+        position: relative;
         display: inline-flex;
         width: var(--xiio-cap);
         height: var(--xiio-cap);
@@ -55,10 +56,19 @@
         margin-right: var(--xiio-gap);
         flex-shrink: 0;
       }
-      .logo-x svg {
-        width: 100%;
-        height: 100%;
-        fill: currentColor;
+      .logo-x-bar {
+        position: absolute;
+        width: 0.1em;
+        height: 0.72em;
+        background: currentColor;
+      }
+      .logo-x-bar-a {
+        transform: rotate(45deg);
+        clip-path: polygon(0% 12%, 100% 0%, 100% 88%, 0% 100%);
+      }
+      .logo-x-bar-b {
+        transform: rotate(-45deg);
+        clip-path: polygon(0% 0%, 100% 12%, 100% 100%, 0% 88%);
       }
       .logo-ii {
         display: inline-flex;
@@ -106,10 +116,8 @@
         <a class="logo-link" href="#" aria-label="XIIO 홈으로">
           <span class="logo">
             <span class="logo-x" aria-hidden="true">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <polygon points="7,5 11,5 17,19 13,19" />
-                <polygon points="13,5 17,5 11,19 7,19" />
-              </svg>
+              <span class="logo-x-bar logo-x-bar-a"></span>
+              <span class="logo-x-bar logo-x-bar-b"></span>
             </span>
             <span class="logo-ii" aria-hidden="true">
               <span class="logo-ii-bar"></span>

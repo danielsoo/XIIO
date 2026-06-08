@@ -8,19 +8,9 @@ const XIIO_GAP = "0.80em";
 /** II 두 막대 사이 간격 */
 const XIIO_II_GAP = "0.36em";
 
-function XiioWordmarkX() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="size-full"
-      aria-hidden
-    >
-      <polygon points="7,5 11,5 17,19 13,19" />
-      <polygon points="13,5 17,5 11,19 7,19" />
-    </svg>
-  );
-}
+/** 회전 후 상·하단이 수평으로 보이도록 끝만 잘림 */
+const X_ARM_CLIP_A = "polygon(0% 12%, 100% 0%, 100% 88%, 0% 100%)";
+const X_ARM_CLIP_B = "polygon(0% 0%, 100% 12%, 100% 100%, 0% 88%)";
 
 export default function XiioWordmark({ className = "" }: Props) {
   return (
@@ -33,8 +23,15 @@ export default function XiioWordmark({ className = "" }: Props) {
       }}
       aria-hidden
     >
-      <span className="inline-flex size-[var(--xiio-cap)] items-center justify-center mr-[var(--xiio-gap)] shrink-0">
-        <XiioWordmarkX />
+      <span className="relative inline-flex size-[var(--xiio-cap)] items-center justify-center mr-[var(--xiio-gap)] shrink-0">
+        <span
+          className="absolute h-[0.72em] w-[0.1em] bg-current rotate-45"
+          style={{ clipPath: X_ARM_CLIP_A }}
+        />
+        <span
+          className="absolute h-[0.72em] w-[0.1em] bg-current -rotate-45"
+          style={{ clipPath: X_ARM_CLIP_B }}
+        />
       </span>
       <span className="inline-flex h-[var(--xiio-cap)] items-center gap-[var(--xiio-ii-gap)] shrink-0">
         <span className="w-[0.1em] h-full bg-current" />
