@@ -41,6 +41,8 @@
         color: #fff;
         line-height: 1;
         --xiio-cap: calc((0.72em + 0.1em) / sqrt(2));
+        /* X↔II, II↔O 그룹 간격 — 앱은 XiioWordmark.tsx 의 XIIO_GAP 과 맞출 것 */
+        --xiio-gap: 0.80em;
       }
       .logo-x {
         position: relative;
@@ -49,7 +51,7 @@
         height: var(--xiio-cap);
         align-items: center;
         justify-content: center;
-        margin-right: 0.80em;
+        margin-right: var(--xiio-gap);
         flex-shrink: 0;
       }
       .logo-x-bar {
@@ -77,7 +79,7 @@
         background: currentColor;
       }
       .logo-o {
-        margin-left: 0.48em;
+        margin-left: var(--xiio-gap);
         width: var(--xiio-cap);
         height: var(--xiio-cap);
         border-radius: 9999px;
@@ -122,12 +124,14 @@
         </a>
       </aside>
       <main class="main">
-        <p>사이드바 로고 미리보기 — <code>AppSidebar.tsx</code>와 동일 스타일</p>
+        <p>사이드바 로고 미리보기 — 자간은 <code>--xiio-gap</code> 한 곳에서 조절</p>
         <div class="hint">
-          <strong>Cursor에서 보기</strong><br />
+          <strong>자간이 안 바뀌는 경우</strong><br />
+          <code>npm run dev</code>(localhost:3000)는 이 HTML이 아니라
+          <code>src/components/layout/XiioWordmark.tsx</code>의 <code>XIIO_GAP</code>을 씁니다.<br /><br />
+          <strong>이 미리보기만 보려면</strong><br />
           터미널: <code>npm run preview:sidebar</code><br />
-          Simple Browser: <code>http://localhost:3456/sidebar-logo.html</code><br />
-          전체 앱: <code>npm run dev</code> → <code>http://localhost:3000</code>
+          브라우저: <code>http://localhost:3456/sidebar-logo.html</code> (저장 후 새로고침)
         </div>
       </main>
     </div>
