@@ -1,80 +1,27 @@
 import { NextResponse } from "next/server";
-import { syncWorkStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
 import {
-  getDbOrNull,
-  parsePromoDoc,
-  parseWorkDoc,
-  promoRef,
-  resolveWorkListThumbnailUrl,
-} from "@/lib/server/works";
-import type { CatalogFeedItem, WorkSection } from "@/types/work";
-import { isWorkSection } from "@/lib/works/constants";
+  FEED_CACHE_HEADERS,
+  fetchCatalogWorksFeed,
+  parseCatalogSection,
+} from "@/lib/server/home-feeds";
+import { getDbOrNull } from "@/lib/server/works";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const sectionParam = url.searchParams.get("section") ?? url.searchParams.get("category");
   const limit = Math.min(24, Math.max(1, Number(url.searchParams.get("limit")) || 8));
+  const section = parseCatalogSection(sectionParam);
 
-  if (!sectionParam || !isWorkSection(sectionParam)) {
+  if (!section) {
     return NextResponse.json({ error: "invalid_section" }, { status: 400 });
   }
 
-  const section = sectionParam as WorkSection;
   const db = await getDbOrNull();
   if (!db) {
     return NextResponse.json({ items: [] });
   }
 
-  const snap = await db
-    .collectionGroup("works")
-    .where("platformStatus", "==", "published")
-    .limit(80)
-    .get();
+  const items = await fetchCatalogWorksFeed(db, section, limit);
 
-  const items: CatalogFeedItem[] = [];
-
-  for (const doc of snap.docs) {
-    if (items.length >= limit) break;
-
-    const ownerUid = doc.ref.parent.parent?.id;
-    if (!ownerUid) continue;
-
-    let work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
-    if (work.section !== section) continue;
-    if (work.streamUid) {
-      const synced = await syncWorkStreamStatusIfNeeded(
-        db,
-        ownerUid,
-        doc.id,
-        work.streamUid,
-        work.streamStatus
-      );
-      work = { ...work, streamStatus: synced };
-    }
-    if (work.streamStatus !== "ready") continue;
-
-    const thumbnailUrl = await resolveWorkListThumbnailUrl(db, ownerUid, doc.id, work);
-    const promoSnap = await promoRef(db, ownerUid, doc.id).get();
-    const promo = promoSnap.exists
-      ? parsePromoDoc(promoSnap.data() as Record<string, unknown>)
-      : null;
-    const thumbnailCrop = promo?.thumbnailCrop ?? work.promoDraft?.thumbnailCrop;
-
-    items.push({
-      id: `${ownerUid}_${doc.id}`,
-      workId: doc.id,
-      ownerUid,
-      title: work.title,
-      director: work.director,
-      section: work.section,
-      approvedCategory: work.approvedCategory,
-      approvedTags: work.approvedTags ?? [],
-      thumbnailUrl,
-      ...(thumbnailCrop ? { thumbnailCrop } : {}),
-    });
-  }
-
-  items.sort((a, b) => a.title.localeCompare(b.title));
-
-  return NextResponse.json({ items });
+  return NextResponse.json({ items }, { headers: FEED_CACHE_HEADERS });
 }

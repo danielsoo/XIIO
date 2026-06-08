@@ -25,11 +25,27 @@ function toPromoShort(item: PromoFeedItem): PromoShort {
   };
 }
 
-export function usePromoFeed(fallbackToDemo = true) {
+type Options = {
+  fallbackToDemo?: boolean;
+  initialItems?: PromoFeedItem[];
+};
+
+export function usePromoFeed(fallbackToDemoOrOptions: boolean | Options = true) {
+  const options =
+    typeof fallbackToDemoOrOptions === "boolean"
+      ? { fallbackToDemo: fallbackToDemoOrOptions }
+      : fallbackToDemoOrOptions;
+  const { fallbackToDemo = true, initialItems } = options;
+
   const { user } = useAuth();
-  const [items, setItems] = useState<PromoShort[]>(fallbackToDemo ? HOME_PROMO_SHORTS : []);
-  const [loading, setLoading] = useState(true);
-  const [fromApi, setFromApi] = useState(false);
+  const [items, setItems] = useState<PromoShort[]>(() => {
+    if (initialItems !== undefined) {
+      return initialItems.map(toPromoShort);
+    }
+    return fallbackToDemo ? HOME_PROMO_SHORTS : [];
+  });
+  const [loading, setLoading] = useState(() => initialItems === undefined);
+  const [fromApi, setFromApi] = useState(() => initialItems !== undefined && initialItems.length > 0);
 
   useEffect(() => {
     let cancelled = false;

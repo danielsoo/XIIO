@@ -27,8 +27,19 @@ import {
   heroTextBandMarginTop,
   heroTextBandMinHeight,
 } from "@/lib/homeHeroLayout";
+import type { CatalogFeedItem, PromoFeedItem } from "@/types/work";
 
-export default function HomeMockPage() {
+type Props = {
+  initialPromoItems?: PromoFeedItem[];
+  initialMovies?: CatalogFeedItem[];
+  initialSeries?: CatalogFeedItem[];
+};
+
+export default function HomeMockPage({
+  initialPromoItems,
+  initialMovies,
+  initialSeries,
+}: Props) {
   const { t } = useTranslations();
   const { user } = useAuth();
   const { rgbTuple, overlayEnabled, heroStyle, themeReady } = useHomeHeroTheme();
@@ -40,9 +51,12 @@ export default function HomeMockPage() {
     registerHeroSection,
     registerHeroText,
   } = useHeroWaveLayout();
-  const { items: promoItems, loading: promoLoading } = usePromoFeed(false);
-  const { items: movies, loading: moviesLoading } = useCatalogFeed("movies", 8);
-  const { items: series, loading: seriesLoading } = useCatalogFeed("series", 4);
+  const { items: promoItems } = usePromoFeed({
+    fallbackToDemo: false,
+    initialItems: initialPromoItems,
+  });
+  const { items: movies } = useCatalogFeed("movies", 8, initialMovies);
+  const { items: series } = useCatalogFeed("series", 4, initialSeries);
 
   const featuredStories = useMemo(
     () =>
@@ -176,9 +190,7 @@ export default function HomeMockPage() {
       <div
         className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
       >
-        {promoLoading ? (
-          <p className="text-white/45 text-sm">{t("common.loading")}</p>
-        ) : featuredStories.length > 0 ? (
+        {featuredStories.length > 0 ? (
           <HomeContentRow
             title={t("home.mock.featuredStories")}
             viewAllHref="/movies"
@@ -188,9 +200,7 @@ export default function HomeMockPage() {
           />
         ) : null}
 
-        {moviesLoading ? (
-          <p className="text-white/45 text-sm">{t("common.loading")}</p>
-        ) : surfaceStories.length > 0 ? (
+        {surfaceStories.length > 0 ? (
           <HomeSurfaceCampusRow
             title={t("home.mock.newToSurface")}
             viewAllHref="/movies"
@@ -199,9 +209,7 @@ export default function HomeMockPage() {
           />
         ) : null}
 
-        {seriesLoading ? (
-          <p className="text-white/45 text-sm">{t("common.loading")}</p>
-        ) : selectsStories.length > 0 ? (
+        {selectsStories.length > 0 ? (
           <HomeContentRow
             title={t("home.mock.xiioSelects")}
             viewAllHref="/series"

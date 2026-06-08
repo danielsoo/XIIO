@@ -1,7 +1,10 @@
 import { Suspense } from "react";
 import HomeMockPage from "@/components/home/HomeMockPage";
+import { getServerHomeFeeds } from "@/lib/server/home-feeds";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { promoItems, movies, series } = await getServerHomeFeeds();
+
   return (
     <Suspense
       fallback={
@@ -10,7 +13,11 @@ export default function HomePage() {
         </main>
       }
     >
-      <HomeMockPage />
+      <HomeMockPage
+        initialPromoItems={promoItems}
+        initialMovies={movies}
+        initialSeries={series}
+      />
     </Suspense>
   );
 }
