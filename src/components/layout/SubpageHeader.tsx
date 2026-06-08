@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import XiioWordmark from "@/components/layout/XiioWordmark";
 import { useTranslations } from "@/context/LocaleContext";
 
 type Props = {
@@ -26,9 +27,7 @@ function XiioLogoLink({ className }: { className?: string }) {
       className={`inline-flex flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent rounded ${className ?? ""}`}
       aria-label={t("common.logoHome")}
     >
-      <span className="text-2xl font-black tracking-widest text-white">
-        X<span className="text-xiio-accent">II</span>O
-      </span>
+      <XiioWordmark />
     </Link>
   );
 }
