@@ -47,7 +47,7 @@ export default function SocietyCreatorRow({
           <ProfileAvatar
             displayName={person.displayName}
             avatarUrl={person.avatarUrl}
-            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-xiio-accent/20 text-lg font-bold text-white ring-2 ring-white/10"
+            className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-xiio-accent/20 text-xl font-bold text-white ring-2 ring-white/10 sm:h-20 sm:w-20 sm:text-2xl"
             imgClassName="h-full w-full object-cover"
           />
         </Link>
@@ -72,7 +72,7 @@ export default function SocietyCreatorRow({
         </div>
       </div>
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 sm:ml-10 sm:max-w-md md:ml-14 lg:ml-20 lg:max-w-lg">
         {quote ? (
           <p className="text-sm leading-relaxed text-white/55 line-clamp-2">{quote}</p>
         ) : null}

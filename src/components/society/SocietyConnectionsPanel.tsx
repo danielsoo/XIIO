@@ -25,59 +25,29 @@ const ROLE_OPTIONS: { value: "" | ProfileRoleTag; labelKey: string }[] = [
   { value: "crew", labelKey: "network.field.crew" },
 ];
 
-function FilterSelect({
+function DropdownSelect({
   label,
   value,
   onChange,
   options,
+  labelClassName = "relative shrink-0",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
+  labelClassName?: string;
 }) {
   return (
-    <label className="relative min-w-[120px] shrink-0">
+    <label className={labelClassName}>
       <span className="sr-only">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none rounded-lg border border-white/10 bg-white/[0.04] px-8 py-2 text-center text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-xiio-accent/30"
+        className="w-full cursor-pointer appearance-none border-0 bg-transparent px-2 py-2 pr-6 text-center text-sm text-white/55 focus:outline-none focus:ring-0"
       >
         {options.map((opt) => (
-          <option key={opt.value || "all"} value={opt.value} className="bg-[#0c0e12]">
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40" aria-hidden>
-        ▾
-      </span>
-    </label>
-  );
-}
-
-function SortSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <label className="relative shrink-0">
-      <span className="sr-only">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="cursor-pointer appearance-none border-0 bg-transparent px-2 py-2 pr-6 text-center text-sm text-white/55 focus:outline-none focus:ring-0"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value} className="bg-[#0c0e12] text-white">
+          <option key={opt.value || "all"} value={opt.value} className="bg-[#0c0e12] text-white">
             {opt.label}
           </option>
         ))}
@@ -261,26 +231,29 @@ export default function SocietyConnectionsPanel() {
 
       {tab !== "requests" && tab !== "sent" ? (
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <FilterSelect
+          <DropdownSelect
             label={t("society.filterAllRoles")}
             value={role}
             onChange={(v) => setRole(v as "" | ProfileRoleTag)}
             options={roleOptions}
+            labelClassName="relative min-w-[120px] shrink-0"
           />
-          <FilterSelect
+          <DropdownSelect
             label={t("society.filterAllSchools")}
             value={school}
             onChange={setSchool}
             options={schoolOptions}
+            labelClassName="relative min-w-[120px] shrink-0"
           />
-          <FilterSelect
+          <DropdownSelect
             label={t("society.filterAllInterests")}
             value={interest}
             onChange={setInterest}
             options={interestOptions}
+            labelClassName="relative min-w-[120px] shrink-0"
           />
           <div className="ml-auto w-full sm:w-auto">
-            <SortSelect
+            <DropdownSelect
               label={t("society.sortRecent")}
               value={sort}
               onChange={(v) => setSort(v as SocietySortId)}
