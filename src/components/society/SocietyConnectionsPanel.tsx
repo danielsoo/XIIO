@@ -37,7 +37,7 @@ function FilterSelect({
   options: { value: string; label: string }[];
 }) {
   return (
-    <label className="relative min-w-[120px] flex-1 sm:flex-none">
+    <label className="relative min-w-[120px] shrink-0">
       <span className="sr-only">{label}</span>
       <select
         value={value}
@@ -225,7 +225,7 @@ export default function SocietyConnectionsPanel() {
       </nav>
 
       {tab !== "requests" && tab !== "sent" ? (
-        <div className="mt-5 flex flex-wrap items-center gap-2">
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
           <FilterSelect
             label={t("society.filterAllRoles")}
             value={role}
@@ -244,14 +244,12 @@ export default function SocietyConnectionsPanel() {
             onChange={setInterest}
             options={interestOptions}
           />
-          <div className="ml-auto w-full sm:w-auto">
-            <FilterSelect
-              label={t("society.sortRecent")}
-              value={sort}
-              onChange={(v) => setSort(v as SocietySortId)}
-              options={sortOptions}
-            />
-          </div>
+          <FilterSelect
+            label={t("society.sortRecent")}
+            value={sort}
+            onChange={(v) => setSort(v as SocietySortId)}
+            options={sortOptions}
+          />
         </div>
       ) : null}
 
