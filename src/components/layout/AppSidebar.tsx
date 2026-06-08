@@ -55,6 +55,7 @@ function NavLink({
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useTranslations();
   const pathname = usePathname();
 
   const isActive = (href: string) => {
@@ -64,8 +65,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex flex-col h-full">
-      <Link href="/" onClick={onNavigate} className="px-4 pt-6 pb-0 block">
-        <span className="text-base font-semibold tracking-[0.22em] text-white">XIIO</span>
+      <Link
+        href="/"
+        onClick={onNavigate}
+        className="flex justify-center px-4 pt-6 pb-0"
+        aria-label={t("common.logoHome")}
+      >
+        <span className="inline-flex items-baseline text-base font-semibold text-white">
+          <span className="mr-[0.32em]">X</span>
+          <span className="tracking-[-0.14em]">II</span>
+          <span className="ml-[0.32em]">O</span>
+        </span>
       </Link>
 
       <nav className="flex flex-1 flex-col pl-2.5 pr-0 mt-20 min-h-0">
