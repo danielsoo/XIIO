@@ -207,7 +207,11 @@ export default function SocietyProfileHero() {
   }, [user]);
 
   if (!user) {
-    return <FallbackHeader />;
+    return (
+      <div className="mb-8 px-4 pt-6 lg:px-0">
+        <FallbackHeader />
+      </div>
+    );
   }
 
   const title = data?.handle || data?.displayName || user.displayName || "—";
@@ -228,7 +232,7 @@ export default function SocietyProfileHero() {
 
   return (
     <section
-      className="relative mb-8 min-h-[240px] overflow-hidden rounded-xl border border-white/5 sm:min-h-[260px] sm:mb-10"
+      className="relative isolate mb-8 min-h-[240px] w-full overflow-hidden -mt-[60px] pt-[60px] sm:min-h-[260px] sm:mb-10"
       aria-busy={loading}
     >
       <div
@@ -249,6 +253,11 @@ export default function SocietyProfileHero() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#060a12] via-[#060a12]/75 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
       </div>
+
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-xiio-bg"
+        aria-hidden
+      />
 
       {data ? (
         <SocietyBannerPicker
