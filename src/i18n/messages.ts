@@ -390,6 +390,9 @@ export const messages = {
       lead: "크리에이터를 발견하고 연결해 아이디어를 현실로 만드세요.",
       hero: {
         editProfile: "프로필 편집",
+        changeBanner: "배너 변경",
+        bannerSaved: "배너가 저장되었습니다.",
+        bannerSaveError: "배너를 저장하지 못했습니다.",
         statStories: "스토리",
         statFollowers: "팔로워",
         statFollowing: "팔로잉",
@@ -2014,6 +2017,9 @@ export const messages = {
       lead: "Discover creators and connect to bring ideas to life.",
       hero: {
         editProfile: "Edit Profile",
+        changeBanner: "Change banner",
+        bannerSaved: "Banner saved.",
+        bannerSaveError: "Could not save banner.",
         statStories: "Stories",
         statFollowers: "Followers",
         statFollowing: "Following",

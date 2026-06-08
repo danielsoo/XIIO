@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n";
+import { parseSocietyBannerBackgroundId } from "@/lib/societyBannerBackground";
 import { resolveRoleTags } from "@/lib/roleTags";
 import type { ProfileRoleTag } from "@/types/portfolio";
 import { isProfessionalField, type ProfessionalField } from "@/types/portfolio";
@@ -122,6 +123,7 @@ export function parseUserProfileDoc(data: Record<string, unknown>): UserProfileD
       typeof data.followingCount === "number" && data.followingCount >= 0
         ? data.followingCount
         : 0,
+    societyBannerBackgroundId: parseSocietyBannerBackgroundId(data.societyBannerBackgroundId),
     accountStatus: data.accountStatus === "deleted" ? "deleted" : "active",
     deletedAt: data.deletedAt,
     createdAt: data.createdAt,

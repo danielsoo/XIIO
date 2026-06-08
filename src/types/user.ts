@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n";
+import type { HeroBackgroundId } from "@/lib/heroBackgroundPresets";
 import type { ProfessionalField, ProfileRoleTag } from "@/types/portfolio";
 
 export type PlatformPurpose = "watch" | "upload" | "both" | "collaborate";
@@ -72,6 +73,8 @@ export interface UserProfileDoc {
   collaborationNote?: string;
   followerCount?: number;
   followingCount?: number;
+  /** Society 프로필 배너 배경 프리셋 */
+  societyBannerBackgroundId?: HeroBackgroundId;
   accountStatus?: AccountStatus;
   deletedAt?: unknown;
   createdAt?: unknown;

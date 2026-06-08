@@ -5,6 +5,7 @@ import { normalizeHandle } from "@/lib/server/credits";
 import { claimHandle } from "@/lib/server/handles";
 import { normalizeRoleTagsInput } from "@/lib/roleTags";
 import { getDbOrNull } from "@/lib/server/works";
+import { parseSocietyBannerBackgroundId } from "@/lib/societyBannerBackground";
 import { parseUserProfileDoc } from "@/lib/userAccess";
 
 function parseAvatarUrl(value: unknown, uid: string): string | null | undefined {
@@ -44,6 +45,7 @@ export async function GET(request: Request) {
     handleChangeRequest: profile.handleChangeRequest ?? null,
     followerCount: profile.followerCount ?? 0,
     followingCount: profile.followingCount ?? 0,
+    societyBannerBackgroundId: profile.societyBannerBackgroundId ?? null,
   });
 }
 
@@ -64,6 +66,7 @@ export async function PATCH(request: Request) {
     openToCollaborate?: boolean;
     collaborationNote?: string;
     avatarUrl?: string | null;
+    societyBannerBackgroundId?: string | null;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -112,6 +115,17 @@ export async function PATCH(request: Request) {
       updates.avatarUrl = parsed;
     }
   }
+  if (body.societyBannerBackgroundId !== undefined) {
+    if (body.societyBannerBackgroundId === null || body.societyBannerBackgroundId === "") {
+      updates.societyBannerBackgroundId = null;
+    } else {
+      const parsed = parseSocietyBannerBackgroundId(body.societyBannerBackgroundId);
+      if (!parsed) {
+        return jsonError("invalid_banner", "유효하지 않은 배너 배경입니다.", 400);
+      }
+      updates.societyBannerBackgroundId = parsed;
+    }
+  }
 
   const profileMerge =
     Object.keys(updates).length > 1
@@ -154,5 +168,6 @@ export async function PATCH(request: Request) {
     openToCollaborate: profile.openToCollaborate === true,
     collaborationNote: profile.collaborationNote ?? null,
     avatarUrl: profile.avatarUrl ?? null,
+    societyBannerBackgroundId: profile.societyBannerBackgroundId ?? null,
   });
 }
