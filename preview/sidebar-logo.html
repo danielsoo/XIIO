@@ -40,12 +40,13 @@
         font-weight: 600;
         color: #fff;
         line-height: 1;
+        --xiio-cap: calc((0.72em + 0.1em) / sqrt(2));
       }
       .logo-x {
         position: relative;
         display: inline-flex;
-        width: 1em;
-        height: 1em;
+        width: var(--xiio-cap);
+        height: var(--xiio-cap);
         align-items: center;
         justify-content: center;
         margin-right: 0.32em;
@@ -68,7 +69,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.21em;
-        height: 0.72em;
+        height: var(--xiio-cap);
         flex-shrink: 0;
       }
       .logo-ii-bar {
@@ -79,8 +80,8 @@
       }
       .logo-o {
         margin-left: 0.32em;
-        width: 0.72em;
-        height: 0.72em;
+        width: var(--xiio-cap);
+        height: var(--xiio-cap);
         border-radius: 9999px;
         border: 0.1em solid currentColor;
         flex-shrink: 0;
