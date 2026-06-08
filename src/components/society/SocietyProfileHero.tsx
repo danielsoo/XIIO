@@ -268,58 +268,60 @@ export default function SocietyProfileHero() {
         />
       ) : null}
 
-      <div className="relative z-10 flex min-h-[320px] flex-col justify-between p-8 md:p-10 sm:min-h-[360px] md:min-h-[380px]">
-        <div className="flex flex-row items-start gap-5 sm:gap-6">
-          <ProfileAvatar
-            displayName={data?.displayName ?? title}
-            avatarUrl={data?.avatarUrl}
-            className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-xiio-accent/20 ring-2 ring-white/20 sm:h-28 sm:w-28 flex items-center justify-center text-2xl font-bold text-white"
-          />
+      <div className="relative z-10 flex min-h-[320px] flex-col p-8 md:p-10 sm:min-h-[360px] md:min-h-[380px]">
+        <div className="flex flex-1 items-center">
+          <div className="flex w-full flex-row items-center gap-5 sm:gap-6">
+            <ProfileAvatar
+              displayName={data?.displayName ?? title}
+              avatarUrl={data?.avatarUrl}
+              className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-xiio-accent/20 ring-2 ring-white/20 sm:h-28 sm:w-28 flex items-center justify-center text-2xl font-bold text-white"
+            />
 
-          <div className="min-w-0 flex-1 text-left">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                {loading && !data ? "…" : title}
-              </h1>
-              <Link
-                href="/account?tab=profile&section=about"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/25 px-3 py-1.5 text-sm font-medium text-white/85 transition hover:border-white/40 hover:bg-white/5"
-              >
-                <EditIcon className="h-3.5 w-3.5" />
-                {t("society.hero.editProfile")}
-              </Link>
-            </div>
-
-            {tagline ? (
-              <p className="mt-1 text-base text-white/85">{tagline}</p>
-            ) : loading ? (
-              <p className="mt-1 text-sm text-white/30">{t("common.loading")}</p>
-            ) : null}
-
-            {data?.schoolName ? (
-              <p className="mt-2 flex items-center gap-1.5 text-sm text-white/50">
-                <SchoolIcon className="h-4 w-4 shrink-0" />
-                <span>{data.schoolName}</span>
-              </p>
-            ) : null}
-
-            {data?.profileLink ? (
-              <p className="mt-1.5 flex items-center gap-1.5 text-sm">
-                <LinkIcon className="h-4 w-4 shrink-0 text-sky-400/80" />
-                <a
-                  href={data.profileLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sky-400 hover:underline"
+            <div className="min-w-0 flex-1 text-left">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  {loading && !data ? "…" : title}
+                </h1>
+                <Link
+                  href="/account?tab=profile&section=about"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/25 px-3 py-1.5 text-sm font-medium text-white/85 transition hover:border-white/40 hover:bg-white/5"
                 >
-                  {displayProfileLink(data.profileLink)}
-                </a>
-              </p>
-            ) : null}
+                  <EditIcon className="h-3.5 w-3.5" />
+                  {t("society.hero.editProfile")}
+                </Link>
+              </div>
+
+              {tagline ? (
+                <p className="mt-1 text-base text-white/85">{tagline}</p>
+              ) : loading ? (
+                <p className="mt-1 text-sm text-white/30">{t("common.loading")}</p>
+              ) : null}
+
+              {data?.schoolName ? (
+                <p className="mt-2 flex items-center gap-1.5 text-sm text-white/50">
+                  <SchoolIcon className="h-4 w-4 shrink-0" />
+                  <span>{data.schoolName}</span>
+                </p>
+              ) : null}
+
+              {data?.profileLink ? (
+                <p className="mt-1.5 flex items-center gap-1.5 text-sm">
+                  <LinkIcon className="h-4 w-4 shrink-0 text-sky-400/80" />
+                  <a
+                    href={data.profileLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sky-400 hover:underline"
+                  >
+                    {displayProfileLink(data.profileLink)}
+                  </a>
+                </p>
+              ) : null}
+            </div>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center border-t border-white/10 pt-5 sm:mt-10">
+        <div className="flex flex-wrap items-center border-t border-white/10 pt-5">
           {stats.map((stat, i) => (
             <div key={stat.label} className="flex items-center">
               {i > 0 ? <StatDivider /> : null}
