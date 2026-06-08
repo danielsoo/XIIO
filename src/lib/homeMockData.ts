@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 export type HomeStoryItem = {
   id: string;
   title: string;
@@ -5,6 +7,7 @@ export type HomeStoryItem = {
   duration: string;
   imageUrl: string;
   href?: string;
+  imageStyle?: CSSProperties;
 };
 
 export const FEATURED_STORIES: HomeStoryItem[] = [

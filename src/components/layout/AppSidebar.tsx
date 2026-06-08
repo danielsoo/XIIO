@@ -71,13 +71,20 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         className="flex justify-center px-4 pt-6 pb-0"
         aria-label={t("common.logoHome")}
       >
-        <span className="inline-flex items-baseline text-[28px] font-semibold text-white">
-          <span className="mr-[0.32em]">X</span>
-          <span className="inline-flex gap-[0.21em]">
-            <span>I</span>
-            <span>I</span>
+        <span className="inline-flex items-center text-[28px] font-semibold text-white leading-none">
+          <span className="inline-flex size-[1em] items-center justify-center mr-[0.32em] shrink-0">
+            X
           </span>
-          <span className="ml-[0.32em]">O</span>
+          <span
+            className="inline-flex h-[1em] items-center gap-[0.21em] shrink-0"
+            aria-hidden
+          >
+            <span className="w-[0.1em] h-[0.78em] bg-current rounded-[1px]" />
+            <span className="w-[0.1em] h-[0.78em] bg-current rounded-[1px]" />
+          </span>
+          <span className="inline-flex size-[1em] items-center justify-center ml-[0.32em] shrink-0">
+            O
+          </span>
         </span>
       </Link>
 

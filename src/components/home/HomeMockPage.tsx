@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
 import HomeContentRow from "@/components/home/HomeContentRow";
 import HomeFeaturedStoryPanel from "@/components/home/HomeFeaturedStoryPanel";
@@ -12,13 +12,14 @@ import { useAuth } from "@/context/AuthContext";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { useCatalogFeed } from "@/hooks/useCatalogFeed";
 import { usePromoFeed } from "@/hooks/usePromoFeed";
 import {
-  DEFAULT_FEATURED_STORY,
-  FEATURED_STORIES,
-  SELECTS_STORIES,
-  SURFACE_STORIES,
-} from "@/lib/homeMockData";
+  catalogItemsToHomeStories,
+  promoToHomeStory,
+} from "@/lib/categoryCatalogAdapter";
+import { DEFAULT_FEATURED_STORY } from "@/lib/homeMockData";
+import { watchHref } from "@/lib/works/catalog-ui";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import {
   heroSectionMinHeight,
@@ -38,7 +39,16 @@ export default function HomeMockPage() {
     registerHeroSection,
     registerHeroText,
   } = useHeroWaveLayout();
-  const { items: promoItems } = usePromoFeed(true);
+  const { items: promoItems, loading: promoLoading } = usePromoFeed(false);
+  const { items: movies, loading: moviesLoading } = useCatalogFeed("movies", 8);
+  const { items: series, loading: seriesLoading } = useCatalogFeed("series", 4);
+
+  const featuredStories = useMemo(
+    () => promoItems.map(promoToHomeStory),
+    [promoItems]
+  );
+  const surfaceStories = useMemo(() => catalogItemsToHomeStories(movies), [movies]);
+  const selectsStories = useMemo(() => catalogItemsToHomeStories(series), [series]);
 
   const setHeroSectionRef = useCallback(
     (el: HTMLElement | null) => {
@@ -59,10 +69,15 @@ export default function HomeMockPage() {
   const featuredPromo = promoItems[0];
   const featuredTitle = featuredPromo?.title ?? DEFAULT_FEATURED_STORY.title;
   const featuredMeta = featuredPromo
-    ? `Short Film • promo`
+    ? `Promo • ${featuredPromo.director}`
     : `${DEFAULT_FEATURED_STORY.category} • ${DEFAULT_FEATURED_STORY.duration}`;
 
-  const watchHref = user ? "/movies" : "/login";
+  const watchHrefPrimary =
+    user && featuredPromo?.ownerUid && featuredPromo?.workId
+      ? watchHref(featuredPromo.ownerUid, featuredPromo.workId)
+      : user
+        ? "/movies"
+        : "/login";
 
   const heroGridBandStyle = isLgViewport
     ? {
@@ -118,7 +133,7 @@ export default function HomeMockPage() {
               </p>
               <div className={`flex flex-wrap items-center ${MOCKUP_HOME.ctaRow}`}>
                 <Link
-                  href={watchHref}
+                  href={watchHrefPrimary}
                   className={`inline-flex items-center gap-2 bg-white text-black font-semibold hover:bg-white/90 transition ${MOCKUP_HOME.ctaButton}`}
                 >
                   <IconPlay className="w-3.5 h-3.5" />
@@ -157,28 +172,40 @@ export default function HomeMockPage() {
       <div
         className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
       >
-        <HomeContentRow
-          title={t("home.mock.featuredStories")}
-          viewAllHref="/movies"
-          viewAllLabel={t("home.mock.viewAll")}
-          items={FEATURED_STORIES}
-          variant="featured"
-        />
+        {promoLoading ? (
+          <p className="text-white/45 text-sm">{t("common.loading")}</p>
+        ) : featuredStories.length > 0 ? (
+          <HomeContentRow
+            title={t("home.mock.featuredStories")}
+            viewAllHref="/movies"
+            viewAllLabel={t("home.mock.viewAll")}
+            items={featuredStories}
+            variant="featured"
+          />
+        ) : null}
 
-        <HomeSurfaceCampusRow
-          title={t("home.mock.newToSurface")}
-          viewAllHref="/movies"
-          viewAllLabel={t("home.mock.viewAll")}
-          items={SURFACE_STORIES}
-        />
+        {moviesLoading ? (
+          <p className="text-white/45 text-sm">{t("common.loading")}</p>
+        ) : surfaceStories.length > 0 ? (
+          <HomeSurfaceCampusRow
+            title={t("home.mock.newToSurface")}
+            viewAllHref="/movies"
+            viewAllLabel={t("home.mock.viewAll")}
+            items={surfaceStories}
+          />
+        ) : null}
 
-        <HomeContentRow
-          title={t("home.mock.xiioSelects")}
-          viewAllHref="/series"
-          viewAllLabel={t("home.mock.viewAll")}
-          items={SELECTS_STORIES}
-          variant="selects"
-        />
+        {seriesLoading ? (
+          <p className="text-white/45 text-sm">{t("common.loading")}</p>
+        ) : selectsStories.length > 0 ? (
+          <HomeContentRow
+            title={t("home.mock.xiioSelects")}
+            viewAllHref="/series"
+            viewAllLabel={t("home.mock.viewAll")}
+            items={selectsStories}
+            variant="selects"
+          />
+        ) : null}
       </div>
 
       <AdminHomeColorPicker />
