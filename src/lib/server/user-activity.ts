@@ -1,10 +1,38 @@
-import { FieldValue, type Firestore } from "firebase-admin/firestore";
+import { FieldValue, type Firestore, type Timestamp } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/server/firebase-admin";
 
 const ACTIVITY_DOC_ID = "activity";
 
+export const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+
 export function userActivityRef(db: Firestore, uid: string) {
   return db.collection("users").doc(uid).collection("private").doc(ACTIVITY_DOC_ID);
+}
+
+function activityTimestampToMillis(value: unknown): number | null {
+  if (value && typeof value === "object" && "toMillis" in value) {
+    return (value as Timestamp).toMillis();
+  }
+  return null;
+}
+
+export function isUserOnline(lastSeenAt: unknown, now = Date.now()): boolean {
+  const ms = activityTimestampToMillis(lastSeenAt);
+  if (ms == null) return false;
+  return now - ms < ONLINE_THRESHOLD_MS;
+}
+
+export async function touchUserPresence(uid: string): Promise<void> {
+  const db = getAdminDb();
+  if (!db) throw new Error("Firebase Admin not configured");
+
+  await userActivityRef(db, uid).set(
+    {
+      lastSeenAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
 }
 
 export async function recordUserVisit(uid: string): Promise<{ visitCount: number }> {
@@ -21,6 +49,7 @@ export async function recordUserVisit(uid: string): Promise<{ visitCount: number
       {
         visitCount,
         lastVisitAt: FieldValue.serverTimestamp(),
+        lastSeenAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true }
@@ -33,15 +62,30 @@ export async function recordUserVisit(uid: string): Promise<{ visitCount: number
 export async function getUserActivity(uid: string): Promise<{
   visitCount: number;
   lastVisitAt: unknown;
+  lastSeenAt: unknown;
 }> {
   const db = getAdminDb();
-  if (!db) return { visitCount: 0, lastVisitAt: null };
+  if (!db) return { visitCount: 0, lastVisitAt: null, lastSeenAt: null };
 
   const snap = await userActivityRef(db, uid).get();
-  if (!snap.exists) return { visitCount: 0, lastVisitAt: null };
+  if (!snap.exists) return { visitCount: 0, lastVisitAt: null, lastSeenAt: null };
   const data = snap.data() ?? {};
   return {
     visitCount: typeof data.visitCount === "number" ? data.visitCount : 0,
     lastVisitAt: data.lastVisitAt ?? null,
+    lastSeenAt: data.lastSeenAt ?? data.lastVisitAt ?? null,
   };
+}
+
+export async function getUsersOnlineStatus(uids: string[]): Promise<Record<string, boolean>> {
+  if (uids.length === 0) return {};
+
+  const now = Date.now();
+  const entries = await Promise.all(
+    uids.map(async (uid) => {
+      const activity = await getUserActivity(uid);
+      return [uid, isUserOnline(activity.lastSeenAt, now)] as const;
+    })
+  );
+  return Object.fromEntries(entries);
 }

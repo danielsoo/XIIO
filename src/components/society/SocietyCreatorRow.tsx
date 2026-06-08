@@ -60,10 +60,10 @@ export default function SocietyCreatorRow({
             >
               {person.displayName}
             </Link>
-            {person.openToCollaborate ? (
+            {person.isOnline ? (
               <span
                 className="h-2 w-2 shrink-0 rounded-full bg-emerald-400"
-                aria-hidden
+                aria-label={t("society.online")}
               />
             ) : null}
           </div>

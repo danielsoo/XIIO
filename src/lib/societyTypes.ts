@@ -11,4 +11,5 @@ export type SocietyPerson = {
   openToCollaborate: boolean;
   collaborationNote?: string;
   followerCount: number;
+  isOnline?: boolean;
 };

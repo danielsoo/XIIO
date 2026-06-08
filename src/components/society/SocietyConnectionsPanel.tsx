@@ -42,7 +42,7 @@ function FilterSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none rounded-lg border border-white/10 bg-white/[0.04] py-2 pl-3 pr-8 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-xiio-accent/30"
+        className="w-full appearance-none rounded-lg border border-white/10 bg-white/[0.04] px-8 py-2 text-center text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-xiio-accent/30"
       >
         {options.map((opt) => (
           <option key={opt.value || "all"} value={opt.value} className="bg-[#0c0e12]">

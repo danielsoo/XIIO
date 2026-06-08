@@ -1,5 +1,6 @@
 import type { Firestore } from "firebase-admin/firestore";
 import { parseUserProfileDoc } from "@/lib/userAccess";
+import { getUsersOnlineStatus } from "@/lib/server/user-activity";
 import type { ProfileRoleTag } from "@/types/portfolio";
 
 export type DiscoverPersonCard = {
@@ -14,6 +15,7 @@ export type DiscoverPersonCard = {
   openToCollaborate: boolean;
   collaborationNote?: string;
   followerCount: number;
+  isOnline: boolean;
 };
 
 export async function listDiscoverablePeople(
@@ -71,8 +73,14 @@ export async function listDiscoverablePeople(
       openToCollaborate: profile.openToCollaborate === true,
       collaborationNote: profile.collaborationNote,
       followerCount: profile.followerCount ?? 0,
+      isOnline: false,
     });
     if (cards.length >= limit) break;
   }
-  return cards;
+
+  const onlineByUid = await getUsersOnlineStatus(cards.map((c) => c.uid));
+  return cards.map((card) => ({
+    ...card,
+    isOnline: onlineByUid[card.uid] === true,
+  }));
 }
