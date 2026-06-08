@@ -12,8 +12,12 @@ export const MOCKUP_CONTENT_INSET = {
 
 /** Implemented sidebar width (12rem) — gap after border-r to main content start */
 export const APP_SIDEBAR_IMPLEMENTATION_PX = 192;
-export const APP_CONTENT_BOUNDARY_INSET_PX =
+const MOCKUP_SIDEBAR_CONTENT_GAP_PX =
   MOCKUP_CONTENT_INSET.left - APP_SIDEBAR_IMPLEMENTATION_PX;
+/** Sidebar border-r ~ main column start; 75% of mockup gap (47px → 35px) */
+export const APP_CONTENT_BOUNDARY_INSET_PX = Math.round(
+  MOCKUP_SIDEBAR_CONTENT_GAP_PX * 0.75
+);
 export const APP_CONTENT_RIGHT_MARGIN_PX = MOCKUP_CONTENT_INSET.rightMargin;
 
 /** App chrome — sidebar vs main column (photos excluded) */

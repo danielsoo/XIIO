@@ -107,7 +107,7 @@ export default function CategoryMockPage({ variant }: { variant: CategoryVariant
         />
 
         <div
-          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.heroContentTop}`}
+          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.heroContentTop}`}
           style={{ minHeight: waveRect.height }}
         >
           <div
@@ -165,7 +165,7 @@ export default function CategoryMockPage({ variant }: { variant: CategoryVariant
       </section>
 
       <div
-        className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentRightPad} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
+        className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
       >
         {rowItems.length > 0 ? (
           <HomeContentRow

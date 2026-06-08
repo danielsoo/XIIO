@@ -3,9 +3,9 @@ import { APP_MAIN_BG } from "@/lib/mockupLayout";
 export const MOCKUP_HOME = {
   pageShell: "w-full",
   contentMainColumnPad:
-    "lg:pl-[calc(var(--app-sidebar-width)+var(--app-content-boundary-inset))]",
-  contentRightPad: "lg:pr-[76px]",
-  topBarRightPad: "lg:pr-[76px]",
+    "lg:pl-[calc(var(--app-sidebar-width)+var(--app-content-boundary-inset))] lg:pr-[var(--app-content-boundary-inset)]",
+  contentRightPad: "",
+  topBarRightPad: "lg:pr-0",
   contentColumnGuard: "min-w-0 max-w-full",
   contentBodyGuard: "min-w-0 max-w-full overflow-x-clip",
   topBarHeight: "h-[60px]",
