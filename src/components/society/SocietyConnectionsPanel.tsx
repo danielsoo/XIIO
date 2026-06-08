@@ -57,6 +57,41 @@ function FilterSelect({
   );
 }
 
+function SortSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="relative shrink-0">
+      <span className="sr-only">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="cursor-pointer appearance-none border-0 bg-transparent px-2 py-2 pr-6 text-center text-sm text-white/55 focus:outline-none focus:ring-0"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value} className="bg-[#0c0e12] text-white">
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <span
+        className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-white/40"
+        aria-hidden
+      >
+        ▾
+      </span>
+    </label>
+  );
+}
+
 export default function SocietyConnectionsPanel() {
   const { user } = useAuth();
   const { t } = useTranslations();
@@ -225,7 +260,7 @@ export default function SocietyConnectionsPanel() {
       </nav>
 
       {tab !== "requests" && tab !== "sent" ? (
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
           <FilterSelect
             label={t("society.filterAllRoles")}
             value={role}
@@ -244,12 +279,14 @@ export default function SocietyConnectionsPanel() {
             onChange={setInterest}
             options={interestOptions}
           />
-          <FilterSelect
-            label={t("society.sortRecent")}
-            value={sort}
-            onChange={(v) => setSort(v as SocietySortId)}
-            options={sortOptions}
-          />
+          <div className="ml-auto w-full sm:w-auto">
+            <SortSelect
+              label={t("society.sortRecent")}
+              value={sort}
+              onChange={(v) => setSort(v as SocietySortId)}
+              options={sortOptions}
+            />
+          </div>
         </div>
       ) : null}
 
