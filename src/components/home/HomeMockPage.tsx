@@ -21,6 +21,7 @@ import {
 import { DEFAULT_FEATURED_STORY } from "@/lib/homeMockData";
 import { watchHref } from "@/lib/works/catalog-ui";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
+import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import {
   heroSectionMinHeight,
   heroTextBandMarginTop,
@@ -44,7 +45,10 @@ export default function HomeMockPage() {
   const { items: series, loading: seriesLoading } = useCatalogFeed("series", 4);
 
   const featuredStories = useMemo(
-    () => promoItems.map(promoToHomeStory),
+    () =>
+      promoItems
+        .slice(0, MOCKUP_MEASURES.featuredRowItemCount)
+        .map(promoToHomeStory),
     [promoItems]
   );
   const surfaceStories = useMemo(() => catalogItemsToHomeStories(movies), [movies]);

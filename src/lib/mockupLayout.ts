@@ -69,6 +69,7 @@ export const MOCKUP_MEASURES = {
   featuredCardHeight: 134,
   featuredCardGap: 14,
   featuredRowWidth: 1221,
+  featuredRowItemCount: 5,
   selectsRowWidth: 974,
   surfaceCardWidth: 177,
   surfaceCardHeight: 111,

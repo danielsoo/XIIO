@@ -73,6 +73,9 @@ export default function HomeContentRow({
   const scrollerRef = useRef<HTMLDivElement>(null);
   const isFeatured = variant === "featured";
   const rowWidthClass = isFeatured ? MOCKUP_HOME.featuredRowWidth : MOCKUP_HOME.selectsRowWidth;
+  const displayItems = isFeatured
+    ? items.slice(0, MOCKUP_MEASURES.featuredRowItemCount)
+    : items;
 
   const scroll = () => {
     scrollerRef.current?.scrollBy({
@@ -107,9 +110,9 @@ export default function HomeContentRow({
 
       <div
         className={`hidden lg:grid min-w-0 w-full max-w-full ${MOCKUP_HOME.featuredRowGap} ${rowWidthClass}`}
-        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${displayItems.length}, minmax(0, 1fr))` }}
       >
-        {items.map((item) => (
+        {displayItems.map((item) => (
           <HomeStoryCard key={item.id} item={item} variant="featured" />
         ))}
       </div>
@@ -119,7 +122,7 @@ export default function HomeContentRow({
         className={`flex overflow-x-auto pb-1 scrollbar-none lg:hidden ${MOCKUP_HOME.featuredRowGap}`}
         style={{ scrollbarWidth: "none" }}
       >
-        {items.map((item) => (
+        {displayItems.map((item) => (
           <HomeStoryCard key={item.id} item={item} variant="featured" />
         ))}
       </div>
