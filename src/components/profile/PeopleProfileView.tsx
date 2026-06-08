@@ -1,12 +1,11 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import PeopleProfileOwnerTabs from "@/components/profile/PeopleProfileOwnerTabs";
-import PublicProfileCard from "@/components/profile/PublicProfileCard";
-import ProfileWorksThumbnailGrid from "@/components/profile/ProfileWorksThumbnailGrid";
-import type { ProfessionalProfileSaved } from "@/hooks/useProfessionalProfileSave";
+import SocietyProfileBody from "@/components/society/SocietyProfileBody";
+import SocietyPublicProfileHero from "@/components/society/SocietyPublicProfileHero";
+import type { HeroBackgroundId } from "@/lib/heroBackgroundPresets";
 import type { DirectorNameChangeRequest } from "@/types/user";
 
 type WorkCard = {
@@ -32,7 +31,12 @@ export type PeopleProfilePayload = {
     profileLink?: string | null;
     followerCount?: number;
     followingCount?: number;
+    schoolName?: string | null;
+    societyBannerBackgroundId?: HeroBackgroundId | null;
   };
+  stats?: { stories: number; totalViews: number };
+  isOnline?: boolean;
+  lastSeenAt?: string | null;
   viewer?: { uid: string; isSelf: boolean; isFollowing: boolean } | null;
   identity?: {
     isDiscoverable: boolean;
@@ -82,88 +86,39 @@ export default function PeopleProfileView({ handle }: Props) {
     void load();
   }, [load]);
 
-  const onProfileSaved = useCallback((saved: ProfessionalProfileSaved) => {
-    setData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        profile: {
-          ...prev.profile,
-          handle: saved.handle?.trim() || prev.profile.handle,
-          headline: saved.headline ?? undefined,
-          bio: saved.bio ?? undefined,
-          openToCollaborate: saved.openToCollaborate,
-          collaborationNote: saved.collaborationNote ?? undefined,
-          profileLink: saved.profileLink ?? undefined,
-        },
-      };
-    });
-  }, []);
-
-  const onAvatarUpdated = useCallback((avatarUrl: string | null) => {
-    setData((prev) => {
-      if (!prev) return prev;
-      return { ...prev, profile: { ...prev.profile, avatarUrl } };
-    });
-  }, []);
-
-  const onIdentityRequest = useCallback(
-    (field: "displayNameChangeRequest" | "handleChangeRequest", req: DirectorNameChangeRequest) => {
-      setData((prev) => {
-        if (!prev?.identity) return prev;
-        return {
-          ...prev,
-          identity: { ...prev.identity, [field]: req },
-        };
-      });
-    },
-    []
-  );
-
-  const renderWorks = (items: WorkCard[], title: string) => {
-    if (items.length === 0) return null;
-    return (
-      <section className="mb-10 w-full">
-        <h2 className="text-lg font-semibold text-white mb-4">{title}</h2>
-        <ProfileWorksThumbnailGrid items={items} linkToWatch />
-      </section>
-    );
-  };
-
   if (loading) {
-    return <p className="text-xiio-muted">{t("common.loading")}</p>;
+    return <p className="px-4 text-xiio-muted lg:px-0">{t("common.loading")}</p>;
   }
 
   if (err || !data) {
-    return <p className="text-red-400">{err ?? t("network.people.notFound")}</p>;
+    return <p className="px-4 text-red-400 lg:px-0">{err ?? t("network.people.notFound")}</p>;
   }
 
   const isSelf = !!data.viewer?.isSelf;
-  const handleLocked = !!data.profile.handle?.trim();
-
-  if (isSelf) {
-    return (
-      <Suspense fallback={<p className="text-xiio-muted">{t("common.loading")}</p>}>
-        <PeopleProfileOwnerTabs
-          data={data}
-          handleLocked={handleLocked}
-          onProfileSaved={onProfileSaved}
-          onIdentityRequest={onIdentityRequest}
-          onAvatarUpdated={onAvatarUpdated}
-        />
-      </Suspense>
-    );
-  }
+  const works = [...data.directed, ...data.credited];
 
   return (
-    <div className="max-w-5xl mx-auto w-full space-y-8">
-      <PublicProfileCard
-        profile={data.profile}
-        isSelf={false}
+    <div className="pb-16">
+      <SocietyPublicProfileHero
+        displayName={data.profile.displayName}
+        handle={data.profile.handle}
+        headline={data.profile.headline}
+        bio={data.profile.bio}
+        avatarUrl={data.profile.avatarUrl}
+        schoolName={data.profile.schoolName}
+        profileLink={data.profile.profileLink}
+        societyBannerBackgroundId={data.profile.societyBannerBackgroundId}
+        followerCount={data.profile.followerCount}
+        followingCount={data.profile.followingCount}
+        stats={data.stats}
+        isOnline={data.isOnline}
+        profileUid={data.profile.uid}
+        isSelf={isSelf}
         isFollowing={!!data.viewer?.isFollowing}
       />
-      {renderWorks(data.directed, t("network.people.directed"))}
-      {renderWorks(data.credited, t("network.people.credited"))}
+      <div className="px-4 lg:px-0">
+        <SocietyProfileBody handle={data.profile.handle} works={works} isSelf={isSelf} />
+      </div>
     </div>
   );
 }

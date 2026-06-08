@@ -261,6 +261,16 @@ export const messages = {
         credited: "출연·기여 작품",
         watch: "시청하기",
         loginToWatch: "시청하려면 로그인이 필요합니다.",
+        posts: {
+          title: "글",
+          placeholder: "프로필에 올릴 글을 작성하세요…",
+          publish: "게시",
+          save: "저장",
+          edit: "수정",
+          delete: "삭제",
+          deleteConfirm: "이 글을 삭제할까요?",
+          empty: "아직 글이 없습니다.",
+        },
       },
     },
     portfolio: {
@@ -429,6 +439,11 @@ export const messages = {
       ctaButton: "Explore Creators",
       popularInterests: "Popular Interests",
       viewAllInterests: "관심사 모두 보기",
+      profileBody: {
+        worksTitle: "작품",
+        worksEmpty: "아직 공개된 작품이 없습니다.",
+        upload: "업로드",
+      },
     },
     discover: {
       title: "창구 — 사람 찾기",
@@ -1892,6 +1907,16 @@ export const messages = {
         credited: "Credits & appearances",
         watch: "Watch",
         loginToWatch: "Sign in to watch.",
+        posts: {
+          title: "Posts",
+          placeholder: "Write something for your profile…",
+          publish: "Publish",
+          save: "Save",
+          edit: "Edit",
+          delete: "Delete",
+          deleteConfirm: "Delete this post?",
+          empty: "No posts yet.",
+        },
       },
     },
     portfolio: {
@@ -2061,6 +2086,11 @@ export const messages = {
       ctaButton: "Explore Creators",
       popularInterests: "Popular Interests",
       viewAllInterests: "View all interests",
+      profileBody: {
+        worksTitle: "Works",
+        worksEmpty: "No published works yet.",
+        upload: "Upload",
+      },
     },
     discover: {
       title: "Discover",

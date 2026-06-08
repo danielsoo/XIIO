@@ -9,6 +9,7 @@ import {
   resolveWorkListThumbnailUrl,
   worksCol,
 } from "@/lib/server/works";
+import { getPeopleProfileHeroMeta } from "@/lib/server/people-profile";
 import { isAccountDeleted, parseUserProfileDoc } from "@/lib/userAccess";
 
 type Params = { params: Promise<{ handle: string }> };
@@ -72,6 +73,8 @@ export async function GET(request: Request, { params }: Params) {
     }
   }
 
+  const heroMeta = await getPeopleProfileHeroMeta(db, uid, profile);
+
   return NextResponse.json({
     profile: {
       uid,
@@ -88,7 +91,12 @@ export async function GET(request: Request, { params }: Params) {
       followerCount: profile.followerCount ?? 0,
       followingCount: profile.followingCount ?? 0,
       profileLink: profile.profileLink ?? null,
+      schoolName: heroMeta.schoolName,
+      societyBannerBackgroundId: heroMeta.societyBannerBackgroundId,
     },
+    stats: heroMeta.stats,
+    isOnline: heroMeta.isOnline,
+    lastSeenAt: heroMeta.lastSeenAt,
     viewer: viewerUid
       ? { uid: viewerUid, isSelf, isFollowing: following }
       : null,
