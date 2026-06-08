@@ -41,16 +41,28 @@
         color: #fff;
         line-height: 1;
       }
-      .logo-cap {
+      .logo-x {
+        position: relative;
         display: inline-flex;
         width: 1em;
         height: 1em;
         align-items: center;
         justify-content: center;
+        margin-right: 0.32em;
         flex-shrink: 0;
       }
-      .logo-x {
-        margin-right: 0.32em;
+      .logo-x-bar {
+        position: absolute;
+        width: 0.1em;
+        height: 0.72em;
+        border-radius: 9999px;
+        background: currentColor;
+      }
+      .logo-x-bar-a {
+        transform: rotate(45deg);
+      }
+      .logo-x-bar-b {
+        transform: rotate(-45deg);
       }
       .logo-ii {
         display: inline-flex;
@@ -98,7 +110,10 @@
       <aside class="sidebar" aria-label="Sidebar preview">
         <a class="logo-link" href="#" aria-label="XIIO 홈으로">
           <span class="logo">
-            <span class="logo-cap logo-x">X</span>
+            <span class="logo-x" aria-hidden="true">
+              <span class="logo-x-bar logo-x-bar-a"></span>
+              <span class="logo-x-bar logo-x-bar-b"></span>
+            </span>
             <span class="logo-ii" aria-hidden="true">
               <span class="logo-ii-bar"></span>
               <span class="logo-ii-bar"></span>

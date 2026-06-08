@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { AppNavIconSvg } from "@/components/layout/AppNavIcon";
 import SidebarProfileRow from "@/components/layout/SidebarProfileRow";
+import XiioWordmark from "@/components/layout/XiioWordmark";
 import {
   APP_SIDEBAR_WIDTH,
   PRIMARY_NAV,
@@ -71,22 +72,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         className="flex justify-center px-4 pt-6 pb-0"
         aria-label={t("common.logoHome")}
       >
-        <span className="inline-flex items-center text-[28px] font-semibold text-white leading-none">
-          <span className="inline-flex size-[1em] items-center justify-center mr-[0.32em] shrink-0">
-            <span className="leading-none">X</span>
-          </span>
-          <span
-            className="inline-flex h-[1em] items-center gap-[0.21em] shrink-0"
-            aria-hidden
-          >
-            <span className="w-[0.1em] h-full bg-current rounded-full" />
-            <span className="w-[0.1em] h-full bg-current rounded-full" />
-          </span>
-          <span
-            className="ml-[0.32em] shrink-0 size-[1em] rounded-full border-[0.1em] border-current box-border"
-            aria-hidden
-          />
-        </span>
+        <XiioWordmark />
       </Link>
 
       <nav className="flex flex-1 flex-col pl-2.5 pr-0 mt-20 min-h-0">
