@@ -270,7 +270,7 @@ export default function SocietyProfileHero() {
 
       <div className="relative z-10 flex min-h-[320px] flex-col p-8 md:p-10 sm:min-h-[360px] md:min-h-[380px]">
         <div className="flex flex-1 items-center">
-          <div className="flex w-full flex-row items-center gap-5 sm:gap-6">
+          <div className="flex w-full flex-row items-start gap-5 sm:gap-6">
             <ProfileAvatar
               displayName={data?.displayName ?? title}
               avatarUrl={data?.avatarUrl}
@@ -317,20 +317,20 @@ export default function SocietyProfileHero() {
                   </a>
                 </p>
               ) : null}
+
+              <div className="mt-5 flex flex-wrap items-center border-t border-white/10 pt-5 sm:mt-6">
+                {stats.map((stat, i) => (
+                  <div key={stat.label} className="flex items-center">
+                    {i > 0 ? <StatDivider /> : null}
+                    <StatCell value={stat.value} label={stat.label} />
+                  </div>
+                ))}
+                {loading && !data ? (
+                  <p className="text-xs text-white/35">{t("common.loading")}</p>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="flex flex-wrap items-center border-t border-white/10 pt-5">
-          {stats.map((stat, i) => (
-            <div key={stat.label} className="flex items-center">
-              {i > 0 ? <StatDivider /> : null}
-              <StatCell value={stat.value} label={stat.label} />
-            </div>
-          ))}
-          {loading && !data ? (
-            <p className="text-xs text-white/35">{t("common.loading")}</p>
-          ) : null}
         </div>
       </div>
     </section>
