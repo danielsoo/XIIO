@@ -39,7 +39,8 @@ export type AppNavItem = {
 
 export const PRIMARY_NAV: AppNavItem[] = [
   { id: "home", labelKey: "nav.home", href: "/", icon: "home", section: "primary" },
-  { id: "discover", labelKey: "nav.discover", href: "/creators", icon: "discover", section: "primary" },
+  { id: "series", labelKey: "nav.series", href: "/series", icon: "series", section: "primary" },
+  { id: "films", labelKey: "nav.films", href: "/movies", icon: "films", section: "primary" },
   {
     id: "campus",
     labelKey: "nav.campus",
@@ -48,8 +49,16 @@ export const PRIMARY_NAV: AppNavItem[] = [
     badgeKey: "nav.campusNew",
     section: "primary",
   },
-  { id: "films", labelKey: "nav.films", href: "/movies", icon: "films", section: "primary" },
+  { id: "creators", labelKey: "nav.creators", href: "/creators", icon: "creators", section: "primary" },
   { id: "society", labelKey: "nav.society", href: "/society", icon: "society", section: "primary" },
+  {
+    id: "myList",
+    labelKey: "nav.myList",
+    href: "/my-list",
+    icon: "myList",
+    requiresAuth: true,
+    section: "primary",
+  },
 ];
 
 export const SECONDARY_NAV: AppNavItem[] = [

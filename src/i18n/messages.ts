@@ -57,7 +57,7 @@ export const messages = {
       creators: "크리에이터",
       upload: "업로드",
       aboutXiio: "About XIIO",
-      discover: "Discover",
+      discover: "창구",
       society: "Society",
       menuOpen: "메뉴 열기",
       myList: "My List",
