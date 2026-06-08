@@ -232,7 +232,7 @@ export default function SocietyProfileHero() {
 
   return (
     <section
-      className="relative isolate mb-8 min-h-[320px] w-full overflow-hidden -mt-[60px] pt-[60px] sm:min-h-[360px] md:min-h-[380px] sm:mb-10"
+      className="relative isolate mb-8 min-h-[280px] w-full overflow-hidden -mt-[60px] pt-[60px] sm:min-h-[300px] md:min-h-[320px] sm:mb-10"
       aria-busy={loading}
     >
       <div
@@ -255,7 +255,7 @@ export default function SocietyProfileHero() {
       </div>
 
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-xiio-bg"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-xiio-bg"
         aria-hidden
       />
 
@@ -268,7 +268,7 @@ export default function SocietyProfileHero() {
         />
       ) : null}
 
-      <div className="relative z-10 flex min-h-[320px] flex-col p-8 md:p-10 sm:min-h-[360px] md:min-h-[380px]">
+      <div className="relative z-10 flex min-h-[280px] flex-col p-6 md:p-8 sm:min-h-[300px] md:min-h-[320px]">
         <div className="flex flex-1 items-center">
           <div className="flex w-full flex-row items-start gap-5 sm:gap-6">
             <ProfileAvatar
@@ -318,7 +318,7 @@ export default function SocietyProfileHero() {
                 </p>
               ) : null}
 
-              <div className="mt-5 flex flex-wrap items-center sm:mt-6">
+              <div className="mt-4 flex flex-wrap items-center sm:mt-5">
                 {stats.map((stat, i) => (
                   <div key={stat.label} className="flex items-center">
                     {i > 0 ? <StatDivider /> : null}
