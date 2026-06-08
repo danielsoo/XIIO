@@ -207,14 +207,7 @@ export default function SocietyConnectionsPanel() {
 
   return (
     <div className="min-w-0 flex-1">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-          {t("society.title")}
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-white/50 sm:text-base">{t("society.lead")}</p>
-      </header>
-
-      <nav className="mt-8 flex gap-6 overflow-x-auto border-b border-white/10" aria-label="Connections tabs">
+      <nav className="flex gap-6 overflow-x-auto border-b border-white/10" aria-label="Connections tabs">
         {tabs.map((item) => (
           <button
             key={item.id}

@@ -388,6 +388,13 @@ export const messages = {
     society: {
       title: "Connections",
       lead: "크리에이터를 발견하고 연결해 아이디어를 현실로 만드세요.",
+      hero: {
+        editProfile: "프로필 편집",
+        statStories: "스토리",
+        statFollowers: "팔로워",
+        statFollowing: "팔로잉",
+        statTotalViews: "총 조회",
+      },
       tabDiscover: "Discover",
       tabConnections: "My Connections",
       tabRequests: "Requests",
@@ -2005,6 +2012,13 @@ export const messages = {
     society: {
       title: "Connections",
       lead: "Discover creators and connect to bring ideas to life.",
+      hero: {
+        editProfile: "Edit Profile",
+        statStories: "Stories",
+        statFollowers: "Followers",
+        statFollowing: "Following",
+        statTotalViews: "Total Views",
+      },
       tabDiscover: "Discover",
       tabConnections: "My Connections",
       tabRequests: "Requests",
