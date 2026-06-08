@@ -1,12 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useAuth } from "@/context/AuthContext";
+import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
+import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { HERO_BACKGROUND_PRESETS } from "@/lib/heroBackgroundPresets";
 import { formatCompactStat } from "@/lib/formatStat";
 import { getUserProfile } from "@/lib/userProfile";
 
@@ -22,8 +23,6 @@ type HeroData = {
   following: number;
   totalViews: number;
 };
-
-const WAVE_PRESET = HERO_BACKGROUND_PRESETS.home_wave;
 
 function StatCell({ value, label }: { value: string; label: string }) {
   return (
@@ -77,8 +76,30 @@ function FallbackHeader() {
 export default function SocietyProfileHero() {
   const { user } = useAuth();
   const { t } = useTranslations();
+  const { rgbTuple, overlayEnabled, themeReady } = useHomeHeroTheme();
+  const {
+    gradStartPercent,
+    layoutReady,
+    registerHeroSection,
+    registerHeroText,
+  } = useHeroWaveLayout();
+  const visualReady = themeReady && layoutReady;
   const [data, setData] = useState<HeroData | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const setHeroSectionRef = useCallback(
+    (el: HTMLElement | null) => {
+      registerHeroSection(el);
+    },
+    [registerHeroSection]
+  );
+
+  const setHeroTextRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      registerHeroText(el);
+    },
+    [registerHeroText]
+  );
 
   useEffect(() => {
     if (!user) {
@@ -195,27 +216,19 @@ export default function SocietyProfileHero() {
 
   return (
     <section
-      className="relative mb-8 min-h-[200px] overflow-hidden rounded-2xl border border-white/10 sm:min-h-[220px] sm:mb-10"
+      ref={setHeroSectionRef}
+      className="relative isolate mb-8 min-h-[200px] overflow-hidden rounded-2xl border border-white/10 sm:min-h-[220px] sm:mb-10"
       aria-busy={loading}
     >
-      <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#0a1628] via-[#060a12] to-black"
-        aria-hidden
+      <HeroLandscapeBackdrop
+        rgbTuple={rgbTuple}
+        overlayEnabled={overlayEnabled}
+        backgroundScope="home"
+        variant="home"
+        gradStartPercent={gradStartPercent}
+        visualReady={visualReady}
+        priority
       />
-
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-[55%] sm:w-[48%]" aria-hidden>
-        <Image
-          src={WAVE_PRESET.src}
-          alt=""
-          fill
-          className="object-cover opacity-90"
-          style={{ objectPosition: WAVE_PRESET.objectPosition }}
-          sizes="(max-width: 768px) 55vw, 48vw"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#060a12] via-[#060a12]/80 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-      </div>
 
       <div className="relative z-10 flex min-h-[200px] flex-col justify-between p-5 sm:min-h-[220px] sm:p-6 md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
@@ -225,7 +238,7 @@ export default function SocietyProfileHero() {
             className="mx-auto h-20 w-20 shrink-0 overflow-hidden rounded-full bg-xiio-accent/20 ring-2 ring-white/20 sm:mx-0 sm:h-24 sm:w-24 flex items-center justify-center text-2xl font-bold text-white"
           />
 
-          <div className="min-w-0 flex-1 text-center sm:text-left">
+          <div ref={setHeroTextRef} className="min-w-0 flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start sm:gap-3">
               <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
                 {loading && !data ? "…" : title}
