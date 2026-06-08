@@ -71,9 +71,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         className="flex justify-center px-4 pt-6 pb-0"
         aria-label={t("common.logoHome")}
       >
-        <span className="inline-flex items-baseline text-base font-semibold text-white">
+        <span className="inline-flex items-baseline text-[2rem] font-semibold text-white">
           <span className="mr-[0.32em]">X</span>
-          <span className="tracking-[-0.14em]">II</span>
+          <span className="inline-flex gap-[0.42em]">
+            <span>I</span>
+            <span>I</span>
+          </span>
           <span className="ml-[0.32em]">O</span>
         </span>
       </Link>
