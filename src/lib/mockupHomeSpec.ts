@@ -5,7 +5,7 @@ export const MOCKUP_HOME = {
   contentMainColumnPad:
     "lg:pl-[calc(var(--app-sidebar-width)+var(--app-content-boundary-inset))]",
   contentRightPad: "lg:pr-[76px]",
-  topBarRightPad: "lg:pr-4",
+  topBarRightPad: "lg:pr-[76px]",
   contentColumnGuard: "min-w-0 max-w-full",
   contentBodyGuard: "min-w-0 max-w-full overflow-x-clip",
   topBarHeight: "h-[60px]",
