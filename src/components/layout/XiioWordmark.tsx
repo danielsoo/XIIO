@@ -8,9 +8,18 @@ const XIIO_GAP = "0.80em";
 /** II 두 막대 사이 간격 */
 const XIIO_II_GAP = "0.36em";
 
+/** clip-path 양 끝 trim — polygon %와 보정 높이에 공용 */
+const X_CLIP_TRIM = 0.12;
+const X_CLIP_TRIM_PCT = `${X_CLIP_TRIM * 100}%`;
+const X_CLIP_KEEP = 1 - 2 * X_CLIP_TRIM;
+const X_CLIP_END_PCT = `${(1 - X_CLIP_TRIM) * 100}%`;
+
+/** clip 손실 보정 — II·O cap 높이와 시각 정렬 */
+const XIIO_X_ARM = `calc(0.72em / ${X_CLIP_KEEP})`;
+
 /** 회전 후 상·하단이 수평으로 보이도록 끝만 잘림 */
-const X_ARM_CLIP_A = "polygon(0% 12%, 100% 0%, 100% 88%, 0% 100%)";
-const X_ARM_CLIP_B = "polygon(0% 0%, 100% 12%, 100% 100%, 0% 88%)";
+const X_ARM_CLIP_A = `polygon(0% ${X_CLIP_TRIM_PCT}, 100% 0%, 100% ${X_CLIP_END_PCT}, 0% 100%)`;
+const X_ARM_CLIP_B = `polygon(0% 0%, 100% ${X_CLIP_TRIM_PCT}, 100% 100%, 0% ${X_CLIP_END_PCT})`;
 
 export default function XiioWordmark({ className = "" }: Props) {
   return (
@@ -20,16 +29,17 @@ export default function XiioWordmark({ className = "" }: Props) {
         ["--xiio-cap" as string]: XIIO_CAP,
         ["--xiio-gap" as string]: XIIO_GAP,
         ["--xiio-ii-gap" as string]: XIIO_II_GAP,
+        ["--xiio-x-arm" as string]: XIIO_X_ARM,
       }}
       aria-hidden
     >
-      <span className="relative inline-flex size-[var(--xiio-cap)] items-center justify-center mr-[var(--xiio-gap)] shrink-0">
+      <span className="relative inline-flex size-[var(--xiio-cap)] items-center justify-center overflow-visible mr-[var(--xiio-gap)] shrink-0">
         <span
-          className="absolute h-[0.72em] w-[0.1em] bg-current rotate-45"
+          className="absolute h-[var(--xiio-x-arm)] w-[0.1em] bg-current rotate-45"
           style={{ clipPath: X_ARM_CLIP_A }}
         />
         <span
-          className="absolute h-[0.72em] w-[0.1em] bg-current -rotate-45"
+          className="absolute h-[var(--xiio-x-arm)] w-[0.1em] bg-current -rotate-45"
           style={{ clipPath: X_ARM_CLIP_B }}
         />
       </span>

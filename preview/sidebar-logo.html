@@ -55,11 +55,13 @@
         justify-content: center;
         margin-right: var(--xiio-gap);
         flex-shrink: 0;
+        overflow: visible;
       }
       .logo-x-bar {
         position: absolute;
         width: 0.1em;
-        height: 0.72em;
+        /* X_CLIP_TRIM=0.12 clip 손실 보정 — XiioWordmark.tsx XIIO_X_ARM */
+        height: calc(0.72em / 0.76);
         background: currentColor;
       }
       .logo-x-bar-a {
