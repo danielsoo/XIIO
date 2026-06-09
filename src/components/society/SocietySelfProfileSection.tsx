@@ -57,5 +57,5 @@ export default function SocietySelfProfileSection() {
 
   const works = [...data.directed, ...data.credited];
 
-  return <SocietyProfileBody handle={data.profile.handle} works={works} isSelf />;
+  return <SocietyProfileBody works={works} isSelf />;
 }

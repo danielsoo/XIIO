@@ -10,6 +10,10 @@ import {
   worksCol,
 } from "@/lib/server/works";
 import { getPeopleProfileHeroMeta } from "@/lib/server/people-profile";
+import {
+  listWorkProfileNotes,
+  workProfileNoteDocId,
+} from "@/lib/server/work-profile-notes";
 import { isAccountDeleted, parseUserProfileDoc } from "@/lib/userAccess";
 
 type Params = { params: Promise<{ handle: string }> };
@@ -41,7 +45,10 @@ export async function GET(request: Request, { params }: Params) {
     following = await isFollowing(db, viewerUid, uid);
   }
 
-  const eligible = await listEligibleWorksForUser(db, uid);
+  const [eligible, noteByKey] = await Promise.all([
+    listEligibleWorksForUser(db, uid),
+    listWorkProfileNotes(db, uid),
+  ]);
   const directed: Record<string, unknown>[] = [];
   const credited: Record<string, unknown>[] = [];
   const seenDirected = new Set<string>();
@@ -62,6 +69,7 @@ export async function GET(request: Request, { params }: Params) {
       characterName: item.characterName,
       thumbnailUrl: thumb,
       watchPath: `/watch/${item.ownerUid}/${item.workId}`,
+      profileNote: noteByKey[workProfileNoteDocId(item.ownerUid, item.workId)] ?? null,
     };
     if (item.role === "owner") {
       if (!seenDirected.has(key)) {

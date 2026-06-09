@@ -16,6 +16,7 @@ type WorkCard = {
   characterName?: string;
   thumbnailUrl?: string | null;
   watchPath: string;
+  profileNote?: string | null;
 };
 
 export type PeopleProfilePayload = {
@@ -117,7 +118,7 @@ export default function PeopleProfileView({ handle }: Props) {
         isFollowing={!!data.viewer?.isFollowing}
       />
       <div className="px-4 lg:px-0">
-        <SocietyProfileBody handle={data.profile.handle} works={works} isSelf={isSelf} />
+        <SocietyProfileBody works={works} isSelf={isSelf} />
       </div>
     </div>
   );

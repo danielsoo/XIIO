@@ -445,6 +445,13 @@ export const messages = {
         worksEmpty: "아직 공개된 작품이 없습니다.",
         upload: "업로드",
       },
+      workNote: {
+        label: "작품 소개",
+        placeholder: "이 작품에 대해 남기고 싶은 말…",
+        save: "저장",
+        saved: "저장되었습니다.",
+        saveError: "저장하지 못했습니다.",
+      },
     },
     discover: {
       title: "창구 — 사람 찾기",
@@ -2092,6 +2099,13 @@ export const messages = {
         worksTitle: "Works",
         worksEmpty: "No published works yet.",
         upload: "Upload",
+      },
+      workNote: {
+        label: "About this work",
+        placeholder: "Write something about this work…",
+        save: "Save",
+        saved: "Saved.",
+        saveError: "Could not save.",
       },
     },
     discover: {
