@@ -10,6 +10,8 @@ const XIIO_O_SIZE = `calc(var(--xiio-cap) + ${XIIO_STROKE})`;
 const XIIO_GAP = "0.74em";
 /** II 두 막대 사이 간격 */
 const XIIO_II_GAP = "0.48em";
+/** X 가로 폭만 살짝 축소 (세로·II/O 정렬 유지) */
+const XIIO_X_SCALE_X = 0.88;
 
 /** clip-path 양 끝 trim — polygon %와 보정 높이에 공용 */
 const X_CLIP_TRIM = 0.12;
@@ -37,7 +39,10 @@ export default function XiioWordmark({ className = "" }: Props) {
       }}
       aria-hidden
     >
-      <span className="relative inline-flex size-[var(--xiio-cap)] items-center justify-center overflow-visible mr-[var(--xiio-gap)] shrink-0">
+      <span
+        className="relative inline-flex size-[var(--xiio-cap)] items-center justify-center overflow-visible mr-[var(--xiio-gap)] shrink-0"
+        style={{ transform: `scaleX(${XIIO_X_SCALE_X})`, transformOrigin: "center" }}
+      >
         <span
           className="absolute h-[var(--xiio-x-arm)] w-[0.1em] bg-current rotate-45"
           style={{ clipPath: X_ARM_CLIP_A }}
