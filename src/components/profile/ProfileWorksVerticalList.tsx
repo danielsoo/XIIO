@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import CreditRolePill from "@/components/profile/CreditRolePill";
 import { useTranslations } from "@/context/LocaleContext";
 import { gradientForTitle } from "@/lib/works/catalog-ui";
@@ -20,6 +21,40 @@ type Props = {
   items: ProfileWorkListItem[];
   isSelf?: boolean;
 };
+
+function WorkListThumbnail({
+  thumbnailUrl,
+  gradient,
+}: {
+  thumbnailUrl?: string | null;
+  gradient: string;
+}) {
+  const [thumbFailed, setThumbFailed] = useState(false);
+
+  useEffect(() => {
+    setThumbFailed(false);
+  }, [thumbnailUrl]);
+
+  const showThumbnail = Boolean(thumbnailUrl) && !thumbFailed;
+
+  return (
+    <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-lg bg-white/5">
+      {showThumbnail ? (
+        <Image
+          src={thumbnailUrl!}
+          alt=""
+          fill
+          className="object-cover"
+          sizes="128px"
+          unoptimized
+          onError={() => setThumbFailed(true)}
+        />
+      ) : (
+        <div className="h-full w-full" style={{ background: gradient }} aria-hidden />
+      )}
+    </div>
+  );
+}
 
 export default function ProfileWorksVerticalList({ items, isSelf = false }: Props) {
   const { t } = useTranslations();
@@ -50,23 +85,7 @@ export default function ProfileWorksVerticalList({ items, isSelf = false }: Prop
                   href={work.watchPath}
                   className="flex items-center gap-4 py-4 transition hover:bg-white/[0.02]"
                 >
-                  <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-lg bg-white/5">
-                    {work.thumbnailUrl ? (
-                      <Image
-                        src={work.thumbnailUrl}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="128px"
-                      />
-                    ) : (
-                      <div
-                        className="h-full w-full"
-                        style={{ background: gradient }}
-                        aria-hidden
-                      />
-                    )}
-                  </div>
+                  <WorkListThumbnail thumbnailUrl={work.thumbnailUrl} gradient={gradient} />
                   <div className="min-w-0 flex-1 text-left">
                     <p className="truncate text-base font-medium text-white">{work.title}</p>
                     <div className="mt-2">
