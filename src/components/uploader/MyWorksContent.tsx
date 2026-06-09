@@ -1,16 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import HomeContentRow from "@/components/home/HomeContentRow";
+import AppPageShell from "@/components/layout/AppPageShell";
+import SectionLabel from "@/components/layout/SectionLabel";
+import SubpageHeader from "@/components/layout/SubpageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import AppPageShell from "@/components/layout/AppPageShell";
-import SubpageHeader from "@/components/layout/SubpageHeader";
 import { useMyWorks } from "@/hooks/useMyWorks";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
+import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
-import type { PlatformStatus, PromoPlatformStatus, StreamStatus } from "@/types/work";
+import { gradientForTitle } from "@/lib/works/catalog-ui";
+import { publishedWorksForRow, thumbnailForWork } from "@/lib/works/my-works-ui";
+import type { PlatformStatus, PromoPlatformStatus, StreamStatus, WorkListItem } from "@/types/work";
 
 function statusBadgeClass(status: PlatformStatus | PromoPlatformStatus): string {
   switch (status) {
@@ -33,6 +39,37 @@ function streamLabel(t: (k: string) => string, s: StreamStatus): string {
   return t(`myWorks.stream.${s}`);
 }
 
+function WorkManageThumbnail({ work }: { work: WorkListItem }) {
+  const thumbnailUrl = thumbnailForWork(work);
+  const gradient = gradientForTitle(work.title);
+  const [thumbFailed, setThumbFailed] = useState(false);
+
+  useEffect(() => {
+    setThumbFailed(false);
+  }, [thumbnailUrl]);
+
+  const showThumbnail = Boolean(thumbnailUrl) && !thumbFailed;
+
+  return (
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-white/5">
+      {showThumbnail ? (
+        <Image
+          src={thumbnailUrl!}
+          alt=""
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 40vw, 160px"
+          unoptimized
+          onError={() => setThumbFailed(true)}
+        />
+      ) : (
+        <div className="h-full w-full" style={{ background: gradient }} aria-hidden />
+      )}
+      <span className="sr-only">{work.title}</span>
+    </div>
+  );
+}
+
 export default function MyWorksContent() {
   const searchParams = useSearchParams();
   const justSubmitted = searchParams.get("submitted") === "1";
@@ -42,6 +79,11 @@ export default function MyWorksContent() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [submitBanner, setSubmitBanner] = useState(justSubmitted);
+
+  const spotlightItems = useMemo(
+    () => (user ? publishedWorksForRow(works, user.uid) : []),
+    [works, user]
+  );
 
   useEffect(() => {
     setSubmitBanner(justSubmitted);
@@ -129,46 +171,54 @@ export default function MyWorksContent() {
 
   if (authLoading) {
     return (
-      <main className="min-h-screen bg-xiio-bg flex items-center justify-center text-white">
-        <p className="text-xiio-muted">{t("common.loading")}</p>
-      </main>
+      <AppPageShell>
+        <p className="text-xiio-muted py-8 text-center">{t("common.loading")}</p>
+      </AppPageShell>
     );
   }
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-xiio-bg flex flex-col items-center justify-center gap-4 px-4">
-        <p className="text-white">{t("myWorks.loginRequired")}</p>
-        <Link href="/login" className="text-xiio-accent hover:underline">
-          {t("common.login")}
-        </Link>
-      </main>
+      <AppPageShell>
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <p className="text-white">{t("myWorks.loginRequired")}</p>
+          <Link href="/login" className="text-xiio-accent hover:underline">
+            {t("common.login")}
+          </Link>
+        </div>
+      </AppPageShell>
     );
   }
 
   return (
-    <AppPageShell standalone>
-        <SubpageHeader variant="standalone" title={t("myWorks.title")} backFallbackHref="/" />
-        {submitBanner ? (
-          <div
-            className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-emerald-300 text-sm leading-relaxed flex items-start justify-between gap-3"
-            role="status"
-          >
-            <p>{t("uploader.submitCompleteBanner")}</p>
-            <button
-              type="button"
-              onClick={() => setSubmitBanner(false)}
-              className="shrink-0 text-emerald-400/80 hover:text-emerald-300 text-lg leading-none"
-              aria-label={t("common.cancel")}
-            >
-              ×
-            </button>
-          </div>
-        ) : null}
+    <AppPageShell>
+      <SubpageHeader
+        title={t("myWorks.title")}
+        description={t("myWorks.subtitle")}
+        backFallbackHref="/society"
+      />
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 -mt-2">
+      {submitBanner ? (
+        <div
+          className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-emerald-300 text-sm leading-relaxed flex items-start justify-between gap-3"
+          role="status"
+        >
+          <p>{t("uploader.submitCompleteBanner")}</p>
+          <button
+            type="button"
+            onClick={() => setSubmitBanner(false)}
+            className="shrink-0 text-emerald-400/80 hover:text-emerald-300 text-lg leading-none"
+            aria-label={t("common.cancel")}
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
+
+      <div className={`pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xiio-muted text-sm">{t("myWorks.subtitle")}</p>
+            <SectionLabel>{t("myWorks.title")}</SectionLabel>
             <Link
               href="/uploader/analytics"
               className="inline-block mt-2 text-sm text-xiio-accent hover:underline"
@@ -178,22 +228,22 @@ export default function MyWorksContent() {
           </div>
           <Link
             href="/uploader/upload"
-            className="inline-flex justify-center px-5 py-2.5 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white text-sm font-medium transition"
+            className={`inline-flex items-center justify-center bg-xiio-accent text-white font-medium hover:bg-xiio-accent-hover transition ${MOCKUP_HOME.ctaButton}`}
           >
             {t("myWorks.uploadNew")}
           </Link>
         </div>
 
-        {msg && (
-          <div className="mb-4 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white">
+        {msg ? (
+          <div className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white">
             {msg}
           </div>
-        )}
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
+        ) : null}
+        {error ? (
+          <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-red-400 text-sm whitespace-pre-wrap break-words">
             {error}
           </div>
-        )}
+        ) : null}
 
         {loading ? (
           <p className="text-xiio-muted">{t("common.loading")}</p>
@@ -205,193 +255,231 @@ export default function MyWorksContent() {
             </Link>
           </div>
         ) : (
-          <ul className="space-y-4">
-            {works.map((work, idx) => {
-              const promoStatus = work.promo?.platformStatus;
-              const canDelete =
-                work.platformStatus === "pending" || work.platformStatus === "rejected";
-              const canRequestRemoval = work.platformStatus === "published";
-              const promoPublished = promoStatus === "published";
-              const workPublished = work.platformStatus === "published";
-              const prologueStatus = work.prologue?.platformStatus;
-              const promoRevisionPending = work.promo?.revisionReviewStatus === "pending";
-              const prologueRevisionPending = work.prologue?.revisionReviewStatus === "pending";
-              const workRevisionPending = work.revisionReviewStatus === "pending";
+          <>
+            {spotlightItems.length > 0 ? (
+              <HomeContentRow
+                title={t("myWorks.spotlightTitle")}
+                viewAllHref="#all-works"
+                viewAllLabel={t("myWorks.allWorksTitle")}
+                items={spotlightItems}
+                variant="featured"
+              />
+            ) : null}
 
-              return (
-                <li
-                  key={work.id}
-                  className="rounded-2xl border border-white/10 bg-xiio-surface p-5 flex flex-col gap-3"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <h2 className="text-lg font-semibold text-white">{work.title}</h2>
-                      <p className="text-xs text-xiio-muted mt-0.5">
-                        {t(`myWorks.section.${work.section}`)} · {streamLabel(t, work.streamStatus)}
-                        {(work.approvedAspectRatio ?? work.proposedAspectRatio) && (
-                          <>
-                            {" "}
-                            ·{" "}
-                            {t(
-                              aspectRatioMessageKey(
-                                work.approvedAspectRatio ?? work.proposedAspectRatio!
-                              )
+            <section id="all-works">
+              <div className="mb-4">
+                <SectionLabel>{t("myWorks.allWorksTitle")}</SectionLabel>
+              </div>
+
+              <ul className="divide-y divide-white/10">
+                {works.map((work, idx) => {
+                  const promoStatus = work.promo?.platformStatus;
+                  const canDelete =
+                    work.platformStatus === "pending" || work.platformStatus === "rejected";
+                  const canRequestRemoval = work.platformStatus === "published";
+                  const promoPublished = promoStatus === "published";
+                  const workPublished = work.platformStatus === "published";
+                  const prologueStatus = work.prologue?.platformStatus;
+                  const promoRevisionPending = work.promo?.revisionReviewStatus === "pending";
+                  const prologueRevisionPending = work.prologue?.revisionReviewStatus === "pending";
+                  const workRevisionPending = work.revisionReviewStatus === "pending";
+
+                  return (
+                    <li key={work.id} className="py-6 first:pt-0">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+                        <div className="w-full shrink-0 sm:w-40">
+                          <WorkManageThumbnail work={work} />
+                        </div>
+
+                        <div className="min-w-0 flex-1 flex flex-col gap-3">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <h2 className="text-lg font-semibold text-white">{work.title}</h2>
+                              <p className="text-xs text-xiio-muted mt-0.5">
+                                {t(`myWorks.section.${work.section}`)} ·{" "}
+                                {streamLabel(t, work.streamStatus)}
+                                {(work.approvedAspectRatio ?? work.proposedAspectRatio) && (
+                                  <>
+                                    {" "}
+                                    ·{" "}
+                                    {t(
+                                      aspectRatioMessageKey(
+                                        work.approvedAspectRatio ?? work.proposedAspectRatio!
+                                      )
+                                    )}
+                                  </>
+                                )}
+                              </p>
+                              {(work.platformStatus === "published" || promoPublished) && (
+                                <p className="text-xs text-white/60 mt-1 tabular-nums">
+                                  {work.platformStatus === "published" && (
+                                    <span>
+                                      {t("myWorks.statsFullViews")}:{" "}
+                                      {(work.viewCount ?? 0).toLocaleString()}
+                                    </span>
+                                  )}
+                                  {work.platformStatus === "published" && promoPublished && " · "}
+                                  {promoPublished && work.promo && (
+                                    <span>
+                                      {t("myWorks.statsPromoViews")}:{" "}
+                                      {(work.promo.viewCount ?? 0).toLocaleString()}
+                                      {" · "}
+                                      {t("myWorks.statsPromoLikes")}:{" "}
+                                      {(work.promo.likeCount ?? 0).toLocaleString()}
+                                    </span>
+                                  )}
+                                </p>
+                              )}
+                              {(work.proposedCategory ||
+                                work.approvedCategory ||
+                                (work.proposedTags?.length ?? 0) > 0) && (
+                                <p className="text-xs text-xiio-muted mt-1">
+                                  {work.platformStatus === "published" && work.approvedCategory
+                                    ? work.approvedCategory
+                                    : work.proposedCategory}
+                                  {(work.platformStatus === "published"
+                                    ? work.approvedTags
+                                    : work.proposedTags)?.length
+                                    ? ` · ${(work.platformStatus === "published" ? work.approvedTags : work.proposedTags)!.join(", ")}`
+                                    : null}
+                                </p>
+                              )}
+                            </div>
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full border ${statusBadgeClass(work.platformStatus)}`}
+                            >
+                              {t(`myWorks.status.${work.platformStatus}`)}
+                            </span>
+                          </div>
+
+                          {work.platformStatus === "rejected" && (
+                            <div className="text-sm text-red-400/90 space-y-0.5">
+                              {work.rejectReasonCode && (
+                                <p className="font-medium">
+                                  {t(`myWorks.rejectReason.${work.rejectReasonCode}`)}
+                                </p>
+                              )}
+                              {work.rejectReason && <p>{work.rejectReason}</p>}
+                            </div>
+                          )}
+
+                          <div className="flex flex-wrap gap-2 text-xs items-center">
+                            <span className="text-xiio-muted">{t("myWorks.promoLabel")}:</span>
+                            {work.promo ? (
+                              <span
+                                className={`px-2 py-0.5 rounded-full border ${statusBadgeClass(promoStatus!)}`}
+                              >
+                                {t(`myWorks.promoStatus.${promoStatus}`)}
+                              </span>
+                            ) : (
+                              <span className="text-xiio-muted">{t("myWorks.promoNone")}</span>
                             )}
-                          </>
-                        )}
-                      </p>
-                      {(work.platformStatus === "published" || promoPublished) && (
-                        <p className="text-xs text-white/60 mt-1 tabular-nums">
-                          {work.platformStatus === "published" && (
-                            <span>
-                              {t("myWorks.statsFullViews")}: {(work.viewCount ?? 0).toLocaleString()}
-                            </span>
-                          )}
-                          {work.platformStatus === "published" && promoPublished && " · "}
-                          {promoPublished && work.promo && (
-                            <span>
-                              {t("myWorks.statsPromoViews")}: {(work.promo.viewCount ?? 0).toLocaleString()}
-                              {" · "}
-                              {t("myWorks.statsPromoLikes")}: {(work.promo.likeCount ?? 0).toLocaleString()}
-                            </span>
-                          )}
-                        </p>
-                      )}
-                      {(work.proposedCategory || work.approvedCategory || (work.proposedTags?.length ?? 0) > 0) && (
-                        <p className="text-xs text-xiio-muted mt-1">
-                          {work.platformStatus === "published" && work.approvedCategory
-                            ? work.approvedCategory
-                            : work.proposedCategory}
-                          {(work.platformStatus === "published"
-                            ? work.approvedTags
-                            : work.proposedTags)?.length
-                            ? ` · ${(work.platformStatus === "published" ? work.approvedTags : work.proposedTags)!.join(", ")}`
-                            : null}
-                        </p>
-                      )}
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full border ${statusBadgeClass(work.platformStatus)}`}
-                    >
-                      {t(`myWorks.status.${work.platformStatus}`)}
-                    </span>
-                  </div>
+                            {promoPublished && (
+                              <span className="text-emerald-400/80">{t("myWorks.promoOnHome")}</span>
+                            )}
+                          </div>
 
-                  {work.platformStatus === "rejected" && (
-                    <div className="text-sm text-red-400/90 space-y-0.5">
-                      {work.rejectReasonCode && (
-                        <p className="font-medium">
-                          {t(`myWorks.rejectReason.${work.rejectReasonCode}`)}
-                        </p>
-                      )}
-                      {work.rejectReason && <p>{work.rejectReason}</p>}
-                    </div>
-                  )}
+                          <div className="flex flex-wrap gap-2 text-xs items-center">
+                            <span className="text-xiio-muted">{t("myWorks.prologueLabel")}:</span>
+                            {work.prologue ? (
+                              <span
+                                className={`px-2 py-0.5 rounded-full border ${statusBadgeClass(prologueStatus!)}`}
+                              >
+                                {t(`myWorks.promoStatus.${prologueStatus}`)}
+                              </span>
+                            ) : (
+                              <span className="text-xiio-muted">{t("myWorks.prologueNone")}</span>
+                            )}
+                          </div>
 
-                  <div className="flex flex-wrap gap-2 text-xs items-center">
-                    <span className="text-xiio-muted">{t("myWorks.promoLabel")}:</span>
-                    {work.promo ? (
-                      <span className={`px-2 py-0.5 rounded-full border ${statusBadgeClass(promoStatus!)}`}>
-                        {t(`myWorks.promoStatus.${promoStatus}`)}
-                      </span>
-                    ) : (
-                      <span className="text-xiio-muted">{t("myWorks.promoNone")}</span>
-                    )}
-                    {promoPublished && (
-                      <span className="text-emerald-400/80">{t("myWorks.promoOnHome")}</span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 text-xs items-center">
-                    <span className="text-xiio-muted">{t("myWorks.prologueLabel")}:</span>
-                    {work.prologue ? (
-                      <span className={`px-2 py-0.5 rounded-full border ${statusBadgeClass(prologueStatus!)}`}>
-                        {t(`myWorks.promoStatus.${prologueStatus}`)}
-                      </span>
-                    ) : (
-                      <span className="text-xiio-muted">{t("myWorks.prologueNone")}</span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <button
-                      type="button"
-                      disabled={idx === 0 || busyId === work.id}
-                      onClick={() => void move(work.id, "up")}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-white/15 text-white hover:bg-white/5 disabled:opacity-30"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      disabled={idx === works.length - 1 || busyId === work.id}
-                      onClick={() => void move(work.id, "down")}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-white/15 text-white hover:bg-white/5 disabled:opacity-30"
-                    >
-                      ↓
-                    </button>
-                    {(work.promo ||
-                      work.promoDraft ||
-                      work.platformStatus === "draft" ||
-                      (work.streamStatus === "ready" && !promoPublished)) && (
-                      <Link
-                        href={`/uploader/works/${work.id}/promo`}
-                        className="px-3 py-1.5 text-xs rounded-lg bg-xiio-accent/20 text-xiio-accent hover:bg-xiio-accent/30 transition"
-                      >
-                        {work.promo || work.promoDraft
-                          ? t("myWorks.editPromo")
-                          : t("myWorks.createPromo")}
-                      </Link>
-                    )}
-                    {workPublished && (
-                      <Link
-                        href={`/uploader/works/${work.id}/edit`}
-                        className="px-3 py-1.5 text-xs rounded-lg border border-white/15 text-white hover:bg-white/5 transition"
-                      >
-                        {t("myWorks.editVideo")}
-                      </Link>
-                    )}
-                    {workPublished && (
-                      <Link
-                        href={`/uploader/works/${work.id}/prologue`}
-                        className="px-3 py-1.5 text-xs rounded-lg bg-white/10 text-white hover:bg-white/15 transition"
-                      >
-                        {work.prologue || work.prologueDraft
-                          ? t("myWorks.editPrologue")
-                          : t("myWorks.createPrologue")}
-                      </Link>
-                    )}
-                    {(workRevisionPending || promoRevisionPending || prologueRevisionPending) && (
-                      <span className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        {t("myWorks.revisionReviewPending")}
-                      </span>
-                    )}
-                    {canDelete && (
-                      <button
-                        type="button"
-                        disabled={busyId === work.id}
-                        onClick={() => void deleteWork(work.id)}
-                        className="px-3 py-1.5 text-xs rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 disabled:opacity-40"
-                      >
-                        {t("myWorks.delete")}
-                      </button>
-                    )}
-                    {canRequestRemoval && (
-                      <button
-                        type="button"
-                        disabled={busyId === work.id || work.platformStatus === "removal_requested"}
-                        onClick={() => void requestDeletion(work.id)}
-                        className="px-3 py-1.5 text-xs rounded-lg border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 disabled:opacity-40"
-                      >
-                        {t("myWorks.requestRemoval")}
-                      </button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              disabled={idx === 0 || busyId === work.id}
+                              onClick={() => void move(work.id, "up")}
+                              className="px-3 py-1.5 text-xs rounded-lg border border-white/15 text-white hover:bg-white/5 disabled:opacity-30"
+                            >
+                              ↑
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === works.length - 1 || busyId === work.id}
+                              onClick={() => void move(work.id, "down")}
+                              className="px-3 py-1.5 text-xs rounded-lg border border-white/15 text-white hover:bg-white/5 disabled:opacity-30"
+                            >
+                              ↓
+                            </button>
+                            {(work.promo ||
+                              work.promoDraft ||
+                              work.platformStatus === "draft" ||
+                              (work.streamStatus === "ready" && !promoPublished)) && (
+                              <Link
+                                href={`/uploader/works/${work.id}/promo`}
+                                className="px-3 py-1.5 text-xs rounded-lg bg-xiio-accent/20 text-xiio-accent hover:bg-xiio-accent/30 transition"
+                              >
+                                {work.promo || work.promoDraft
+                                  ? t("myWorks.editPromo")
+                                  : t("myWorks.createPromo")}
+                              </Link>
+                            )}
+                            {workPublished && (
+                              <Link
+                                href={`/uploader/works/${work.id}/edit`}
+                                className="px-3 py-1.5 text-xs rounded-lg border border-white/15 text-white hover:bg-white/5 transition"
+                              >
+                                {t("myWorks.editVideo")}
+                              </Link>
+                            )}
+                            {workPublished && (
+                              <Link
+                                href={`/uploader/works/${work.id}/prologue`}
+                                className="px-3 py-1.5 text-xs rounded-lg bg-white/10 text-white hover:bg-white/15 transition"
+                              >
+                                {work.prologue || work.prologueDraft
+                                  ? t("myWorks.editPrologue")
+                                  : t("myWorks.createPrologue")}
+                              </Link>
+                            )}
+                            {(workRevisionPending ||
+                              promoRevisionPending ||
+                              prologueRevisionPending) && (
+                              <span className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                {t("myWorks.revisionReviewPending")}
+                              </span>
+                            )}
+                            {canDelete && (
+                              <button
+                                type="button"
+                                disabled={busyId === work.id}
+                                onClick={() => void deleteWork(work.id)}
+                                className="px-3 py-1.5 text-xs rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 disabled:opacity-40"
+                              >
+                                {t("myWorks.delete")}
+                              </button>
+                            )}
+                            {canRequestRemoval && (
+                              <button
+                                type="button"
+                                disabled={
+                                  busyId === work.id || work.platformStatus === "removal_requested"
+                                }
+                                onClick={() => void requestDeletion(work.id)}
+                                className="px-3 py-1.5 text-xs rounded-lg border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 disabled:opacity-40"
+                              >
+                                {t("myWorks.requestRemoval")}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          </>
         )}
+      </div>
     </AppPageShell>
   );
 }

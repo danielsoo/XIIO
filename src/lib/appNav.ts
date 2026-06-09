@@ -10,6 +10,9 @@ export const HIDE_APP_SHELL_PATHS = [
 ];
 
 export function shouldHideAppShell(pathname: string): boolean {
+  if (pathname === "/uploader/works" || pathname.startsWith("/uploader/works?")) {
+    return false;
+  }
   return HIDE_APP_SHELL_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
   );
