@@ -10,8 +10,8 @@ const XIIO_O_SIZE = `calc(var(--xiio-cap) + ${XIIO_STROKE})`;
 const XIIO_GAP = "0.74em";
 /** II 두 막대 사이 간격 */
 const XIIO_II_GAP = "0.48em";
-/** X 가로 폭만 살짝 축소 (세로·II/O 정렬 유지) */
-const XIIO_X_SCALE_X = 0.88;
+/** X 막대 회전각 (45° → 위·아래 개구 좁힘) */
+const XIIO_X_ANGLE_DEG = 52;
 
 /** clip-path 양 끝 trim — polygon %와 보정 높이에 공용 */
 const X_CLIP_TRIM = 0.12;
@@ -19,8 +19,12 @@ const X_CLIP_TRIM_PCT = `${X_CLIP_TRIM * 100}%`;
 const X_CLIP_KEEP = 1 - 2 * X_CLIP_TRIM;
 const X_CLIP_END_PCT = `${(1 - X_CLIP_TRIM) * 100}%`;
 
+/** 45° 기준 0.72em 세로에 맞추도록 각도 변경 시 팔 길이 보정 */
+const XIIO_X_ARM_LEN_RATIO =
+  Math.sin((45 * Math.PI) / 180) / Math.sin((XIIO_X_ANGLE_DEG * Math.PI) / 180);
+
 /** clip 손실 보정 — II·O cap 높이와 시각 정렬 */
-const XIIO_X_ARM = `calc(0.72em / ${X_CLIP_KEEP})`;
+const XIIO_X_ARM = `calc(0.72em / ${X_CLIP_KEEP} * ${XIIO_X_ARM_LEN_RATIO})`;
 
 /** 회전 후 상·하단이 수평으로 보이도록 끝만 잘림 */
 const X_ARM_CLIP_A = `polygon(0% ${X_CLIP_TRIM_PCT}, 100% 0%, 100% ${X_CLIP_END_PCT}, 0% 100%)`;
@@ -39,17 +43,14 @@ export default function XiioWordmark({ className = "" }: Props) {
       }}
       aria-hidden
     >
-      <span
-        className="relative inline-flex size-[var(--xiio-cap)] items-center justify-center overflow-visible mr-[var(--xiio-gap)] shrink-0"
-        style={{ transform: `scaleX(${XIIO_X_SCALE_X})`, transformOrigin: "center" }}
-      >
+      <span className="relative inline-flex size-[var(--xiio-cap)] items-center justify-center overflow-visible mr-[var(--xiio-gap)] shrink-0">
         <span
-          className="absolute h-[var(--xiio-x-arm)] w-[0.1em] bg-current rotate-45"
-          style={{ clipPath: X_ARM_CLIP_A }}
+          className="absolute h-[var(--xiio-x-arm)] w-[0.1em] bg-current"
+          style={{ transform: `rotate(${XIIO_X_ANGLE_DEG}deg)`, clipPath: X_ARM_CLIP_A }}
         />
         <span
-          className="absolute h-[var(--xiio-x-arm)] w-[0.1em] bg-current -rotate-45"
-          style={{ clipPath: X_ARM_CLIP_B }}
+          className="absolute h-[var(--xiio-x-arm)] w-[0.1em] bg-current"
+          style={{ transform: `rotate(-${XIIO_X_ANGLE_DEG}deg)`, clipPath: X_ARM_CLIP_B }}
         />
       </span>
       <span className="inline-flex h-[var(--xiio-cap)] items-center gap-[var(--xiio-ii-gap)] shrink-0">

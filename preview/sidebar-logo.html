@@ -56,23 +56,20 @@
         margin-right: var(--xiio-gap);
         flex-shrink: 0;
         overflow: visible;
-        /* XiioWordmark.tsx XIIO_X_SCALE_X */
-        transform: scaleX(0.88);
-        transform-origin: center;
       }
       .logo-x-bar {
         position: absolute;
         width: 0.1em;
-        /* X_CLIP_TRIM=0.12 clip 손실 보정 — XiioWordmark.tsx XIIO_X_ARM */
-        height: calc(0.72em / 0.76);
+        /* XIIO_X_ANGLE_DEG=52, sin(45°)/sin(52°) — XiioWordmark.tsx XIIO_X_ARM */
+        height: calc(0.72em / 0.76 * 0.897328);
         background: currentColor;
       }
       .logo-x-bar-a {
-        transform: rotate(45deg);
+        transform: rotate(52deg);
         clip-path: polygon(0% 12%, 100% 0%, 100% 88%, 0% 100%);
       }
       .logo-x-bar-b {
-        transform: rotate(-45deg);
+        transform: rotate(-52deg);
         clip-path: polygon(0% 0%, 100% 12%, 100% 100%, 0% 88%);
       }
       .logo-ii {
