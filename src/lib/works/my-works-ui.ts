@@ -4,11 +4,7 @@ import { promoCropToVideoStyle } from "@/lib/works/promo-crop-interaction";
 import type { WorkListItem } from "@/types/work";
 
 export function thumbnailForWork(work: WorkListItem): string | null {
-  const url =
-    work.promo?.thumbnailUrl ??
-    work.promoDraft?.thumbnailUrl ??
-    work.prologue?.thumbnailUrl ??
-    null;
+  const url = work.promo?.thumbnailUrl ?? work.promoDraft?.thumbnailUrl ?? null;
   return url?.trim() || null;
 }
 
