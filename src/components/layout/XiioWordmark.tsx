@@ -7,9 +7,9 @@ const XIIO_STROKE = "0.1em";
 /** O 외곽 직경 — II cap + 스트로크 1회분 */
 const XIIO_O_SIZE = `calc(var(--xiio-cap) + ${XIIO_STROKE})`;
 /** X↔II, II↔O 그룹 간격 */
-const XIIO_GAP = "0.77em";
+const XIIO_GAP = "0.74em";
 /** II 두 막대 사이 간격 */
-const XIIO_II_GAP = "0.42em";
+const XIIO_II_GAP = "0.48em";
 
 /** clip-path 양 끝 trim — polygon %와 보정 높이에 공용 */
 const X_CLIP_TRIM = 0.12;
