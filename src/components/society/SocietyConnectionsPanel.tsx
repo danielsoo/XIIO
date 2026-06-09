@@ -14,6 +14,7 @@ import {
   mockTagsForPerson,
   type SocietySortId,
 } from "@/lib/societyMockData";
+import { useSocietyPresencePoll } from "@/hooks/useSocietyPresencePoll";
 import type { SocietyPerson } from "@/lib/societyTypes";
 import type { ProfileRoleTag } from "@/types/portfolio";
 
@@ -166,6 +167,15 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
     }
     return list;
   }, [people, school, interest, sort]);
+
+  const presenceUids = useMemo(() => filteredPeople.map((p) => p.uid), [filteredPeople]);
+
+  useSocietyPresencePoll({
+    user,
+    uids: presenceUids,
+    setPeople,
+    enabled: tab === "discover" || tab === "connections",
+  });
 
   const tabs: { id: SocietyTabId; labelKey: string }[] = [
     { id: "discover", labelKey: "society.tabDiscover" },
