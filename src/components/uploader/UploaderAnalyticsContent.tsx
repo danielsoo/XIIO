@@ -82,33 +82,36 @@ export default function UploaderAnalyticsContent() {
   }, [data]);
 
   if (authLoading) {
-    return <p className="text-xiio-muted">{t("common.loading")}</p>;
+    return (
+      <AppPageShell>
+        <p className="text-xiio-muted py-16 text-center">{t("common.loading")}</p>
+      </AppPageShell>
+    );
   }
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-xiio-bg flex flex-col items-center justify-center gap-4 px-4">
-        <p className="text-white">{t("myWorks.loginRequired")}</p>
-        <Link href="/login" className="text-xiio-accent hover:underline">
-          {t("common.login")}
-        </Link>
-      </main>
+      <AppPageShell>
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <p className="text-white">{t("myWorks.loginRequired")}</p>
+          <Link href="/login" className="text-xiio-accent hover:underline">
+            {t("common.login")}
+          </Link>
+        </div>
+      </AppPageShell>
     );
   }
 
   return (
-    <AppPageShell standalone>
+    <AppPageShell>
       <div className="space-y-10">
-        <div>
-          <SubpageHeader
-            variant="standalone"
-            title={t("uploader.analytics.title")}
-            backHref="/uploader/works"
-            backLabel={t("myWorks.title")}
-            backFallbackHref="/uploader/works"
-          />
-          <p className="text-xiio-muted text-sm -mt-4">{t("uploader.analytics.subtitle")}</p>
-        </div>
+        <SubpageHeader
+          title={t("uploader.analytics.title")}
+          description={t("uploader.analytics.subtitle")}
+          backHref="/uploader/works"
+          backLabel={t("myWorks.title")}
+          backFallbackHref="/uploader/works"
+        />
 
         {loading ? (
           <p className="text-xiio-muted">{t("common.loading")}</p>

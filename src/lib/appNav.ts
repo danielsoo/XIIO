@@ -9,8 +9,20 @@ export const HIDE_APP_SHELL_PATHS = [
   "/auth",
 ];
 
+const UPLOADER_IN_APP_SHELL_PREFIXES = [
+  "/uploader/works",
+  "/uploader/upload",
+  "/uploader/analytics",
+];
+
+function isUploaderInAppShell(pathname: string): boolean {
+  return UPLOADER_IN_APP_SHELL_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
+}
+
 export function shouldHideAppShell(pathname: string): boolean {
-  if (pathname === "/uploader/works" || pathname.startsWith("/uploader/works?")) {
+  if (isUploaderInAppShell(pathname)) {
     return false;
   }
   return HIDE_APP_SHELL_PATHS.some(

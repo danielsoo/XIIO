@@ -1031,9 +1031,8 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
   ) : null;
 
   return (
-    <AppPageShell standalone>
+    <AppPageShell>
         <SubpageHeader
-          variant="standalone"
           title={t("promoEditor.title")}
           backHref="/uploader/works"
           backLabel={t("promoEditor.backToWorks")}

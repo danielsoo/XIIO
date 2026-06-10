@@ -59,30 +59,34 @@ export default function UploaderUploadInner() {
 
   if (authLoading || !checked || settingsLoading) {
     return (
-      <main className="min-h-screen bg-xiio-bg flex items-center justify-center text-white">
-        <p className="text-xiio-muted">{t("common.loading")}</p>
-      </main>
+      <AppPageShell>
+        <p className="text-xiio-muted py-16 text-center">{t("common.loading")}</p>
+      </AppPageShell>
     );
   }
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-xiio-bg flex flex-col items-center justify-center gap-4 px-4">
-        <p className="text-white">{t("uploader.uploadLoginRequired")}</p>
-        <Link href="/login" className="text-xiio-accent hover:underline">
-          {t("common.login")}
-        </Link>
-      </main>
+      <AppPageShell>
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <p className="text-white">{t("uploader.uploadLoginRequired")}</p>
+          <Link href="/login" className="text-xiio-accent hover:underline">
+            {t("common.login")}
+          </Link>
+        </div>
+      </AppPageShell>
     );
   }
 
   if (needsDeposit) {
     return (
-      <AppPageShell standalone>
-        <SubpageHeader variant="standalone" backFallbackHref="/" />
-        <div className="max-w-lg mx-auto rounded-2xl border border-white/10 bg-xiio-surface p-8">
-          <h1 className="text-2xl font-bold text-white mb-2">{t("uploader.uploadDepositTitle")}</h1>
-          <p className="text-xiio-muted text-sm mb-6">{t("uploader.uploadDepositBody")}</p>
+      <AppPageShell>
+        <SubpageHeader
+          title={t("uploader.uploadDepositTitle")}
+          description={t("uploader.uploadDepositBody")}
+          backFallbackHref="/"
+        />
+        <div className="max-w-lg rounded-2xl border border-white/10 bg-xiio-surface p-8">
           <Link
             href="/uploader/verify"
             className="block w-full text-center py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
@@ -95,57 +99,50 @@ export default function UploaderUploadInner() {
   }
 
   return (
-    <AppPageShell standalone>
-        <SubpageHeader
-          variant="standalone"
-          title={t("uploader.uploadTitle")}
-          backFallbackHref="/"
-          endContent={
-            <Link
-              href="/uploader/works"
-              className="hidden sm:inline-flex items-center min-h-[44px] px-3 py-2 text-sm font-medium text-xiio-accent hover:underline"
-            >
-              {t("myWorks.title")}
-            </Link>
-          }
-        />
-        <p className="text-xiio-muted text-sm md:text-base max-w-2xl mb-8 -mt-4">{t("uploader.uploadBody")}</p>
+    <AppPageShell>
+      <SubpageHeader
+        title={t("uploader.uploadTitle")}
+        description={t("uploader.uploadBody")}
+        backFallbackHref="/"
+      />
+      <div className="mb-6 flex justify-end -mt-4">
+        <Link
+          href="/uploader/works"
+          className="text-sm font-medium text-xiio-accent hover:underline"
+        >
+          {t("myWorks.title")}
+        </Link>
+      </div>
 
-        {err && (
-          <div
-            ref={topErrorRef}
-            role="alert"
-            className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-400 text-sm whitespace-pre-wrap break-words"
-          >
-            {err}
-          </div>
-        )}
+      {err && (
+        <div
+          ref={topErrorRef}
+          role="alert"
+          className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-400 text-sm whitespace-pre-wrap break-words"
+        >
+          {err}
+        </div>
+      )}
 
-        <DirectorNameSetupModal
-          open={showDirectorModal}
-          onSaved={(name) => {
-            setDefaultDirectorName(name);
-            setShowDirectorModal(false);
-          }}
-        />
+      <DirectorNameSetupModal
+        open={showDirectorModal}
+        onSaved={(name) => {
+          setDefaultDirectorName(name);
+          setShowDirectorModal(false);
+        }}
+      />
 
-        <UploaderUploadForm
-          user={user}
-          initialDirector={defaultDirectorName}
-          onSuccess={() => {
-            setErr(null);
-            router.replace("/uploader/works?submitted=1");
-          }}
-          onError={(message) => {
-            setErr(message);
-          }}
-        />
-
-        <p className="mt-6 text-center sm:hidden">
-          <Link href="/uploader/works" className="text-base font-medium text-xiio-accent hover:underline">
-            {t("myWorks.title")}
-          </Link>
-        </p>
+      <UploaderUploadForm
+        user={user}
+        initialDirector={defaultDirectorName}
+        onSuccess={() => {
+          setErr(null);
+          router.replace("/uploader/works?submitted=1");
+        }}
+        onError={(message) => {
+          setErr(message);
+        }}
+      />
     </AppPageShell>
   );
 }

@@ -248,9 +248,8 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
     (!rev.streamUid || rev.streamStatus === "ready");
 
   return (
-    <AppPageShell standalone>
+    <AppPageShell>
         <SubpageHeader
-          variant="standalone"
           title={t("workRevision.title")}
           backHref="/uploader/works"
           backLabel={t("workRevision.backToWorks")}
