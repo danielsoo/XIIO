@@ -25,7 +25,6 @@ export type AppNavIcon =
   | "campus"
   | "society"
   | "series"
-  | "creators"
   | "myList"
   | "upload"
   | "about";
@@ -52,7 +51,6 @@ export const PRIMARY_NAV: AppNavItem[] = [
     badgeKey: "nav.campusNew",
     section: "primary",
   },
-  { id: "creators", labelKey: "nav.creators", href: "/creators", icon: "creators", section: "primary" },
   { id: "society", labelKey: "nav.society", href: "/society", icon: "society", section: "primary" },
   {
     id: "myList",

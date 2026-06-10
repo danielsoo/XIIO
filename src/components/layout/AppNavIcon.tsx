@@ -89,13 +89,6 @@ export function AppNavIconSvg({ icon, active = false, className = iconClass }: P
           <path strokeLinecap="round" strokeWidth={2} d="M6 20h3M11 20h3M16 20h3" />
         </svg>
       );
-    case "creators":
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-          <circle cx="12" cy="8" r="3.25" strokeWidth={sw} />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={sw} d="M5.5 20v-0.75a6.5 6.5 0 0113 0V20" />
-        </svg>
-      );
     case "myList":
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

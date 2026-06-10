@@ -7,7 +7,7 @@ import {
   type ProfileSectionId,
 } from "@/lib/profileSections";
 
-export type MainTabId = "activity" | "profile" | "discover";
+export type MainTabId = "activity" | "profile";
 export type ActivityTabId = "uploads" | "likes" | "watched";
 
 type ActivityTab = { id: ActivityTabId; labelKey: string; count?: number };
@@ -25,7 +25,7 @@ type Props = {
   onProfileSection?: (id: ProfileSectionId) => void;
 };
 
-const MAIN_IDS: MainTabId[] = ["activity", "profile", "discover"];
+const MAIN_IDS: MainTabId[] = ["activity", "profile"];
 
 const SECTION_LABEL_KEYS: Record<ProfileSectionId, string> = {
   about: "accountProfile.sections.about",

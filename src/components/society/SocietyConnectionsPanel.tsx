@@ -77,6 +77,8 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
   const [school, setSchool] = useState("");
   const [interest, setInterest] = useState("");
   const [sort, setSort] = useState<SocietySortId>("recent");
+  const [q, setQ] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [people, setPeople] = useState<SocietyPerson[]>([]);
   const [connectedUids, setConnectedUids] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -121,6 +123,7 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
       const params = new URLSearchParams();
       if (tab === "connections") params.set("followingOnly", "1");
       if (role) params.set("role", role);
+      if (searchQuery) params.set("q", searchQuery);
       const res = await fetch(`/api/discover/people?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -136,7 +139,11 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
     } finally {
       setLoading(false);
     }
-  }, [user, tab, role, t]);
+  }, [user, tab, role, searchQuery, t]);
+
+  const submitSearch = () => {
+    setSearchQuery(q.trim());
+  };
 
   useEffect(() => {
     void loadFollowingSet();
@@ -259,7 +266,25 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
       </nav>
 
       {tab !== "requests" && tab !== "sent" && tab !== "works" ? (
-        <div className="mt-5 flex flex-wrap items-center gap-2">
+        <>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+              placeholder={t("discover.searchPlaceholder")}
+              className="min-w-[200px] flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+            />
+            <button
+              type="button"
+              onClick={submitSearch}
+              className="rounded-lg bg-xiio-accent px-4 py-2 text-sm text-white"
+            >
+              {t("discover.search")}
+            </button>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
           <DropdownSelect
             label={t("society.filterAllRoles")}
             value={role}
@@ -289,7 +314,8 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
               options={sortOptions}
             />
           </div>
-        </div>
+          </div>
+        </>
       ) : null}
 
       {tab === "works" ? (

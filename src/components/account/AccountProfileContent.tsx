@@ -23,10 +23,9 @@ import AccountProfileNav, {
 import AccountProfileSettingsPanel from "@/components/account/AccountProfileSettingsPanel";
 import AccountUploadsList from "@/components/account/AccountUploadsList";
 import AccountWorkActivityList from "@/components/account/AccountWorkActivityList";
-import DiscoverBooth from "@/components/account/DiscoverBooth";
 
 function parseMainTab(raw: string | null): MainTabId {
-  if (raw === "profile" || raw === "discover") return raw;
+  if (raw === "profile") return raw;
   return "activity";
 }
 
@@ -94,6 +93,12 @@ export default function AccountProfileContent() {
   const goPreviewSection = () => {
     setProfileSection("preview");
   };
+
+  useEffect(() => {
+    if (searchParams.get("tab") === "discover") {
+      router.replace("/society?tab=discover", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     if (!user) {
@@ -167,7 +172,6 @@ export default function AccountProfileContent() {
   const mainTabLabels: Record<MainTabId, string> = {
     activity: t("accountProfile.tabActivity"),
     profile: t("accountProfile.tabProfileSettings"),
-    discover: t("accountProfile.tabDiscover"),
   };
 
   const activityTabs: { id: ActivityTabId; labelKey: string; count?: number }[] = [
@@ -294,7 +298,7 @@ export default function AccountProfileContent() {
         />
       );
     }
-    return <DiscoverBooth />;
+    return null;
   };
 
   return (
