@@ -53,19 +53,21 @@ export default function MyListPage() {
 
   if (authLoading) {
     return (
-      <main className="min-h-screen bg-xiio-bg pt-24 px-6 flex items-center justify-center">
-        <p className="text-xiio-muted">{t("common.loading")}</p>
-      </main>
+      <AppPageShell>
+        <p className="text-xiio-muted py-16 text-center">{t("common.loading")}</p>
+      </AppPageShell>
     );
   }
 
   if (!user) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-xiio-bg text-xiio-muted">
-        <Link href="/login" className="text-xiio-accent hover:underline">
-          {t("common.loginRequired")}
-        </Link>
-      </main>
+      <AppPageShell>
+        <div className="flex flex-col items-center gap-4 py-16 text-center text-xiio-muted">
+          <Link href="/login" className="text-xiio-accent hover:underline">
+            {t("common.loginRequired")}
+          </Link>
+        </div>
+      </AppPageShell>
     );
   }
 

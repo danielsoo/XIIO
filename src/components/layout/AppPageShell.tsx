@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
 
-/** Horizontal padding aligned with home hero (HomePageContent). */
-export const PAGE_GUTTER = "px-4 sm:px-6 md:px-8 lg:px-10";
+/** AppShell 안 — 모바일만 px, lg는 AppShell inset에 맡김 (Society·TopBar와 동일) */
+export const PAGE_GUTTER_IN_SHELL = "px-4 lg:px-0";
+
+/** AppShell 밖 standalone (verify 등) */
+export const PAGE_GUTTER_STANDALONE = "px-4 sm:px-6 md:px-8 lg:px-10";
+
+/** @deprecated PAGE_GUTTER_IN_SHELL 사용 */
+export const PAGE_GUTTER = PAGE_GUTTER_IN_SHELL;
 
 /** Max content width aligned with home hero grid. */
 export const PAGE_CONTAINER = "mx-auto w-full max-w-7xl";
@@ -22,9 +28,10 @@ export default function AppPageShell({
   className = "",
 }: Props) {
   const pt = standalone ? "pt-6" : withNavbar ? "pt-6" : "pt-6";
+  const gutter = standalone ? PAGE_GUTTER_STANDALONE : PAGE_GUTTER_IN_SHELL;
 
   return (
-    <main className={`min-h-screen bg-xiio-bg pb-16 ${pt} ${PAGE_GUTTER} ${className}`.trim()}>
+    <main className={`min-h-screen bg-xiio-bg pb-16 ${pt} ${gutter} ${className}`.trim()}>
       <div className={PAGE_CONTAINER}>{children}</div>
     </main>
   );
