@@ -60,24 +60,14 @@ export default function HomeSurfaceCampusRow({
 
   const scroll = () => {
     scrollerRef.current?.scrollBy({
-      left: MOCKUP_MEASURES.surfaceCardWidth + MOCKUP_MEASURES.surfaceCardGap,
+      left: MOCKUP_MEASURES.surfaceCardWidth + 14,
       behavior: "smooth",
     });
   };
 
   return (
     <section className="min-w-0 w-full">
-      <div className="mb-4 hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:gap-6 max-w-full min-w-0">
-        <SectionHeader
-          title={title}
-          viewAllHref={viewAllHref}
-          viewAllLabel={viewAllLabel}
-          onScroll={scroll}
-        />
-        <div aria-hidden />
-      </div>
-
-      <div className="mb-4 lg:hidden">
+      <div className="mb-4">
         <SectionHeader
           title={title}
           viewAllHref={viewAllHref}
@@ -86,16 +76,13 @@ export default function HomeSurfaceCampusRow({
         />
       </div>
 
-      <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:gap-6 items-stretch max-w-full min-w-0">
-        <div
-          className={`grid min-w-0 w-full ${MOCKUP_HOME.surfaceRowGap}`}
-          style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
-        >
-          {items.map((item) => (
-            <HomeStoryCard key={item.id} item={item} variant="surface" />
-          ))}
-        </div>
-        <CampusCurrentsBanner className="shrink-0 self-stretch" />
+      <div
+        className={`hidden lg:grid min-w-0 w-full max-w-full ${MOCKUP_HOME.surfaceRowGap} ${MOCKUP_HOME.surfaceRowWidth}`}
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+      >
+        {items.map((item) => (
+          <HomeStoryCard key={item.id} item={item} variant="surface" />
+        ))}
       </div>
 
       <div
@@ -104,11 +91,13 @@ export default function HomeSurfaceCampusRow({
         style={{ scrollbarWidth: "none" }}
       >
         {items.map((item) => (
-          <HomeStoryCard key={item.id} item={item} variant="surface" />
+          <div key={item.id} className={MOCKUP_HOME.surfaceMobileCardWidth}>
+            <HomeStoryCard item={item} variant="surface" />
+          </div>
         ))}
       </div>
 
-      <div className="mt-4 lg:hidden">
+      <div className="mt-4 lg:mt-6">
         <CampusCurrentsBanner />
       </div>
     </section>
