@@ -60,16 +60,16 @@
       .logo-x-bar {
         position: absolute;
         width: 0.1em;
-        /* XIIO_X_ANGLE_DEG=35, sin(45°)/sin(35°) — XiioWordmark.tsx XIIO_X_ARM */
-        height: calc(0.72em / 0.76 * 1.23279);
+        /* XIIO_X_INTER_ANGLE_DEG=35, bar ±17.5° — XiioWordmark.tsx XIIO_X_ARM */
+        height: calc(0.72em / 0.76);
         background: currentColor;
       }
       .logo-x-bar-a {
-        transform: rotate(35deg);
+        transform: rotate(17.5deg);
         clip-path: polygon(0% 12%, 100% 0%, 100% 88%, 0% 100%);
       }
       .logo-x-bar-b {
-        transform: rotate(-35deg);
+        transform: rotate(-17.5deg);
         clip-path: polygon(0% 0%, 100% 12%, 100% 100%, 0% 88%);
       }
       .logo-ii {
