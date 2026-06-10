@@ -46,6 +46,7 @@ export default function SidebarProfileRow({ onNavigate }: { onNavigate?: () => v
     return (
       <Link
         href="/login"
+        prefetch={false}
         onClick={onNavigate}
         className="block mx-2 text-center py-2.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-sm font-semibold"
       >

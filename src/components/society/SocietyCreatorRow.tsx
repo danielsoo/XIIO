@@ -41,6 +41,7 @@ export default function SocietyCreatorRow({
       <div className="flex items-center gap-4 sm:contents">
         <Link
           href={`/people/${person.handle}`}
+          prefetch={false}
           className="relative shrink-0"
           aria-label={person.displayName}
         >
@@ -56,6 +57,7 @@ export default function SocietyCreatorRow({
           <div className="flex items-center gap-2">
             <Link
               href={`/people/${person.handle}`}
+              prefetch={false}
               className="truncate text-lg font-semibold text-white transition hover:text-xiio-accent"
             >
               {person.displayName}

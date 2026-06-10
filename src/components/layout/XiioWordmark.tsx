@@ -10,8 +10,8 @@ const XIIO_O_SIZE = `calc(var(--xiio-cap) + ${XIIO_STROKE})`;
 const XIIO_GAP = "0.74em";
 /** II 두 막대 사이 간격 */
 const XIIO_II_GAP = "0.48em";
-/** X 막대 회전각 (45° → 위·아래 개구 좁힘) */
-const XIIO_X_ANGLE_DEG = 52;
+/** X 막대 회전각 (기본 45° 대비 조정) */
+const XIIO_X_ANGLE_DEG = 35;
 
 /** clip-path 양 끝 trim — polygon %와 보정 높이에 공용 */
 const X_CLIP_TRIM = 0.12;

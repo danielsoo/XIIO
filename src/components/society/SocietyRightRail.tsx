@@ -25,6 +25,7 @@ export default function SocietyRightRail() {
           <p className="mt-2 text-sm leading-relaxed text-white/60">{t("society.ctaBody")}</p>
           <Link
             href="/creators"
+            prefetch={false}
             className="mt-5 inline-flex rounded-full bg-xiio-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 transition"
           >
             {t("society.ctaButton")}
@@ -44,6 +45,7 @@ export default function SocietyRightRail() {
         </ul>
         <Link
           href="/creators"
+          prefetch={false}
           className="mt-4 inline-flex items-center gap-1 text-xs text-xiio-accent hover:underline"
         >
           {t("society.viewAllInterests")}

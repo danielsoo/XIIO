@@ -35,6 +35,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       onClick={onNavigate}
       id={item.id === "myList" ? "app-nav-my-list" : undefined}
       data-nav-id={item.id}
@@ -68,6 +69,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex flex-col h-full">
       <Link
         href="/"
+        prefetch={false}
         onClick={onNavigate}
         className="flex justify-center px-4 pt-6 pb-0"
         aria-label={t("common.logoHome")}
