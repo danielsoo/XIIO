@@ -137,7 +137,7 @@ function HeroPhotoLayers({
             alt=""
             fill
             priority={priority}
-            className="object-cover"
+            className="object-contain"
             style={imageStyle}
             sizes={stripWidth}
           />

@@ -6,7 +6,6 @@ import {
   type CampusBackgroundId,
   type HomeBackgroundId,
 } from "./homeHeroColors";
-import { heroPhotoTopFadeBandPx } from "./homeHeroLayout";
 
 export type HeroBackgroundScope = "home" | "campus";
 
@@ -18,9 +17,6 @@ export { isValidHomeBackgroundId, isValidCampusBackgroundId };
 
 /** Home wave — matches campus vertical anchor */
 const HOME_WAVE_OBJECT_POSITION = "right 38%";
-
-/** Underwater — vertical anchor (no top fade band; px shift only) */
-const HOME_UNDER_WATER_OFFSET_Y_PX = Math.round(heroPhotoTopFadeBandPx()) - 90;
 
 type HeroBackgroundPreset = {
   scope: HeroBackgroundScope;
@@ -42,8 +38,7 @@ export const HERO_BACKGROUND_PRESETS: Record<HeroBackgroundId, HeroBackgroundPre
   home_under_water: {
     scope: "home",
     src: "/images/hero/home-under-water.png",
-    objectPosition: HOME_WAVE_OBJECT_POSITION,
-    offsetYPx: HOME_UNDER_WATER_OFFSET_Y_PX,
+    objectPosition: "center center",
   },
   campus_wave1: {
     scope: "campus",
