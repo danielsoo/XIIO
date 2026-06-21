@@ -130,10 +130,7 @@ function HeroPhotoLayers({
 
   if (flatPhoto) {
     return (
-      <div
-        className="absolute inset-0"
-        style={heroPhotoFlatMaskStyle(stripHeightPx)}
-      >
+      <div className="absolute inset-0">
         <div className="absolute inset-0" style={offsetWrapperStyle}>
           <Image
             src={heroImage}
@@ -229,7 +226,7 @@ export default function HeroLandscapeBackdrop({
         }}
         aria-hidden
       >
-        <div className="absolute inset-0" style={heroPhotoStripEdgeMaskStyle(backdropHeight)}>
+        <div className="absolute inset-0" style={isHomeUnderWater ? undefined : heroPhotoStripEdgeMaskStyle(backdropHeight)}>
           <HeroPhotoLayers
             heroImage={heroImage}
             heroImagePosition={heroImagePosition}
