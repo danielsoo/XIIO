@@ -122,7 +122,10 @@ function HeroPhotoLayers({
   topFadeBandPercent?: number;
   flatPhoto?: boolean;
 }) {
-  const imageStyle = { objectPosition: heroImagePosition };
+  const imageStyle = {
+    objectPosition: heroImagePosition,
+    ...(flatPhoto ? { transform: "scaleX(-1)" as const } : {}),
+  };
   const offsetWrapperStyle = heroPhotoOffsetWrapperStyle(offsetYPx);
 
   if (flatPhoto) {

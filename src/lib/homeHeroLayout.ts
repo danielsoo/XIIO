@@ -121,9 +121,18 @@ export function heroPhotoFlatMaskStyle(stripHeightPx: number) {
   const sharpFadeStartPx = stripHeightPx * 0.82;
   const sharpFade = maskStopPercent(sharpFadeStartPx, stripHeightPx);
 
+  const topHidePx =
+    MOCKUP_MEASURES.topBarHeight + MOCKUP_MEASURES.heroBackdropTopOffsetLg;
+  const topHide = maskStopPercent(topHidePx, stripHeightPx);
+  const topVisiblePx =
+    topHidePx + stripHeightPx * MOCKUP_MEASURES.heroPhotoTopFadeBandPercent;
+  const topVisible = maskStopPercent(topVisiblePx, stripHeightPx);
+
   return maskStyleFromImage(
     `linear-gradient(to bottom,
-      black 0%,
+      transparent 0%,
+      transparent ${topHide}%,
+      black ${topVisible}%,
       black ${sharpFade}%,
       transparent 100%)`
   );
