@@ -18,7 +18,7 @@ export default function ProfileAvatar({
     return (
       <div className={className} aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt="" className={imgClassName} />
+        <img src={url} alt="" className={imgClassName} loading="lazy" />
       </div>
     );
   }

@@ -146,12 +146,8 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
   };
 
   useEffect(() => {
-    void loadFollowingSet();
-  }, [loadFollowingSet]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+    void Promise.all([loadFollowingSet(), load()]);
+  }, [loadFollowingSet, load]);
 
   const filteredPeople = useMemo(() => {
     let list = [...people];

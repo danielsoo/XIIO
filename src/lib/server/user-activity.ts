@@ -93,21 +93,23 @@ export async function getUsersActivityStatus(
 ): Promise<Record<string, UserActivityStatus>> {
   if (uids.length === 0) return {};
 
+  const db = getAdminDb();
+  if (!db) return {};
+
   const now = Date.now();
-  const entries = await Promise.all(
-    uids.map(async (uid) => {
-      const activity = await getUserActivity(uid);
-      const lastSeenAt = activityTimestampToIso(activity.lastSeenAt);
-      return [
-        uid,
-        {
-          isOnline: isUserOnline(activity.lastSeenAt, now),
-          lastSeenAt,
-        },
-      ] as const;
-    })
-  );
-  return Object.fromEntries(entries);
+  const refs = uids.map((uid) => userActivityRef(db, uid));
+  const snaps = await db.getAll(...refs);
+
+  const result: Record<string, UserActivityStatus> = {};
+  for (let i = 0; i < uids.length; i++) {
+    const data = snaps[i].data();
+    const raw = data?.lastSeenAt ?? data?.lastVisitAt ?? null;
+    result[uids[i]] = {
+      isOnline: isUserOnline(raw, now),
+      lastSeenAt: activityTimestampToIso(raw),
+    };
+  }
+  return result;
 }
 
 export async function getUsersOnlineStatus(uids: string[]): Promise<Record<string, boolean>> {

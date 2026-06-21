@@ -5,11 +5,14 @@ import SocietyProfileBody from "@/components/society/SocietyProfileBody";
 import type { PeopleProfilePayload } from "@/components/profile/PeopleProfileView";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { getCached, setCache } from "@/lib/feedCache";
 
 export default function SocietySelfProfileSection() {
   const { user } = useAuth();
   const { t } = useTranslations();
-  const [data, setData] = useState<PeopleProfilePayload | null>(null);
+  const cacheKey = `society-self:${user?.uid}`;
+  const cached = getCached<PeopleProfilePayload>(cacheKey);
+  const [data, setData] = useState<PeopleProfilePayload | null>(cached ?? null);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
@@ -17,6 +20,7 @@ export default function SocietySelfProfileSection() {
       setData(null);
       return;
     }
+    if (cached) return;
     setLoading(true);
     try {
       const token = await user.getIdToken();
@@ -37,13 +41,15 @@ export default function SocietySelfProfileSection() {
         setData(null);
         return;
       }
-      setData((await res.json()) as PeopleProfilePayload);
+      const payload = (await res.json()) as PeopleProfilePayload;
+      setData(payload);
+      setCache(cacheKey, payload);
     } catch {
       setData(null);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, cached, cacheKey]);
 
   useEffect(() => {
     void load();
