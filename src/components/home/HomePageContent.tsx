@@ -5,8 +5,13 @@ import { useSearchParams } from "next/navigation";
 import HomeHeroActions from "@/components/HomeHeroActions";
 import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
 import HomeCatalogSection from "@/components/home/HomeCatalogSection";
-import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
-import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPlayer";
+import dynamic from "next/dynamic";
+
+const PromoShortCarousel = dynamic(
+  () => import("@/components/shorts/PromoShortCarousel"),
+  { ssr: false }
+);
+import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/promoShortConstants";
 import { HomeHeroThemeProvider, useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { usePromoFeed } from "@/hooks/usePromoFeed";

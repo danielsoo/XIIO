@@ -5,7 +5,7 @@ import ContentCard from "@/components/ContentCard";
 import PlaybackVideo from "@/components/PlaybackVideo";
 import PromoShortCarousel from "@/components/shorts/PromoShortCarousel";
 import PromoShortPlayer from "@/components/shorts/PromoShortPlayer";
-import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPlayer";
+import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/promoShortConstants";
 import { useTranslations } from "@/context/LocaleContext";
 import { gradientForTitle } from "@/lib/works/catalog-ui";
 import { buildEditorPreviewPromoShort } from "@/lib/works/editor-preview-promo";

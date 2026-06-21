@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { getCached, setCache } from "@/lib/feedCache";
 import { HOME_PROMO_SHORTS } from "@/data/promoShorts";
 import type { PromoShort } from "@/types/promoShort";
 import type { PromoFeedItem } from "@/types/work";
@@ -38,16 +39,24 @@ export function usePromoFeed(fallbackToDemoOrOptions: boolean | Options = true) 
   const { fallbackToDemo = true, initialItems } = options;
 
   const { user } = useAuth();
+  const cacheKey = `promo:${user?.uid ?? "anon"}`;
+  const cached = getCached<PromoShort[]>(cacheKey);
+
   const [items, setItems] = useState<PromoShort[]>(() => {
-    if (initialItems !== undefined) {
-      return initialItems.map(toPromoShort);
-    }
+    if (cached !== undefined) return cached;
+    if (initialItems !== undefined) return initialItems.map(toPromoShort);
     return fallbackToDemo ? HOME_PROMO_SHORTS : [];
   });
-  const [loading, setLoading] = useState(() => initialItems === undefined);
-  const [fromApi, setFromApi] = useState(() => initialItems !== undefined && initialItems.length > 0);
+  const [loading, setLoading] = useState(
+    () => cached === undefined && initialItems === undefined
+  );
+  const [fromApi, setFromApi] = useState(
+    () => cached !== undefined || (initialItems !== undefined && initialItems.length > 0)
+  );
 
   useEffect(() => {
+    if (cached !== undefined) return;
+
     let cancelled = false;
     (async () => {
       try {
@@ -63,6 +72,7 @@ export function usePromoFeed(fallbackToDemoOrOptions: boolean | Options = true) 
         if (apiItems.length > 0) {
           setItems(apiItems);
           setFromApi(true);
+          setCache(cacheKey, apiItems);
         } else if (!fallbackToDemo) {
           setItems([]);
         }
@@ -75,7 +85,7 @@ export function usePromoFeed(fallbackToDemoOrOptions: boolean | Options = true) 
     return () => {
       cancelled = true;
     };
-  }, [fallbackToDemo, user]);
+  }, [fallbackToDemo, user, cacheKey, cached]);
 
   return { items, loading, fromApi };
 }

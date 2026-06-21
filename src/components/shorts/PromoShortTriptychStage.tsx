@@ -4,7 +4,7 @@ import { useState } from "react";
 import PromoShortCarouselStage from "@/components/shorts/PromoShortCarouselStage";
 import PromoShortExpandedViewer from "@/components/shorts/PromoShortExpandedViewer";
 import type { PromoShortLayout, PromoShortPlayerSize } from "@/components/shorts/PromoShortPlayer";
-import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/PromoShortPlayer";
+import { HOME_HERO_PEEK_VIEWPORT_CLASS } from "@/components/shorts/promoShortConstants";
 import type { PromoShort } from "@/types/promoShort";
 
 type Props = {

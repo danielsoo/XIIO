@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 import { useEffect, useState } from "react";
 
 interface ContentCardProps {
@@ -16,7 +16,7 @@ interface ContentCardProps {
   roundedClassName?: string;
 }
 
-export default function ContentCard({
+export default memo(function ContentCard({
   title,
   gradient,
   thumbnailUrl,
@@ -70,4 +70,4 @@ export default function ContentCard({
   }
 
   return <div className={className}>{inner}</div>;
-}
+});

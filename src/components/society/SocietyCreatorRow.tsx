@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useTranslations } from "@/context/LocaleContext";
@@ -18,7 +19,7 @@ type Props = {
   onConnect: () => void;
 };
 
-export default function SocietyCreatorRow({
+export default memo(function SocietyCreatorRow({
   person,
   connected,
   connectBusy,
@@ -115,4 +116,4 @@ export default function SocietyCreatorRow({
       </div>
     </article>
   );
-}
+});

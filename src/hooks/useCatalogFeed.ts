@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getCached, setCache } from "@/lib/feedCache";
 import type { CatalogFeedItem, WorkSection } from "@/types/work";
 
 export function useCatalogFeed(
@@ -8,16 +9,29 @@ export function useCatalogFeed(
   limit = 8,
   initialItems?: CatalogFeedItem[]
 ) {
-  const [items, setItems] = useState<CatalogFeedItem[]>(initialItems ?? []);
-  const [loading, setLoading] = useState(() => initialItems === undefined);
+  const cacheKey = `catalog:${section}:${limit}`;
+  const cached = getCached<CatalogFeedItem[]>(cacheKey);
+
+  const [items, setItems] = useState<CatalogFeedItem[]>(
+    initialItems ?? cached ?? []
+  );
+  const [loading, setLoading] = useState(
+    () => initialItems === undefined && cached === undefined
+  );
 
   useEffect(() => {
+    if (cached !== undefined) return;
+
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch(`/api/feed/works?section=${section}&limit=${limit}`);
         const data = (await res.json()) as { items?: CatalogFeedItem[] };
-        if (!cancelled) setItems(data.items ?? []);
+        if (!cancelled) {
+          const fetched = data.items ?? [];
+          setItems(fetched);
+          setCache(cacheKey, fetched);
+        }
       } catch {
         if (!cancelled) setItems([]);
       } finally {
@@ -27,7 +41,7 @@ export function useCatalogFeed(
     return () => {
       cancelled = true;
     };
-  }, [section, limit]);
+  }, [section, limit, cacheKey, cached]);
 
   return { items, loading };
 }

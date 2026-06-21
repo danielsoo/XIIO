@@ -141,8 +141,7 @@ export default function ProfileOwnerWorkspace({
         </button>
       </div>
 
-      {activeTab === "preview" ? (
-        <div className="space-y-8">
+      <div className={activeTab === "preview" ? "space-y-8" : "hidden"}>
           <p className="text-sm text-xiio-muted">{t("profile.tabs.previewHint")}</p>
           {savedBanner && (
             <p className="text-sm text-emerald-400 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2">
@@ -164,9 +163,8 @@ export default function ProfileOwnerWorkspace({
               </Link>
             </p>
           )}
-        </div>
-      ) : (
-        <div className="space-y-6">
+      </div>
+      <div className={activeTab === "edit" ? "space-y-6" : "hidden"}>
           <section className="bg-xiio-surface rounded-2xl border border-white/10 p-6 sm:p-8 space-y-6">
             <p className="text-sm text-xiio-muted">{t("profile.tabs.editHint")}</p>
             <ProfilePhotoEditor
@@ -208,8 +206,7 @@ export default function ProfileOwnerWorkspace({
             <ProfileDiscoverSettings initialDiscoverable={data.identity?.isDiscoverable} />
             <PortfolioShareSection />
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
