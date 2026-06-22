@@ -105,7 +105,7 @@ export default function HomeMockPage({
     : undefined;
 
   return (
-    <main className={`min-h-screen min-w-0 w-full overflow-x-clip ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
+    <main className={`min-h-screen min-w-0 w-full ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
       <section
         ref={setHeroSectionRef}
         className={`relative isolate flex min-w-0 w-full flex-col -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
