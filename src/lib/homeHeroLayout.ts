@@ -132,7 +132,7 @@ export function heroPhotoFlatMaskStyle(stripHeightPx: number) {
     `linear-gradient(to bottom,
       transparent 0%,
       transparent ${topHide}%,
-      black ${topVisible}%,
+      black ${topHide}%,
       black 100%)`
   );
 }
