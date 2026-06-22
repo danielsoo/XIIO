@@ -50,7 +50,7 @@ const MOBILE_FALLBACK: HeroWaveRect = {
 };
 
 function getInitialWaveRect(): HeroWaveRect {
-  if (typeof window === "undefined") return LG_FALLBACK;
+  if (typeof window === "undefined") return MOBILE_FALLBACK;
   return window.matchMedia("(min-width: 1024px)").matches ? LG_FALLBACK : MOBILE_FALLBACK;
 }
 

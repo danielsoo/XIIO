@@ -109,7 +109,7 @@ export default function HomeMockPage({
       <section
         ref={setHeroSectionRef}
         className={`relative isolate flex min-w-0 w-full flex-col -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
-        style={{ minHeight: heroSectionMinHeight(waveRect) }}
+        style={isLgViewport ? { minHeight: heroSectionMinHeight(waveRect) } : undefined}
       >
         <HeroLandscapeBackdrop
           rgbTuple={rgbTuple}
