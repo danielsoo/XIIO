@@ -13,6 +13,7 @@ import {
   heroPhotoStripEdgeMaskStyle,
 } from "@/lib/homeHeroLayout";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
+import { APP_CONTENT_BOUNDARY_INSET_PX } from "@/lib/mockupLayout";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 import {
   resolveHeroBackground,
@@ -221,7 +222,7 @@ export default function HeroLandscapeBackdrop({
         style={{
           top: waveRect.backdropTop,
           left: waveRect.insetLeft,
-          right: isHomeUnderWater ? 0 : waveRect.insetRight,
+          right: isHomeUnderWater ? -APP_CONTENT_BOUNDARY_INSET_PX : waveRect.insetRight,
           height: backdropHeight,
         }}
         aria-hidden
