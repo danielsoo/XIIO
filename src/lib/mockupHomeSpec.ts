@@ -27,12 +27,12 @@ export const MOCKUP_HOME = {
   ctaRow: "gap-[clamp(0.5rem,1vw,12px)]",
   ctaButton: "h-[clamp(2rem,3.5vw,40px)] px-[clamp(0.75rem,2vw,1.5rem)] text-[clamp(0.7rem,1.2vw,14px)] rounded-full",
   featuredLabel:
-    "text-[10px] font-semibold tracking-[0.2em] text-sky-400 uppercase mb-2",
-  featuredTitle: "text-[18px] font-semibold text-white",
-  featuredMeta: "text-[12px] text-white/45 mb-3",
+    "text-[clamp(0.5rem,0.9vw,10px)] font-semibold tracking-[0.2em] text-sky-400 uppercase mb-[clamp(0.25rem,0.5vw,0.5rem)]",
+  featuredTitle: "text-[clamp(0.9rem,1.6vw,18px)] font-semibold text-white",
+  featuredMeta: "text-[clamp(0.6rem,1vw,12px)] text-white/45 mb-[clamp(0.5rem,1vw,0.75rem)]",
   featuredPlay:
-    "shrink-0 w-10 h-10 rounded-full border border-white/25 flex items-center justify-center text-white/90 hover:bg-white/10 transition",
-  viewAllLink: "text-xs",
+    "shrink-0 w-[clamp(2rem,3.5vw,2.5rem)] h-[clamp(2rem,3.5vw,2.5rem)] rounded-full border border-white/25 flex items-center justify-center text-white/90 hover:bg-white/10 transition",
+  viewAllLink: "text-[clamp(0.6rem,1vw,0.75rem)]",
   featuredHeaderToCards: "mt-3.5",
   sectionGap: "gap-8",
   featuredCardWidth: "w-full max-w-[233px] min-w-0",

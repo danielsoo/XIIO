@@ -167,23 +167,6 @@ export default function HomeMockPage({
               </div>
             </div>
 
-            <div
-              className={`hidden lg:flex min-w-0 max-w-full flex-col justify-end items-end ${MOCKUP_HOME.heroTextBottom}`}
-            >
-              <HomeFeaturedStoryPanel
-                label={t("home.mock.featuredLabel")}
-                title={featuredTitle}
-                meta={featuredMeta}
-              />
-            </div>
-          </div>
-
-          <div className="lg:hidden relative z-10 mt-8 px-4">
-            <HomeFeaturedStoryPanel
-              label={t("home.mock.featuredLabel")}
-              title={featuredTitle}
-              meta={featuredMeta}
-            />
           </div>
         </div>
       </section>

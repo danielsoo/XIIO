@@ -21,7 +21,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="ko" className="dark">
-      <body className={`font-sans ${playfair.variable}`}>
+      <body className={`font-sans ${playfair.variable} min-w-[360px]`}>
         <Providers initialHomeTheme={initialHomeTheme}>
           <AppShell>{children}</AppShell>
         </Providers>
