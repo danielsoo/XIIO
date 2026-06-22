@@ -121,7 +121,7 @@ export function heroPhotoFlatMaskStyle(stripHeightPx: number) {
   const sharpFadeStartPx = stripHeightPx * 0.82;
   const sharpFade = maskStopPercent(sharpFadeStartPx, stripHeightPx);
 
-  const topHidePx = MOCKUP_MEASURES.topBarHeight;
+  const topHidePx = 40;
   const topHide = maskStopPercent(topHidePx, stripHeightPx);
   const topVisiblePx =
     topHidePx + stripHeightPx * MOCKUP_MEASURES.heroPhotoTopFadeBandPercent;
