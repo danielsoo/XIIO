@@ -87,7 +87,7 @@ export function HeroWaveLayoutProvider({ children }: { children: ReactNode }) {
   const [isLgViewport, setIsLgViewport] = useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(min-width: 1024px)").matches
-      : true
+      : false
   );
 
   const measure = useCallback(() => {
