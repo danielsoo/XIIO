@@ -131,16 +131,16 @@ function HeroPhotoLayers({
 
   if (flatPhoto) {
     return (
-      <div className="absolute inset-0" style={heroPhotoFlatMaskStyle(stripHeightPx)}>
-        <div className="absolute inset-0" style={offsetWrapperStyle}>
+      <div className="absolute top-0 right-0 bottom-0 -left-[100vw]" style={heroPhotoFlatMaskStyle(stripHeightPx)}>
+        <div className="absolute top-0 right-0 bottom-0 -left-[100vw]" style={offsetWrapperStyle}>
           <Image
             src={heroImage}
             alt=""
-            fill
+            width={2086}
+            height={944}
             priority={priority}
-            className="object-cover"
+            className="absolute right-0 top-0 h-full w-auto max-w-none"
             style={imageStyle}
-            sizes={stripWidth}
           />
         </div>
       </div>
@@ -216,7 +216,7 @@ export default function HeroLandscapeBackdrop({
 
     return (
       <div
-        className={`absolute z-[1] overflow-hidden pointer-events-none transition-opacity duration-0 ${className} ${
+        className={`absolute z-[1] ${isHomeUnderWater ? "overflow-visible" : "overflow-hidden"} pointer-events-none transition-opacity duration-0 ${className} ${
           visualReady ? "opacity-100" : "opacity-0"
         }`}
         style={{
@@ -238,7 +238,7 @@ export default function HeroLandscapeBackdrop({
             flatPhoto={isHomeUnderWater}
           />
         </div>
-        {overlayEnabled ? (
+        {overlayEnabled && !isHomeUnderWater ? (
           <div className="absolute inset-0" style={heroOverlayContentMaskStyle()}>
             <OverlayLayers
               overlayEnabled

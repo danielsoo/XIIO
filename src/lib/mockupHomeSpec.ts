@@ -19,13 +19,13 @@ export const MOCKUP_HOME = {
   heroGrid:
     "lg:grid lg:items-end lg:grid-cols-[minmax(0,min(560px,52vw))_minmax(0,1fr)] lg:gap-[clamp(1rem,4vw,6rem)] lg:overflow-visible",
   heroTitle:
-    "font-serif text-[clamp(2.25rem,4.5vw,68px)] font-normal leading-[1.12] tracking-tight mb-4 max-w-full",
+    "font-serif text-[clamp(2.25rem,4.5vw,68px)] font-normal leading-[1.12] tracking-tight mb-[clamp(0.5rem,1vw,1rem)] max-w-full",
   heroSubtitle:
-    "text-[15px] leading-[1.55] max-w-[min(100%,560px)] text-white/55 mb-7",
+    "text-[clamp(0.75rem,1.5vw,15px)] leading-[1.55] max-w-[min(100%,560px)] text-white/55 mb-[clamp(1rem,2.5vw,1.75rem)]",
   heroTextColumnWide:
     "relative z-10 min-w-0 lg:max-w-none",
-  ctaRow: "gap-[12px]",
-  ctaButton: "h-[40px] px-6 text-[14px] rounded-full",
+  ctaRow: "gap-[clamp(0.5rem,1vw,12px)]",
+  ctaButton: "h-[clamp(2rem,3.5vw,40px)] px-[clamp(0.75rem,2vw,1.5rem)] text-[clamp(0.7rem,1.2vw,14px)] rounded-full",
   featuredLabel:
     "text-[10px] font-semibold tracking-[0.2em] text-sky-400 uppercase mb-2",
   featuredTitle: "text-[18px] font-semibold text-white",
