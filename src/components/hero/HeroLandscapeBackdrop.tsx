@@ -138,7 +138,7 @@ function HeroPhotoLayers({
             alt=""
             fill
             priority={priority}
-            className="object-contain"
+            className="object-cover"
             style={imageStyle}
             sizes={stripWidth}
           />
@@ -238,7 +238,7 @@ export default function HeroLandscapeBackdrop({
             flatPhoto={isHomeUnderWater}
           />
         </div>
-        {overlayEnabled && !isHomeUnderWater ? (
+        {overlayEnabled ? (
           <div className="absolute inset-0" style={heroOverlayContentMaskStyle()}>
             <OverlayLayers
               overlayEnabled
