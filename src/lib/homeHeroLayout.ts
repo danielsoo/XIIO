@@ -133,8 +133,7 @@ export function heroPhotoFlatMaskStyle(stripHeightPx: number) {
       transparent 0%,
       transparent ${topHide}%,
       black ${topVisible}%,
-      black ${sharpFade}%,
-      transparent 100%)`
+      black 100%)`
   );
 }
 

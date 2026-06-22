@@ -119,6 +119,7 @@ export default function HomeMockPage({
           gradStartPercent={gradStartPercent}
           visualReady={visualReady}
           priority
+          presetOverride="home_under_water"
         />
 
         <div

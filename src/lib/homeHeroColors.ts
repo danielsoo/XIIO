@@ -1,7 +1,7 @@
 export type HomeBackgroundId = "home_wave" | "home_under_water";
 export type CampusBackgroundId = "campus_wave1" | "campus_wave2" | "campus_wave3";
 
-export const DEFAULT_HOME_BACKGROUND_ID: HomeBackgroundId = "home_wave";
+export const DEFAULT_HOME_BACKGROUND_ID: HomeBackgroundId = "home_under_water";
 export const DEFAULT_CAMPUS_BACKGROUND_ID: CampusBackgroundId = "campus_wave1";
 
 export function isValidHomeBackgroundId(id: string): id is HomeBackgroundId {
