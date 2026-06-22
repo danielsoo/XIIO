@@ -220,7 +220,7 @@ export default function HeroLandscapeBackdrop({
         }`}
         style={{
           top: waveRect.backdropTop,
-          left: waveRect.insetLeft,
+          left: isHomeUnderWater ? 0 : waveRect.insetLeft,
           right: isHomeUnderWater ? 0 : waveRect.insetRight,
           height: backdropHeight,
         }}
