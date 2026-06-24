@@ -139,7 +139,7 @@ function HeroPhotoLayers({
             width={2086}
             height={944}
             priority={priority}
-            className="absolute right-0 top-0 h-full w-auto max-w-none"
+            className="absolute right-0 top-[60px] h-[65%] lg:h-[75%] w-auto max-w-none brightness-110"
             style={imageStyle}
           />
         </div>
