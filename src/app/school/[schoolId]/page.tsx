@@ -6,6 +6,8 @@ import {
   fetchSchoolWorksFeed,
   sortByPublishedAtDesc,
   sortByViewCountDesc,
+  toClientSafeCatalogItem,
+  toClientSafeSchool,
 } from "@/lib/server/school-feeds";
 import { pickSchoolRepresentativeWork } from "@/lib/server/school-representative";
 import { getDbOrNull } from "@/lib/server/works";
@@ -31,11 +33,11 @@ export default async function SchoolPage({ params }: Params) {
 
   return (
     <SchoolProfilePage
-      school={school}
+      school={toClientSafeSchool(school)}
       stats={stats}
-      latest={latest}
-      mostViewed={mostViewed}
-      representative={representative}
+      latest={latest.map(toClientSafeCatalogItem)}
+      mostViewed={mostViewed.map(toClientSafeCatalogItem)}
+      representative={representative ? toClientSafeCatalogItem(representative) : null}
     />
   );
 }

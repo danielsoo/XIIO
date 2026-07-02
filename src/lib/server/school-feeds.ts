@@ -114,6 +114,17 @@ export async function fetchSchoolsRanking(db: Firestore, limit = 50): Promise<Sc
     .slice(0, limit);
 }
 
+/** Firestore Timestamp(클래스 인스턴스)는 Server→Client Component 경계를 못 건넘 — 화면에 안 쓰는 필드라 제거 */
+export function toClientSafeSchool(school: SchoolListItem): SchoolListItem {
+  const { createdAt, updatedAt, ...rest } = school;
+  return rest;
+}
+
+export function toClientSafeCatalogItem(item: CatalogFeedItem): CatalogFeedItem {
+  const { publishedAt, ...rest } = item;
+  return rest;
+}
+
 export async function getServerSchoolFeed(schoolId: string) {
   const db = await getDbOrNull();
   if (!db) return { school: null, items: [] as CatalogFeedItem[], stats: computeSchoolStats([]) };
