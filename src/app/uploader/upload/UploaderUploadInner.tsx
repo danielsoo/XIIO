@@ -24,6 +24,7 @@ export default function UploaderUploadInner() {
     topErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [err]);
   const [defaultDirectorName, setDefaultDirectorName] = useState<string | null>(null);
+  const [schoolNameHint, setSchoolNameHint] = useState<string | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [showDirectorModal, setShowDirectorModal] = useState(false);
 
@@ -41,10 +42,14 @@ export default function UploaderUploadInner() {
         const res = await fetch("/api/me/uploader-settings", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const data = (await res.json()) as { defaultDirectorName?: string | null };
+        const data = (await res.json()) as {
+          defaultDirectorName?: string | null;
+          schoolNameHint?: string | null;
+        };
         if (cancelled) return;
         const name = data.defaultDirectorName?.trim() || null;
         setDefaultDirectorName(name);
+        setSchoolNameHint(data.schoolNameHint?.trim() || null);
         setShowDirectorModal(!name);
       } catch {
         if (!cancelled) setShowDirectorModal(false);
@@ -135,6 +140,7 @@ export default function UploaderUploadInner() {
       <UploaderUploadForm
         user={user}
         initialDirector={defaultDirectorName}
+        initialSchoolNameHint={schoolNameHint}
         onSuccess={() => {
           setErr(null);
           router.replace("/uploader/works?submitted=1");

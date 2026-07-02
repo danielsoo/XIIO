@@ -17,6 +17,7 @@ import { uploaderInputClass } from "@/components/uploader/uploaderFormStyles";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
 import WorkTagInput from "@/components/uploader/WorkTagInput";
+import SchoolPicker, { type SchoolPickerValue } from "@/components/uploader/SchoolPicker";
 import CreditTagInput, {
   type PendingEmailInvite,
   type TaggedCredit,
@@ -97,6 +98,7 @@ const UPLOAD_STEP_META: UploadWizardStepMeta[] = [
 type Props = {
   user: User;
   initialDirector?: string | null;
+  initialSchoolNameHint?: string | null;
   onSuccess: (payload: { workId: string; message: string }) => void;
   onError: (message: string) => void;
 };
@@ -110,7 +112,13 @@ type CollabInvitePostResponse = {
   error?: string;
 };
 
-export default function UploaderUploadForm({ user, initialDirector, onSuccess, onError }: Props) {
+export default function UploaderUploadForm({
+  user,
+  initialDirector,
+  initialSchoolNameHint,
+  onSuccess,
+  onError,
+}: Props) {
   const { t } = useTranslations();
   const { locale } = useLocale();
   const [stepIndex, setStepIndex] = useState(0);
@@ -134,6 +142,7 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("16:9");
   const [contentCategory, setContentCategory] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [school, setSchool] = useState<SchoolPickerValue>(null);
   const [credits, setCredits] = useState<TaggedCredit[]>([]);
   const [pendingEmailInvites, setPendingEmailInvites] = useState<PendingEmailInvite[]>([]);
   const directorLocked = Boolean(initialDirector?.trim());
@@ -439,6 +448,8 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
             uploadLength: file.size,
             contentCategory: contentCategory.trim() || undefined,
             tags: tagList.length > 0 ? tagList : undefined,
+            schoolId: school?.id || undefined,
+            schoolName: school?.name || undefined,
             director: (directorLocked ? lockedDirectorName : director.trim()) || undefined,
             description: trimmedDescription,
             promoDraft: {
@@ -869,6 +880,20 @@ export default function UploaderUploadForm({ user, initialDirector, onSuccess, o
                   );
                 })}
               </div>
+            </div>
+            <div>
+              <label className="block text-xs text-xiio-muted mb-1.5">
+                {t("uploader.schoolPickerLabel")}
+              </label>
+              <SchoolPicker
+                value={school}
+                onChange={setSchool}
+                disabled={busy}
+                user={user}
+                inputClassName={uploaderInputClass}
+                initialQuery={initialSchoolNameHint?.trim() ?? ""}
+              />
+              <p className="mt-1.5 text-xs text-xiio-muted">{t("uploader.schoolPickerHint")}</p>
             </div>
             <div>
               <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-category">

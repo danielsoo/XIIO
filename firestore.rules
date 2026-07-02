@@ -18,6 +18,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // 학교 레지스트리 — 공개 조회, 생성/수정은 서버 API(Admin SDK)만
+    match /schools/{schoolId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /users/{userId}/watchProfiles/{profileId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }

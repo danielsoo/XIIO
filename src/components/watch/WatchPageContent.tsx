@@ -25,7 +25,6 @@ const SECTION_TITLE_KEYS: Record<PublicWorkWatch["section"], string> = {
   series: "nav.series",
   entertainment: "nav.entertainment",
   shorts: "nav.shorts",
-  "school-battle": "nav.schoolBattle",
 };
 
 type WatchPhase = "prologue" | "main";

@@ -46,6 +46,8 @@ export function parseWorkPendingRevision(data: Record<string, unknown>): WorkPen
       typeof r.proposedAspectRatio === "string" && isVideoAspectRatio(r.proposedAspectRatio)
         ? r.proposedAspectRatio
         : undefined,
+    proposedSchoolId: r.proposedSchoolId ? String(r.proposedSchoolId) : undefined,
+    proposedSchoolName: r.proposedSchoolName ? String(r.proposedSchoolName) : undefined,
     rejectReason: r.rejectReason ? String(r.rejectReason) : undefined,
     rejectReasonCode:
       typeof code === "string" && isRejectReasonCode(code) ? code : undefined,

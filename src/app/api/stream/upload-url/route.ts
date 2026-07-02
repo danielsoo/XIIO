@@ -24,6 +24,7 @@ import {
 } from "@/lib/server/credits";
 import { parseUploadLength } from "@/lib/server/parse-upload-length";
 import { normalizeContentCategory, normalizeTags } from "@/lib/works/label-utils";
+import { getSchoolById } from "@/lib/server/schools";
 import type { WorkCreditInput } from "@/types/credits";
 import type { PrologueDraft, PromoDraft, VideoAspectRatio } from "@/types/work";
 
@@ -57,6 +58,8 @@ export async function POST(request: Request) {
     director?: string;
     aspectRatio?: string;
     uploadLength?: number | string;
+    schoolId?: string;
+    schoolName?: string;
     promoDraft?: {
       title?: string;
       description?: string;
@@ -133,6 +136,17 @@ export async function POST(request: Request) {
 
   const workId = crypto.randomUUID();
 
+  const schoolIdRaw = body.schoolId?.trim();
+  let proposedSchoolId: string | null = null;
+  let proposedSchoolName: string | null = null;
+  if (schoolIdRaw) {
+    const school = await getSchoolById(db, schoolIdRaw);
+    if (school) {
+      proposedSchoolId = school.id;
+      proposedSchoolName = school.name;
+    }
+  }
+
   try {
     const userSnap = await db.collection("users").doc(session.uid).get();
     const profile = userSnap.exists
@@ -163,6 +177,8 @@ export async function POST(request: Request) {
       proposedCategory: proposedCategory || null,
       proposedTags: proposedTags.length > 0 ? proposedTags : null,
       proposedAspectRatio,
+      proposedSchoolId,
+      proposedSchoolName,
       promoDraft,
       ...(prologueDraft ? { prologueDraft } : {}),
       platformStatus: "draft",

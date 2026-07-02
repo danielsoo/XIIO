@@ -93,7 +93,7 @@ export default function AdminHomeColorPicker() {
   } = useHomeHeroTheme();
 
   const isHomePage = pathname === "/";
-  const isCampusPage = pathname === "/school-battle";
+  const isCampusPage = pathname === "/schools";
   const showPanel = isHomePage || isCampusPage;
 
   const [hexInput, setHexInput] = useState(theme.heroHex);

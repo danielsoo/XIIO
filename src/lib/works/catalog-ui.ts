@@ -24,7 +24,6 @@ export function sectionCatalogHref(section: WorkSection): string {
     series: "/series",
     entertainment: "/entertainment",
     shorts: "/shorts",
-    "school-battle": "/school-battle",
   };
   return paths[section];
 }

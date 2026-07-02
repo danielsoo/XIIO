@@ -39,7 +39,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const isHeroMockPage = pathname === "/" || pathname === "/school-battle";
+  const isHeroMockPage = pathname === "/" || pathname === "/schools";
   const [profile, setProfile] = useState<UserProfileDoc | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

@@ -23,10 +23,12 @@ export async function GET(request: Request) {
 
   const worksSnap = await worksCol(db, session.uid).limit(1).get();
   const defaultDirectorName = profile?.defaultDirectorName?.trim() || null;
+  const schoolNameHint = profile?.schoolName?.trim() || null;
   const req = profile?.directorNameChangeRequest;
 
   return NextResponse.json({
     defaultDirectorName,
+    schoolNameHint,
     hasWorks: !worksSnap.empty,
     directorNameChangeRequest: req
       ? {

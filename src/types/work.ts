@@ -4,7 +4,6 @@ export const WORK_SECTIONS = [
   "series",
   "entertainment",
   "shorts",
-  "school-battle",
 ] as const;
 
 export type WorkSection = (typeof WORK_SECTIONS)[number];
@@ -63,6 +62,9 @@ export type WorkPendingRevision = {
   proposedCategory?: string;
   proposedTags?: string[];
   proposedAspectRatio?: VideoAspectRatio;
+  /** 대표하는 학교 — school-battle 아님, 콘텐츠 발견용 태그 */
+  proposedSchoolId?: string;
+  proposedSchoolName?: string;
   rejectReason?: string;
   rejectReasonCode?: RejectReasonCode;
   submittedAt?: unknown;
@@ -115,6 +117,12 @@ export type WorkDoc = {
   proposedAspectRatio?: VideoAspectRatio;
   /** 어드민 승인 시 확정 (공개·표시용) */
   approvedAspectRatio?: VideoAspectRatio;
+  /** 업로드 시 선택한 대표 학교 — schools/{schoolId} 참조, 어드민 승인 전 */
+  proposedSchoolId?: string;
+  proposedSchoolName?: string;
+  /** 어드민 승인 시 확정 (학교 페이지·랭킹 집계용) */
+  approvedSchoolId?: string;
+  approvedSchoolName?: string;
   platformStatus: PlatformStatus;
   streamStatus: StreamStatus;
   streamUid?: string;
@@ -246,6 +254,11 @@ export type CatalogFeedItem = {
   section: WorkSection;
   approvedCategory?: string;
   approvedTags: string[];
+  approvedSchoolId?: string;
+  approvedSchoolName?: string;
   thumbnailUrl?: string;
   thumbnailCrop?: PromoFrameCrop;
+  viewCount?: number;
+  likeCount?: number;
+  publishedAt?: unknown;
 };

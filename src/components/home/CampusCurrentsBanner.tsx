@@ -16,7 +16,7 @@ export default function CampusCurrentsBanner({ className = "" }: Props) {
 
   return (
     <Link
-      href="/school-battle"
+      href="/schools"
       className={`relative ${MOCKUP_HOME.campusBanner} ${MOCKUP_HOME.cardRadius} overflow-hidden border border-white/[0.08] hover:border-sky-500/25 transition group ${className}`}
     >
       <Image
@@ -29,13 +29,13 @@ export default function CampusCurrentsBanner({ className = "" }: Props) {
       <div className="absolute inset-0 bg-gradient-to-r from-xiio-bg via-xiio-bg/85 to-transparent" />
       <div className="relative z-10 p-5 flex flex-col justify-end h-full min-h-[inherit]">
         <p className="text-[11px] font-semibold tracking-wide text-sky-400 mb-1.5">
-          {t("home.mock.campusBannerTitle")}
+          {t("home.mock.schoolsBannerTitle")}
         </p>
         <p className="text-sm text-white/70 leading-relaxed mb-4 max-w-[220px]">
-          {t("home.mock.campusBannerBody")}
+          {t("home.mock.schoolsBannerBody")}
         </p>
         <span className="inline-flex items-center gap-1 text-sm text-sky-400 font-medium group-hover:text-sky-300">
-          {t("home.mock.exploreBattles")}
+          {t("home.mock.exploreSchools")}
           <IconArrowRight className="w-3.5 h-3.5" />
         </span>
         <div className="absolute bottom-5 right-5 flex -space-x-2">

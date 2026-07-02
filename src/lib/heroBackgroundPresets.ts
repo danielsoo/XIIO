@@ -26,7 +26,7 @@ type HeroBackgroundPreset = {
   offsetYPx?: number;
 };
 
-/** Campus `/school-battle` vertical anchor — home presets match this start height */
+/** Campus `/schools` vertical anchor — home presets match this start height */
 export const CAMPUS_HERO_OBJECT_POSITION = "right center";
 
 export const HERO_BACKGROUND_PRESETS: Record<HeroBackgroundId, HeroBackgroundPreset> = {

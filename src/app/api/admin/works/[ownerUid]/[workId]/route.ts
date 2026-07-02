@@ -8,6 +8,7 @@ import {
   rejectWorkRevision,
 } from "@/lib/server/content-revisions";
 import { refreshCreditIndexForWorkStatus } from "@/lib/server/credits";
+import { adjustSchoolWorkCount } from "@/lib/server/schools";
 import {
   FieldValue,
   getDbOrNull,
@@ -129,6 +130,8 @@ export async function PATCH(request: Request, { params }: Params) {
     approvedCategory?: string;
     approvedTags?: string[];
     approvedAspectRatio?: string;
+    approvedSchoolId?: string;
+    approvedSchoolName?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -213,11 +216,19 @@ export async function PATCH(request: Request, { params }: Params) {
       approvedAspectRatio = aspectBody;
     }
 
+    const approvedSchoolId =
+      body.approvedSchoolId?.trim() || work.proposedSchoolId?.trim() || null;
+    const approvedSchoolName = approvedSchoolId
+      ? body.approvedSchoolName?.trim() || work.proposedSchoolName?.trim() || null
+      : null;
+
     await ref.update({
       platformStatus: "published",
       approvedCategory,
       approvedTags: approvedTags.length > 0 ? approvedTags : null,
       approvedAspectRatio,
+      approvedSchoolId,
+      approvedSchoolName,
       publishedAt: FieldValue.serverTimestamp(),
       reviewedAt: FieldValue.serverTimestamp(),
       reviewedBy: session.uid,
@@ -234,6 +245,9 @@ export async function PATCH(request: Request, { params }: Params) {
       workTitle: work.title,
     });
     await refreshCreditIndexForWorkStatus(db, ownerUid, workId);
+    if (approvedSchoolId) {
+      await adjustSchoolWorkCount(db, approvedSchoolId, 1);
+    }
     return NextResponse.json({ ok: true, platformStatus: "published" });
   }
 
@@ -320,6 +334,9 @@ export async function PATCH(request: Request, { params }: Params) {
       workTitle: work.title,
     });
     await ref.delete();
+    if (work.approvedSchoolId) {
+      await adjustSchoolWorkCount(db, work.approvedSchoolId, -1);
+    }
     return NextResponse.json({ ok: true, deleted: true });
   }
 
