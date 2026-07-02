@@ -109,7 +109,7 @@ export async function fetchSchool(db: Firestore, schoolId: string): Promise<Scho
 export async function fetchSchoolsRanking(db: Firestore, limit = 50): Promise<SchoolListItem[]> {
   const all = await collectSchoolsForSuggestions(db);
   return all
-    .filter((s) => s.status === "active")
+    .filter((s) => s.status !== "merged")
     .sort((a, b) => (b.workCount ?? 0) - (a.workCount ?? 0))
     .slice(0, limit);
 }
