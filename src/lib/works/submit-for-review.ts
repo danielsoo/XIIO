@@ -16,8 +16,12 @@ export type SubmitProgress = {
 
 type EditorSnapshot = {
   work: { streamStatus?: string; platformStatus?: string; videoStaging?: { prologuePath?: string } };
-  promo: { streamStatus?: string; platformStatus?: string } | null;
   prologue: { streamStatus?: string; platformStatus?: string } | null;
+};
+
+type PromoEditorSnapshot = {
+  work: { streamStatus?: string };
+  promo: { streamStatus?: string; platformStatus?: string } | null;
 };
 
 async function authJson<T>(
@@ -50,14 +54,14 @@ async function pollEditorReady(
 ): Promise<void> {
   const started = Date.now();
   while (Date.now() - started < maxMs) {
-    const { ok, data } = await authJson<EditorSnapshot>(
-      token,
-      `/api/me/works/${workId}/prologue`,
-      { method: "GET" }
-    );
-    const workReady = data.work.streamStatus === "ready";
-    const promoReady = data.promo?.streamStatus === "ready";
-    const hasPrologueStaging = Boolean(data.work.videoStaging?.prologuePath?.trim());
+    const [{ ok: prologueOk, data }, { ok: promoOk, data: promoData }] = await Promise.all([
+      authJson<EditorSnapshot>(token, `/api/me/works/${workId}/prologue`, { method: "GET" }),
+      authJson<PromoEditorSnapshot>(token, `/api/me/works/${workId}/promo`, { method: "GET" }),
+    ]);
+    const ok = prologueOk && promoOk;
+    const workReady = data.work?.streamStatus === "ready";
+    const promoReady = promoData.promo?.streamStatus === "ready";
+    const hasPrologueStaging = Boolean(data.work?.videoStaging?.prologuePath?.trim());
     const prologueReady = !hasPrologueStaging || data.prologue?.streamStatus === "ready";
     if (ok && workReady && promoReady && prologueReady) {
       return;
