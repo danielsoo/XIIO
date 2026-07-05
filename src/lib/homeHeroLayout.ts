@@ -136,6 +136,23 @@ export function heroPhotoFlatMaskStyle(stripHeightPx: number) {
   );
 }
 
+/**
+ * Underwater photo — radial vignette mask so the rectangle dissolves into the black
+ * page background instead of hard-cutting. The ellipse touches the box edges exactly
+ * (100%/100%) on both axes; a low inner-stop dedicates most of each axis's own radius
+ * to the fade, so the transition spans enough pixels on the *short* (vertical) axis
+ * too — a fixed percent of a landscape image's height is far fewer pixels than the
+ * same percent of its width, which is what made the top/bottom edge look sharp.
+ */
+export function heroFlatPhotoEdgeFadeMaskStyle(innerStopPercent = 30) {
+  const gradient = `radial-gradient(ellipse 100% 100% at center,
+    black 0%,
+    black ${innerStopPercent}%,
+    rgba(0, 0, 0, 0.45) ${innerStopPercent + (100 - innerStopPercent) * 0.55}%,
+    transparent 100%)`;
+  return maskStyleFromImage(gradient);
+}
+
 /** Sharp band — blur bleed ends at top bar + lg content offset (px), not % of strip */
 export function heroPhotoSharpBandMaskStyle(
   stripHeightPx: number,

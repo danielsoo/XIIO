@@ -4,6 +4,7 @@ import Image from "next/image";
 import {
   heroBackdropStripHeight,
   heroDiagonalGradient,
+  heroFlatPhotoEdgeFadeMaskStyle,
   heroFullBleedMaskStyle,
   heroMobileVerticalGradient,
   heroOverlayContentMaskStyle,
@@ -125,7 +126,7 @@ function HeroPhotoLayers({
 }) {
   const imageStyle = {
     objectPosition: heroImagePosition,
-    ...(flatPhoto ? { transform: "scaleX(-1)" as const } : {}),
+    ...(flatPhoto ? { transform: "scaleX(-1)" as const, ...heroFlatPhotoEdgeFadeMaskStyle() } : {}),
   };
   const offsetWrapperStyle = heroPhotoOffsetWrapperStyle(offsetYPx);
 
@@ -139,8 +140,20 @@ function HeroPhotoLayers({
             width={2086}
             height={944}
             priority={priority}
-            className="absolute right-0 top-[60px] h-[65%] lg:h-[75%] w-auto max-w-none brightness-110"
+            className="absolute right-0 top-[60px] h-[65%] lg:h-[80%] w-auto max-w-none brightness-110"
             style={imageStyle}
+          />
+          <div
+            className="absolute right-0 top-[60px] h-[65%] lg:h-[80%] aspect-[2086/944] pointer-events-none"
+            style={{
+              backgroundImage: [
+                "linear-gradient(to bottom, black 0px, rgba(0,0,0,0.55) 10px, rgba(0,0,0,0.25) 20px, rgba(0,0,0,0.08) 30px, transparent 40px)",
+                "linear-gradient(to top, black 0px, rgba(0,0,0,0.55) 10px, rgba(0,0,0,0.25) 20px, rgba(0,0,0,0.08) 30px, transparent 40px)",
+                "linear-gradient(to right, black 0px, rgba(0,0,0,0.55) 10px, rgba(0,0,0,0.25) 20px, rgba(0,0,0,0.08) 30px, transparent 40px)",
+                "linear-gradient(to left, black 0px, rgba(0,0,0,0.55) 10px, rgba(0,0,0,0.25) 20px, rgba(0,0,0,0.08) 30px, transparent 40px)",
+              ].join(", "),
+            }}
+            aria-hidden
           />
         </div>
       </div>
