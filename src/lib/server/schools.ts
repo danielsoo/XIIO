@@ -23,11 +23,33 @@ export function slugifySchoolName(raw: string): string {
     .slice(0, 80);
 }
 
+const SCHOOL_NAME_STOPWORDS = new Set(["the", "of", "and", "at", "a", "an"]);
+
+/**
+ * "The Pennsylvania State University" -> PSU, "University of California, Los Angeles" -> UCLA.
+ * Drop filler words, then take every remaining word's first letter — this matches how most
+ * real university initialisms are actually formed, not just the first two words.
+ */
 function initialsFromName(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "??";
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
+  const meaningful = words.filter((w) => !SCHOOL_NAME_STOPWORDS.has(w.toLowerCase().replace(/[^a-z]/gi, "")));
+  const source = meaningful.length > 0 ? meaningful : words;
+  if (source.length === 0) return "??";
+  if (source.length === 1) {
+    const word = source[0];
+    // Already an acronym-looking name (KAIST, MIT, ...) — use as-is instead of truncating it
+    if (/^[A-Z]{2,6}$/.test(word)) return word;
+    return word.slice(0, 2).toUpperCase();
+  }
+  return source
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 5);
+}
+
+function shortNameFromName(name: string): string {
+  return name.trim().replace(/^the\s+/i, "").trim() || name.trim();
 }
 
 export function parseSchoolDoc(id: string, data: Record<string, unknown>): SchoolListItem {
@@ -35,8 +57,10 @@ export function parseSchoolDoc(id: string, data: Record<string, unknown>): Schoo
   return {
     id,
     name,
-    shortName: data.shortName ? String(data.shortName) : name,
-    initials: data.initials ? String(data.initials) : initialsFromName(name),
+    shortName: data.shortName ? String(data.shortName) : shortNameFromName(name),
+    // Always derived fresh from name (not trusted from storage) so algorithm
+    // improvements apply retroactively to every school without a migration.
+    initials: initialsFromName(name),
     slug: data.slug ? String(data.slug) : id,
     colorPrimary: typeof data.colorPrimary === "string" ? data.colorPrimary : "#0ea5e9",
     colorSecondary: typeof data.colorSecondary === "string" ? data.colorSecondary : "#ffffff",
@@ -68,7 +92,7 @@ export async function getOrCreateSchool(
 
   const doc: SchoolDoc = {
     name: trimmed,
-    shortName: trimmed,
+    shortName: shortNameFromName(trimmed),
     initials: initialsFromName(trimmed),
     slug,
     colorPrimary: "#0ea5e9",
