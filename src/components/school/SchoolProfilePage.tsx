@@ -1,14 +1,26 @@
 "use client";
 
-import AppPageShell from "@/components/layout/AppPageShell";
-import SubpageHeader from "@/components/layout/SubpageHeader";
-import SectionLabel from "@/components/layout/SectionLabel";
+import Link from "next/link";
+import { useCallback } from "react";
 import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
+import HomeFeaturedStoryPanel from "@/components/home/HomeFeaturedStoryPanel";
 import HomeStoryCard from "@/components/home/HomeStoryCard";
+import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
+import SectionLabel from "@/components/layout/SectionLabel";
+import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
+import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
-import type { HomeStoryItem } from "@/lib/homeMockData";
 import { catalogItemsToHomeStories } from "@/lib/categoryCatalogAdapter";
-import { rgba } from "@/lib/campusBrandColors";
+import type { HomeStoryItem } from "@/lib/homeMockData";
+import {
+  heroSectionMinHeight,
+  heroTextBandMarginTop,
+  heroTextBandMinHeight,
+} from "@/lib/homeHeroLayout";
+import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
+import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
+import { schoolBrandWashGradient } from "@/lib/school-brand";
+import type { CampusBackgroundId } from "@/lib/heroBackgroundPresets";
 import type { SchoolListItem, SchoolStats } from "@/types/school";
 import type { CatalogFeedItem } from "@/types/work";
 
@@ -18,6 +30,7 @@ type Props = {
   latest: CatalogFeedItem[];
   mostViewed: CatalogFeedItem[];
   representative: CatalogFeedItem | null;
+  heroPreset: CampusBackgroundId;
 };
 
 function StoryGrid({ items }: { items: HomeStoryItem[] }) {
@@ -30,77 +43,127 @@ function StoryGrid({ items }: { items: HomeStoryItem[] }) {
   );
 }
 
-function SchoolHeaderBadge({ school }: { school: SchoolListItem }) {
-  const size = 88;
-  if (school.logoUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={school.logoUrl}
-        alt={school.name}
-        width={size}
-        height={size}
-        className="rounded-full object-contain bg-white/5 shrink-0"
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-  return (
-    <div
-      className="shrink-0 rounded-full flex items-center justify-center font-black text-white"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.32,
-        backgroundColor: rgba(school.colorPrimary, 0.25),
-        border: `3px solid ${rgba(school.colorPrimary, 0.6)}`,
-      }}
-    >
-      {school.initials}
-    </div>
-  );
-}
-
-export default function SchoolProfilePage({ school, stats, latest, mostViewed, representative }: Props) {
+export default function SchoolProfilePage({
+  school,
+  stats,
+  latest,
+  mostViewed,
+  representative,
+  heroPreset,
+}: Props) {
   const { t } = useTranslations();
+  const { rgbTuple, overlayEnabled, heroStyle, themeReady } = useHomeHeroTheme();
+  const {
+    waveRect,
+    gradStartPercent,
+    layoutReady,
+    isLgViewport,
+    registerHeroSection,
+    registerHeroText,
+  } = useHeroWaveLayout();
 
+  const setHeroSectionRef = useCallback(
+    (el: HTMLElement | null) => {
+      registerHeroSection(el);
+    },
+    [registerHeroSection]
+  );
+
+  const setHeroTextRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      registerHeroText(el);
+    },
+    [registerHeroText]
+  );
+
+  const visualReady = themeReady && layoutReady;
   const repStory = representative ? catalogItemsToHomeStories([representative])[0] : null;
   const latestStories = catalogItemsToHomeStories(latest);
   const mostViewedStories = catalogItemsToHomeStories(mostViewed);
 
+  const heroGridBandStyle = isLgViewport
+    ? {
+        marginTop: heroTextBandMarginTop(),
+        minHeight: heroTextBandMinHeight(waveRect),
+      }
+    : undefined;
+
+  const statsLine = `${t("schools.profileMovies")} ${stats.movieCount} · ${t(
+    "schools.profileSeries"
+  )} ${stats.seriesCount} · ${t("schools.profileEntertainment")} ${stats.entertainmentCount}`;
+
+  const representativePanel = repStory ? (
+    <Link href={repStory.href ?? `/school/${school.id}`} className="block">
+      <HomeFeaturedStoryPanel
+        label={t("schools.representative")}
+        title={repStory.title}
+        meta={repStory.category}
+      />
+    </Link>
+  ) : null;
+
   return (
-    <AppPageShell>
-      <SubpageHeader backHref="/schools" backLabel={t("schools.backToSchools")} showHome />
+    <main className={`min-h-screen min-w-0 w-full ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
+      <section
+        ref={setHeroSectionRef}
+        className={`relative isolate flex min-w-0 w-full flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
+        style={{ minHeight: heroSectionMinHeight(waveRect) }}
+      >
+        <HeroLandscapeBackdrop
+          rgbTuple={rgbTuple}
+          overlayEnabled={overlayEnabled}
+          backgroundScope="campus"
+          variant="home"
+          presetOverride={heroPreset}
+          gradStartPercent={gradStartPercent}
+          visualReady={visualReady}
+          priority
+        />
+        <div
+          className="absolute inset-0 pointer-events-none z-[1]"
+          style={{ background: schoolBrandWashGradient(school.colorPrimary, school.colorSecondary) }}
+        />
 
-      <div className="flex items-center gap-5 mb-8">
-        <SchoolHeaderBadge school={school} />
-        <div className="min-w-0">
-          <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight truncate">
-            {school.name}
-          </h1>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-xiio-muted">
-            <span>{t("schools.profileMovies")} {stats.movieCount}</span>
-            <span>{t("schools.profileSeries")} {stats.seriesCount}</span>
-            <span>{t("schools.profileEntertainment")} {stats.entertainmentCount}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-10">
-        <section>
-          <h2 className="text-lg font-bold text-white mb-3">{t("schools.representative")}</h2>
-          {repStory ? (
-            <div className="max-w-xs">
-              <HomeStoryCard item={repStory} variant="featured" />
+        <div
+          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.heroContentTop}`}
+          style={{ minHeight: waveRect.height }}
+        >
+          <div className={`flex-1 w-full ${MOCKUP_HOME.heroGrid}`} style={heroGridBandStyle}>
+            <div
+              ref={setHeroTextRef}
+              className={`min-w-0 ${MOCKUP_HOME.heroTextColumnWide} ${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
+            >
+              <Link
+                href="/schools"
+                className={`${MOCKUP_CAMPUS.heroBadge} inline-flex items-center gap-1 hover:text-sky-300 transition`}
+              >
+                ← {t("schools.backToSchools")}
+              </Link>
+              <h1 className={MOCKUP_CAMPUS.heroTitle}>{school.name}</h1>
+              <p className={MOCKUP_HOME.heroSubtitle}>{statsLine}</p>
             </div>
-          ) : (
-            <p className="text-sm text-xiio-muted">{t("schools.representativeEmpty")}</p>
-          )}
-        </section>
 
+            {representativePanel ? (
+              <div
+                className={`hidden lg:flex min-w-0 max-w-full flex-col justify-end items-end ${MOCKUP_HOME.heroTextBottom}`}
+              >
+                {representativePanel}
+              </div>
+            ) : null}
+          </div>
+
+          {representativePanel ? (
+            <div className="lg:hidden relative z-10 mt-8 px-4">{representativePanel}</div>
+          ) : null}
+        </div>
+      </section>
+
+      <div
+        className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
+      >
         {latestStories.length > 0 && (
           <section>
-            <div className="mb-4">
+            <div className={MOCKUP_CAMPUS.sectionHeaderRow}>
               <SectionLabel>{t("schools.latest")}</SectionLabel>
             </div>
             <StoryGrid items={latestStories} />
@@ -109,15 +172,13 @@ export default function SchoolProfilePage({ school, stats, latest, mostViewed, r
 
         {mostViewedStories.length > 0 && (
           <section>
-            <div className="mb-4">
+            <div className={MOCKUP_CAMPUS.sectionHeaderRow}>
               <SectionLabel>{t("schools.mostViewed")}</SectionLabel>
             </div>
             <StoryGrid items={mostViewedStories} />
           </section>
         )}
       </div>
-
-      <AdminHomeColorPicker />
-    </AppPageShell>
+    </main>
   );
 }

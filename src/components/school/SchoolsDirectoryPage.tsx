@@ -1,78 +1,116 @@
 "use client";
 
 import Link from "next/link";
-import AppPageShell from "@/components/layout/AppPageShell";
-import SubpageHeader from "@/components/layout/SubpageHeader";
+import { useCallback } from "react";
 import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
+import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
+import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
+import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { rgba } from "@/lib/campusBrandColors";
+import {
+  heroSectionMinHeight,
+  heroTextBandMarginTop,
+  heroTextBandMinHeight,
+} from "@/lib/homeHeroLayout";
+import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
+import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
+import SchoolPosterCard from "@/components/school/SchoolPosterCard";
 import type { SchoolListItem } from "@/types/school";
-
-function SchoolBadge({ school, size = 56 }: { school: SchoolListItem; size?: number }) {
-  if (school.logoUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={school.logoUrl}
-        alt={school.name}
-        width={size}
-        height={size}
-        className="rounded-full object-contain bg-white/5 shrink-0"
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-  return (
-    <div
-      className="shrink-0 rounded-full flex items-center justify-center font-black text-white"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.32,
-        backgroundColor: rgba(school.colorPrimary, 0.25),
-        border: `2px solid ${rgba(school.colorPrimary, 0.6)}`,
-      }}
-    >
-      {school.initials}
-    </div>
-  );
-}
 
 export default function SchoolsDirectoryPage({ schools }: { schools: SchoolListItem[] }) {
   const { t } = useTranslations();
+  const { rgbTuple, overlayEnabled, heroStyle, themeReady } = useHomeHeroTheme();
+  const {
+    waveRect,
+    gradStartPercent,
+    layoutReady,
+    isLgViewport,
+    registerHeroSection,
+    registerHeroText,
+  } = useHeroWaveLayout();
+
+  const setHeroSectionRef = useCallback(
+    (el: HTMLElement | null) => {
+      registerHeroSection(el);
+    },
+    [registerHeroSection]
+  );
+
+  const setHeroTextRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      registerHeroText(el);
+    },
+    [registerHeroText]
+  );
+
+  const visualReady = themeReady && layoutReady;
+
+  const heroGridBandStyle = isLgViewport
+    ? {
+        marginTop: heroTextBandMarginTop(),
+        minHeight: heroTextBandMinHeight(waveRect),
+      }
+    : undefined;
 
   return (
-    <AppPageShell>
-      <SubpageHeader
-        title={t("schools.directoryTitle")}
-        description={t("schools.directorySubtitle")}
-        backFallbackHref="/"
-        showHome
-      />
+    <main className={`min-h-screen min-w-0 w-full ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
+      <section
+        ref={setHeroSectionRef}
+        className={`relative isolate flex min-w-0 w-full flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
+        style={{ minHeight: heroSectionMinHeight(waveRect) }}
+      >
+        <HeroLandscapeBackdrop
+          rgbTuple={rgbTuple}
+          overlayEnabled={overlayEnabled}
+          backgroundScope="campus"
+          variant="home"
+          gradStartPercent={gradStartPercent}
+          visualReady={visualReady}
+          priority
+        />
 
-      {schools.length === 0 ? (
-        <p className="text-xiio-muted py-16 text-center">{t("schools.empty")}</p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {schools.map((school) => (
-            <Link
-              key={school.id}
-              href={`/school/${school.id}`}
-              className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-white/25 hover:bg-white/[0.06] transition text-center"
+        <div
+          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.heroContentTop}`}
+          style={{ minHeight: waveRect.height }}
+        >
+          <div className={`flex-1 w-full ${MOCKUP_HOME.heroGrid}`} style={heroGridBandStyle}>
+            <div
+              ref={setHeroTextRef}
+              className={`min-w-0 ${MOCKUP_HOME.heroTextColumnWide} ${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
             >
-              <SchoolBadge school={school} />
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-white truncate max-w-[10rem]">{school.name}</p>
-                <p className="mt-1 text-xs text-xiio-muted">
-                  {t("schools.workCount", { count: school.workCount ?? 0 })}
-                </p>
+              <p className={MOCKUP_CAMPUS.heroBadge}>{t("schools.heroBadge")}</p>
+              <h1 className={MOCKUP_HOME.heroTitle}>
+                <span className="block text-white">{t("schools.directoryTitle")}</span>
+              </h1>
+              <p className={MOCKUP_HOME.heroSubtitle}>{t("schools.directorySubtitle")}</p>
+              <div className={`flex flex-wrap items-center ${MOCKUP_HOME.ctaRow}`}>
+                <Link
+                  href="/uploader/upload"
+                  className={`inline-flex items-center border border-white/30 text-white font-medium hover:bg-white/[0.06] transition ${MOCKUP_HOME.ctaButton}`}
+                >
+                  {t("schools.heroCta")}
+                </Link>
               </div>
-            </Link>
-          ))}
+            </div>
+          </div>
         </div>
-      )}
+      </section>
+
+      <div
+        className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
+      >
+        {schools.length === 0 ? (
+          <p className="text-white/45">{t("schools.empty")}</p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {schools.map((school) => (
+              <SchoolPosterCard key={school.id} school={school} />
+            ))}
+          </div>
+        )}
+      </div>
 
       <AdminHomeColorPicker />
-    </AppPageShell>
+    </main>
   );
 }

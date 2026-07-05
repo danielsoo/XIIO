@@ -10,6 +10,7 @@ import {
   toClientSafeSchool,
 } from "@/lib/server/school-feeds";
 import { pickSchoolRepresentativeWork } from "@/lib/server/school-representative";
+import { schoolHeroBackground } from "@/lib/school-brand";
 import { getDbOrNull } from "@/lib/server/works";
 
 type Params = { params: Promise<{ schoolId: string }> };
@@ -30,6 +31,7 @@ export default async function SchoolPage({ params }: Params) {
   const representative = pickSchoolRepresentativeWork(items);
   const latest = sortByPublishedAtDesc(items).slice(0, 12);
   const mostViewed = sortByViewCountDesc(items).slice(0, 12);
+  const heroPreset = schoolHeroBackground(schoolId);
 
   return (
     <SchoolProfilePage
@@ -38,6 +40,7 @@ export default async function SchoolPage({ params }: Params) {
       latest={latest.map(toClientSafeCatalogItem)}
       mostViewed={mostViewed.map(toClientSafeCatalogItem)}
       representative={representative ? toClientSafeCatalogItem(representative) : null}
+      heroPreset={heroPreset}
     />
   );
 }
