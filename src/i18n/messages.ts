@@ -58,6 +58,7 @@ export const messages = {
       discover: "창구",
       society: "소사이어티",
       menuOpen: "메뉴 열기",
+      messages: "메시지",
       myList: "내 리스트",
     },
     topBar: {
@@ -1704,6 +1705,7 @@ export const messages = {
       discover: "Discover",
       society: "Society",
       menuOpen: "Open menu",
+      messages: "Messages",
       myList: "My List",
     },
     topBar: {

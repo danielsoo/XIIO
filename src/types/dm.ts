@@ -3,6 +3,8 @@ export type DmThreadDoc = {
   lastMessageAt?: unknown;
   lastMessagePreview?: string;
   lastSenderUid?: string;
+  /** uid -> Firestore Timestamp of when that participant last viewed the thread */
+  lastReadAt?: Record<string, unknown>;
   createdAt?: unknown;
   updatedAt?: unknown;
 };

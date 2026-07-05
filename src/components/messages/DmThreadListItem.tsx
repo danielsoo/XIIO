@@ -72,13 +72,20 @@ export default function DmThreadListItem({ thread }: Props) {
               {thread.otherDisplayName}
             </p>
           </DmProfileLink>
-          {thread.lastMessageAt && (
-            <span className="text-[11px] text-xiio-muted shrink-0 tabular-nums">
-              {formatDmTime(thread.lastMessageAt, locale)}
-            </span>
-          )}
+          <span className="flex items-center gap-1.5 shrink-0">
+            {thread.unread && (
+              <span className="w-2 h-2 rounded-full bg-xiio-accent" aria-hidden />
+            )}
+            {thread.lastMessageAt && (
+              <span className="text-[11px] text-xiio-muted tabular-nums">
+                {formatDmTime(thread.lastMessageAt, locale)}
+              </span>
+            )}
+          </span>
         </div>
-        <p className="text-sm text-xiio-muted truncate mt-0.5">
+        <p
+          className={`text-sm truncate mt-0.5 ${thread.unread ? "text-white font-medium" : "text-xiio-muted"}`}
+        >
           {preview || t("dm.threadEmpty")}
         </p>
       </div>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminTimestampToMillis } from "@/lib/admin/format-timestamp";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
-import { getOrCreateThread, listThreadsForUser } from "@/lib/server/dm";
+import { getOrCreateThread, isThreadUnread, listThreadsForUser } from "@/lib/server/dm";
 import { getUidByHandle } from "@/lib/server/handles";
 import { getDbOrNull } from "@/lib/server/works";
 import { parseUserProfileDoc } from "@/lib/userAccess";
@@ -35,6 +35,7 @@ export async function GET(request: Request) {
         lastMessagePreview: row.thread.lastMessagePreview ?? "",
         lastMessageAt: timestampToIso(row.thread.lastMessageAt),
         lastSenderUid: row.thread.lastSenderUid ?? null,
+        unread: isThreadUnread(row.thread, auth.session.uid),
       };
     })
   );

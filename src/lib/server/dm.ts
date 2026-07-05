@@ -1,6 +1,7 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import type { DmMessageDoc, DmThreadDoc } from "@/types/dm";
 import { isBlocked } from "@/lib/server/blocks";
+import { adminTimestampToMillis } from "@/lib/admin/format-timestamp";
 
 const MAX_TEXT = 2000;
 
@@ -26,9 +27,29 @@ export function parseDmThread(data: Record<string, unknown>): DmThreadDoc | null
       ? String(data.lastMessagePreview).slice(0, 200)
       : undefined,
     lastSenderUid: data.lastSenderUid ? String(data.lastSenderUid) : undefined,
+    lastReadAt:
+      data.lastReadAt && typeof data.lastReadAt === "object"
+        ? (data.lastReadAt as Record<string, unknown>)
+        : undefined,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
+}
+
+/** 안읽음 여부 — 마지막 메시지 시각이 이 사용자의 마지막 열람 시각보다 나중이면 안읽음 */
+export function isThreadUnread(thread: DmThreadDoc, uid: string): boolean {
+  const lastMessageMs = adminTimestampToMillis(thread.lastMessageAt);
+  if (lastMessageMs == null) return false;
+  if (thread.lastSenderUid === uid) return false;
+  const readMs = adminTimestampToMillis(thread.lastReadAt?.[uid]);
+  return readMs == null || readMs < lastMessageMs;
+}
+
+/** 스레드 열람 시 호출 — 해당 사용자에 한해 마지막 열람 시각 갱신 */
+export async function markThreadRead(db: Firestore, threadId: string, uid: string): Promise<void> {
+  await dmThreadsCol(db)
+    .doc(threadId)
+    .update({ [`lastReadAt.${uid}`]: FieldValue.serverTimestamp() });
 }
 
 export function parseDmMessage(id: string, data: Record<string, unknown>): DmMessageDoc & { id: string } {
@@ -115,4 +136,9 @@ export async function listThreadsForUser(db: Firestore, uid: string, limit = 40)
       return { threadId: d.id, otherUid, thread };
     })
     .filter(Boolean);
+}
+
+export async function countUnreadThreadsForUser(db: Firestore, uid: string): Promise<number> {
+  const rows = await listThreadsForUser(db, uid);
+  return rows.filter((row) => row && isThreadUnread(row.thread, uid)).length;
 }

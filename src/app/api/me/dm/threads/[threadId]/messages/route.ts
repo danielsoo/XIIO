@@ -3,6 +3,7 @@ import { jsonError, requireUser } from "@/lib/server/api-auth";
 import {
   dmMessagesCol,
   dmThreadsCol,
+  markThreadRead,
   parseDmMessage,
   parseDmThread,
   sendDmMessage,
@@ -38,6 +39,8 @@ export async function GET(request: Request, { params }: Params) {
   const messages = snap.docs
     .map((d) => parseDmMessage(d.id, d.data() as Record<string, unknown>))
     .reverse();
+
+  await markThreadRead(db, threadId, auth.session.uid);
 
   const otherUid = thread.participantIds.find((id) => id !== auth.session.uid) ?? "";
   const otherSnap = await db.collection("users").doc(otherUid).get();

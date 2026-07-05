@@ -7,6 +7,7 @@ export type DmThreadRow = {
   lastMessagePreview: string;
   lastMessageAt: string | null;
   lastSenderUid: string | null;
+  unread: boolean;
 };
 
 export type DmInboxTab = "primary" | "general" | "requests";

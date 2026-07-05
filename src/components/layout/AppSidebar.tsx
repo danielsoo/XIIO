@@ -7,6 +7,7 @@ import { useTranslations } from "@/context/LocaleContext";
 import { AppNavIconSvg } from "@/components/layout/AppNavIcon";
 import SidebarProfileRow from "@/components/layout/SidebarProfileRow";
 import XiioWordmark from "@/components/layout/XiioWordmark";
+import { useDmUnreadCount } from "@/context/DmUnreadContext";
 import {
   APP_SIDEBAR_WIDTH,
   PRIMARY_NAV,
@@ -30,7 +31,9 @@ function NavLink({
 }) {
   const { t } = useTranslations();
   const { user } = useAuth();
+  const unreadCount = useDmUnreadCount();
   const href = item.requiresAuth && !user ? "/login" : item.href;
+  const showUnreadBadge = item.id === "messages" && unreadCount > 0;
 
   return (
     <Link
@@ -46,7 +49,11 @@ function NavLink({
     >
       <AppNavIconSvg icon={item.icon} active={active} />
       <span className="flex-1 truncate">{t(item.labelKey)}</span>
-      {item.badgeKey ? (
+      {showUnreadBadge ? (
+        <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-xiio-accent text-white text-[10px] font-bold flex items-center justify-center tabular-nums">
+          {unreadCount > 99 ? "99+" : unreadCount}
+        </span>
+      ) : item.badgeKey ? (
         <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-sky-500/20 text-sky-400">
           {t(item.badgeKey)}
         </span>

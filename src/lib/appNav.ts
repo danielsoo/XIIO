@@ -38,6 +38,7 @@ export type AppNavIcon =
   | "society"
   | "series"
   | "myList"
+  | "messages"
   | "upload"
   | "about";
 
@@ -63,6 +64,14 @@ export const PRIMARY_NAV: AppNavItem[] = [
     section: "primary",
   },
   { id: "society", labelKey: "nav.society", href: "/society", icon: "society", section: "primary" },
+  {
+    id: "messages",
+    labelKey: "nav.messages",
+    href: "/messages",
+    icon: "messages",
+    requiresAuth: true,
+    section: "primary",
+  },
   {
     id: "myList",
     labelKey: "nav.myList",

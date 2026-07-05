@@ -95,6 +95,24 @@ export function AppNavIconSvg({ icon, active = false, className = iconClass }: P
           <path strokeLinecap="round" strokeWidth={sw} d="M12 6v12M6 12h12" />
         </svg>
       );
+    case "messages":
+      if (active) {
+        return (
+          <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M4 4h16a1 1 0 011 1v11a1 1 0 01-1 1H9l-5 4v-4H4a1 1 0 01-1-1V5a1 1 0 011-1z" />
+          </svg>
+        );
+      }
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={sw}
+            d="M4 5h16a1 1 0 011 1v11a1 1 0 01-1 1H9l-5 4v-4H4a1 1 0 01-1-1V6a1 1 0 011-1z"
+          />
+        </svg>
+      );
     case "upload":
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

@@ -27,6 +27,7 @@ export default function DmConversationPane({ threadId }: Props) {
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const sendingRef = useRef(false);
+  const lastMessageIdRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user || !threadId) return;
@@ -56,7 +57,11 @@ export default function DmConversationPane({ threadId }: Props) {
   }, [load]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const lastId = messages.length > 0 ? messages[messages.length - 1].id : null;
+    if (lastId === lastMessageIdRef.current) return;
+    const isFirstLoad = lastMessageIdRef.current === null;
+    lastMessageIdRef.current = lastId;
+    bottomRef.current?.scrollIntoView({ behavior: isFirstLoad ? "auto" : "smooth" });
   }, [messages]);
 
   const send = async () => {
