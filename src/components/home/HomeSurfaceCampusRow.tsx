@@ -78,7 +78,7 @@ export default function HomeSurfaceCampusRow({
 
       <div
         className={`hidden lg:grid min-w-0 w-full max-w-full ${MOCKUP_HOME.surfaceRowGap} ${MOCKUP_HOME.surfaceRowWidth}`}
-        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: "repeat(5, minmax(0, 1fr))" }}
       >
         {items.map((item) => (
           <HomeStoryCard key={item.id} item={item} variant="surface" />

@@ -71,11 +71,9 @@ export default function HomeContentRow({
   hideHeader = false,
 }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const isFeatured = variant === "featured";
-  const rowWidthClass = isFeatured ? MOCKUP_HOME.featuredRowWidth : MOCKUP_HOME.selectsRowWidth;
-  const displayItems = isFeatured
-    ? items.slice(0, MOCKUP_MEASURES.featuredRowItemCount)
-    : items;
+  // 데스크톱은 한 줄에 고정 5개, 나머지는 자동으로 다음 줄로 넘어감 (잘리지 않음) — 두 variant 모두 5열 폭에 맞춤
+  const rowWidthClass = MOCKUP_HOME.featuredRowWidth;
+  const displayItems = items;
 
   const scroll = () => {
     scrollerRef.current?.scrollBy({
@@ -110,7 +108,7 @@ export default function HomeContentRow({
 
       <div
         className={`hidden lg:grid min-w-0 w-full max-w-full ${MOCKUP_HOME.featuredRowGap} ${rowWidthClass}`}
-        style={{ gridTemplateColumns: `repeat(${displayItems.length}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${MOCKUP_MEASURES.featuredRowItemCount}, minmax(0, 1fr))` }}
       >
         {displayItems.map((item) => (
           <HomeStoryCard key={item.id} item={item} variant="featured" />
