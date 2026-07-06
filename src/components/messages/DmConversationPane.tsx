@@ -25,7 +25,7 @@ export default function DmConversationPane({ threadId }: Props) {
   const [otherAvatarUrl, setOtherAvatarUrl] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sendingRef = useRef(false);
   const lastMessageIdRef = useRef<string | null>(null);
 
@@ -61,7 +61,12 @@ export default function DmConversationPane({ threadId }: Props) {
     if (lastId === lastMessageIdRef.current) return;
     const isFirstLoad = lastMessageIdRef.current === null;
     lastMessageIdRef.current = lastId;
-    bottomRef.current?.scrollIntoView({ behavior: isFirstLoad ? "auto" : "smooth" });
+    // scrollTo on the container itself — scrollIntoView would also nudge the outer
+    // page scroll since it walks up every scrollable ancestor, not just this one.
+    scrollContainerRef.current?.scrollTo({
+      top: scrollContainerRef.current.scrollHeight,
+      behavior: isFirstLoad ? "auto" : "smooth",
+    });
   }, [messages]);
 
   const send = async () => {
@@ -127,7 +132,7 @@ export default function DmConversationPane({ threadId }: Props) {
         </DmProfileLink>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
         {messages.length === 0 ? (
           <p className="text-center text-sm text-xiio-muted py-12">{t("dm.threadEmpty")}</p>
         ) : (
@@ -166,7 +171,6 @@ export default function DmConversationPane({ threadId }: Props) {
             )}
           </>
         )}
-        <div ref={bottomRef} />
       </div>
 
       <form
