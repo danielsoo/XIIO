@@ -10,4 +10,21 @@ export type DmThreadRow = {
   unread: boolean;
 };
 
-export type DmInboxTab = "primary" | "general" | "requests";
+export type RoomMemberPreview = {
+  uid: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
+export type RoomListItem = {
+  roomId: string;
+  name: string;
+  memberIds: string[];
+  memberPreview: RoomMemberPreview[];
+  lastMessagePreview: string;
+  lastMessageAt: string | null;
+  lastSenderUid: string | null;
+  unread: boolean;
+};
+
+export type DmMainTab = "messages" | "groups" | "requests" | "invites";

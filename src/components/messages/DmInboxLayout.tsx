@@ -2,8 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import BusinessInviteComposerModal from "@/components/messages/BusinessInviteComposerModal";
 import DmSidebar from "@/components/messages/DmSidebar";
+import { useDmInbox } from "@/components/messages/DmInboxContext";
 import DmNewMessageModal from "@/components/messages/DmNewMessageModal";
+import RoomComposerModal from "@/components/messages/RoomComposerModal";
 
 type Props = {
   children: ReactNode;
@@ -11,20 +14,23 @@ type Props = {
 
 export default function DmInboxLayout({ children }: Props) {
   const pathname = usePathname();
-  const hasThread = /^\/messages\/[^/]+$/.test(pathname);
+  const hasThread =
+    /^\/messages\/[^/]+$/.test(pathname) || /^\/messages\/rooms\/[^/]+$/.test(pathname);
+  const { businessInviteComposerOpen, closeBusinessInviteComposer, roomComposerOpen, closeRoomComposer } =
+    useDmInbox();
 
   return (
     <>
-      <div className="flex min-h-[calc(100vh-6rem)] max-h-[calc(100vh-6rem)] border border-white/10 rounded-2xl overflow-hidden bg-xiio-surface/40">
+      <div className="flex min-h-[calc(100vh-6rem)] max-h-[calc(100vh-6rem)] border border-white/15 rounded-2xl overflow-hidden bg-xiio-surface">
         <aside
-          className={`w-full md:w-[360px] shrink-0 flex flex-col border-r border-white/10 bg-xiio-bg ${
+          className={`w-full md:w-[360px] shrink-0 flex flex-col border-r border-white/10 bg-xiio-surface ${
             hasThread ? "hidden md:flex" : "flex"
           }`}
         >
           <DmSidebar />
         </aside>
         <section
-          className={`flex-1 min-w-0 flex flex-col bg-xiio-bg ${
+          className={`flex-1 min-w-0 flex flex-col bg-[#181818] ${
             hasThread ? "flex" : "hidden md:flex"
           }`}
         >
@@ -32,6 +38,10 @@ export default function DmInboxLayout({ children }: Props) {
         </section>
       </div>
       <DmNewMessageModal />
+      {businessInviteComposerOpen && (
+        <BusinessInviteComposerModal onClose={closeBusinessInviteComposer} />
+      )}
+      {roomComposerOpen && <RoomComposerModal onClose={closeRoomComposer} />}
     </>
   );
 }

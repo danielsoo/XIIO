@@ -21,12 +21,17 @@ export function DmUnreadProvider({ children }: { children: ReactNode }) {
     const load = async () => {
       try {
         const token = await user.getIdToken();
-        const res = await fetch("/api/me/dm/unread-count", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = (await res.json()) as { count?: number };
-        if (!cancelled) setCount(data.count ?? 0);
+        const [dmRes, roomRes] = await Promise.all([
+          fetch("/api/me/dm/unread-count", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch("/api/me/rooms/unread-count", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        const dmCount = dmRes.ok ? ((await dmRes.json()) as { count?: number }).count ?? 0 : 0;
+        const roomCount = roomRes.ok ? ((await roomRes.json()) as { count?: number }).count ?? 0 : 0;
+        if (!cancelled) setCount(dmCount + roomCount);
       } catch {
         /* ignore — badge just stays at its last known value */
       }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { deleteStreamVideo, resolveReviewPlaybackUrl } from "@/lib/cloudflare/stream";
 import { listWorkAuditLog, recordAdminAudit } from "@/lib/server/admin-audit";
 import { jsonError, requireAdmin } from "@/lib/server/api-auth";
+import { createNotification } from "@/lib/server/notifications";
 import { parseUserProfileDoc } from "@/lib/userAccess";
 import {
   approveWorkRevision,
@@ -180,6 +181,12 @@ export async function PATCH(request: Request, { params }: Params) {
           targetType: "full",
           workTitle: work.title,
         });
+        await createNotification(db, {
+          recipientUid: ownerUid,
+          type: "work_approve",
+          workId,
+          workTitle: work.title,
+        });
         return NextResponse.json({ ok: true, platformStatus: "published", revisionApplied: true });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -244,6 +251,12 @@ export async function PATCH(request: Request, { params }: Params) {
       targetType: "full",
       workTitle: work.title,
     });
+    await createNotification(db, {
+      recipientUid: ownerUid,
+      type: "work_approve",
+      workId,
+      workTitle: work.title,
+    });
     await refreshCreditIndexForWorkStatus(db, ownerUid, workId);
     if (approvedSchoolId) {
       await adjustSchoolWorkCount(db, approvedSchoolId, 1);
@@ -276,6 +289,13 @@ export async function PATCH(request: Request, { params }: Params) {
           workTitle: work.title,
           note: reason,
         });
+        await createNotification(db, {
+          recipientUid: ownerUid,
+          type: "work_reject",
+          workId,
+          workTitle: work.title,
+          rejectReasonCode: code,
+        });
         return NextResponse.json({ ok: true, revisionReviewStatus: "rejected" });
       } catch {
         return jsonError("invalid_state", "수정 심사 상태가 아닙니다.", 400);
@@ -298,6 +318,13 @@ export async function PATCH(request: Request, { params }: Params) {
       targetType: "full",
       workTitle: work.title,
       note: reason,
+    });
+    await createNotification(db, {
+      recipientUid: ownerUid,
+      type: "work_reject",
+      workId,
+      workTitle: work.title,
+      rejectReasonCode: code,
     });
     return NextResponse.json({ ok: true, platformStatus: "rejected" });
   }

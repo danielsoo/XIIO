@@ -92,6 +92,7 @@ export default function SocietyPublicProfileHero({
           <PeopleProfileActions
             profileUid={profileUid}
             handle={handle}
+            displayName={displayName}
             isSelf={false}
             initialFollowing={isFollowing}
           />

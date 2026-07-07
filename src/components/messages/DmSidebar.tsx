@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BusinessInviteList from "@/components/messages/BusinessInviteList";
 import { useDmInbox } from "@/components/messages/DmInboxContext";
 import DmInboxTabs from "@/components/messages/DmInboxTabs";
 import DmSearchBar from "@/components/messages/DmSearchBar";
 import DmShortcutsRow from "@/components/messages/DmShortcutsRow";
 import DmThreadList from "@/components/messages/DmThreadList";
+import RoomList from "@/components/messages/RoomList";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { getUserProfile } from "@/lib/userProfile";
 
 export default function DmSidebar() {
-  const { openNewMessage } = useDmInbox();
+  const { mainTab, openNewMessage, openRoomComposer } = useDmInbox();
   const { user } = useAuth();
   const { t } = useTranslations();
   const [handle, setHandle] = useState<string | null>(null);
@@ -38,9 +40,9 @@ export default function DmSidebar() {
         <h1 className="text-lg font-bold text-white truncate">{headerLabel}</h1>
         <button
           type="button"
-          onClick={openNewMessage}
+          onClick={mainTab === "groups" ? openRoomComposer : openNewMessage}
           className="p-2 rounded-lg text-white hover:bg-white/10 transition"
-          aria-label={t("dm.inbox.newMessage")}
+          aria-label={mainTab === "groups" ? t("dm.rooms.newRoom") : t("dm.inbox.newMessage")}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path
@@ -53,11 +55,19 @@ export default function DmSidebar() {
         </button>
       </div>
       <DmInboxTabs />
-      <DmSearchBar />
-      <DmShortcutsRow />
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <DmThreadList />
-      </div>
+      {mainTab === "invites" ? (
+        <BusinessInviteList />
+      ) : mainTab === "groups" ? (
+        <RoomList />
+      ) : (
+        <>
+          <DmSearchBar />
+          <DmShortcutsRow />
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <DmThreadList />
+          </div>
+        </>
+      )}
     </div>
   );
 }

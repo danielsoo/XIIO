@@ -82,6 +82,7 @@ export default function PublicProfileCard({
                 <PeopleProfileActions
                   profileUid={profile.uid}
                   handle={profile.handle}
+                  displayName={profile.displayName}
                   isSelf={false}
                   initialFollowing={isFollowing}
                 />

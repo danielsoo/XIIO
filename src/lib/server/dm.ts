@@ -2,6 +2,7 @@ import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import type { DmMessageDoc, DmThreadDoc } from "@/types/dm";
 import { isBlocked } from "@/lib/server/blocks";
 import { adminTimestampToMillis } from "@/lib/admin/format-timestamp";
+import { buildNotificationPayload, notificationsCol } from "@/lib/server/notifications";
 
 const MAX_TEXT = 2000;
 
@@ -88,22 +89,34 @@ export async function sendDmMessage(
   db: Firestore,
   threadId: string,
   senderUid: string,
-  text: string
+  text: string,
+  /**
+   * Client already knows the other participant from its last thread load — passing it lets us
+   * run the isBlocked check in parallel with the thread read instead of after it (shaves one
+   * network round-trip off every send). The hint is only trusted once verified against the
+   * thread's real participantIds below; otherwise we fall back to the safe sequential check.
+   */
+  otherUidHint?: string
 ): Promise<{ ok: true; messageId: string } | { ok: false; code: string }> {
   const trimmed = text.trim().slice(0, MAX_TEXT);
   if (!trimmed) return { ok: false, code: "empty" };
 
   const threadRef = dmThreadsCol(db).doc(threadId);
-  const threadSnap = await threadRef.get();
+  const [threadSnap, hintBlocked] = await Promise.all([
+    threadRef.get(),
+    otherUidHint ? isBlocked(db, senderUid, otherUidHint) : Promise.resolve(null),
+  ]);
   if (!threadSnap.exists) return { ok: false, code: "thread_not_found" };
   const thread = parseDmThread(threadSnap.data() as Record<string, unknown>);
   if (!thread) return { ok: false, code: "thread_invalid" };
   if (!thread.participantIds.includes(senderUid)) return { ok: false, code: "forbidden" };
 
   const otherUid = thread.participantIds.find((id) => id !== senderUid);
-  if (!otherUid || (await isBlocked(db, senderUid, otherUid))) {
-    return { ok: false, code: "blocked" };
-  }
+  if (!otherUid) return { ok: false, code: "blocked" };
+
+  const blocked =
+    hintBlocked !== null && otherUidHint === otherUid ? hintBlocked : await isBlocked(db, senderUid, otherUid);
+  if (blocked) return { ok: false, code: "blocked" };
 
   const msgRef = dmMessagesCol(db, threadId).doc();
   const batch = db.batch();
@@ -118,6 +131,16 @@ export async function sendDmMessage(
     lastSenderUid: senderUid,
     updatedAt: FieldValue.serverTimestamp(),
   });
+  batch.set(
+    notificationsCol(db).doc(),
+    buildNotificationPayload({
+      recipientUid: otherUid,
+      type: "new_dm_message",
+      actorUid: senderUid,
+      threadId,
+      messagePreview: trimmed.slice(0, 120),
+    })
+  );
   await batch.commit();
   return { ok: true, messageId: msgRef.id };
 }

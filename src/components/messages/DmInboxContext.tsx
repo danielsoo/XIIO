@@ -9,14 +9,25 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import type { DmInboxTab, DmThreadRow } from "@/components/messages/types";
+import type {
+  DmMainTab,
+  DmThreadRow,
+  RoomListItem,
+} from "@/components/messages/types";
+
+const VALID_MAIN_TABS: DmMainTab[] = ["messages", "groups", "requests", "invites"];
+
+function isDmMainTab(v: string | null): v is DmMainTab {
+  return v != null && (VALID_MAIN_TABS as string[]).includes(v);
+}
 
 type DmInboxContextValue = {
   threads: DmThreadRow[];
   loading: boolean;
-  tab: DmInboxTab;
-  setTab: (tab: DmInboxTab) => void;
+  mainTab: DmMainTab;
+  setMainTab: (tab: DmMainTab) => void;
   search: string;
   setSearch: (q: string) => void;
   filteredThreads: DmThreadRow[];
@@ -25,17 +36,35 @@ type DmInboxContextValue = {
   newMessageOpen: boolean;
   openNewMessage: () => void;
   closeNewMessage: () => void;
+  businessInviteComposerOpen: boolean;
+  openBusinessInviteComposer: () => void;
+  closeBusinessInviteComposer: () => void;
+  rooms: RoomListItem[];
+  roomsLoading: boolean;
+  refreshRooms: () => Promise<void>;
+  roomComposerOpen: boolean;
+  openRoomComposer: () => void;
+  closeRoomComposer: () => void;
 };
 
 const DmInboxContext = createContext<DmInboxContextValue | null>(null);
 
 export function DmInboxProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [threads, setThreads] = useState<DmThreadRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<DmInboxTab>("primary");
+  const [mainTab, setMainTab] = useState<DmMainTab>(() => {
+    const tab = searchParams.get("tab");
+    return isDmMainTab(tab) ? tab : "messages";
+  });
   const [search, setSearch] = useState("");
   const [newMessageOpen, setNewMessageOpen] = useState(false);
+  const [businessInviteComposerOpen, setBusinessInviteComposerOpen] = useState(false);
+
+  const [rooms, setRooms] = useState<RoomListItem[]>([]);
+  const [roomsLoading, setRoomsLoading] = useState(true);
+  const [roomComposerOpen, setRoomComposerOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!user) {
@@ -57,6 +86,26 @@ export function DmInboxProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, [user]);
 
+  const refreshRooms = useCallback(async () => {
+    if (!user) {
+      setRooms([]);
+      setRoomsLoading(false);
+      return;
+    }
+    const token = await user.getIdToken();
+    const res = await fetch("/api/me/rooms", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      setRooms([]);
+      setRoomsLoading(false);
+      return;
+    }
+    const data = (await res.json()) as { rooms?: RoomListItem[] };
+    setRooms(data.rooms ?? []);
+    setRoomsLoading(false);
+  }, [user]);
+
   useEffect(() => {
     setLoading(true);
     void refresh();
@@ -64,16 +113,23 @@ export function DmInboxProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(id);
   }, [refresh]);
 
+  useEffect(() => {
+    setRoomsLoading(true);
+    void refreshRooms();
+    const id = setInterval(() => void refreshRooms(), 8000);
+    return () => clearInterval(id);
+  }, [refreshRooms]);
+
   const tabFiltered = useMemo(() => {
     if (!user) return [];
-    if (tab === "general") return [];
-    if (tab === "requests") {
+    if (mainTab === "invites" || mainTab === "groups") return [];
+    if (mainTab === "requests") {
       return threads.filter(
         (th) => th.lastSenderUid && th.lastSenderUid !== user.uid
       );
     }
     return threads;
-  }, [threads, tab, user]);
+  }, [threads, mainTab, user]);
 
   const filteredThreads = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -92,8 +148,8 @@ export function DmInboxProvider({ children }: { children: ReactNode }) {
     () => ({
       threads,
       loading,
-      tab,
-      setTab,
+      mainTab,
+      setMainTab,
       search,
       setSearch,
       filteredThreads,
@@ -102,16 +158,30 @@ export function DmInboxProvider({ children }: { children: ReactNode }) {
       newMessageOpen,
       openNewMessage: () => setNewMessageOpen(true),
       closeNewMessage: () => setNewMessageOpen(false),
+      businessInviteComposerOpen,
+      openBusinessInviteComposer: () => setBusinessInviteComposerOpen(true),
+      closeBusinessInviteComposer: () => setBusinessInviteComposerOpen(false),
+      rooms,
+      roomsLoading,
+      refreshRooms,
+      roomComposerOpen,
+      openRoomComposer: () => setRoomComposerOpen(true),
+      closeRoomComposer: () => setRoomComposerOpen(false),
     }),
     [
       threads,
       loading,
-      tab,
+      mainTab,
       search,
       filteredThreads,
       shortcutThreads,
       refresh,
       newMessageOpen,
+      businessInviteComposerOpen,
+      rooms,
+      roomsLoading,
+      refreshRooms,
+      roomComposerOpen,
     ]
   );
 

@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useDmUnreadCount } from "@/context/DmUnreadContext";
 import { useTranslations } from "@/context/LocaleContext";
 import ProfileAvatar from "@/components/ProfileAvatar";
-import { IconBell, IconSearch } from "@/components/icons/MockupIcons";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import { IconSearch } from "@/components/icons/MockupIcons";
 import { getUserProfile } from "@/lib/userProfile";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import type { UserProfileDoc } from "@/types/user";
@@ -38,7 +38,6 @@ function MockProfileIcon() {
 export default function AppTopBar({ onMenuOpen }: Props) {
   const { t } = useTranslations();
   const { user, logout } = useAuth();
-  const unreadCount = useDmUnreadCount();
   const router = useRouter();
   const pathname = usePathname();
   const isHeroMockPage = pathname === "/" || pathname === "/schools";
@@ -101,17 +100,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        <button
-          type="button"
-          onClick={() => router.push("/messages")}
-          className="relative p-2.5 rounded-full text-white/50 hover:text-white hover:bg-white/5 transition"
-          aria-label={t("topBar.notifications")}
-        >
-          <IconBell />
-          {unreadCount > 0 ? (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-xiio-accent ring-2 ring-xiio-bg" aria-hidden />
-          ) : null}
-        </button>
+        <NotificationBell />
 
         {user ? (
           <div ref={ref} className="relative">

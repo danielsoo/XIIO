@@ -8,7 +8,7 @@ import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 
-type Message = { id: string; senderUid: string; text: string };
+type Message = { id: string; senderUid: string; text: string; pending?: boolean; failed?: boolean };
 
 type Props = {
   threadId: string;
@@ -24,9 +24,7 @@ export default function DmConversationPane({ threadId }: Props) {
   const [otherHandle, setOtherHandle] = useState<string | null>(null);
   const [otherAvatarUrl, setOtherAvatarUrl] = useState<string | null>(null);
   const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const sendingRef = useRef(false);
   const lastMessageIdRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
@@ -69,36 +67,52 @@ export default function DmConversationPane({ threadId }: Props) {
     });
   }, [messages]);
 
-  const send = async () => {
-    if (!user || !threadId || !text.trim()) return;
-    if (sendingRef.current || busy) return;
-    sendingRef.current = true;
-    setBusy(true);
+  const send = () => {
+    if (!user || !threadId) return;
     const payload = text.trim();
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`/api/me/dm/threads/${threadId}/messages`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: payload }),
-      });
-      if (res.ok) {
-        setText("");
-        await load();
-        await refreshThreads();
+    if (!payload) return;
+
+    // Show the message immediately — the network call happens in the background,
+    // so sending never blocks on Firestore round-trip latency.
+    setText("");
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setMessages((prev) => [...prev, { id: tempId, senderUid: user.uid, text: payload, pending: true }]);
+
+    void (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/me/dm/threads/${threadId}/messages`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: payload, otherUidHint: otherUid || undefined }),
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { messageId?: string };
+          if (data.messageId) {
+            const messageId = data.messageId;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === tempId ? { id: messageId, senderUid: user.uid, text: payload } : m))
+            );
+          }
+          // Background sync — reconciles unread badges / thread list ordering with
+          // what's already shown optimistically; doesn't block anything above.
+          void load();
+          void refreshThreads();
+        } else {
+          setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, pending: false, failed: true } : m)));
+        }
+      } catch {
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, pending: false, failed: true } : m)));
       }
-    } finally {
-      sendingRef.current = false;
-      setBusy(false);
-    }
+    })();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    void send();
+    send();
   };
 
   if (!user) return null;
@@ -142,7 +156,7 @@ export default function DmConversationPane({ threadId }: Props) {
               return (
                 <div
                   key={m.id}
-                  className={`flex gap-2 ${mine ? "justify-end" : "justify-start items-end"}`}
+                  className={`flex gap-2 min-w-0 ${mine ? "justify-end" : "justify-start items-end"}`}
                 >
                   {!mine && (
                     <DmProfileLink handle={otherHandle} uid={otherUid} className="shrink-0">
@@ -154,14 +168,19 @@ export default function DmConversationPane({ threadId }: Props) {
                       />
                     </DmProfileLink>
                   )}
-                  <div
-                    className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
-                      mine
-                        ? "bg-xiio-accent text-white rounded-br-md"
-                        : "bg-white/10 text-white rounded-bl-md"
-                    }`}
-                  >
-                    {m.text}
+                  <div className={`flex flex-col min-w-0 max-w-[75%] ${mine ? "items-end" : "items-start"}`}>
+                    <div
+                      className={`px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
+                        mine
+                          ? `bg-xiio-accent text-white rounded-br-md ${m.pending ? "opacity-60" : ""}`
+                          : "bg-[#2c2c2e] text-white rounded-bl-md"
+                      }`}
+                    >
+                      {m.text}
+                    </div>
+                    {m.failed && (
+                      <p className="text-[11px] text-red-400 mt-0.5 px-1">{t("dm.sendFailed")}</p>
+                    )}
                   </div>
                 </div>
               );
@@ -182,12 +201,11 @@ export default function DmConversationPane({ threadId }: Props) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={t("dm.placeholder")}
-          disabled={busy}
-          className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-sm text-white disabled:opacity-50 focus:outline-none focus:border-xiio-accent/50"
+          className="flex-1 bg-white/10 border border-white/15 rounded-full px-4 py-2.5 text-sm text-white disabled:opacity-50 focus:outline-none focus:border-xiio-accent/50"
         />
         <button
           type="submit"
-          disabled={busy || !text.trim()}
+          disabled={!text.trim()}
           className="px-4 py-2.5 rounded-full bg-xiio-accent text-white text-sm font-semibold disabled:opacity-40 hover:bg-xiio-accent-hover transition"
         >
           {t("dm.send")}

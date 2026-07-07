@@ -1,4 +1,5 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
+import { buildNotificationPayload, notificationsCol } from "@/lib/server/notifications";
 
 export function followDocId(followerUid: string, followingUid: string): string {
   return `${followerUid}_${followingUid}`;
@@ -45,6 +46,10 @@ export async function followUser(
     db.collection("users").doc(followerUid),
     { followingCount: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() },
     { merge: true }
+  );
+  batch.set(
+    notificationsCol(db).doc(),
+    buildNotificationPayload({ recipientUid: followingUid, type: "new_follower", actorUid: followerUid })
   );
   await batch.commit();
   return { ok: true };

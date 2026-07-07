@@ -1,19 +1,20 @@
 "use client";
 
 import { useDmInbox } from "@/components/messages/DmInboxContext";
-import type { DmInboxTab } from "@/components/messages/types";
+import type { DmMainTab } from "@/components/messages/types";
 import { useTranslations } from "@/context/LocaleContext";
 
-const TABS: DmInboxTab[] = ["primary", "general", "requests"];
+const TABS: DmMainTab[] = ["messages", "groups", "requests", "invites"];
 
 export default function DmInboxTabs() {
-  const { tab, setTab } = useDmInbox();
+  const { mainTab, setMainTab } = useDmInbox();
   const { t } = useTranslations();
 
-  const labels: Record<DmInboxTab, string> = {
-    primary: t("dm.tabs.primary"),
-    general: t("dm.tabs.general"),
+  const labels: Record<DmMainTab, string> = {
+    messages: t("dm.tabs.messages"),
+    groups: t("dm.tabs.groups"),
     requests: t("dm.tabs.requests"),
+    invites: t("dm.tabs.invites"),
   };
 
   return (
@@ -22,9 +23,9 @@ export default function DmInboxTabs() {
         <button
           key={id}
           type="button"
-          onClick={() => setTab(id)}
+          onClick={() => setMainTab(id)}
           className={`flex-1 py-3 text-sm font-semibold transition border-b-2 -mb-px ${
-            tab === id
+            mainTab === id
               ? "text-white border-white"
               : "text-xiio-muted border-transparent hover:text-white"
           }`}

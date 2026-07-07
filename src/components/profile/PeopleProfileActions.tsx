@@ -3,12 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import BusinessInviteComposerModal from "@/components/messages/BusinessInviteComposerModal";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 
 type Props = {
   profileUid: string;
   handle: string;
+  displayName?: string;
   isSelf: boolean;
   initialFollowing: boolean;
 };
@@ -16,6 +18,7 @@ type Props = {
 export default function PeopleProfileActions({
   profileUid,
   handle,
+  displayName,
   isSelf,
   initialFollowing,
 }: Props) {
@@ -24,6 +27,7 @@ export default function PeopleProfileActions({
   const router = useRouter();
   const [following, setFollowing] = useState(initialFollowing);
   const [busy, setBusy] = useState(false);
+  const [inviteComposerOpen, setInviteComposerOpen] = useState(false);
 
   if (isSelf) {
     return null;
@@ -89,6 +93,20 @@ export default function PeopleProfileActions({
       <button type="button" disabled={busy} onClick={() => void startDm()} className={btnOutline}>
         {t("dm.message")}
       </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => setInviteComposerOpen(true)}
+        className={btnOutline}
+      >
+        {t("dm.invites.composerTitle")}
+      </button>
+      {inviteComposerOpen && (
+        <BusinessInviteComposerModal
+          presetRecipient={{ uid: profileUid, handle, displayName: displayName || handle }}
+          onClose={() => setInviteComposerOpen(false)}
+        />
+      )}
     </div>
   );
 }

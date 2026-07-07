@@ -5,7 +5,7 @@ import DmThreadListItem from "@/components/messages/DmThreadListItem";
 import { useTranslations } from "@/context/LocaleContext";
 
 export default function DmThreadList() {
-  const { filteredThreads, loading, tab } = useDmInbox();
+  const { filteredThreads, loading, mainTab } = useDmInbox();
   const { t } = useTranslations();
 
   if (loading) {
@@ -16,11 +16,7 @@ export default function DmThreadList() {
 
   if (filteredThreads.length === 0) {
     const emptyMsg =
-      tab === "general"
-        ? t("dm.tabs.generalEmpty")
-        : tab === "requests"
-          ? t("dm.tabs.requestsEmpty")
-          : t("dm.empty");
+      mainTab === "requests" ? t("dm.tabs.requestsEmpty") : t("dm.empty");
     return <p className="px-4 py-8 text-sm text-xiio-muted text-center">{emptyMsg}</p>;
   }
 
