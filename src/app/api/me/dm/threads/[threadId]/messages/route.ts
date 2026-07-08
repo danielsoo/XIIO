@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timestampToIso } from "@/lib/collab-invite-pure";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
 import {
   dmMessagesCol,
@@ -38,7 +39,8 @@ export async function GET(request: Request, { params }: Params) {
 
   const messages = snap.docs
     .map((d) => parseDmMessage(d.id, d.data() as Record<string, unknown>))
-    .reverse();
+    .reverse()
+    .map((m) => ({ ...m, createdAt: timestampToIso(m.createdAt) }));
 
   await markThreadRead(db, threadId, auth.session.uid);
 

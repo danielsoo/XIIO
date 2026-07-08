@@ -25,3 +25,31 @@ export function formatDmTime(iso: string | null | undefined, locale: string): st
     return "";
   }
 }
+
+/** Absolute clock time for a message bubble (e.g. "오후 3:24" / "3:24 PM"). */
+export function formatClockTime(iso: string | null | undefined, locale: string): string {
+  if (!iso) return "";
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return "";
+
+  try {
+    return new Date(ms).toLocaleTimeString(locale.startsWith("ko") ? "ko-KR" : "en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+/** True when both timestamps fall in the same calendar minute (used to group consecutive messages). */
+export function isSameClockMinute(
+  aIso: string | null | undefined,
+  bIso: string | null | undefined
+): boolean {
+  if (!aIso || !bIso) return false;
+  const a = Date.parse(aIso);
+  const b = Date.parse(bIso);
+  if (Number.isNaN(a) || Number.isNaN(b)) return false;
+  return Math.floor(a / 60000) === Math.floor(b / 60000);
+}

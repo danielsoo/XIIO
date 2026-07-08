@@ -7,8 +7,16 @@ import DmProfileLink from "@/components/messages/DmProfileLink";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { formatClockTime, isSameClockMinute } from "@/lib/dm/formatDmTime";
 
-type Message = { id: string; senderUid: string; text: string; pending?: boolean; failed?: boolean };
+type Message = {
+  id: string;
+  senderUid: string;
+  text: string;
+  createdAt: string | null;
+  pending?: boolean;
+  failed?: boolean;
+};
 
 type Props = {
   threadId: string;
@@ -16,7 +24,7 @@ type Props = {
 
 export default function DmConversationPane({ threadId }: Props) {
   const { user } = useAuth();
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const { refresh: refreshThreads } = useDmInbox();
   const [messages, setMessages] = useState<Message[]>([]);
   const [otherName, setOtherName] = useState("");
@@ -76,7 +84,11 @@ export default function DmConversationPane({ threadId }: Props) {
     // so sending never blocks on Firestore round-trip latency.
     setText("");
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    setMessages((prev) => [...prev, { id: tempId, senderUid: user.uid, text: payload, pending: true }]);
+    const nowIso = new Date().toISOString();
+    setMessages((prev) => [
+      ...prev,
+      { id: tempId, senderUid: user.uid, text: payload, createdAt: nowIso, pending: true },
+    ]);
 
     void (async () => {
       try {
@@ -94,7 +106,9 @@ export default function DmConversationPane({ threadId }: Props) {
           if (data.messageId) {
             const messageId = data.messageId;
             setMessages((prev) =>
-              prev.map((m) => (m.id === tempId ? { id: messageId, senderUid: user.uid, text: payload } : m))
+              prev.map((m) =>
+                m.id === tempId ? { id: messageId, senderUid: user.uid, text: payload, createdAt: nowIso } : m
+              )
             );
           }
           // Background sync — reconciles unread badges / thread list ordering with
@@ -146,34 +160,27 @@ export default function DmConversationPane({ threadId }: Props) {
         </DmProfileLink>
       </header>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-4 min-h-0">
         {messages.length === 0 ? (
           <p className="text-center text-sm text-xiio-muted py-12">{t("dm.threadEmpty")}</p>
         ) : (
           <>
-            {messages.map((m) => {
+            {messages.map((m, i) => {
               const mine = m.senderUid === user.uid;
-              return (
-                <div
-                  key={m.id}
-                  className={`flex gap-2 min-w-0 ${mine ? "justify-end" : "justify-start items-end"}`}
-                >
-                  {!mine && (
-                    <DmProfileLink handle={otherHandle} uid={otherUid} className="shrink-0">
-                      <ProfileAvatar
-                        displayName={otherName || "?"}
-                        avatarUrl={otherAvatarUrl}
-                        className="w-8 h-8 rounded-full bg-white/10 ring-1 ring-white/20 flex items-center justify-center text-xs font-bold text-white overflow-hidden shrink-0"
-                        imgClassName="w-full h-full object-cover"
-                      />
-                    </DmProfileLink>
-                  )}
-                  <div className={`flex flex-col min-w-0 max-w-[75%] ${mine ? "items-end" : "items-start"}`}>
+              const prev = i > 0 ? messages[i - 1] : null;
+              const next = i < messages.length - 1 ? messages[i + 1] : null;
+              const groupedWithPrev =
+                prev !== null && prev.senderUid === m.senderUid && isSameClockMinute(prev.createdAt, m.createdAt);
+              const isLastInGroup =
+                next === null || next.senderUid !== m.senderUid || !isSameClockMinute(next.createdAt, m.createdAt);
+              const marginTop = i === 0 ? "" : groupedWithPrev ? "mt-1" : "mt-3";
+
+              if (mine) {
+                return (
+                  <div key={m.id} className={`flex flex-col min-w-0 max-w-[75%] ml-auto items-end ${marginTop}`}>
                     <div
-                      className={`px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
-                        mine
-                          ? `bg-xiio-accent text-white rounded-br-md ${m.pending ? "opacity-60" : ""}`
-                          : "bg-[#2c2c2e] text-white rounded-bl-md"
+                      className={`px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words bg-xiio-accent text-white rounded-br-md ${
+                        m.pending ? "opacity-60" : ""
                       }`}
                     >
                       {m.text}
@@ -182,6 +189,35 @@ export default function DmConversationPane({ threadId }: Props) {
                       <p className="text-[11px] text-red-400 mt-0.5 px-1">{t("dm.sendFailed")}</p>
                     )}
                   </div>
+                );
+              }
+
+              return (
+                <div key={m.id} className={`flex flex-col min-w-0 max-w-[75%] items-start ${marginTop}`}>
+                  {/* Avatar and bubble share one row so they're always the same height —
+                      the timestamp lives outside this row so it can't skew that alignment. */}
+                  <div className="flex gap-2 min-w-0 w-full items-end">
+                    {isLastInGroup ? (
+                      <DmProfileLink handle={otherHandle} uid={otherUid} className="shrink-0">
+                        <ProfileAvatar
+                          displayName={otherName || "?"}
+                          avatarUrl={otherAvatarUrl}
+                          className="w-8 h-8 rounded-full bg-white/10 ring-1 ring-white/20 flex items-center justify-center text-xs font-bold text-white overflow-hidden shrink-0"
+                          imgClassName="w-full h-full object-cover"
+                        />
+                      </DmProfileLink>
+                    ) : (
+                      <div className="w-8 h-8 shrink-0" aria-hidden />
+                    )}
+                    <div className="min-w-0 px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words bg-[#2c2c2e] text-white rounded-bl-md">
+                      {m.text}
+                    </div>
+                  </div>
+                  {isLastInGroup && (
+                    <p className="text-[11px] text-xiio-muted mt-0.5 pl-10">
+                      {formatClockTime(m.createdAt, locale)}
+                    </p>
+                  )}
                 </div>
               );
             })}

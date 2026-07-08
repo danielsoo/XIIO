@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timestampToIso } from "@/lib/collab-invite-pure";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
 import {
   markRoomRead,
@@ -34,7 +35,8 @@ export async function GET(request: Request, { params }: Params) {
   const snap = await roomMessagesCol(db, roomId).orderBy("createdAt", "desc").limit(limit).get();
   const messages = snap.docs
     .map((d) => parseRoomMessage(d.id, d.data() as Record<string, unknown>))
-    .reverse();
+    .reverse()
+    .map((m) => ({ ...m, createdAt: timestampToIso(m.createdAt) }));
 
   await markRoomRead(db, roomId, auth.session.uid);
 
