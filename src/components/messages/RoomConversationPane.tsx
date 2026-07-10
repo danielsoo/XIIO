@@ -2,13 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDmInbox } from "@/components/messages/DmInboxContext";
 import DmProfileLink from "@/components/messages/DmProfileLink";
+import MessageActionsToolbar from "@/components/messages/MessageActionsToolbar";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
-import { formatClockTime, isSameClockMinute } from "@/lib/dm/formatDmTime";
+import {
+  formatClockTime,
+  formatDateDivider,
+  isSameCalendarDay,
+  isSameClockMinute,
+} from "@/lib/dm/formatDmTime";
 
 type Message = {
   id: string;
@@ -17,8 +23,19 @@ type Message = {
   createdAt: string | null;
   pending?: boolean;
   failed?: boolean;
+  reactions?: Record<string, string>;
+  replyToMessageId?: string;
+  replyToSenderUid?: string;
+  replyToText?: string;
 };
 type Member = { uid: string; handle: string | null; displayName: string; avatarUrl: string | null };
+
+type ReplyingTo = {
+  messageId: string;
+  senderUid: string;
+  senderName: string;
+  text: string;
+};
 
 type Props = {
   roomId: string;
@@ -35,6 +52,8 @@ export default function RoomConversationPane({ roomId }: Props) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastMessageIdRef = useRef<string | null>(null);
 
@@ -96,10 +115,23 @@ export default function RoomConversationPane({ roomId }: Props) {
     setText("");
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const nowIso = new Date().toISOString();
+    const replyPayload = replyingTo
+      ? { messageId: replyingTo.messageId, senderUid: replyingTo.senderUid, text: replyingTo.text }
+      : undefined;
     setMessages((prev) => [
       ...prev,
-      { id: tempId, senderUid: user.uid, text: payload, createdAt: nowIso, pending: true },
+      {
+        id: tempId,
+        senderUid: user.uid,
+        text: payload,
+        createdAt: nowIso,
+        pending: true,
+        replyToMessageId: replyPayload?.messageId,
+        replyToSenderUid: replyPayload?.senderUid,
+        replyToText: replyPayload?.text,
+      },
     ]);
+    setReplyingTo(null);
 
     void (async () => {
       try {
@@ -110,16 +142,14 @@ export default function RoomConversationPane({ roomId }: Props) {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ text: payload }),
+          body: JSON.stringify({ text: payload, replyTo: replyPayload }),
         });
         if (res.ok) {
           const data = (await res.json()) as { messageId?: string };
           if (data.messageId) {
             const messageId = data.messageId;
             setMessages((prev) =>
-              prev.map((m) =>
-                m.id === tempId ? { id: messageId, senderUid: user.uid, text: payload, createdAt: nowIso } : m
-              )
+              prev.map((m) => (m.id === tempId ? { ...m, id: messageId, pending: false } : m))
             );
           }
           // Background sync — reconciles unread badges / room list ordering with
@@ -132,6 +162,60 @@ export default function RoomConversationPane({ roomId }: Props) {
       } catch {
         setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, pending: false, failed: true } : m)));
       }
+    })();
+  };
+
+  const handleReact = (messageId: string, emoji: string) => {
+    if (!user) return;
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== messageId) return m;
+        const reactions = { ...(m.reactions ?? {}) };
+        if (reactions[user.uid] === emoji) {
+          delete reactions[user.uid];
+        } else {
+          reactions[user.uid] = emoji;
+        }
+        return { ...m, reactions };
+      })
+    );
+    void (async () => {
+      const token = await user.getIdToken();
+      await fetch(`/api/me/rooms/${roomId}/messages/${messageId}/react`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji }),
+      });
+      void load();
+    })();
+  };
+
+  const handleReply = (m: Message) => {
+    setReplyingTo({
+      messageId: m.id,
+      senderUid: m.senderUid,
+      senderName:
+        m.senderUid === user?.uid ? t("dm.actions.you") : memberMap.get(m.senderUid)?.displayName ?? "—",
+      text: m.text,
+    });
+  };
+
+  const handleCopy = (value: string) => {
+    void navigator.clipboard.writeText(value);
+  };
+
+  const handleDelete = (messageId: string) => {
+    if (!user) return;
+    if (!window.confirm(t("dm.actions.deleteConfirm"))) return;
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    void (async () => {
+      const token = await user.getIdToken();
+      await fetch(`/api/me/rooms/${roomId}/messages/${messageId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      void load();
+      void refreshRooms();
     })();
   };
 
@@ -228,31 +312,54 @@ export default function RoomConversationPane({ roomId }: Props) {
               prev !== null && prev.senderUid === m.senderUid && isSameClockMinute(prev.createdAt, m.createdAt);
             const isLastInGroup =
               next === null || next.senderUid !== m.senderUid || !isSameClockMinute(next.createdAt, m.createdAt);
-            const marginTop = i === 0 ? "" : groupedWithPrev ? "mt-1" : "mt-3";
+            const showDateDivider = i === 0 || !isSameCalendarDay(prev?.createdAt, m.createdAt);
+            const marginTop = i === 0 || showDateDivider ? "" : groupedWithPrev ? "mt-1" : "mt-3";
 
-            if (mine) {
-              return (
-                <div key={m.id} className={`flex flex-col min-w-0 max-w-[75%] ml-auto items-end ${marginTop}`}>
+            const reactionSet = Array.from(new Set(Object.values(m.reactions ?? {})));
+
+            const replyQuote = m.replyToMessageId && (
+              <div className="max-w-full mb-1 px-2 py-1 rounded-lg bg-white/5 border-l-2 border-xiio-accent/60 text-[11px] text-xiio-muted truncate">
+                {m.replyToSenderUid === user.uid
+                  ? t("dm.actions.you")
+                  : memberMap.get(m.replyToSenderUid ?? "")?.displayName ?? "—"}
+                : {m.replyToText}
+              </div>
+            );
+
+            const bubble = mine ? (
+              <div className={`flex flex-col min-w-0 max-w-[75%] ml-auto items-end ${marginTop}`}>
+                {replyQuote}
+                <div className="group flex items-end gap-1 justify-end">
+                  <MessageActionsToolbar
+                    active={activeMessageId === m.id}
+                    onReact={(emoji) => handleReact(m.id, emoji)}
+                    onReply={() => handleReply(m)}
+                    onCopy={() => handleCopy(m.text)}
+                    onDelete={() => handleDelete(m.id)}
+                  />
                   <div
-                    className={`px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words bg-xiio-accent text-white rounded-br-md ${
+                    onClick={() => setActiveMessageId((v) => (v === m.id ? null : m.id))}
+                    className={`cursor-pointer px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words bg-xiio-accent text-white rounded-br-md ${
                       m.pending ? "opacity-60" : ""
                     }`}
                   >
                     {m.text}
                   </div>
-                  {m.failed && (
-                    <p className="text-[11px] text-red-400 mt-0.5 px-1">{t("dm.sendFailed")}</p>
-                  )}
                 </div>
-              );
-            }
-
-            return (
-              <div key={m.id} className={`flex flex-col min-w-0 max-w-[75%] items-start ${marginTop}`}>
+                {reactionSet.length > 0 && (
+                  <div className="mt-0.5 px-1 text-xs">{reactionSet.join(" ")}</div>
+                )}
+                {m.failed && (
+                  <p className="text-[11px] text-red-400 mt-0.5 px-1">{t("dm.sendFailed")}</p>
+                )}
+              </div>
+            ) : (
+              <div className={`flex flex-col min-w-0 max-w-[75%] items-start ${marginTop}`}>
                 <p className="text-[11px] text-xiio-muted mb-0.5 px-1">{sender?.displayName ?? "—"}</p>
+                {replyQuote}
                 {/* Avatar and bubble share one row so they're always the same height —
                     the timestamp lives outside this row so it can't skew that alignment. */}
-                <div className="flex gap-2 min-w-0 w-full items-end">
+                <div className="group flex gap-2 min-w-0 w-full items-end">
                   {isLastInGroup ? (
                     <DmProfileLink handle={sender?.handle ?? null} uid={m.senderUid} className="shrink-0">
                       <ProfileAvatar
@@ -265,10 +372,22 @@ export default function RoomConversationPane({ roomId }: Props) {
                   ) : (
                     <div className="w-8 h-8 shrink-0" aria-hidden />
                   )}
-                  <div className="min-w-0 px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words bg-[#2c2c2e] text-white rounded-bl-md">
+                  <div
+                    onClick={() => setActiveMessageId((v) => (v === m.id ? null : m.id))}
+                    className="cursor-pointer min-w-0 px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words bg-[#2c2c2e] text-white rounded-bl-md"
+                  >
                     {m.text}
                   </div>
+                  <MessageActionsToolbar
+                    active={activeMessageId === m.id}
+                    onReact={(emoji) => handleReact(m.id, emoji)}
+                    onReply={() => handleReply(m)}
+                    onCopy={() => handleCopy(m.text)}
+                  />
                 </div>
+                {reactionSet.length > 0 && (
+                  <div className="mt-0.5 pl-10 text-xs">{reactionSet.join(" ")}</div>
+                )}
                 {isLastInGroup && (
                   <p className="text-[11px] text-xiio-muted mt-0.5 pl-10">
                     {formatClockTime(m.createdAt, locale)}
@@ -276,9 +395,39 @@ export default function RoomConversationPane({ roomId }: Props) {
                 )}
               </div>
             );
+
+            return (
+              <Fragment key={m.id}>
+                {showDateDivider && (
+                  <div className="flex justify-center my-4">
+                    <span className="text-[11px] text-xiio-muted">{formatDateDivider(m.createdAt, locale)}</span>
+                  </div>
+                )}
+                {bubble}
+              </Fragment>
+            );
           })
         )}
       </div>
+
+      {replyingTo && (
+        <div className="flex items-center gap-2 border-t border-white/10 px-4 py-2 bg-white/[0.02] shrink-0">
+          <div className="flex-1 min-w-0 pl-2 border-l-2 border-xiio-accent/60">
+            <p className="text-[11px] text-xiio-accent">
+              {t("dm.actions.replyingTo", { name: replyingTo.senderName })}
+            </p>
+            <p className="text-xs text-xiio-muted truncate">{replyingTo.text}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReplyingTo(null)}
+            className="text-xs text-xiio-muted hover:text-white px-2 shrink-0"
+            aria-label={t("dm.actions.cancelReply")}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}

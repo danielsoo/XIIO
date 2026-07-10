@@ -17,4 +17,9 @@ export type RoomMessageDoc = {
   senderUid: string;
   text: string;
   createdAt?: unknown;
+  /** uid -> emoji, one reaction per user */
+  reactions?: Record<string, string>;
+  replyToMessageId?: string;
+  replyToSenderUid?: string;
+  replyToText?: string;
 };

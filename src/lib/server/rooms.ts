@@ -1,11 +1,14 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { adminTimestampToMillis } from "@/lib/admin/format-timestamp";
 import { isBlocked } from "@/lib/server/blocks";
+import { isAllowedReactionEmoji } from "@/lib/dm/messageReactions";
+import type { SendMessageReplyTo } from "@/lib/server/dm";
 import { buildNotificationPayload, notificationsCol } from "@/lib/server/notifications";
 import { MAX_ROOM_MEMBERS, type RoomDoc, type RoomMessageDoc } from "@/types/room";
 
 const MAX_TEXT = 2000;
 const MAX_NAME = 100;
+const MAX_REPLY_TEXT = 160;
 
 export function roomsCol(db: Firestore) {
   return db.collection("rooms");
@@ -44,6 +47,18 @@ export function parseRoomMessage(id: string, data: Record<string, unknown>): Roo
     senderUid: String(data.senderUid ?? ""),
     text: String(data.text ?? "").slice(0, MAX_TEXT),
     createdAt: data.createdAt,
+    reactions:
+      data.reactions && typeof data.reactions === "object"
+        ? Object.fromEntries(
+            Object.entries(data.reactions as Record<string, unknown>).map(([uid, emoji]) => [
+              uid,
+              String(emoji),
+            ])
+          )
+        : undefined,
+    replyToMessageId: data.replyToMessageId ? String(data.replyToMessageId) : undefined,
+    replyToSenderUid: data.replyToSenderUid ? String(data.replyToSenderUid) : undefined,
+    replyToText: data.replyToText ? String(data.replyToText) : undefined,
   };
 }
 
@@ -97,7 +112,8 @@ export async function sendRoomMessage(
   db: Firestore,
   roomId: string,
   senderUid: string,
-  text: string
+  text: string,
+  replyTo?: SendMessageReplyTo
 ): Promise<{ ok: true; messageId: string } | { ok: false; code: string }> {
   const trimmed = text.trim().slice(0, MAX_TEXT);
   if (!trimmed) return { ok: false, code: "empty" };
@@ -111,11 +127,17 @@ export async function sendRoomMessage(
 
   const msgRef = roomMessagesCol(db, roomId).doc();
   const batch = db.batch();
-  batch.set(msgRef, {
+  const messageDoc: Record<string, unknown> = {
     senderUid,
     text: trimmed,
     createdAt: FieldValue.serverTimestamp(),
-  });
+  };
+  if (replyTo?.messageId) {
+    messageDoc.replyToMessageId = replyTo.messageId;
+    messageDoc.replyToSenderUid = replyTo.senderUid;
+    messageDoc.replyToText = replyTo.text.trim().slice(0, MAX_REPLY_TEXT);
+  }
+  batch.set(msgRef, messageDoc);
   batch.update(roomRef, {
     lastMessageAt: FieldValue.serverTimestamp(),
     lastMessagePreview: trimmed.slice(0, 120),
@@ -138,6 +160,52 @@ export async function sendRoomMessage(
   }
   await batch.commit();
   return { ok: true, messageId: msgRef.id };
+}
+
+export async function reactToRoomMessage(
+  db: Firestore,
+  roomId: string,
+  messageId: string,
+  uid: string,
+  emoji: string
+): Promise<{ ok: true; reactions: Record<string, string> } | { ok: false; code: string }> {
+  if (!isAllowedReactionEmoji(emoji)) return { ok: false, code: "invalid_emoji" };
+
+  const roomSnap = await roomsCol(db).doc(roomId).get();
+  if (!roomSnap.exists) return { ok: false, code: "room_not_found" };
+  const room = parseRoomDoc(roomSnap.data() as Record<string, unknown>);
+  if (!room?.memberIds.includes(uid)) return { ok: false, code: "forbidden" };
+
+  const msgRef = roomMessagesCol(db, roomId).doc(messageId);
+  const msgSnap = await msgRef.get();
+  if (!msgSnap.exists) return { ok: false, code: "message_not_found" };
+  const existing = parseRoomMessage(messageId, msgSnap.data() as Record<string, unknown>);
+
+  const reactions = { ...(existing.reactions ?? {}) };
+  if (reactions[uid] === emoji) {
+    delete reactions[uid];
+  } else {
+    reactions[uid] = emoji;
+  }
+
+  await msgRef.update({ reactions });
+  return { ok: true, reactions };
+}
+
+export async function deleteRoomMessage(
+  db: Firestore,
+  roomId: string,
+  messageId: string,
+  uid: string
+): Promise<{ ok: true } | { ok: false; code: string }> {
+  const msgRef = roomMessagesCol(db, roomId).doc(messageId);
+  const snap = await msgRef.get();
+  if (!snap.exists) return { ok: false, code: "message_not_found" };
+  const message = parseRoomMessage(messageId, snap.data() as Record<string, unknown>);
+  if (message.senderUid !== uid) return { ok: false, code: "forbidden" };
+
+  await msgRef.delete();
+  return { ok: true };
 }
 
 export async function listRoomsForUser(db: Firestore, uid: string, limit = 40) {

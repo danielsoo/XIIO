@@ -72,14 +72,17 @@ export async function POST(request: Request, { params }: Params) {
   const db = await getDbOrNull();
   if (!db) return jsonError("admin_not_configured", "서버 DB를 사용할 수 없습니다.", 503);
 
-  let body: { text?: string };
+  let body: {
+    text?: string;
+    replyTo?: { messageId: string; senderUid: string; text: string };
+  };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     return jsonError("invalid_json", "요청 형식(JSON)이 올바르지 않습니다.", 400);
   }
 
-  const result = await sendRoomMessage(db, roomId, auth.session.uid, body.text ?? "");
+  const result = await sendRoomMessage(db, roomId, auth.session.uid, body.text ?? "", body.replyTo);
   if (!result.ok) {
     const msg =
       result.code === "empty"

@@ -3,6 +3,9 @@ import type { DmMessageDoc, DmThreadDoc } from "@/types/dm";
 import { isBlocked } from "@/lib/server/blocks";
 import { adminTimestampToMillis } from "@/lib/admin/format-timestamp";
 import { buildNotificationPayload, notificationsCol } from "@/lib/server/notifications";
+import { isAllowedReactionEmoji } from "@/lib/dm/messageReactions";
+
+const MAX_REPLY_TEXT = 160;
 
 const MAX_TEXT = 2000;
 
@@ -59,6 +62,18 @@ export function parseDmMessage(id: string, data: Record<string, unknown>): DmMes
     senderUid: String(data.senderUid ?? ""),
     text: String(data.text ?? "").slice(0, MAX_TEXT),
     createdAt: data.createdAt,
+    reactions:
+      data.reactions && typeof data.reactions === "object"
+        ? Object.fromEntries(
+            Object.entries(data.reactions as Record<string, unknown>).map(([uid, emoji]) => [
+              uid,
+              String(emoji),
+            ])
+          )
+        : undefined,
+    replyToMessageId: data.replyToMessageId ? String(data.replyToMessageId) : undefined,
+    replyToSenderUid: data.replyToSenderUid ? String(data.replyToSenderUid) : undefined,
+    replyToText: data.replyToText ? String(data.replyToText) : undefined,
   };
 }
 
@@ -85,6 +100,12 @@ export async function getOrCreateThread(
   return { threadId };
 }
 
+export type SendMessageReplyTo = {
+  messageId: string;
+  senderUid: string;
+  text: string;
+};
+
 export async function sendDmMessage(
   db: Firestore,
   threadId: string,
@@ -96,7 +117,8 @@ export async function sendDmMessage(
    * network round-trip off every send). The hint is only trusted once verified against the
    * thread's real participantIds below; otherwise we fall back to the safe sequential check.
    */
-  otherUidHint?: string
+  otherUidHint?: string,
+  replyTo?: SendMessageReplyTo
 ): Promise<{ ok: true; messageId: string } | { ok: false; code: string }> {
   const trimmed = text.trim().slice(0, MAX_TEXT);
   if (!trimmed) return { ok: false, code: "empty" };
@@ -120,11 +142,17 @@ export async function sendDmMessage(
 
   const msgRef = dmMessagesCol(db, threadId).doc();
   const batch = db.batch();
-  batch.set(msgRef, {
+  const messageDoc: Record<string, unknown> = {
     senderUid,
     text: trimmed,
     createdAt: FieldValue.serverTimestamp(),
-  });
+  };
+  if (replyTo?.messageId) {
+    messageDoc.replyToMessageId = replyTo.messageId;
+    messageDoc.replyToSenderUid = replyTo.senderUid;
+    messageDoc.replyToText = replyTo.text.trim().slice(0, MAX_REPLY_TEXT);
+  }
+  batch.set(msgRef, messageDoc);
   batch.update(threadRef, {
     lastMessageAt: FieldValue.serverTimestamp(),
     lastMessagePreview: trimmed.slice(0, 120),
@@ -143,6 +171,52 @@ export async function sendDmMessage(
   );
   await batch.commit();
   return { ok: true, messageId: msgRef.id };
+}
+
+export async function reactToDmMessage(
+  db: Firestore,
+  threadId: string,
+  messageId: string,
+  uid: string,
+  emoji: string
+): Promise<{ ok: true; reactions: Record<string, string> } | { ok: false; code: string }> {
+  if (!isAllowedReactionEmoji(emoji)) return { ok: false, code: "invalid_emoji" };
+
+  const threadSnap = await dmThreadsCol(db).doc(threadId).get();
+  if (!threadSnap.exists) return { ok: false, code: "thread_not_found" };
+  const thread = parseDmThread(threadSnap.data() as Record<string, unknown>);
+  if (!thread?.participantIds.includes(uid)) return { ok: false, code: "forbidden" };
+
+  const msgRef = dmMessagesCol(db, threadId).doc(messageId);
+  const msgSnap = await msgRef.get();
+  if (!msgSnap.exists) return { ok: false, code: "message_not_found" };
+  const existing = parseDmMessage(messageId, msgSnap.data() as Record<string, unknown>);
+
+  const reactions = { ...(existing.reactions ?? {}) };
+  if (reactions[uid] === emoji) {
+    delete reactions[uid];
+  } else {
+    reactions[uid] = emoji;
+  }
+
+  await msgRef.update({ reactions });
+  return { ok: true, reactions };
+}
+
+export async function deleteDmMessage(
+  db: Firestore,
+  threadId: string,
+  messageId: string,
+  uid: string
+): Promise<{ ok: true } | { ok: false; code: string }> {
+  const msgRef = dmMessagesCol(db, threadId).doc(messageId);
+  const snap = await msgRef.get();
+  if (!snap.exists) return { ok: false, code: "message_not_found" };
+  const message = parseDmMessage(messageId, snap.data() as Record<string, unknown>);
+  if (message.senderUid !== uid) return { ok: false, code: "forbidden" };
+
+  await msgRef.delete();
+  return { ok: true };
 }
 
 export async function listThreadsForUser(db: Firestore, uid: string, limit = 40) {

@@ -53,3 +53,36 @@ export function isSameClockMinute(
   if (Number.isNaN(a) || Number.isNaN(b)) return false;
   return Math.floor(a / 60000) === Math.floor(b / 60000);
 }
+
+/** True when both timestamps fall on the same local calendar day (used for date-divider placement). */
+export function isSameCalendarDay(
+  aIso: string | null | undefined,
+  bIso: string | null | undefined
+): boolean {
+  if (!aIso || !bIso) return false;
+  const a = new Date(aIso);
+  const b = new Date(bIso);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return false;
+  return (
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  );
+}
+
+/** Instagram-style date-divider label shown between messages sent on different days (e.g. "Apr 5, 2026, 11:47 AM"). */
+export function formatDateDivider(iso: string | null | undefined, locale: string): string {
+  if (!iso) return "";
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return "";
+
+  try {
+    return new Date(ms).toLocaleString(locale.startsWith("ko") ? "ko-KR" : "en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}

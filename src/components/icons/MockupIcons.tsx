@@ -79,3 +79,36 @@ export function IconScrollNext({ className = "w-4 h-4" }: IconProps) {
     </svg>
   );
 }
+
+/** Reaction trigger — round smiley face with a small "+" badge. */
+export function IconSmilePlus({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <circle cx="10" cy="10" r="7" strokeWidth={stroke} />
+      <path strokeLinecap="round" strokeWidth={stroke} d="M7.5 9.3h.01M12.5 9.3h.01" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={stroke} d="M7.3 11.8c.9 1 2.5 1 3.4 0" />
+      <circle cx="17.5" cy="16.5" r="4" strokeWidth={stroke} />
+      <path strokeLinecap="round" strokeWidth={stroke} d="M17.5 14.8v3.4M15.8 16.5h3.4" />
+    </svg>
+  );
+}
+
+/** Reply trigger — a clean curved arrow (universal reply glyph). */
+export function IconReply({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={stroke} d="M9 17l-5-5 5-5" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={stroke} d="M4 12h9a5 5 0 015 5v1" />
+    </svg>
+  );
+}
+
+export function IconDotsVertical({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <circle cx="12" cy="5.5" r="1.9" />
+      <circle cx="12" cy="12" r="1.9" />
+      <circle cx="12" cy="18.5" r="1.9" />
+    </svg>
+  );
+}
