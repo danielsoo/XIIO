@@ -7,6 +7,7 @@ import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
 import HomeContentRow from "@/components/home/HomeContentRow";
 import HomeStoriesPanel, { type HomeStoryPanelItem } from "@/components/home/HomeStoriesPanel";
 import HomeSurfaceCampusRow from "@/components/home/HomeSurfaceCampusRow";
+import HeroCopy, { HERO_COPY_STAGE_CLASS } from "@/components/hero/HeroCopy";
 import { SequentialVideoLoadProvider } from "@/components/video/SequentialVideoLoadProvider";
 import { IconPlay } from "@/components/icons/MockupIcons";
 import { useAuth } from "@/context/AuthContext";
@@ -123,18 +124,17 @@ export default function HomeMockPage({
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,11,13,0.92)_0%,rgba(11,11,13,0.62)_38%,rgba(11,11,13,0.08)_70%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,11,13,0.04)_0%,rgba(11,11,13,0.08)_55%,#0b0b0d_100%)]" />
 
-        <div className="relative z-10 grid min-h-[560px] grid-cols-1 items-center gap-10 px-6 py-12 lg:grid-cols-[minmax(0,660px)_minmax(190px,1fr)] lg:px-12">
-          <div className="max-w-[620px]">
-            <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.16em] text-xiio-accent">
-              Featured Film
-            </p>
-            <h1 className="mb-5 font-serif text-[clamp(3.2rem,6vw,5.1rem)] font-semibold leading-[1.02] text-[#f5f4f2]">
-              {featuredTitle}
-            </h1>
-            <p className="mb-6 max-w-[430px] text-[15px] leading-[1.65] text-white/70">
-              A dockworker&apos;s daughter searches the harbor town for the truth about her father&apos;s last voyage.
-              Shot over eleven nights on the Oregon coast.
-            </p>
+        <div className={`${HERO_COPY_STAGE_CLASS} grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,660px)_minmax(190px,1fr)]`}>
+          <HeroCopy
+            eyebrow="Featured Film"
+            title={featuredTitle}
+            description={
+              <>
+                A dockworker&apos;s daughter searches the harbor town for the truth about her father&apos;s last voyage.
+                Shot over eleven nights on the Oregon coast.
+              </>
+            }
+          >
             <p className="mb-7 text-[13px] text-white/50">{featuredMeta}</p>
             <div className="flex flex-wrap items-center gap-3.5">
               <Link
@@ -151,7 +151,7 @@ export default function HomeMockPage({
                 + My List
               </Link>
             </div>
-          </div>
+          </HeroCopy>
 
           {storyItems.length > 0 ? (
             <div className="hidden justify-self-end lg:block">

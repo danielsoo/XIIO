@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import ContentCard from "@/components/ContentCard";
 import HomeContentRow from "@/components/home/HomeContentRow";
+import HeroCopy, { HERO_COPY_STAGE_CLASS } from "@/components/hero/HeroCopy";
 import SectionLabel from "@/components/layout/SectionLabel";
 import { IconPlay } from "@/components/icons/MockupIcons";
 import { useAuth } from "@/context/AuthContext";
@@ -225,18 +226,18 @@ export default function CategoryMockPage({ variant }: { variant: CategoryVariant
           />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,11,13,0.94)_0%,rgba(11,11,13,0.62)_40%,rgba(11,11,13,0.08)_72%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,11,13,0.06)_0%,rgba(11,11,13,0.1)_62%,#0b0b0d_100%)]" />
-          <div className="relative z-10 flex min-h-[560px] items-end px-6 pb-16 lg:px-12">
-            <div className="min-w-0 max-w-[720px]">
-              <p className="text-xs font-bold tracking-[0.16em] text-xiio-gold uppercase mb-3.5">
-                {t("category.mock.nowShowing")}
-              </p>
-              <h1 className="mb-4 font-serif text-[clamp(3rem,5.2vw,4.7rem)] font-semibold leading-[1.04] text-white">
-                <span className="block">Undertow</span>
-              </h1>
-              <p className="mb-7 max-w-[620px] text-[15px] leading-[1.65] text-white/65">
-                A dockworker&apos;s daughter searches the harbor town for the truth about her father&apos;s last voyage.
-                Shot over eleven nights on the Oregon coast.
-              </p>
+          <div className={HERO_COPY_STAGE_CLASS}>
+            <HeroCopy
+              eyebrow={t("category.mock.nowShowing")}
+              eyebrowTone="gold"
+              title="Undertow"
+              description={
+                <>
+                  A dockworker&apos;s daughter searches the harbor town for the truth about her father&apos;s last voyage.
+                  Shot over eleven nights on the Oregon coast.
+                </>
+              }
+            >
               <Link
                 href={watchHrefPrimary}
                 className="inline-flex h-12 items-center gap-2.5 rounded-full bg-[#f5f4f2] px-7 text-[14px] font-semibold text-[#0b0b0d] transition hover:bg-white"
@@ -244,7 +245,7 @@ export default function CategoryMockPage({ variant }: { variant: CategoryVariant
                 <IconPlay className="w-3.5 h-3.5" />
                 Play Feature
               </Link>
-            </div>
+            </HeroCopy>
           </div>
         </section>
       ) : (

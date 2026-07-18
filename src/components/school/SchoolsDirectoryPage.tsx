@@ -4,16 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback } from "react";
 import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
+import HeroCopy from "@/components/hero/HeroCopy";
 import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useSchoolsFeed } from "@/hooks/useSchoolsFeed";
-import {
-  heroSectionMinHeight,
-  heroTextBandMarginTop,
-  heroTextBandMinHeight,
-} from "@/lib/homeHeroLayout";
+import { heroSectionMinHeight } from "@/lib/homeHeroLayout";
 import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { schoolPosterGradient, schoolSeasonDelta, schoolStudentCount } from "@/lib/school-brand";
@@ -149,7 +146,6 @@ export default function SchoolsDirectoryPage({ schools: initialSchools }: { scho
     waveRect,
     gradStartPercent,
     layoutReady,
-    isLgViewport,
     registerHeroSection,
     registerHeroText,
   } = useHeroWaveLayout();
@@ -170,13 +166,6 @@ export default function SchoolsDirectoryPage({ schools: initialSchools }: { scho
 
   const visualReady = themeReady && layoutReady;
 
-  const heroGridBandStyle = isLgViewport
-    ? {
-        marginTop: heroTextBandMarginTop(),
-        minHeight: heroTextBandMinHeight(waveRect),
-      }
-    : undefined;
-
   return (
     <main className={`min-h-screen min-w-0 w-full ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
       <section
@@ -195,29 +184,19 @@ export default function SchoolsDirectoryPage({ schools: initialSchools }: { scho
         />
 
         <div
-          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.heroContentTop}`}
-          style={{ minHeight: waveRect.height }}
+          ref={setHeroTextRef}
+          className="absolute inset-x-0 top-[196px] z-10 px-6 lg:px-12"
         >
-          <div className={`flex-1 w-full ${MOCKUP_HOME.heroGrid}`} style={heroGridBandStyle}>
-            <div
-              ref={setHeroTextRef}
-              className={`min-w-0 ${MOCKUP_HOME.heroTextColumnWide} ${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
-            >
-              <p className={`${MOCKUP_CAMPUS.heroBadge} flex items-center gap-2.5`}>
-                <span className="w-[7px] h-[7px] rounded-full bg-xiio-accent shrink-0" aria-hidden />
-                {t("schools.heroBadge")}
-              </p>
-              <h1 className={MOCKUP_HOME.heroTitle}>
-                <span className="block text-white">{t("schools.directoryTitle")}</span>
-              </h1>
-              <p className={MOCKUP_HOME.heroSubtitle}>{t("schools.directorySubtitle")}</p>
-            </div>
-          </div>
+          <HeroCopy
+            eyebrow={t("schools.heroBadge")}
+            title={t("schools.directoryTitle")}
+            description={t("schools.directorySubtitle")}
+          />
         </div>
       </section>
 
       <div
-        className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
+        className={`relative z-10 bg-xiio-bg px-4 pt-11 lg:px-12 ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
       >
         {loading && schools.length === 0 ? (
           <p className="text-white/45">{t("common.loading")}</p>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import HomeContentRow from "@/components/home/HomeContentRow";
+import HeroCopy, { HERO_COPY_STAGE_CLASS } from "@/components/hero/HeroCopy";
 import SectionLabel from "@/components/layout/SectionLabel";
 import { IconPlay } from "@/components/icons/MockupIcons";
 import { useTranslations } from "@/context/LocaleContext";
@@ -172,10 +173,19 @@ export default function DiscoverPage({ initialPromoItems, initialMovies, initial
           sizes="(min-width: 1024px) calc(100vw - 220px), 100vw"
           className="object-contain object-center 2xl:object-cover"
         />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,11,13,0.78)_0%,rgba(11,11,13,0.34)_42%,rgba(11,11,13,0.02)_72%)]" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-xiio-bg to-transparent" />
-        <div className="sr-only">
-          <h1>Made by creators. For the stories that deserve to be seen.</h1>
-          <p>Support emerging filmmakers. Discover tomorrow&apos;s classics.</p>
+        <div className={HERO_COPY_STAGE_CLASS}>
+          <HeroCopy
+            eyebrow={t("discoverPage.mock.badge")}
+            title={t("discoverPage.mock.heroTitle")}
+            description={
+              <>
+                <span className="block">{t("discoverPage.mock.heroSubtitleLine1")}</span>
+                <span className="block">{t("discoverPage.mock.heroSubtitleLine2")}</span>
+              </>
+            }
+          />
         </div>
       </section>
 
