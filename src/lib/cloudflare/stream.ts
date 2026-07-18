@@ -221,11 +221,28 @@ export async function getStreamVideo(streamUid: string): Promise<StreamVideoInfo
   };
 }
 
-/** Public thumbnail for Stream UID (customer subdomain) */
-export function getStreamThumbnailUrl(streamUid: string): string | null {
-  const sub = getCustomerSubdomain();
-  if (!sub) return null;
-  return `https://${sub}/${streamUid}/thumbnails/thumbnail.jpg`;
+type StreamThumbnailOptions = {
+  width?: number;
+  height?: number;
+  fit?: "crop" | "clip" | "scale";
+};
+
+function getPublicDeliveryHost(): string {
+  return getCustomerSubdomain() ?? "videodelivery.net";
+}
+
+/** Small public thumbnail for Stream UID; works without a configured customer subdomain. */
+export function getStreamThumbnailUrl(
+  streamUid: string,
+  options: StreamThumbnailOptions = {}
+): string {
+  const host = getPublicDeliveryHost();
+  const params = new URLSearchParams();
+  if (options.width) params.set("width", String(Math.round(options.width)));
+  if (options.height) params.set("height", String(Math.round(options.height)));
+  if (options.fit) params.set("fit", options.fit);
+  const query = params.size > 0 ? `?${params.toString()}` : "";
+  return `https://${host}/${streamUid}/thumbnails/thumbnail.jpg${query}`;
 }
 
 /** 홈 히어로·promo 피드·관리자 심사 — HLS manifest를 고화질 rendition 위주로 */
@@ -250,10 +267,8 @@ export function appendPlaybackBandwidthHint(url: string, hintMbps: number): stri
 export function getPlaybackUrl(
   streamUid: string,
   opts?: PlaybackUrlOptions
-): string | null {
-  const sub = getCustomerSubdomain();
-  if (!sub) return null;
-  const base = `https://${sub}/${streamUid}/manifest/video.m3u8`;
+): string {
+  const base = `https://${getPublicDeliveryHost()}/${streamUid}/manifest/video.m3u8`;
   const hint = opts?.clientBandwidthHintMbps;
   if (hint != null && hint > 0) {
     return appendPlaybackBandwidthHint(base, hint);
@@ -289,10 +304,8 @@ export function getStreamMp4DownloadUrl(streamUid: string): string | null {
 
 /** Thumbnail at offset — used when MP4 is unavailable. */
 export function getStreamThumbnailAtTime(streamUid: string, timeSeconds: number): string | null {
-  const sub = getCustomerSubdomain();
-  if (!sub) return null;
   const sec = Math.max(0, Math.floor(timeSeconds));
-  return `https://${sub}/${streamUid}/thumbnails/thumbnail.jpg?time=${sec}s`;
+  return `https://${getPublicDeliveryHost()}/${streamUid}/thumbnails/thumbnail.jpg?time=${sec}s`;
 }
 
 type DownloadStatus = { status?: string; url?: string; percentComplete?: number };

@@ -2,7 +2,7 @@ import { MOCKUP_SECTION_LABEL } from "@/lib/mockupLayout";
 
 /** Campus (002) mockup — page-specific tokens; shared shell from MOCKUP_HOME */
 export const MOCKUP_CAMPUS = {
-  heroBadge: "text-xs font-bold tracking-[0.25em] text-sky-400 mb-3",
+  heroBadge: "text-xs font-bold tracking-[0.25em] text-xiio-accent mb-3",
   heroTitle: "text-[48px] sm:text-[52px] font-black tracking-tight text-white uppercase leading-[1.05] mb-3",
   heroSubtitle: "text-[15px] leading-[1.5] max-w-[376px] text-white/55 mb-7",
   sectionLabel: MOCKUP_SECTION_LABEL.text,
@@ -33,11 +33,11 @@ export const MOCKUP_CAMPUS = {
   schoolLogoActive: "w-24 h-24",
   schoolLogoPast: "w-[104px] h-[104px]",
   schoolNameMain: "text-sm font-black tracking-[0.18em] text-white leading-tight",
-  schoolNameSub: "text-[10px] font-semibold tracking-[0.15em] text-sky-400 mt-0.5",
+  schoolNameSub: "text-[10px] font-semibold tracking-[0.15em] text-xiio-accent mt-0.5",
   activeSchoolNameMain:
     "text-base sm:text-lg font-black tracking-[0.18em] text-white leading-tight",
   activeSchoolNameSub:
-    "text-[11px] sm:text-xs font-semibold tracking-[0.15em] text-sky-400 mt-0.5",
+    "text-[11px] sm:text-xs font-semibold tracking-[0.15em] text-xiio-accent mt-0.5",
   schoolStats: "text-[11px] text-white/40",
   activeSchoolRow: "flex items-center gap-5 sm:gap-6",
   activeBattleHero:

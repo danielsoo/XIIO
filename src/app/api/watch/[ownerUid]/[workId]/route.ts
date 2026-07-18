@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { getStreamEmbedUrl, getStreamVideo, resolvePlaybackUrl } from "@/lib/cloudflare/stream";
+import { resolveWorkCreditDisplayName } from "@/lib/credit-display-name";
+import { peopleProfileHref } from "@/lib/dm/peopleProfileHref";
+import { listWorkCredits } from "@/lib/server/credits";
 import {
   getDbOrNull,
   parsePrologueDoc,
@@ -7,12 +10,27 @@ import {
   prologueRef,
   worksCol,
 } from "@/lib/server/works";
-import type { PublicWorkWatch } from "@/types/watch";
+import { parseUserProfileDoc } from "@/lib/userAccess";
+import type { PublicWorkCredit, PublicWorkWatch } from "@/types/watch";
 
 type Params = { params: Promise<{ ownerUid: string; workId: string }> };
 
+const WATCH_CACHE_TTL_MS = 5 * 60 * 1000;
+const WATCH_CACHE_HEADERS = {
+  "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+};
+const watchPayloadCache = new Map<
+  string,
+  { expiresAt: number; payload: PublicWorkWatch }
+>();
+
 export async function GET(_request: Request, { params }: Params) {
   const { ownerUid, workId } = await params;
+  const cacheKey = `${ownerUid}:${workId}`;
+  const cached = watchPayloadCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return NextResponse.json(cached.payload, { headers: WATCH_CACHE_HEADERS });
+  }
 
   const db = await getDbOrNull();
   if (!db) {
@@ -37,8 +55,56 @@ export async function GET(_request: Request, { params }: Params) {
     );
   }
 
-  const playbackUrl = await resolvePlaybackUrl(work.streamUid);
-  const info = await getStreamVideo(work.streamUid);
+  const [playbackUrl, info, rawCredits, prologueSnap] = await Promise.all([
+    resolvePlaybackUrl(work.streamUid),
+    getStreamVideo(work.streamUid),
+    listWorkCredits(db, ownerUid, workId),
+    prologueRef(db, ownerUid, workId).get(),
+  ]);
+
+  const [credits, prologue] = await Promise.all([
+    Promise.all(
+      rawCredits
+        .filter((c) => c.status === "accepted")
+        .map(async (c): Promise<PublicWorkCredit | null> => {
+          const userSnap = await db.collection("users").doc(c.userId).get();
+          if (!userSnap.exists) return null;
+          const profile = parseUserProfileDoc(userSnap.data() as Record<string, unknown>);
+          const displayName = resolveWorkCreditDisplayName(
+            { displayName: profile.displayName, defaultDirectorName: profile.defaultDirectorName, handle: profile.handle },
+            c.role
+          );
+          if (!displayName) return null;
+          return {
+            id: c.id,
+            userId: c.userId,
+            role: c.role,
+            displayName,
+            characterName: c.characterName,
+            avatarUrl: profile.avatarUrl,
+            profileHref: peopleProfileHref(profile.handle, c.userId),
+          };
+        })
+    ).then((items) => items.filter((c): c is PublicWorkCredit => c != null)),
+    (async (): Promise<PublicWorkWatch["prologue"]> => {
+      if (!prologueSnap.exists) return undefined;
+      const item = parsePrologueDoc(prologueSnap.data() as Record<string, unknown>);
+      if (
+        item.platformStatus !== "published" ||
+        item.streamStatus !== "ready" ||
+        !item.streamUid
+      ) {
+        return undefined;
+      }
+      return {
+        playbackUrl: await resolvePlaybackUrl(item.streamUid),
+        embedUrl: getStreamEmbedUrl(item.streamUid),
+        durationSec: item.durationSec,
+        title: item.title,
+        description: item.description,
+      };
+    })(),
+  ]);
 
   const payload: PublicWorkWatch = {
     workId,
@@ -54,26 +120,15 @@ export async function GET(_request: Request, { params }: Params) {
     embedUrl: getStreamEmbedUrl(work.streamUid),
     thumbnailUrl: info?.thumbnail,
     durationSec: info?.duration,
+    credits,
+    approvedSchoolId: work.approvedSchoolId,
+    approvedSchoolName: work.approvedSchoolName,
+    ...(prologue ? { prologue } : {}),
   };
 
-  const prologueSnap = await prologueRef(db, ownerUid, workId).get();
-  if (prologueSnap.exists) {
-    const prologue = parsePrologueDoc(prologueSnap.data() as Record<string, unknown>);
-    if (
-      prologue.platformStatus === "published" &&
-      prologue.streamStatus === "ready" &&
-      prologue.streamUid
-    ) {
-      const prologuePlayback = await resolvePlaybackUrl(prologue.streamUid);
-      payload.prologue = {
-        playbackUrl: prologuePlayback,
-        embedUrl: getStreamEmbedUrl(prologue.streamUid),
-        durationSec: prologue.durationSec,
-        title: prologue.title,
-        description: prologue.description,
-      };
-    }
-  }
-
-  return NextResponse.json(payload);
+  watchPayloadCache.set(cacheKey, {
+    expiresAt: Date.now() + WATCH_CACHE_TTL_MS,
+    payload,
+  });
+  return NextResponse.json(payload, { headers: WATCH_CACHE_HEADERS });
 }

@@ -6,8 +6,10 @@ export type HomeStoryItem = {
   category: string;
   duration: string;
   imageUrl: string;
+  videoUrl?: string;
   href?: string;
   imageStyle?: CSSProperties;
+  progressPercent?: number;
 };
 
 export const FEATURED_STORIES: HomeStoryItem[] = [

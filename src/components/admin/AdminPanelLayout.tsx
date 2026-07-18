@@ -77,11 +77,14 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="min-h-screen bg-xiio-bg flex flex-col md:flex-row">
-      <aside className="md:w-56 shrink-0 border-b md:border-b-0 md:border-r border-white/10 bg-black/40">
+      <aside className="md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-white/10 bg-xiio-sidebar">
         <div className="p-4 border-b border-white/10">
           <Link href="/admin" className="text-lg font-black tracking-widest text-white">
             X<span className="text-xiio-accent">II</span>O
           </Link>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35 mt-2">
+            {t("admin.consoleLabel")}
+          </p>
           <p className="text-xs text-xiio-muted mt-1">
             {isSuperAdmin ? t("admin.roleSuper") : t("admin.roleAdmin")}
           </p>

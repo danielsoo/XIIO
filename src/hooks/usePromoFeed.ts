@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getCached, setCache } from "@/lib/feedCache";
+import { getCached, getOrLoadCached, setCache } from "@/lib/feedCache";
+import { preloadFeedThumbnails } from "@/lib/clientFeedLoaders";
 import { HOME_PROMO_SHORTS } from "@/data/promoShorts";
 import type { PromoShort } from "@/types/promoShort";
 import type { PromoFeedItem } from "@/types/work";
@@ -38,9 +39,11 @@ export function usePromoFeed(fallbackToDemoOrOptions: boolean | Options = true) 
       : fallbackToDemoOrOptions;
   const { fallbackToDemo = true, initialItems } = options;
 
-  const { user } = useAuth();
-  const cacheKey = `promo:${user?.uid ?? "anon"}`;
-  const cached = getCached<PromoShort[]>(cacheKey);
+  const { user, loading: authLoading } = useAuth();
+  const publicCacheKey = "promo:v3:public";
+  const cacheKey = user ? `promo:v3:${user.uid}` : publicCacheKey;
+  const cached =
+    getCached<PromoShort[]>(cacheKey) ?? getCached<PromoShort[]>(publicCacheKey);
 
   const [items, setItems] = useState<PromoShort[]>(() => {
     if (cached !== undefined) return cached;
@@ -55,29 +58,68 @@ export function usePromoFeed(fallbackToDemoOrOptions: boolean | Options = true) 
   );
 
   useEffect(() => {
-    if (cached !== undefined) return;
+    if (authLoading) return;
+
+    if (initialItems !== undefined) {
+      const seeded = initialItems.map(toPromoShort);
+      setCache(publicCacheKey, seeded);
+      if (user) setCache(cacheKey, seeded);
+      setItems(seeded);
+      setFromApi(seeded.length > 0);
+      setLoading(false);
+      return;
+    }
 
     let cancelled = false;
+    const existing =
+      getCached<PromoShort[]>(cacheKey) ?? getCached<PromoShort[]>(publicCacheKey);
+    if (existing !== undefined) {
+      setItems(existing.length > 0 || !fallbackToDemo ? existing : HOME_PROMO_SHORTS);
+      setFromApi(existing.length > 0);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
     (async () => {
       try {
-        const headers: HeadersInit = {};
-        if (user) {
-          const token = await user.getIdToken();
-          headers.Authorization = `Bearer ${token}`;
-        }
-        const res = await fetch("/api/feed/promo-shorts", { headers });
-        const data = (await res.json()) as { items?: PromoFeedItem[] };
+        // Public metadata and thumbnails are the critical path. Personal likes
+        // are merged only after the visible cards have already appeared.
+        const publicItems = await getOrLoadCached(publicCacheKey, async () => {
+          const res = await fetch("/api/feed/promo-shorts");
+          if (!res.ok) throw new Error("promo_feed_failed");
+          const data = (await res.json()) as { items?: PromoFeedItem[] };
+          return preloadFeedThumbnails((data.items ?? []).map(toPromoShort));
+        });
         if (cancelled) return;
-        const apiItems = (data.items ?? []).map(toPromoShort);
-        if (apiItems.length > 0) {
-          setItems(apiItems);
+        if (publicItems.length > 0) {
+          setItems(publicItems);
           setFromApi(true);
-          setCache(cacheKey, apiItems);
         } else if (!fallbackToDemo) {
           setItems([]);
+          setFromApi(false);
+        } else {
+          setItems(HOME_PROMO_SHORTS);
+          setFromApi(false);
+        }
+
+        if (user) {
+          const personalizedItems = await getOrLoadCached(cacheKey, async () => {
+            const token = await user.getIdToken();
+            const res = await fetch("/api/feed/promo-shorts", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error("promo_feed_personalization_failed");
+            const data = (await res.json()) as { items?: PromoFeedItem[] };
+            return preloadFeedThumbnails((data.items ?? []).map(toPromoShort));
+          });
+          if (!cancelled && personalizedItems.length > 0) {
+            setItems(personalizedItems);
+            setFromApi(true);
+          }
         }
       } catch {
-        if (!fallbackToDemo && !cancelled) setItems([]);
+        if (!fallbackToDemo && !cancelled && existing === undefined) setItems([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -85,7 +127,7 @@ export function usePromoFeed(fallbackToDemoOrOptions: boolean | Options = true) 
     return () => {
       cancelled = true;
     };
-  }, [fallbackToDemo, user, cacheKey, cached]);
+  }, [authLoading, fallbackToDemo, user, cacheKey, publicCacheKey, initialItems]);
 
   return { items, loading, fromApi };
 }

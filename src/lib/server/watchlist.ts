@@ -1,10 +1,9 @@
 import { FieldValue, type Firestore, type Timestamp } from "firebase-admin/firestore";
-import { syncWorkStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
+import { getStreamThumbnailUrl } from "@/lib/cloudflare/stream";
 import {
   parsePromoDoc,
   parseWorkDoc,
   promoRef,
-  resolveWorkListThumbnailUrl,
   worksCol,
 } from "@/lib/server/works";
 import type { CatalogFeedItem } from "@/types/work";
@@ -28,22 +27,14 @@ function timestampMs(value: unknown): number {
   return 0;
 }
 
-async function assertWatchlistWork(db: Firestore, ownerUid: string, workId: string) {
+export async function assertPublishedWork(db: Firestore, ownerUid: string, workId: string) {
   const workSnap = await worksCol(db, ownerUid).doc(workId).get();
   if (!workSnap.exists) return { ok: false as const, error: "not_found" };
-  let work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
+  const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
   if (work.platformStatus !== "published") return { ok: false as const, error: "not_published" };
-  if (work.streamUid) {
-    const synced = await syncWorkStreamStatusIfNeeded(
-      db,
-      ownerUid,
-      workId,
-      work.streamUid,
-      work.streamStatus
-    );
-    work = { ...work, streamStatus: synced };
+  if (work.streamStatus !== "ready" || !work.streamUid) {
+    return { ok: false as const, error: "not_published" };
   }
-  if (work.streamStatus !== "ready") return { ok: false as const, error: "not_published" };
   return { ok: true as const, work };
 }
 
@@ -64,7 +55,7 @@ export async function setWatchlistItem(
   workId: string,
   saved: boolean
 ): Promise<{ ok: true; saved: boolean } | { ok: false; error: string }> {
-  const published = await assertWatchlistWork(db, ownerUid, workId);
+  const published = await assertPublishedWork(db, ownerUid, workId);
   if (!published.ok) return { ok: false, error: published.error };
 
   const ref = saveRef(db, uid, ownerUid, workId);
@@ -87,34 +78,66 @@ export async function setWatchlistItem(
   return { ok: true, saved: false };
 }
 
-async function toCatalogFeedItem(
+export async function toCatalogFeedItem(
   db: Firestore,
   ownerUid: string,
   workId: string
 ): Promise<CatalogFeedItem | null> {
-  const published = await assertWatchlistWork(db, ownerUid, workId);
-  if (!published.ok) return null;
+  return (await toCatalogFeedItems(db, [{ ownerUid, workId }]))[0] ?? null;
+}
 
-  const { work } = published;
-  const thumbnailUrl = await resolveWorkListThumbnailUrl(db, ownerUid, workId, work);
-  const promoSnap = await promoRef(db, ownerUid, workId).get();
-  const promo = promoSnap.exists
-    ? parsePromoDoc(promoSnap.data() as Record<string, unknown>)
-    : null;
-  const thumbnailCrop = promo?.thumbnailCrop ?? work.promoDraft?.thumbnailCrop;
+export async function toCatalogFeedItems(
+  db: Firestore,
+  rows: { ownerUid: string; workId: string }[]
+): Promise<CatalogFeedItem[]> {
+  if (rows.length === 0) return [];
+  const workRefs = rows.map((row) => worksCol(db, row.ownerUid).doc(row.workId));
+  const workSnaps = await db.getAll(...workRefs);
 
-  return {
-    id: `${ownerUid}_${workId}`,
-    workId,
-    ownerUid,
-    title: work.title,
-    director: work.director,
-    section: work.section,
-    approvedCategory: work.approvedCategory,
-    approvedTags: work.approvedTags ?? [],
-    thumbnailUrl,
-    ...(thumbnailCrop ? { thumbnailCrop } : {}),
-  };
+  const published = rows.flatMap((row, index) => {
+    const snap = workSnaps[index];
+    if (!snap?.exists) return [];
+    const work = parseWorkDoc(row.workId, snap.data() as Record<string, unknown>);
+    if (work.platformStatus !== "published" || work.streamStatus !== "ready" || !work.streamUid) {
+      return [];
+    }
+    return [{ ...row, work }];
+  });
+  if (published.length === 0) return [];
+
+  const promoSnaps = await db.getAll(
+    ...published.map((row) => promoRef(db, row.ownerUid, row.workId))
+  );
+
+  return published.map((row, index) => {
+    const promoSnap = promoSnaps[index];
+    const promo = promoSnap?.exists
+      ? parsePromoDoc(promoSnap.data() as Record<string, unknown>)
+      : null;
+    const thumbnailUrl =
+      promo?.thumbnailUrl ??
+      row.work.promoDraft?.thumbnailUrl ??
+      getStreamThumbnailUrl(row.work.streamUid!) ??
+      undefined;
+    const thumbnailCrop = promo?.thumbnailCrop ?? row.work.promoDraft?.thumbnailCrop;
+
+    return {
+      id: `${row.ownerUid}_${row.workId}`,
+      workId: row.workId,
+      ownerUid: row.ownerUid,
+      title: row.work.title,
+      director: row.work.director,
+      section: row.work.section,
+      approvedCategory: row.work.approvedCategory,
+      approvedTags: row.work.approvedTags ?? [],
+      approvedSchoolId: row.work.approvedSchoolId,
+      approvedSchoolName: row.work.approvedSchoolName,
+      thumbnailUrl,
+      ...(thumbnailCrop ? { thumbnailCrop } : {}),
+      viewCount: row.work.viewCount ?? 0,
+      likeCount: row.work.likeCount ?? 0,
+    } satisfies CatalogFeedItem;
+  });
 }
 
 export async function listWatchlistItems(db: Firestore, uid: string): Promise<CatalogFeedItem[]> {
@@ -133,10 +156,5 @@ export async function listWatchlistItems(db: Firestore, uid: string): Promise<Ca
   rows.sort((a, b) => b.sortMs - a.sortMs);
   const slice = rows.slice(0, MAX_ITEMS);
 
-  const items: CatalogFeedItem[] = [];
-  for (const row of slice) {
-    const item = await toCatalogFeedItem(db, row.ownerUid, row.workId);
-    if (item) items.push(item);
-  }
-  return items;
+  return toCatalogFeedItems(db, slice);
 }

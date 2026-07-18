@@ -71,7 +71,7 @@ export default function MessageActionsToolbar({ active, onReact, onReply, onCopy
       </div>
 
       {emojiPickerOpen && (
-        <div className="absolute bottom-full left-0 mb-2 flex items-center gap-1 bg-[#1c1c1e] border border-white/10 rounded-full shadow-lg px-2 py-1.5 z-10">
+        <div className="animate-dropdown-in absolute bottom-full left-0 mb-2 flex items-center gap-1 bg-[#1c1c1e] border border-white/10 rounded-full shadow-lg px-2 py-1.5 z-10">
           {MESSAGE_REACTION_EMOJIS.map((emoji) => (
             <button
               key={emoji}
@@ -89,7 +89,7 @@ export default function MessageActionsToolbar({ active, onReact, onReply, onCopy
       )}
 
       {moreMenuOpen && (
-        <div className="absolute bottom-full left-0 mb-2 min-w-[130px] bg-[#1c1c1e] border border-white/10 rounded-lg shadow-lg py-1 z-10">
+        <div className="animate-dropdown-in absolute bottom-full left-0 mb-2 min-w-[130px] bg-[#1c1c1e] border border-white/10 rounded-lg shadow-lg py-1 z-10">
           <button
             type="button"
             onClick={() => {

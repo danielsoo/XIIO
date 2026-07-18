@@ -27,6 +27,7 @@ export async function listDiscoverablePeople(
     q?: string;
     followingOnly?: string[];
     limit?: number;
+    includeActivity?: boolean;
   }
 ): Promise<DiscoverPersonCard[]> {
   const limit = Math.min(opts.limit ?? 48, 60);
@@ -79,6 +80,8 @@ export async function listDiscoverablePeople(
     });
     if (cards.length >= limit) break;
   }
+
+  if (opts.includeActivity === false) return cards;
 
   const activityByUid = await getUsersActivityStatus(cards.map((c) => c.uid));
   return cards.map((card) => {

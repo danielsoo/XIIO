@@ -59,7 +59,7 @@ export default memo(function ContentCard({
     </>
   );
 
-  const className = `group relative block ${roundedClassName} overflow-hidden aspect-video cursor-pointer hover:scale-[1.02] transition-transform duration-200`;
+  const className = `group relative block ${roundedClassName} overflow-hidden aspect-video cursor-pointer hover:scale-[1.03] hover:shadow-xl hover:shadow-black/40 transition-[transform,box-shadow] duration-200 ease-out`;
 
   if (href) {
     return (

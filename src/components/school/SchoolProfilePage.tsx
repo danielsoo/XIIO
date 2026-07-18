@@ -19,7 +19,7 @@ import {
 } from "@/lib/homeHeroLayout";
 import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
-import { schoolBrandWashGradient } from "@/lib/school-brand";
+import { schoolBrandWashGradient, schoolSeasonDelta, schoolStudentCount } from "@/lib/school-brand";
 import type { CampusBackgroundId } from "@/lib/heroBackgroundPresets";
 import type { SchoolListItem, SchoolStats } from "@/types/school";
 import type { CatalogFeedItem } from "@/types/work";
@@ -135,7 +135,7 @@ export default function SchoolProfilePage({
             >
               <Link
                 href="/schools"
-                className={`${MOCKUP_CAMPUS.heroBadge} inline-flex items-center gap-1 hover:text-sky-300 transition`}
+                className={`${MOCKUP_CAMPUS.heroBadge} inline-flex items-center gap-1 hover:text-xiio-accent-hover transition`}
               >
                 ← {t("schools.backToSchools")}
               </Link>
@@ -161,6 +161,30 @@ export default function SchoolProfilePage({
       <div
         className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
       >
+        <div className="flex gap-10 sm:gap-14 border-b border-white/[0.08] pb-8">
+          <div>
+            <p className="font-serif text-2xl sm:text-3xl font-semibold text-white">{stats.workCount}</p>
+            <p className="text-[12px] text-white/45 mt-1">{t("schools.statWorks")}</p>
+          </div>
+          <div>
+            <p className="font-serif text-2xl sm:text-3xl font-semibold text-white">
+              {schoolStudentCount(school.id, stats.workCount)}
+            </p>
+            <p className="text-[12px] text-white/45 mt-1">{t("schools.statStudents")}</p>
+          </div>
+          {(() => {
+            const delta = schoolSeasonDelta(school.id);
+            return (
+              <div>
+                <p className={`font-serif text-2xl sm:text-3xl font-semibold ${delta.up ? "text-xiio-success" : "text-white"}`}>
+                  {delta.label}
+                </p>
+                <p className="text-[12px] text-white/45 mt-1">{t("schools.statMovement")}</p>
+              </div>
+            );
+          })()}
+        </div>
+
         {latestStories.length > 0 && (
           <section>
             <div className={MOCKUP_CAMPUS.sectionHeaderRow}>

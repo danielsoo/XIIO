@@ -88,11 +88,11 @@ export default function PeopleProfileView({ handle }: Props) {
   }, [load]);
 
   if (loading) {
-    return <p className="px-4 text-xiio-muted lg:px-0">{t("common.loading")}</p>;
+    return <p className="px-4 text-xiio-muted lg:px-12">{t("common.loading")}</p>;
   }
 
   if (err || !data) {
-    return <p className="px-4 text-red-400 lg:px-0">{err ?? t("network.people.notFound")}</p>;
+    return <p className="px-4 text-red-400 lg:px-12">{err ?? t("network.people.notFound")}</p>;
   }
 
   const isSelf = !!data.viewer?.isSelf;
@@ -117,7 +117,7 @@ export default function PeopleProfileView({ handle }: Props) {
         isSelf={isSelf}
         isFollowing={!!data.viewer?.isFollowing}
       />
-      <div className="px-4 lg:px-0">
+      <div className="px-4 lg:px-12">
         <SocietyProfileBody works={works} isSelf={isSelf} />
       </div>
     </div>

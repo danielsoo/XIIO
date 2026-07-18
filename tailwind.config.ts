@@ -12,17 +12,22 @@ const config: Config = {
     extend: {
       colors: {
         xiio: {
-          bg: "#020408",
-          sidebar: "#02070B",
-          surface: "#141414",
-          card: "#1a1a2e",
-          accent: "#6C63FF",
-          "accent-hover": "#5a52e0",
+          bg: "#0b0b0d",
+          sidebar: "#0d0d10",
+          surface: "#111114",
+          card: "#16161a",
+          accent: "#3D7DFF",
+          "accent-hover": "#5c92ff",
+          gold: "#e3c483",
+          "gold-dim": "#C9A15A",
+          success: "#7fd99a",
+          destructive: "#ff8080",
           muted: "#b3b3b3",
         },
       },
       fontFamily: {
         sans: [
+          "var(--font-sans)",
           "Pretendard",
           "Apple SD Gothic Neo",
           "Noto Sans KR",

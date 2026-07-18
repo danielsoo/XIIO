@@ -10,6 +10,7 @@ import XiioWordmark from "@/components/layout/XiioWordmark";
 import { useDmUnreadCount } from "@/context/DmUnreadContext";
 import {
   APP_SIDEBAR_WIDTH,
+  NETWORK_NAV,
   PRIMARY_NAV,
   SECONDARY_NAV,
   type AppNavItem,
@@ -38,6 +39,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      prefetch
       onClick={onNavigate}
       id={item.id === "myList" ? "app-nav-my-list" : undefined}
       data-nav-id={item.id}
@@ -54,7 +56,7 @@ function NavLink({
           {unreadCount > 99 ? "99+" : unreadCount}
         </span>
       ) : item.badgeKey ? (
-        <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-sky-500/20 text-sky-400">
+        <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-xiio-accent/20 text-xiio-accent-hover">
           {t(item.badgeKey)}
         </span>
       ) : null}
@@ -75,6 +77,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex flex-col h-full">
       <Link
         href="/"
+        prefetch
         onClick={onNavigate}
         className="flex justify-center px-4 pt-6 pb-0"
         aria-label={t("common.logoHome")}
@@ -88,7 +91,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
           ))}
         </div>
-        <div className="h-20 shrink-0 border-t border-white/[0.06]" aria-hidden />
+        <div className="h-px shrink-0 bg-white/[0.06] my-3.5 mr-2.5" aria-hidden />
+        <div className="flex flex-col gap-0.5">
+          {NETWORK_NAV.map((item) => (
+            <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />
+          ))}
+        </div>
+        <div className="flex-1" aria-hidden />
+        <div className="h-px shrink-0 bg-white/[0.06] my-3 mr-2.5" aria-hidden />
         <div className="flex flex-col gap-0.5">
           {SECONDARY_NAV.map((item) => (
             <NavLink key={item.id} item={item} active={isActive(item.href)} onNavigate={onNavigate} />

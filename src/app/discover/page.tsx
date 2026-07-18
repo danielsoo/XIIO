@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import DiscoverPage from "@/components/discover/DiscoverPage";
 
-export default function DiscoverRedirectPage() {
-  redirect("/society?tab=discover");
+export default function Discover() {
+  return <DiscoverPage />;
 }

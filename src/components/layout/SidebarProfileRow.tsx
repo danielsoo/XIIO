@@ -78,7 +78,7 @@ export default function SidebarProfileRow({ onNavigate }: { onNavigate?: () => v
       </button>
 
       {open ? (
-        <div className="absolute bottom-full left-2 right-2 mb-1 py-1 rounded-lg border border-white/10 bg-[#0c0e12] shadow-xl z-50">
+        <div className="animate-dropdown-in absolute bottom-full left-2 right-2 mb-1 py-1 rounded-lg border border-white/10 bg-xiio-card shadow-xl z-50">
           <button
             type="button"
             onClick={() => go("/account")}

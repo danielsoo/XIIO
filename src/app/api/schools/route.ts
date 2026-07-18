@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 import { jsonError, requireUser } from "@/lib/server/api-auth";
+import { FEED_CACHE_HEADERS } from "@/lib/server/home-feeds";
+import { fetchSchoolsRanking, toClientSafeSchool } from "@/lib/server/school-feeds";
 import { getDbOrNull } from "@/lib/server/works";
 import { getOrCreateSchool } from "@/lib/server/schools";
+
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit")) || 50));
+  const db = await getDbOrNull();
+  if (!db) return NextResponse.json({ schools: [] }, { headers: FEED_CACHE_HEADERS });
+
+  const schools = (await fetchSchoolsRanking(db, limit)).map(toClientSafeSchool);
+  return NextResponse.json({ schools }, { headers: FEED_CACHE_HEADERS });
+}
 
 /** 업로드 시 학교 검색 결과에 없으면 자가등록 — pending 상태로 즉시 생성, 관리자가 비동기로 정리 */
 export async function POST(request: Request) {

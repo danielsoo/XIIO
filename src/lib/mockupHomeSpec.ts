@@ -2,16 +2,15 @@ import { APP_MAIN_BG } from "@/lib/mockupLayout";
 
 export const MOCKUP_HOME = {
   pageShell: "w-full",
-  contentMainColumnPad:
-    "lg:pl-[calc(var(--app-sidebar-width)+var(--app-content-boundary-inset))] lg:pr-[var(--app-content-boundary-inset)]",
+  contentMainColumnPad: "lg:pl-[var(--app-sidebar-width)]",
   contentRightPad: "",
-  topBarRightPad: "lg:pr-0",
+  topBarRightPad: "lg:px-10",
   contentColumnGuard: "min-w-0 max-w-full",
   contentBodyGuard: "min-w-0 max-w-full overflow-x-clip",
   topBarHeight: "h-[60px]",
-  searchBar: "w-full max-w-[520px] min-w-0 h-[40px] text-[14px]",
+  searchBar: "w-full max-w-[440px] min-w-0 h-[40px] text-[13.5px]",
   searchIconLeft: "left-[16px]",
-  heroSection: "min-h-[280px] lg:min-h-0",
+  heroSection: "min-h-[480px] lg:min-h-[560px]",
   heroInnerMinHeight: "min-h-0",
   heroContentTop: "pt-[36px] lg:pt-0",
   heroTextBottom: "pb-[40px] lg:pb-0",
@@ -27,7 +26,7 @@ export const MOCKUP_HOME = {
   ctaRow: "gap-[clamp(0.5rem,1vw,12px)]",
   ctaButton: "h-[clamp(2rem,3.5vw,40px)] px-[clamp(0.75rem,2vw,1.5rem)] text-[clamp(0.7rem,1.2vw,14px)] rounded-full",
   featuredLabel:
-    "text-[clamp(0.5rem,0.9vw,10px)] font-semibold tracking-[0.2em] text-sky-400 uppercase mb-[clamp(0.25rem,0.5vw,0.5rem)]",
+    "text-[clamp(0.5rem,0.9vw,10px)] font-semibold tracking-[0.2em] text-xiio-accent uppercase mb-[clamp(0.25rem,0.5vw,0.5rem)]",
   featuredTitle: "text-[clamp(0.9rem,1.6vw,18px)] font-semibold text-white",
   featuredMeta: "text-[clamp(0.6rem,1vw,12px)] text-white/45 mb-[clamp(0.5rem,1vw,0.75rem)]",
   featuredPlay:
@@ -45,8 +44,8 @@ export const MOCKUP_HOME = {
   surfaceRowGap: "gap-[14px]",
   campusBanner: "w-full max-w-[380px] min-w-0 min-h-[190px]",
   cardRadius: "rounded-xl",
-  accentBlue: "#89A5CF",
-  accentBlueBright: "#6EB5FF",
+  accentBlue: "#3D7DFF",
+  accentBlueBright: "#5c92ff",
   bg: APP_MAIN_BG,
 } as const;
 

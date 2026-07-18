@@ -30,7 +30,7 @@ export default function DmInboxLayout({ children }: Props) {
           <DmSidebar />
         </aside>
         <section
-          className={`flex-1 min-w-0 flex flex-col bg-[#181818] ${
+          className={`flex-1 min-w-0 flex flex-col bg-xiio-surface ${
             hasThread ? "flex" : "hidden md:flex"
           }`}
         >

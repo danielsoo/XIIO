@@ -31,3 +31,16 @@ export function sectionCatalogHref(section: WorkSection): string {
 export function watchHref(ownerUid: string, workId: string): string {
   return `/watch/${ownerUid}/${workId}`;
 }
+
+export function formatDurationMinutes(durationSec: number): string {
+  const minutes = Math.max(0, Math.round(durationSec / 60));
+  return `${minutes} min`;
+}
+
+export function formatReleaseDate(iso: string, locale: string = "en-US"): string {
+  try {
+    return new Date(iso).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+  } catch {
+    return "";
+  }
+}

@@ -34,7 +34,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ presence: {} });
   }
 
-  const snaps = await Promise.all(uids.map((uid) => db.collection("users").doc(uid).get()));
+  const userRefs = uids.map((uid) => db.collection("users").doc(uid));
+  const snaps = await db.getAll(...userRefs);
   const allowed: string[] = [];
   for (let i = 0; i < uids.length; i++) {
     const snap = snaps[i];

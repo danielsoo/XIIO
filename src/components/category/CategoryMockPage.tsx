@@ -1,79 +1,239 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import ContentCard from "@/components/ContentCard";
 import HomeContentRow from "@/components/home/HomeContentRow";
-import HomeFeaturedStoryPanel from "@/components/home/HomeFeaturedStoryPanel";
-import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
 import SectionLabel from "@/components/layout/SectionLabel";
 import { IconPlay } from "@/components/icons/MockupIcons";
 import { useAuth } from "@/context/AuthContext";
-import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
-import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useCatalogFeed } from "@/hooks/useCatalogFeed";
-import { catalogItemsToHomeStories } from "@/lib/categoryCatalogAdapter";
-import type { HeroBackgroundId } from "@/lib/heroBackgroundPresets";
-import { DEFAULT_FEATURED_STORY } from "@/lib/homeMockData";
-import {
-  heroSectionMinHeight,
-  heroTextBandMarginTop,
-  heroTextBandMinHeight,
-} from "@/lib/homeHeroLayout";
+import { useContinueWatching } from "@/hooks/useContinueWatching";
+import { criticsQuoteFor } from "@/data/criticsQuotes";
+import { watchProgressItemsToHomeStories } from "@/lib/categoryCatalogAdapter";
+import { buildSeriesCatalog, newestEpisodesAcrossCatalog } from "@/lib/series/seriesAdapter";
 import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
-import { gradientForTitle, watchHref } from "@/lib/works/catalog-ui";
-import type { WorkSection } from "@/types/work";
+import { formatDurationMinutes, gradientForTitle, watchHref } from "@/lib/works/catalog-ui";
+import type { CatalogFeedItem, WorkSection } from "@/types/work";
+import type { SeriesDetail } from "@/types/series";
+import filmHeroImage from "../../../film_hero.png";
 
-type CategoryVariant = "films" | "series";
+type CategoryVariant = "films" | "series" | "entertainment";
 
 const VARIANT_CONFIG: Record<
   CategoryVariant,
-  { section: WorkSection; presetOverride: HeroBackgroundId; viewAllHref: string }
+  { section: WorkSection; viewAllHref: string }
 > = {
-  films: { section: "movies", presetOverride: "home_wave", viewAllHref: "/movies" },
-  series: { section: "series", presetOverride: "campus_wave2", viewAllHref: "/series" },
+  films: { section: "movies", viewAllHref: "/movies" },
+  series: { section: "series", viewAllHref: "/series" },
+  entertainment: { section: "entertainment", viewAllHref: "/entertainment" },
 };
+
+function CriticsPicksSection({ items, t }: { items: CatalogFeedItem[]; t: (k: string) => string }) {
+  const picks = items.slice(0, 3);
+  if (picks.length === 0) return null;
+  return (
+    <section>
+      <div className={MOCKUP_CAMPUS.sectionHeaderRow}>
+        <SectionLabel>{t("category.mock.criticsPicks")}</SectionLabel>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {picks.map((item) => {
+          const { quote, source } = criticsQuoteFor(item.id);
+          return (
+            <Link
+              key={item.id}
+              href={watchHref(item.ownerUid, item.workId)}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-white/20 transition"
+            >
+              <p className="font-serif italic text-[17px] leading-snug text-white mb-3">&ldquo;{quote}&rdquo;</p>
+              <p className="text-[11px] uppercase tracking-[0.12em] text-white/40">
+                {source} — {item.title}
+              </p>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function FestivalSelectionsRow({ items, t }: { items: CatalogFeedItem[]; t: (k: string) => string }) {
+  const picks = items.slice(0, 6);
+  if (picks.length === 0) return null;
+  return (
+    <section>
+      <div className={MOCKUP_CAMPUS.sectionHeaderRow}>
+        <SectionLabel>{t("category.mock.festivalSelections")}</SectionLabel>
+      </div>
+      <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: "none" }}>
+        {picks.map((item) => (
+          <Link
+            key={item.id}
+            href={watchHref(item.ownerUid, item.workId)}
+            className="group shrink-0 w-[220px]"
+          >
+            <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-xiio-gold/30 group-hover:border-xiio-gold/60 transition mb-2.5">
+              {item.thumbnailUrl ? (
+                <Image src={item.thumbnailUrl} alt="" fill sizes="220px" className="object-cover" unoptimized />
+              ) : (
+                <div className={`absolute inset-0 ${gradientForTitle(item.title)}`} />
+              )}
+              <div className="absolute top-2 left-2 rounded-full bg-black/60 border border-xiio-gold/40 px-2.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-xiio-gold">
+                Selection
+              </div>
+            </div>
+            <p className="text-[13px] font-semibold text-white truncate">{item.title}</p>
+            <p className="text-[11px] text-white/45 mt-0.5">{item.approvedCategory ?? item.section}</p>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NewEpisodesRow({
+  episodes,
+  t,
+  loggedIn,
+}: {
+  episodes: ReturnType<typeof newestEpisodesAcrossCatalog>;
+  t: (k: string) => string;
+  loggedIn: boolean;
+}) {
+  if (episodes.length === 0) return null;
+  return (
+    <section>
+      <div className={MOCKUP_CAMPUS.sectionHeaderRow}>
+        <SectionLabel>{t("category.mock.newEpisodes")}</SectionLabel>
+      </div>
+      <div className="flex flex-col gap-2">
+        {episodes.slice(0, 6).map((ep) => (
+          <Link
+            key={ep.id}
+            href={loggedIn ? watchHref(ep.ownerUid, ep.workId) : "/login"}
+            className="group flex items-center gap-3.5 rounded-xl p-2 hover:bg-white/[0.03] transition"
+          >
+            <div className="relative w-[104px] shrink-0 aspect-video rounded-lg overflow-hidden border border-white/[0.08]">
+              {ep.thumbnailUrl ? (
+                <Image src={ep.thumbnailUrl} alt="" fill sizes="104px" className="object-cover" unoptimized />
+              ) : (
+                <div className={`absolute inset-0 ${gradientForTitle(ep.title)}`} />
+              )}
+              <div className="absolute top-1.5 left-1.5 bg-xiio-accent text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                NEW
+              </div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13.5px] font-semibold text-white truncate">{ep.title}</p>
+              <p className="text-[11.5px] text-white/45 mt-0.5">
+                S{ep.seasonNumber} · E{ep.episodeNumber} · {formatDurationMinutes(ep.durationSec)}
+              </p>
+            </div>
+            <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-[12px] font-medium text-white/80 group-hover:text-white group-hover:border-white/30 transition">
+              <IconPlay className="w-2.5 h-2.5" />
+              Play
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BingeCollectionsSection({
+  seriesList,
+  t,
+  loggedIn,
+}: {
+  seriesList: SeriesDetail[];
+  t: (k: string) => string;
+  loggedIn: boolean;
+}) {
+  if (seriesList.length === 0) return null;
+  return (
+    <section>
+      <div className={MOCKUP_CAMPUS.sectionHeaderRow}>
+        <SectionLabel>{t("category.mock.bingeCollections")}</SectionLabel>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {seriesList.map((series) => {
+          const firstPlayable = series.seasons
+            .flatMap((s) => s.episodes)
+            .find((ep) => ep.workId);
+          const href = firstPlayable
+            ? loggedIn
+              ? watchHref(firstPlayable.ownerUid, firstPlayable.workId)
+              : "/login"
+            : "/series";
+          const episodeCount = series.seasons.reduce((n, s) => n + s.episodes.length, 0);
+          return (
+            <Link
+              key={series.id}
+              href={href}
+              className="group rounded-2xl overflow-hidden border border-white/[0.08] hover:border-white/20 transition"
+            >
+              <div className="relative aspect-video">
+                {firstPlayable?.thumbnailUrl ? (
+                  <Image
+                    src={firstPlayable.thumbnailUrl}
+                    alt=""
+                    fill
+                    sizes="360px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className={`absolute inset-0 ${gradientForTitle(series.title)}`} />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+                <div className="absolute bottom-2.5 left-3 right-3">
+                  <p className="font-serif text-[16px] font-semibold text-white leading-tight">{series.title}</p>
+                  <p className="text-[11px] text-white/55 mt-0.5">
+                    {series.seasons.length} Seasons · {episodeCount} Episodes
+                  </p>
+                </div>
+              </div>
+              <div className="p-3.5">
+                <p className="text-[12.5px] text-white/55 line-clamp-2">{series.synopsis}</p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 export default function CategoryMockPage({ variant }: { variant: CategoryVariant }) {
   const { t } = useTranslations();
   const { user } = useAuth();
-  const { rgbTuple, overlayEnabled, heroStyle, themeReady } = useHomeHeroTheme();
-  const {
-    waveRect,
-    gradStartPercent,
-    layoutReady,
-    isLgViewport,
-    registerHeroSection,
-    registerHeroText,
-  } = useHeroWaveLayout();
   const config = VARIANT_CONFIG[variant];
   const i18n = `category.mock.${variant}` as const;
   const { items, loading } = useCatalogFeed(config.section, 12);
+  const { items: continueWatchingAll } = useContinueWatching();
 
-  const setHeroSectionRef = useCallback(
-    (el: HTMLElement | null) => {
-      registerHeroSection(el);
-    },
-    [registerHeroSection]
+  const continueWatchingItems = useMemo(
+    () => continueWatchingAll.filter((it) => it.section === config.section),
+    [continueWatchingAll, config.section]
+  );
+  const continueWatchingStories = useMemo(
+    () => watchProgressItemsToHomeStories(continueWatchingItems),
+    [continueWatchingItems]
+  );
+  const newEpisodes = useMemo(
+    () => (variant === "series" ? newestEpisodesAcrossCatalog(items, 8) : []),
+    [variant, items]
+  );
+  const bingeSeries = useMemo(
+    () => (variant === "series" ? buildSeriesCatalog(items) : []),
+    [variant, items]
   );
 
-  const setHeroTextRef = useCallback(
-    (el: HTMLDivElement | null) => {
-      registerHeroText(el);
-    },
-    [registerHeroText]
-  );
-
-  const visualReady = themeReady && layoutReady;
-
-  const rowItems = useMemo(() => catalogItemsToHomeStories(items), [items]);
   const featured = items[0];
-  const featuredTitle = featured?.title ?? DEFAULT_FEATURED_STORY.title;
-  const featuredMeta = featured
-    ? `${featured.approvedCategory ?? config.section} • ${featured.approvedTags[0] ?? "watch"}`
-    : `${DEFAULT_FEATURED_STORY.category} • ${DEFAULT_FEATURED_STORY.duration}`;
 
   const watchHrefPrimary = user
     ? featured
@@ -81,100 +241,77 @@ export default function CategoryMockPage({ variant }: { variant: CategoryVariant
       : config.viewAllHref
     : "/login";
 
-  const heroGridBandStyle = isLgViewport
-    ? {
-        marginTop: heroTextBandMarginTop(),
-        minHeight: heroTextBandMinHeight(waveRect),
-      }
-    : undefined;
+  const hasHero = variant === "films";
 
   return (
-    <main className={`min-h-screen min-w-0 w-full ${MOCKUP_HOME.pageShell}`} style={heroStyle}>
-      <section
-        ref={setHeroSectionRef}
-        className={`relative isolate flex min-w-0 w-full flex-col overflow-hidden -mt-[60px] pt-[60px] ${MOCKUP_HOME.heroSection}`}
-        style={{ minHeight: heroSectionMinHeight(waveRect) }}
-      >
-        <HeroLandscapeBackdrop
-          rgbTuple={rgbTuple}
-          overlayEnabled={overlayEnabled}
-          backgroundScope="home"
-          variant="home"
-          gradStartPercent={gradStartPercent}
-          presetOverride={config.presetOverride}
-          visualReady={visualReady}
-          priority
-        />
-
-        <div
-          className={`relative z-10 flex flex-1 flex-col ${MOCKUP_HOME.heroInnerMinHeight} ${MOCKUP_HOME.heroContentTop}`}
-          style={{ minHeight: waveRect.height }}
-        >
-          <div
-            className={`flex-1 w-full ${MOCKUP_HOME.heroGrid}`}
-            style={heroGridBandStyle}
-          >
-            <div
-              ref={setHeroTextRef}
-              className={`${MOCKUP_HOME.heroTextColumnWide} ${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
-            >
-              <p className={MOCKUP_CAMPUS.heroBadge}>{t(`${i18n}.badge`)}</p>
-              <h1 className={MOCKUP_HOME.heroTitle}>
-                <span className="block text-white">{t(`${i18n}.heroTitle`)}</span>
-              </h1>
-              <p className={MOCKUP_HOME.heroSubtitle}>
-                <span className="block">{t(`${i18n}.heroSubtitleLine1`)}</span>
-                <span className="block">{t(`${i18n}.heroSubtitleLine2`)}</span>
+    <main className={`min-h-screen min-w-0 w-full ${MOCKUP_HOME.pageShell}`}>
+      {hasHero ? (
+        <section className="relative isolate min-h-[560px] overflow-hidden">
+          <Image
+            src={filmHeroImage}
+            alt="A young filmmaker looking across a city at night"
+            fill
+            priority
+            sizes="(min-width: 1024px) calc(100vw - 220px), 100vw"
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,11,13,0.94)_0%,rgba(11,11,13,0.62)_40%,rgba(11,11,13,0.08)_72%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,11,13,0.06)_0%,rgba(11,11,13,0.1)_62%,#0b0b0d_100%)]" />
+          <div className="relative z-10 flex min-h-[560px] items-end px-6 pb-16 lg:px-12">
+            <div className="min-w-0 max-w-[720px]">
+              <p className="text-xs font-bold tracking-[0.16em] text-xiio-gold uppercase mb-3.5">
+                {t("category.mock.nowShowing")}
               </p>
-              <div className={`flex flex-wrap items-center ${MOCKUP_HOME.ctaRow}`}>
-                <Link
-                  href={watchHrefPrimary}
-                  className={`inline-flex items-center gap-2 bg-white text-black font-semibold hover:bg-white/90 transition ${MOCKUP_HOME.ctaButton}`}
-                >
-                  <IconPlay className="w-3.5 h-3.5" />
-                  {t(`${i18n}.startWatching`)}
-                </Link>
-                <Link
-                  href="/uploader/upload"
-                  className={`inline-flex items-center border border-white/30 text-white font-medium hover:bg-white/[0.06] transition ${MOCKUP_HOME.ctaButton}`}
-                >
-                  {t(`${i18n}.uploadStory`)}
-                </Link>
-              </div>
-            </div>
-
-            <div
-              className={`hidden lg:flex min-w-0 max-w-full flex-col justify-end items-end ${MOCKUP_HOME.heroTextBottom}`}
-            >
-              <HomeFeaturedStoryPanel
-                label={t("home.mock.featuredLabel")}
-                title={featuredTitle}
-                meta={featuredMeta}
-              />
+              <h1 className="mb-4 font-serif text-[clamp(3rem,5.2vw,4.7rem)] font-semibold leading-[1.04] text-white">
+                <span className="block">Undertow</span>
+              </h1>
+              <p className="mb-7 max-w-[620px] text-[15px] leading-[1.65] text-white/65">
+                A dockworker&apos;s daughter searches the harbor town for the truth about her father&apos;s last voyage.
+                Shot over eleven nights on the Oregon coast.
+              </p>
+              <Link
+                href={watchHrefPrimary}
+                className="inline-flex h-12 items-center gap-2.5 rounded-full bg-[#f5f4f2] px-7 text-[14px] font-semibold text-[#0b0b0d] transition hover:bg-white"
+              >
+                <IconPlay className="w-3.5 h-3.5" />
+                Play Feature
+              </Link>
             </div>
           </div>
-
-          <div className="lg:hidden relative z-10 mt-8 px-4">
-            <HomeFeaturedStoryPanel
-              label={t("home.mock.featuredLabel")}
-              title={featuredTitle}
-              meta={featuredMeta}
-            />
-          </div>
+        </section>
+      ) : (
+        <div className="px-4 pt-8 lg:px-12">
+          <h1 className="font-serif text-[32px] font-semibold text-white mt-6 mb-2">
+            {t(`${i18n}.heroTitle`)}
+          </h1>
+          <p className="text-[14px] text-white/50 max-w-[560px] mb-10">
+            <span>{t(`${i18n}.heroSubtitleLine1`)} </span>
+            <span>{t(`${i18n}.heroSubtitleLine2`)}</span>
+          </p>
         </div>
-      </section>
+      )}
 
       <div
-        className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
+        className={`relative z-10 bg-xiio-bg px-4 ${hasHero ? "pt-11" : ""} lg:px-12 ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col gap-11`}
       >
-        {rowItems.length > 0 ? (
+        {variant === "series" && continueWatchingStories.length > 0 ? (
           <HomeContentRow
-            title={t(`${i18n}.spotlightTitle`)}
-            viewAllHref={config.viewAllHref}
+            title={t("category.mock.continueWatching")}
+            viewAllHref="/my-list"
             viewAllLabel={t("home.mock.viewAll")}
-            items={rowItems}
+            items={continueWatchingStories}
             variant="featured"
           />
+        ) : null}
+
+        {variant === "films" ? <FestivalSelectionsRow items={items} t={t} /> : null}
+        {variant === "films" ? <CriticsPicksSection items={items} t={t} /> : null}
+
+        {variant === "series" ? (
+          <NewEpisodesRow episodes={newEpisodes} t={t} loggedIn={Boolean(user)} />
+        ) : null}
+        {variant === "series" ? (
+          <BingeCollectionsSection seriesList={bingeSeries} t={t} loggedIn={Boolean(user)} />
         ) : null}
 
         <section>

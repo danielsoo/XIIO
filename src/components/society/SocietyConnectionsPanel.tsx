@@ -15,6 +15,13 @@ import {
   type SocietySortId,
 } from "@/lib/societyMockData";
 import { useSocietyPresencePoll } from "@/hooks/useSocietyPresencePoll";
+import {
+  addFollowingUid,
+  loadFollowingUids,
+  loadSocietyPeople,
+  readFollowingUids,
+  readSocietyPeople,
+} from "@/lib/societyPeopleCache";
 import type { SocietyPerson } from "@/lib/societyTypes";
 import type { ProfileRoleTag } from "@/types/portfolio";
 
@@ -49,7 +56,7 @@ function DropdownSelect({
         className="w-full cursor-pointer appearance-none border-0 bg-transparent px-2 py-2 pr-6 text-center text-sm text-white/55 focus:outline-none focus:ring-0"
       >
         {options.map((opt) => (
-          <option key={opt.value || "all"} value={opt.value} className="bg-[#0c0e12] text-white">
+          <option key={opt.value || "all"} value={opt.value} className="bg-xiio-card text-white">
             {opt.label}
           </option>
         ))}
@@ -79,9 +86,15 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
   const [sort, setSort] = useState<SocietySortId>("recent");
   const [q, setQ] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [people, setPeople] = useState<SocietyPerson[]>([]);
-  const [connectedUids, setConnectedUids] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [people, setPeople] = useState<SocietyPerson[]>(() =>
+    readSocietyPeople(user, { followingOnly: tab === "connections" })?.people ?? []
+  );
+  const [connectedUids, setConnectedUids] = useState<Set<string>>(
+    () => new Set(user ? readFollowingUids(user.uid) ?? [] : [])
+  );
+  const [loading, setLoading] = useState(
+    () => tab === "discover" && !readSocietyPeople(null)?.people.length
+  );
   const [err, setErr] = useState<string | null>(null);
   const [busyUid, setBusyUid] = useState<string | null>(null);
 
@@ -90,14 +103,11 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
       setConnectedUids(new Set());
       return;
     }
+    const stored = readFollowingUids(user.uid);
+    if (stored) setConnectedUids(new Set(stored));
     try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/discover/people?followingOnly=1", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const data = (await res.json()) as { people?: SocietyPerson[] };
-      setConnectedUids(new Set((data.people ?? []).map((p) => p.uid)));
+      const uids = await loadFollowingUids(user);
+      setConnectedUids(new Set(uids));
     } catch {
       /* ignore */
     }
@@ -110,32 +120,32 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
       setErr(null);
       return;
     }
-    if (!user) {
+    if (tab === "connections" && !user) {
       setLoading(false);
       setPeople([]);
       setErr(null);
       return;
     }
-    setLoading(true);
+
+    const options = {
+      followingOnly: tab === "connections",
+      role,
+      q: searchQuery,
+    } as const;
+    const stored = readSocietyPeople(user, options);
+    if (stored) {
+      setPeople(stored.people);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setErr(null);
     try {
-      const token = await user.getIdToken();
-      const params = new URLSearchParams();
-      if (tab === "connections") params.set("followingOnly", "1");
-      if (role) params.set("role", role);
-      if (searchQuery) params.set("q", searchQuery);
-      const res = await fetch(`/api/discover/people?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        setErr(t("society.loadError"));
-        setPeople([]);
-        return;
-      }
-      const data = (await res.json()) as { people?: SocietyPerson[] };
-      setPeople(data.people ?? []);
+      const data = await loadSocietyPeople(user, options);
+      setPeople(data.people);
     } catch {
       setErr(t("society.loadError"));
+      if (!stored) setPeople([]);
     } finally {
       setLoading(false);
     }
@@ -146,8 +156,12 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
   };
 
   useEffect(() => {
-    void Promise.all([loadFollowingSet(), load()]);
-  }, [loadFollowingSet, load]);
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    void loadFollowingSet();
+  }, [loadFollowingSet]);
 
   const filteredPeople = useMemo(() => {
     let list = [...people];
@@ -198,7 +212,8 @@ export default function SocietyConnectionsPanel({ activeTab, onTabChange }: Prop
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        setConnectedUids((prev) => new Set([...prev, person.uid]));
+        const next = addFollowingUid(user.uid, person.uid);
+        setConnectedUids(new Set(next));
       }
     } finally {
       setBusyUid(null);

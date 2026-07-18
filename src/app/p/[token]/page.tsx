@@ -14,6 +14,14 @@ export default function PublicPortfolioPage() {
   const [data, setData] = useState<PublicPortfolioPayload | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const copyShareLink = () => {
+    void navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -42,7 +50,16 @@ export default function PublicPortfolioPage() {
       ) : err || !data ? (
         <p className="text-red-400">{err}</p>
       ) : (
-        <div className="max-w-5xl mx-auto w-full space-y-8">
+        <div className="max-w-[1100px] mx-auto w-full space-y-8">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={copyShareLink}
+              className="rounded-full border border-white/15 px-5 py-2.5 text-[13px] text-white hover:bg-white/[0.06] transition"
+            >
+              {copied ? t("portfolio.public.linkCopied") : t("portfolio.public.copyShareLink")}
+            </button>
+          </div>
           <PublicProfileCard
             profile={data.profile}
             submissionBadge={t("portfolio.public.badge")}

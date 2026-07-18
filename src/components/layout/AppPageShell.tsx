@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-/** AppShell 안 — 모바일만 px, lg는 AppShell inset에 맡김 (Society·TopBar와 동일) */
-export const PAGE_GUTTER_IN_SHELL = "px-4 lg:px-0";
+/** AppShell content inset from the final imported redesign. */
+export const PAGE_GUTTER_IN_SHELL = "px-4 lg:px-12";
 
 /** AppShell 밖 standalone (verify 등) */
 export const PAGE_GUTTER_STANDALONE = "px-4 sm:px-6 md:px-8 lg:px-10";
@@ -9,8 +9,8 @@ export const PAGE_GUTTER_STANDALONE = "px-4 sm:px-6 md:px-8 lg:px-10";
 /** @deprecated PAGE_GUTTER_IN_SHELL 사용 */
 export const PAGE_GUTTER = PAGE_GUTTER_IN_SHELL;
 
-/** Max content width aligned with home hero grid. */
-export const PAGE_CONTAINER = "mx-auto w-full max-w-7xl";
+/** Max content width aligned with the 1400px handoff grid. */
+export const PAGE_CONTAINER = "mx-auto w-full max-w-[1400px]";
 
 type Props = {
   children: ReactNode;

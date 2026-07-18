@@ -11,7 +11,7 @@ export const MOCKUP_CONTENT_INSET = {
 } as const;
 
 /** Implemented sidebar width (12rem) — gap after border-r to main content start */
-export const APP_SIDEBAR_IMPLEMENTATION_PX = 192;
+export const APP_SIDEBAR_IMPLEMENTATION_PX = 220;
 const MOCKUP_SIDEBAR_CONTENT_GAP_PX =
   MOCKUP_CONTENT_INSET.left - APP_SIDEBAR_IMPLEMENTATION_PX;
 /** Sidebar border-r ~ main column start; 75% of mockup gap (47px → 35px) */
@@ -21,13 +21,13 @@ export const APP_CONTENT_BOUNDARY_INSET_PX = Math.round(
 export const APP_CONTENT_RIGHT_MARGIN_PX = MOCKUP_CONTENT_INSET.rightMargin;
 
 /** App chrome — sidebar vs main column (photos excluded) */
-export const APP_SIDEBAR_BG = "#02070B";
-export const APP_MAIN_BG = "#020408";
+export const APP_SIDEBAR_BG = "#0d0d10";
+export const APP_MAIN_BG = "#0b0b0d";
 
 /** Section headers — All Films style (dot + xs bold caps) */
 export const MOCKUP_SECTION_LABEL = {
   row: "flex items-center gap-2",
-  dot: "w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0",
+  dot: "w-1.5 h-1.5 rounded-full bg-xiio-accent shrink-0",
   text: "text-xs font-bold tracking-[0.2em] uppercase text-white",
 } as const;
 

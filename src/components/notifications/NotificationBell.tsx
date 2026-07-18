@@ -68,7 +68,7 @@ export default function NotificationBell() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full mt-2 w-80 max-w-[90vw] rounded-lg border border-white/10 bg-[#0c0e12] shadow-xl z-50 overflow-hidden">
+        <div className="animate-dropdown-in absolute right-0 top-full mt-2 w-80 max-w-[90vw] rounded-lg border border-white/10 bg-xiio-card shadow-xl z-50 overflow-hidden">
           <div className="px-4 py-3 border-b border-white/10">
             <p className="text-sm font-semibold text-white">{t("notifications.title")}</p>
           </div>

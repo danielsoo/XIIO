@@ -38,6 +38,18 @@ export function AppNavIconSvg({ icon, active = false, className = iconClass }: P
           <path strokeLinecap="round" strokeWidth={sw} d="M16.5 16.5L20 20" />
         </svg>
       );
+    case "entertainment":
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={sw}
+            d="M6 4l1.5 3L10.5 8.5 7.5 10 6 13l-1.5-3L1.5 8.5 4.5 7z"
+          />
+          <circle cx="16" cy="15" r="5.5" strokeWidth={sw} />
+        </svg>
+      );
     case "society":
       if (active) {
         return (

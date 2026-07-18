@@ -4,6 +4,10 @@ import { useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import AppSidebar from "@/components/layout/AppSidebar";
 import AppTopBar from "@/components/layout/AppTopBar";
+import AppRoutePrefetcher from "@/components/layout/AppRoutePrefetcher";
+import PublicFeedPrefetcher from "@/components/layout/PublicFeedPrefetcher";
+import WatchRoutePrefetcher from "@/components/watch/WatchRoutePrefetcher";
+import SocietySummaryPrefetcher from "@/components/society/SocietySummaryPrefetcher";
 import { DmUnreadProvider } from "@/context/DmUnreadContext";
 import { HeroWaveLayoutProvider } from "@/context/HeroWaveLayoutContext";
 import { NotificationProvider } from "@/context/NotificationContext";
@@ -18,13 +22,22 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const { heroStyle } = useHomeHeroTheme();
 
   if (shouldHideAppShell(pathname)) {
-    return <>{children}</>;
+    return (
+      <>
+        <WatchRoutePrefetcher />
+        {children}
+      </>
+    );
   }
 
   return (
     <HeroWaveLayoutProvider>
       <DmUnreadProvider>
         <NotificationProvider>
+          <AppRoutePrefetcher />
+          <PublicFeedPrefetcher />
+          <SocietySummaryPrefetcher />
+          <WatchRoutePrefetcher />
           <div className="min-h-screen min-w-[360px] bg-xiio-bg text-white" style={heroStyle}>
             <AppSidebar mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
             <div

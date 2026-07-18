@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback } from "react";
 import AdminHomeColorPicker from "@/components/home/AdminHomeColorPicker";
@@ -7,6 +8,7 @@ import HeroLandscapeBackdrop from "@/components/hero/HeroLandscapeBackdrop";
 import { useHeroWaveLayout } from "@/context/HeroWaveLayoutContext";
 import { useHomeHeroTheme } from "@/context/HomeHeroThemeContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { useSchoolsFeed } from "@/hooks/useSchoolsFeed";
 import {
   heroSectionMinHeight,
   heroTextBandMarginTop,
@@ -14,11 +16,134 @@ import {
 } from "@/lib/homeHeroLayout";
 import { MOCKUP_CAMPUS } from "@/lib/mockupCampusSpec";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
-import SchoolPosterCard from "@/components/school/SchoolPosterCard";
+import { schoolPosterGradient, schoolSeasonDelta, schoolStudentCount } from "@/lib/school-brand";
 import type { SchoolListItem } from "@/types/school";
 
-export default function SchoolsDirectoryPage({ schools }: { schools: SchoolListItem[] }) {
+const MEDAL_COLORS = ["#E9C16A", "#D7D7DE", "#D79A63"] as const;
+const PODIUM_ORDER = [1, 0, 2] as const;
+const PODIUM_HEIGHTS = ["h-24", "h-32", "h-20"] as const;
+
+function SchoolMark({ school, sizeClass }: { school: SchoolListItem; sizeClass: string }) {
+  if (school.logoUrl) {
+    return (
+      <div className={`relative ${sizeClass} shrink-0 rounded-full overflow-hidden bg-black/30`}>
+        <Image src={school.logoUrl} alt="" fill className="object-contain p-2" sizes="80px" unoptimized />
+      </div>
+    );
+  }
+  return (
+    <div
+      className={`flex ${sizeClass} shrink-0 items-center justify-center rounded-full text-sm font-black text-white/90`}
+      style={{ background: schoolPosterGradient(school.colorPrimary, school.colorSecondary) }}
+    >
+      {school.initials}
+    </div>
+  );
+}
+
+function SchoolPodium({ schools, t }: { schools: SchoolListItem[]; t: (k: string, v?: Record<string, string | number>) => string }) {
+  const top3 = schools.slice(0, 3);
+  if (top3.length === 0) return null;
+  return (
+    <section>
+      <div className={MOCKUP_CAMPUS.sectionHeaderRow}>
+        <SectionLabelInline>{t("schools.podiumTitle")}</SectionLabelInline>
+      </div>
+      <div className="flex items-end justify-center gap-4 sm:gap-6">
+        {PODIUM_ORDER.filter((i) => top3[i]).map((i) => {
+          const school = top3[i]!;
+          const medal = MEDAL_COLORS[i]!;
+          return (
+            <Link
+              key={school.id}
+              href={`/school/${school.id}`}
+              className="flex flex-col items-center gap-3 group w-[120px] sm:w-[150px]"
+            >
+              <div
+                className="rounded-full p-1"
+                style={{ boxShadow: `0 0 0 2px ${medal}` }}
+              >
+                <SchoolMark school={school} sizeClass={i === 0 ? "w-20 h-20 sm:w-24 sm:h-24" : "w-16 h-16 sm:w-20 sm:h-20"} />
+              </div>
+              <div className="text-center">
+                <p className="text-[13px] font-semibold text-white truncate max-w-[140px] group-hover:text-white">
+                  {school.name}
+                </p>
+                <p className="text-[11px] text-white/45 mt-0.5">
+                  {t("schools.workCount", { count: school.workCount ?? 0 })}
+                </p>
+              </div>
+              <div
+                className={`w-full ${PODIUM_HEIGHTS[i]} rounded-t-lg flex items-start justify-center pt-2`}
+                style={{ background: `linear-gradient(180deg, ${medal}33, ${medal}0d)`, borderTop: `2px solid ${medal}` }}
+              >
+                <span className="text-lg font-black" style={{ color: medal }}>
+                  {i + 1}
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function SectionLabelInline({ children }: { children: React.ReactNode }) {
+  return (
+    <div className={MOCKUP_CAMPUS.sectionLabelRow}>
+      <span className={MOCKUP_CAMPUS.sectionDot} aria-hidden />
+      <h2 className={MOCKUP_CAMPUS.sectionLabel}>{children}</h2>
+    </div>
+  );
+}
+
+function SchoolRankedTable({ schools, t }: { schools: SchoolListItem[]; t: (k: string, v?: Record<string, string | number>) => string }) {
+  if (schools.length === 0) return null;
+  return (
+    <section>
+      <div className={MOCKUP_CAMPUS.sectionHeaderRow}>
+        <SectionLabelInline>{t("schools.contendersTitle")}</SectionLabelInline>
+      </div>
+      <div className="rounded-2xl border border-white/[0.08] overflow-hidden">
+        <div className="grid grid-cols-[40px_1fr_70px_70px_56px] items-center gap-3 px-4 py-2.5 border-b border-white/[0.06] text-[11px] uppercase tracking-wide text-white/35">
+          <span>{t("schools.rankColumn")}</span>
+          <span>{t("schools.schoolColumn")}</span>
+          <span className="text-right">{t("schools.worksColumn")}</span>
+          <span className="text-right">{t("schools.studentsColumn")}</span>
+          <span className="text-right">{t("schools.changeColumn")}</span>
+        </div>
+        {schools.map((school, i) => {
+          const delta = schoolSeasonDelta(school.id);
+          return (
+            <Link
+              key={school.id}
+              href={`/school/${school.id}`}
+              className="grid grid-cols-[40px_1fr_70px_70px_56px] items-center gap-3 px-4 py-3 border-b border-white/[0.06] last:border-b-0 hover:bg-white/[0.02] transition"
+            >
+              <span className="font-serif text-lg text-white/40">{i + 1}</span>
+              <span className="flex items-center gap-3 min-w-0">
+                <SchoolMark school={school} sizeClass="w-8 h-8" />
+                <span className="text-[13.5px] font-medium text-white truncate">{school.name}</span>
+              </span>
+              <span className="text-right text-[13px] text-white/70 tabular-nums">{school.workCount ?? 0}</span>
+              <span className="text-right text-[13px] text-white/70 tabular-nums">
+                {schoolStudentCount(school.id, school.workCount ?? 0)}
+              </span>
+              <span className={`text-right text-[12.5px] tabular-nums ${delta.up ? "text-xiio-success" : "text-white/40"}`}>
+                {delta.label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+export default function SchoolsDirectoryPage({ schools: initialSchools }: { schools?: SchoolListItem[] }) {
   const { t } = useTranslations();
+  const { items: schools, loading } = useSchoolsFeed(50, initialSchools);
   const { rgbTuple, overlayEnabled, heroStyle, themeReady } = useHomeHeroTheme();
   const {
     waveRect,
@@ -78,19 +203,14 @@ export default function SchoolsDirectoryPage({ schools }: { schools: SchoolListI
               ref={setHeroTextRef}
               className={`min-w-0 ${MOCKUP_HOME.heroTextColumnWide} ${MOCKUP_HOME.heroTextColumn} ${MOCKUP_HOME.heroTextBottom}`}
             >
-              <p className={MOCKUP_CAMPUS.heroBadge}>{t("schools.heroBadge")}</p>
+              <p className={`${MOCKUP_CAMPUS.heroBadge} flex items-center gap-2.5`}>
+                <span className="w-[7px] h-[7px] rounded-full bg-xiio-accent shrink-0" aria-hidden />
+                {t("schools.heroBadge")}
+              </p>
               <h1 className={MOCKUP_HOME.heroTitle}>
                 <span className="block text-white">{t("schools.directoryTitle")}</span>
               </h1>
               <p className={MOCKUP_HOME.heroSubtitle}>{t("schools.directorySubtitle")}</p>
-              <div className={`flex flex-wrap items-center ${MOCKUP_HOME.ctaRow}`}>
-                <Link
-                  href="/uploader/upload"
-                  className={`inline-flex items-center border border-white/30 text-white font-medium hover:bg-white/[0.06] transition ${MOCKUP_HOME.ctaButton}`}
-                >
-                  {t("schools.heroCta")}
-                </Link>
-              </div>
             </div>
           </div>
         </div>
@@ -99,14 +219,15 @@ export default function SchoolsDirectoryPage({ schools }: { schools: SchoolListI
       <div
         className={`relative z-10 bg-xiio-bg ${MOCKUP_HOME.pageShell} ${MOCKUP_HOME.contentBodyGuard} pb-16 flex flex-col ${MOCKUP_HOME.sectionGap}`}
       >
-        {schools.length === 0 ? (
+        {loading && schools.length === 0 ? (
+          <p className="text-white/45">{t("common.loading")}</p>
+        ) : schools.length === 0 ? (
           <p className="text-white/45">{t("schools.empty")}</p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {schools.map((school) => (
-              <SchoolPosterCard key={school.id} school={school} />
-            ))}
-          </div>
+          <>
+            <SchoolPodium schools={schools} t={t} />
+            <SchoolRankedTable schools={schools} t={t} />
+          </>
         )}
       </div>
 

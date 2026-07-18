@@ -150,12 +150,12 @@ export default function SocietyProfileHeroLayout({
 
               {profileLink ? (
                 <p className="mt-1.5 flex items-center gap-1.5 text-sm">
-                  <LinkIcon className="h-4 w-4 shrink-0 text-sky-400/80" />
+                  <LinkIcon className="h-4 w-4 shrink-0 text-xiio-accent/80" />
                   <a
                     href={profileLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sky-400 hover:underline"
+                    className="text-xiio-accent hover:underline"
                   >
                     {displayProfileLink(profileLink)}
                   </a>

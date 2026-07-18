@@ -123,7 +123,7 @@ export default function BusinessInviteCard({ invite, box, onChanged }: Props) {
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-xiio-accent/20 text-xiio-accent font-medium">
+            <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-xiio-gold/[0.16] text-xiio-gold font-medium">
               {directionBadge}
             </span>
             {invite.status !== "pending" && (

@@ -7,27 +7,14 @@ import SocietyProfileHeroLayout from "@/components/society/SocietyProfileHeroLay
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { formatCompactStat } from "@/lib/formatStat";
-import type { HeroBackgroundId } from "@/lib/heroBackgroundPresets";
+import { DEFAULT_SOCIETY_BANNER_ID } from "@/lib/societyBannerBackground";
 import {
-  DEFAULT_SOCIETY_BANNER_ID,
-  parseSocietyBannerBackgroundId,
-} from "@/lib/societyBannerBackground";
-import { getUserProfile } from "@/lib/userProfile";
+  fetchSocietySummary,
+  readStoredSocietySummary,
+  type SocietySummary,
+} from "@/lib/societySummaryCache";
 
-type HeroData = {
-  displayName: string;
-  handle: string | null;
-  headline: string | null;
-  bio: string | null;
-  avatarUrl: string | null;
-  schoolName: string | null;
-  profileLink: string | null;
-  societyBannerBackgroundId: HeroBackgroundId;
-  stories: number;
-  followers: number;
-  following: number;
-  totalViews: number;
-};
+type HeroData = SocietySummary;
 
 function EditIcon({ className }: { className?: string }) {
   return (
@@ -45,7 +32,7 @@ function EditIcon({ className }: { className?: string }) {
 function FallbackHeader() {
   const { t } = useTranslations();
   return (
-    <header className="mb-8 px-4 pt-6 lg:px-0">
+    <header className="mb-8 px-4 pt-6 lg:px-12">
       <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{t("society.title")}</h1>
       <p className="mt-2 max-w-2xl text-sm text-white/50 sm:text-base">{t("society.lead")}</p>
     </header>
@@ -66,79 +53,20 @@ export default function SocietyProfileHero() {
     }
 
     let cancelled = false;
-    setLoading(true);
+    const stored = readStoredSocietySummary(user.uid);
+    if (stored) {
+      setData(stored);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
 
     (async () => {
       try {
-        const token = await user.getIdToken();
-        const headers = { Authorization: `Bearer ${token}` };
-
-        const [profileDoc, proRes, worksRes, analyticsRes] = await Promise.all([
-          getUserProfile(user.uid),
-          fetch("/api/me/professional-profile", { headers }),
-          fetch("/api/me/works", { headers }),
-          fetch("/api/me/analytics?days=90", { headers }),
-        ]);
-
-        const pro = proRes.ok
-          ? ((await proRes.json()) as {
-              handle?: string | null;
-              headline?: string | null;
-              bio?: string | null;
-              displayName?: string;
-              avatarUrl?: string | null;
-              profileLink?: string | null;
-              followerCount?: number;
-              followingCount?: number;
-              societyBannerBackgroundId?: HeroBackgroundId | null;
-            })
-          : null;
-
-        let stories = 0;
-        if (worksRes.ok) {
-          const worksBody = (await worksRes.json()) as {
-            works?: { platformStatus?: string }[];
-          };
-          stories = (worksBody.works ?? []).filter((w) => w.platformStatus === "published").length;
-        }
-
-        let totalViews = 0;
-        if (analyticsRes.ok) {
-          const analyticsBody = (await analyticsRes.json()) as {
-            summary?: { totalViews?: number };
-          };
-          totalViews = analyticsBody.summary?.totalViews ?? 0;
-        }
-
-        if (cancelled) return;
-
-        const displayName =
-          pro?.displayName?.trim() ||
-          profileDoc?.displayName?.trim() ||
-          user.displayName?.trim() ||
-          "—";
-
-        const bannerId =
-          parseSocietyBannerBackgroundId(pro?.societyBannerBackgroundId) ??
-          parseSocietyBannerBackgroundId(profileDoc?.societyBannerBackgroundId) ??
-          DEFAULT_SOCIETY_BANNER_ID;
-
-        setData({
-          displayName,
-          handle: pro?.handle?.trim() || null,
-          headline: pro?.headline?.trim() || null,
-          bio: pro?.bio?.trim() || null,
-          avatarUrl: pro?.avatarUrl ?? profileDoc?.avatarUrl ?? null,
-          schoolName: profileDoc?.schoolName?.trim() || null,
-          profileLink: pro?.profileLink ?? profileDoc?.profileLink ?? null,
-          societyBannerBackgroundId: bannerId,
-          stories,
-          followers: pro?.followerCount ?? 0,
-          following: pro?.followingCount ?? 0,
-          totalViews,
-        });
+        const summary = await fetchSocietySummary(user);
+        if (!cancelled) setData(summary);
       } catch {
-        if (!cancelled) {
+        if (!cancelled && !stored) {
           setData({
             displayName: user.displayName?.trim() || "—",
             handle: null,

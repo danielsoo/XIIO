@@ -5,89 +5,182 @@ import {
   getStreamThumbnailUrl,
   STREAM_TEASER_BANDWIDTH_HINT_MBPS,
 } from "@/lib/cloudflare/stream";
-import { isPromoLiked } from "@/lib/server/engagement";
-import { syncWorkStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
+import { promoLikeRef } from "@/lib/server/engagement";
 import {
   getDbOrNull,
   parsePromoDoc,
   parseWorkDoc,
   promoRef,
-  resolveWorkListThumbnailUrl,
-  worksCol,
 } from "@/lib/server/works";
 import type { CatalogFeedItem, PromoFeedItem, WorkSection } from "@/types/work";
 import { isWorkSection } from "@/lib/works/constants";
 
 export const FEED_CACHE_HEADERS = {
-  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+  "Cache-Control": "public, max-age=30, s-maxage=120, stale-while-revalidate=600",
+} as const;
+
+export const PERSONALIZED_FEED_CACHE_HEADERS = {
+  "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+  Vary: "Authorization",
 } as const;
 
 const DEFAULT_PROMO_ASPECT_RATIO = 16 / 9;
+const SERVER_FEED_TTL_MS = 60_000;
+
+type FeedCacheEntry<T> = { data: T; expiresAt: number };
+
+const resultCache = new Map<string, FeedCacheEntry<unknown>>();
+const inFlightLoads = new Map<string, Promise<unknown>>();
+
+async function getOrLoadFeed<T>(key: string, loader: () => Promise<T>): Promise<T> {
+  const cached = resultCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.data as T;
+  if (cached) resultCache.delete(key);
+
+  const active = inFlightLoads.get(key);
+  if (active) return active as Promise<T>;
+
+  const promise = loader()
+    .then((data) => {
+      resultCache.set(key, { data, expiresAt: Date.now() + SERVER_FEED_TTL_MS });
+      return data;
+    })
+    .finally(() => {
+      inFlightLoads.delete(key);
+    });
+  inFlightLoads.set(key, promise);
+  return promise;
+}
+
+async function loadPromoShortsFeed(db: Firestore): Promise<PromoFeedItem[]> {
+  const promoSnap = await db
+    .collectionGroup("promoShort")
+    .where("platformStatus", "==", "published")
+    .limit(36)
+    .get();
+
+  const candidates = promoSnap.docs.flatMap((promoDoc) => {
+    const promo = parsePromoDoc(promoDoc.data() as Record<string, unknown>);
+    if (promo.streamStatus !== "ready" || !promo.streamUid) return [];
+
+    const workRef = promoDoc.ref.parent.parent;
+    const ownerUid = workRef?.parent.parent?.id;
+    if (!workRef || !ownerUid) return [];
+    return [{ promo, workRef, workId: workRef.id, ownerUid }];
+  });
+
+  if (candidates.length === 0) return [];
+  const workSnaps = await db.getAll(...candidates.map((item) => item.workRef));
+
+  const items = candidates.flatMap((item, index) => {
+    const workSnap = workSnaps[index];
+    if (!workSnap?.exists) return [];
+    const work = parseWorkDoc(item.workId, workSnap.data() as Record<string, unknown>);
+    const rawPlayback = getPlaybackUrl(item.promo.streamUid!, {
+      clientBandwidthHintMbps: STREAM_TEASER_BANDWIDTH_HINT_MBPS,
+    });
+    const videoUrl = rawPlayback
+      ? appendPlaybackBandwidthHint(rawPlayback, STREAM_TEASER_BANDWIDTH_HINT_MBPS)
+      : null;
+    if (!videoUrl) return [];
+
+    const thumbnailUrl = getStreamThumbnailUrl(item.promo.streamUid!, {
+      width: 720,
+      height: 1280,
+      fit: "crop",
+    });
+
+    return [{
+      id: `${item.ownerUid}_${item.workId}`,
+      workId: item.workId,
+      ownerUid: item.ownerUid,
+      title: item.promo.title ?? work.title,
+      director: work.director ?? "—",
+      description: item.promo.description ?? work.description ?? "",
+      videoUrl,
+      streamUid: item.promo.streamUid!,
+      thumbnailUrl,
+      aspectRatio: DEFAULT_PROMO_ASPECT_RATIO,
+      frameCrop: item.promo.frameCrop,
+      likeCount: item.promo.likeCount ?? 0,
+      viewCount: item.promo.viewCount ?? 0,
+      likedByMe: false,
+    } satisfies PromoFeedItem];
+  });
+
+  items.sort((a, b) => a.title.localeCompare(b.title));
+  return items;
+}
 
 export async function fetchPromoShortsFeed(
   db: Firestore,
   viewerUid: string | null = null
 ): Promise<PromoFeedItem[]> {
-  const promoSnap = await db
-    .collectionGroup("promoShort")
+  const items = await getOrLoadFeed("promo:public", () => loadPromoShortsFeed(db));
+  if (!viewerUid || items.length === 0) return items;
+
+  const likeSnaps = await db.getAll(
+    ...items.map((item) => promoLikeRef(db, viewerUid, item.ownerUid, item.workId))
+  );
+  return items.map((item, index) => ({ ...item, likedByMe: Boolean(likeSnaps[index]?.exists) }));
+}
+
+async function loadCatalogWorksFeed(
+  db: Firestore,
+  section: WorkSection,
+  cappedLimit: number
+): Promise<CatalogFeedItem[]> {
+  const snap = await db
+    .collectionGroup("works")
     .where("platformStatus", "==", "published")
+    .where("section", "==", section)
+    .limit(Math.min(72, cappedLimit * 3))
     .get();
 
-  const rows = await Promise.all(
-    promoSnap.docs.map(async (promoDoc) => {
-      const promo = parsePromoDoc(promoDoc.data() as Record<string, unknown>);
-      if (promo.streamStatus !== "ready" || !promo.streamUid) return null;
+  const candidates = snap.docs.flatMap((doc) => {
+    const ownerUid = doc.ref.parent.parent?.id;
+    if (!ownerUid) return [];
+    const work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
+    if (work.streamStatus !== "ready" || !work.streamUid) return [];
+    return [{ doc, ownerUid, work }];
+  }).slice(0, cappedLimit);
 
-      const workRef = promoDoc.ref.parent.parent;
-      if (!workRef) return null;
-      const workId = workRef.id;
-      const ownerUid = workRef.parent.parent?.id;
-      if (!ownerUid) return null;
-
-      const workSnap = await worksCol(db, ownerUid).doc(workId).get();
-      if (!workSnap.exists) return null;
-      const work = parseWorkDoc(workId, workSnap.data() as Record<string, unknown>);
-
-      const rawPlayback = getPlaybackUrl(promo.streamUid, {
-        clientBandwidthHintMbps: STREAM_TEASER_BANDWIDTH_HINT_MBPS,
-      });
-      const videoUrl = rawPlayback
-        ? appendPlaybackBandwidthHint(rawPlayback, STREAM_TEASER_BANDWIDTH_HINT_MBPS)
-        : null;
-      if (!videoUrl) return null;
-
-      let likedByMe = false;
-      if (viewerUid) {
-        likedByMe = await isPromoLiked(db, viewerUid, ownerUid, workId);
-      }
-
-      const thumbnailUrl =
-        promo.thumbnailUrl ??
-        work.promoDraft?.thumbnailUrl ??
-        getStreamThumbnailUrl(promo.streamUid) ??
-        undefined;
-
-      const feedItem: PromoFeedItem = {
-        id: `${ownerUid}_${workId}`,
-        workId,
-        ownerUid,
-        title: promo.title ?? work.title,
-        director: work.director ?? "—",
-        description: promo.description ?? work.description ?? "",
-        videoUrl,
-        streamUid: promo.streamUid,
-        thumbnailUrl,
-        aspectRatio: DEFAULT_PROMO_ASPECT_RATIO,
-        frameCrop: promo.frameCrop,
-        likeCount: promo.likeCount ?? 0,
-        viewCount: promo.viewCount ?? 0,
-        likedByMe,
-      };
-      return feedItem;
-    })
+  if (candidates.length === 0) return [];
+  const promoSnaps = await db.getAll(
+    ...candidates.map((item) => promoRef(db, item.ownerUid, item.doc.id))
   );
 
-  const items = rows.filter((row): row is PromoFeedItem => row !== null);
+  const items = candidates.map((item, index) => {
+    const promoSnap = promoSnaps[index];
+    const promo = promoSnap?.exists
+      ? parsePromoDoc(promoSnap.data() as Record<string, unknown>)
+      : null;
+    const thumbnailUrl = getStreamThumbnailUrl(
+      promo?.streamUid ?? item.work.streamUid!,
+      {
+        width: 1280,
+        height: 720,
+        fit: "crop",
+      }
+    );
+    const thumbnailCrop = promo?.thumbnailCrop ?? item.work.promoDraft?.thumbnailCrop;
+
+    return {
+      id: `${item.ownerUid}_${item.doc.id}`,
+      workId: item.doc.id,
+      ownerUid: item.ownerUid,
+      title: item.work.title,
+      director: item.work.director,
+      section: item.work.section,
+      approvedCategory: item.work.approvedCategory,
+      approvedTags: item.work.approvedTags ?? [],
+      thumbnailUrl,
+      ...(thumbnailCrop ? { thumbnailCrop } : {}),
+      viewCount: item.work.viewCount ?? 0,
+      likeCount: item.work.likeCount ?? 0,
+    } satisfies CatalogFeedItem;
+  });
+
   items.sort((a, b) => a.title.localeCompare(b.title));
   return items;
 }
@@ -98,58 +191,9 @@ export async function fetchCatalogWorksFeed(
   limit = 8
 ): Promise<CatalogFeedItem[]> {
   const cappedLimit = Math.min(24, Math.max(1, limit));
-
-  const snap = await db
-    .collectionGroup("works")
-    .where("platformStatus", "==", "published")
-    .limit(80)
-    .get();
-
-  const items: CatalogFeedItem[] = [];
-
-  for (const doc of snap.docs) {
-    if (items.length >= cappedLimit) break;
-
-    const ownerUid = doc.ref.parent.parent?.id;
-    if (!ownerUid) continue;
-
-    let work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
-    if (work.section !== section) continue;
-    if (work.streamUid) {
-      const synced = await syncWorkStreamStatusIfNeeded(
-        db,
-        ownerUid,
-        doc.id,
-        work.streamUid,
-        work.streamStatus
-      );
-      work = { ...work, streamStatus: synced };
-    }
-    if (work.streamStatus !== "ready") continue;
-
-    const thumbnailUrl = await resolveWorkListThumbnailUrl(db, ownerUid, doc.id, work);
-    const promoSnap = await promoRef(db, ownerUid, doc.id).get();
-    const promo = promoSnap.exists
-      ? parsePromoDoc(promoSnap.data() as Record<string, unknown>)
-      : null;
-    const thumbnailCrop = promo?.thumbnailCrop ?? work.promoDraft?.thumbnailCrop;
-
-    items.push({
-      id: `${ownerUid}_${doc.id}`,
-      workId: doc.id,
-      ownerUid,
-      title: work.title,
-      director: work.director,
-      section: work.section,
-      approvedCategory: work.approvedCategory,
-      approvedTags: work.approvedTags ?? [],
-      thumbnailUrl,
-      ...(thumbnailCrop ? { thumbnailCrop } : {}),
-    });
-  }
-
-  items.sort((a, b) => a.title.localeCompare(b.title));
-  return items;
+  return getOrLoadFeed(`catalog:${section}:${cappedLimit}`, () =>
+    loadCatalogWorksFeed(db, section, cappedLimit)
+  );
 }
 
 export type ServerHomeFeeds = {
@@ -164,13 +208,20 @@ export async function getServerHomeFeeds(): Promise<ServerHomeFeeds> {
     return { promoItems: [], movies: [], series: [] };
   }
 
-  const [promoItems, movies, series] = await Promise.all([
-    fetchPromoShortsFeed(db),
-    fetchCatalogWorksFeed(db, "movies", 8),
-    fetchCatalogWorksFeed(db, "series", 4),
-  ]);
+  try {
+    const [promoItems, movies, series] = await Promise.all([
+      fetchPromoShortsFeed(db),
+      fetchCatalogWorksFeed(db, "movies", 8),
+      fetchCatalogWorksFeed(db, "series", 4),
+    ]);
 
-  return { promoItems, movies, series };
+    return { promoItems, movies, series };
+  } catch (error) {
+    // The catalog is live data, but a temporary Firestore/network failure must
+    // not make the cinematic shell or a production build unavailable.
+    console.warn("Home feeds are temporarily unavailable.", error);
+    return { promoItems: [], movies: [], series: [] };
+  }
 }
 
 export function parseCatalogSection(

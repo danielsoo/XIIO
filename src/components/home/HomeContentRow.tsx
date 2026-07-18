@@ -8,6 +8,7 @@ import { IconScrollNext } from "@/components/icons/MockupIcons";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import type { HomeStoryItem } from "@/lib/homeMockData";
+import { useDesktopViewport } from "@/hooks/useDesktopViewport";
 
 type Props = {
   title: string;
@@ -71,6 +72,7 @@ export default function HomeContentRow({
   hideHeader = false,
 }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const isDesktop = useDesktopViewport();
   // 데스크톱은 한 줄에 고정 5개, 나머지는 자동으로 다음 줄로 넘어감 (잘리지 않음) — 두 variant 모두 5열 폭에 맞춤
   const rowWidthClass = MOCKUP_HOME.featuredRowWidth;
   const displayItems = items;
@@ -110,8 +112,14 @@ export default function HomeContentRow({
         className={`hidden lg:grid min-w-0 w-full max-w-full ${MOCKUP_HOME.featuredRowGap} ${rowWidthClass}`}
         style={{ gridTemplateColumns: `repeat(${MOCKUP_MEASURES.featuredRowItemCount}, minmax(0, 1fr))` }}
       >
-        {displayItems.map((item) => (
-          <HomeStoryCard key={item.id} item={item} variant="featured" />
+        {displayItems.map((item, index) => (
+          <HomeStoryCard
+            key={item.id}
+            item={item}
+            variant="featured"
+            videoQueueKey={`desktop:${title}:${index}:${item.id}`}
+            videoEnabled={isDesktop === true}
+          />
         ))}
       </div>
 
@@ -120,8 +128,14 @@ export default function HomeContentRow({
         className={`flex overflow-x-auto pb-1 scrollbar-none lg:hidden ${MOCKUP_HOME.featuredRowGap}`}
         style={{ scrollbarWidth: "none" }}
       >
-        {displayItems.map((item) => (
-          <HomeStoryCard key={item.id} item={item} variant="featured" />
+        {displayItems.map((item, index) => (
+          <HomeStoryCard
+            key={item.id}
+            item={item}
+            variant="featured"
+            videoQueueKey={`mobile:${title}:${index}:${item.id}`}
+            videoEnabled={isDesktop === false}
+          />
         ))}
       </div>
     </section>

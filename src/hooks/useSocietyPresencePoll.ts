@@ -42,7 +42,7 @@ async function fetchPresence(
 }
 
 export function useSocietyPresencePoll({ user, uids, setPeople, enabled }: Props) {
-  const uidsKey = uids.join(",");
+  const uidsKey = [...uids].sort().join(",");
   const uidsRef = useRef(uids);
   uidsRef.current = uids;
 

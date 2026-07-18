@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { IconSearch } from "@/components/icons/MockupIcons";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { getUserProfile } from "@/lib/userProfile";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import type { UserProfileDoc } from "@/types/user";
@@ -38,11 +39,11 @@ function MockProfileIcon() {
 export default function AppTopBar({ onMenuOpen }: Props) {
   const { t } = useTranslations();
   const { user, logout } = useAuth();
+  const { isAdmin, checked: adminChecked } = useAdminAccess();
   const router = useRouter();
-  const pathname = usePathname();
-  const isHeroMockPage = pathname === "/" || pathname === "/schools";
   const [profile, setProfile] = useState<UserProfileDoc | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,9 +72,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
 
   return (
     <header
-      className={`sticky top-0 z-30 flex min-w-0 items-center gap-3 px-4 lg:pl-0 ${MOCKUP_HOME.topBarRightPad} ${MOCKUP_HOME.topBarHeight} ${
-        isHeroMockPage ? "bg-transparent backdrop-blur-none" : "bg-xiio-bg/90 backdrop-blur-md"
-      }`}
+      className={`sticky top-0 z-30 flex min-w-0 items-center gap-3 px-4 ${MOCKUP_HOME.topBarRightPad} ${MOCKUP_HOME.topBarHeight} border-b border-white/[0.06] bg-xiio-bg/90 backdrop-blur-md`}
     >
       <button
         type="button"
@@ -86,17 +85,27 @@ export default function AppTopBar({ onMenuOpen }: Props) {
         </svg>
       </button>
 
-      <div className="flex min-w-0 flex-1 justify-center">
-        <label className={`relative hidden sm:block ${MOCKUP_HOME.searchBar}`}>
-          <span className="sr-only">{t("topBar.searchLabel")}</span>
-          <IconSearch className={`absolute top-1/2 -translate-y-1/2 ${MOCKUP_HOME.searchIconLeft} w-4 h-4 text-white/30`} />
-          <input
-            type="search"
-            readOnly
-            placeholder={t("topBar.searchPlaceholder")}
-            className="w-full h-full rounded-full bg-white/[0.04] border border-white/[0.08] py-2 pl-11 pr-4 text-white placeholder:text-white/30 cursor-default"
-          />
-        </label>
+      <div className="flex min-w-0 flex-1 justify-start">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const value = searchValue.trim();
+            router.push(value ? `/search?q=${encodeURIComponent(value)}` : "/search");
+          }}
+          className={`relative hidden sm:block ${MOCKUP_HOME.searchBar}`}
+        >
+          <label>
+            <span className="sr-only">{t("topBar.searchLabel")}</span>
+            <IconSearch className={`absolute top-1/2 -translate-y-1/2 ${MOCKUP_HOME.searchIconLeft} w-4 h-4 text-white/30`} />
+            <input
+              type="search"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder={t("topBar.searchPlaceholder")}
+              className="w-full h-full rounded-full bg-white/[0.04] border border-white/[0.08] py-2 pl-11 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent/50"
+            />
+          </label>
+        </form>
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
@@ -116,7 +125,7 @@ export default function AppTopBar({ onMenuOpen }: Props) {
               />
             </button>
             {menuOpen ? (
-              <div className="absolute right-0 top-full mt-2 py-1 w-44 rounded-lg border border-white/10 bg-[#0c0e12] shadow-xl z-50">
+              <div className="animate-dropdown-in absolute right-0 top-full mt-2 py-1 w-44 rounded-lg border border-white/10 bg-xiio-card shadow-xl z-50">
                 <button
                   type="button"
                   onClick={() => {
@@ -137,6 +146,18 @@ export default function AppTopBar({ onMenuOpen }: Props) {
                 >
                   {t("profileMenu.settings")}
                 </button>
+                {adminChecked && isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      router.push("/admin");
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5"
+                  >
+                    {t("profileMenu.adminPanel")}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => void logout().then(() => router.push("/"))}

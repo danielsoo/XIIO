@@ -57,7 +57,7 @@ export default function SocietySelfProfileSection() {
 
   if (!user) return null;
   if (loading && !data) {
-    return <p className="mb-8 px-4 text-sm text-white/40 lg:px-0">{t("common.loading")}</p>;
+    return <p className="mb-8 px-4 text-sm text-white/40 lg:px-12">{t("common.loading")}</p>;
   }
   if (!data?.profile.handle) return null;
 

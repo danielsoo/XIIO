@@ -11,7 +11,7 @@ function analyticsRef(db: Firestore, ownerUid: string) {
   return db.collection("users").doc(ownerUid).collection("private").doc("analytics");
 }
 
-function likeRef(db: Firestore, likerUid: string, ownerUid: string, workId: string) {
+export function promoLikeRef(db: Firestore, likerUid: string, ownerUid: string, workId: string) {
   const safe = `${ownerUid}_${workId}`.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 120);
   return db.collection("users").doc(likerUid).collection("private").doc(`like_promo_${safe}`);
 }
@@ -114,7 +114,7 @@ export async function isPromoLiked(
   ownerUid: string,
   workId: string
 ): Promise<boolean> {
-  const snap = await likeRef(db, likerUid, ownerUid, workId).get();
+  const snap = await promoLikeRef(db, likerUid, ownerUid, workId).get();
   return snap.exists;
 }
 
@@ -129,7 +129,7 @@ export async function setPromoLike(
   if (!published.ok) return { ok: false, error: published.error };
 
   const day = dayKeyUTC();
-  const lRef = likeRef(db, likerUid, ownerUid, workId);
+  const lRef = promoLikeRef(db, likerUid, ownerUid, workId);
   const summaryDocRef = analyticsRef(db, ownerUid);
 
   const result = await db.runTransaction(async (tx) => {

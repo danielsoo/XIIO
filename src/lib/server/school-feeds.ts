@@ -1,20 +1,16 @@
 import type { Firestore } from "firebase-admin/firestore";
-import { syncWorkStreamStatusIfNeeded } from "@/lib/server/sync-stream-status";
+import { getStreamThumbnailUrl } from "@/lib/cloudflare/stream";
 import {
   getDbOrNull,
   parsePromoDoc,
   parseWorkDoc,
   promoRef,
-  resolveWorkListThumbnailUrl,
-  worksCol,
 } from "@/lib/server/works";
 import { collectSchoolsForSuggestions, parseSchoolDoc, schoolsCol } from "@/lib/server/schools";
 import type { CatalogFeedItem } from "@/types/work";
 import type { SchoolListItem, SchoolStats } from "@/types/school";
 
-const SCHOOL_WORKS_SCAN_LIMIT = 300;
-
-/** 학교 페이지 배경 — 홈 fetchCatalogWorksFeed와 동일하게 published works를 스캔 후 학교로 필터 */
+/** 학교 페이지 작품 — 학교와 공개 상태를 인덱스로 직접 조회하고 부가 문서는 한 번에 읽는다. */
 export async function fetchSchoolWorksFeed(
   db: Firestore,
   schoolId: string,
@@ -24,57 +20,53 @@ export async function fetchSchoolWorksFeed(
 
   const snap = await db
     .collectionGroup("works")
-    .where("platformStatus", "==", "published")
-    .limit(SCHOOL_WORKS_SCAN_LIMIT)
+    .where("approvedSchoolId", "==", schoolId)
+    .limit(Math.min(180, cappedLimit * 3))
     .get();
 
-  const items: CatalogFeedItem[] = [];
-
-  for (const doc of snap.docs) {
+  const candidates = snap.docs.flatMap((doc) => {
     const ownerUid = doc.ref.parent.parent?.id;
-    if (!ownerUid) continue;
+    if (!ownerUid) return [];
+    const work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
+    if (work.platformStatus !== "published" || work.streamStatus !== "ready" || !work.streamUid) return [];
+    return [{ doc, ownerUid, work }];
+  }).slice(0, cappedLimit);
 
-    let work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
-    if (work.approvedSchoolId !== schoolId) continue;
-    if (work.streamUid) {
-      const synced = await syncWorkStreamStatusIfNeeded(
-        db,
-        ownerUid,
-        doc.id,
-        work.streamUid,
-        work.streamStatus
-      );
-      work = { ...work, streamStatus: synced };
-    }
-    if (work.streamStatus !== "ready") continue;
+  if (candidates.length === 0) return [];
+  const promoSnaps = await db.getAll(
+    ...candidates.map((item) => promoRef(db, item.ownerUid, item.doc.id))
+  );
 
-    const thumbnailUrl = await resolveWorkListThumbnailUrl(db, ownerUid, doc.id, work);
-    const promoSnap = await promoRef(db, ownerUid, doc.id).get();
-    const promo = promoSnap.exists
+  return candidates.map((item, index) => {
+    const promoSnap = promoSnaps[index];
+    const promo = promoSnap?.exists
       ? parsePromoDoc(promoSnap.data() as Record<string, unknown>)
       : null;
-    const thumbnailCrop = promo?.thumbnailCrop ?? work.promoDraft?.thumbnailCrop;
+    const thumbnailUrl =
+      promo?.thumbnailUrl ??
+      item.work.promoDraft?.thumbnailUrl ??
+      getStreamThumbnailUrl(item.work.streamUid!) ??
+      undefined;
+    const thumbnailCrop = promo?.thumbnailCrop ?? item.work.promoDraft?.thumbnailCrop;
 
-    items.push({
-      id: `${ownerUid}_${doc.id}`,
-      workId: doc.id,
-      ownerUid,
-      title: work.title,
-      director: work.director,
-      section: work.section,
-      approvedCategory: work.approvedCategory,
-      approvedTags: work.approvedTags ?? [],
-      approvedSchoolId: work.approvedSchoolId,
-      approvedSchoolName: work.approvedSchoolName,
+    return {
+      id: `${item.ownerUid}_${item.doc.id}`,
+      workId: item.doc.id,
+      ownerUid: item.ownerUid,
+      title: item.work.title,
+      director: item.work.director,
+      section: item.work.section,
+      approvedCategory: item.work.approvedCategory,
+      approvedTags: item.work.approvedTags ?? [],
+      approvedSchoolId: item.work.approvedSchoolId,
+      approvedSchoolName: item.work.approvedSchoolName,
       thumbnailUrl,
       ...(thumbnailCrop ? { thumbnailCrop } : {}),
-      viewCount: work.viewCount ?? 0,
-      likeCount: work.likeCount ?? 0,
-      publishedAt: work.publishedAt,
-    });
-  }
-
-  return items.slice(0, cappedLimit);
+      viewCount: item.work.viewCount ?? 0,
+      likeCount: item.work.likeCount ?? 0,
+      publishedAt: item.work.publishedAt,
+    } satisfies CatalogFeedItem;
+  });
 }
 
 export function computeSchoolStats(items: CatalogFeedItem[]): SchoolStats {

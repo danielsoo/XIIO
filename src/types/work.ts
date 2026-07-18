@@ -262,3 +262,9 @@ export type CatalogFeedItem = {
   likeCount?: number;
   publishedAt?: unknown;
 };
+
+export type WatchProgressItem = CatalogFeedItem & {
+  positionSec: number;
+  durationSec: number;
+  progressPercent: number;
+};

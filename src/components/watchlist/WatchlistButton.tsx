@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
+import { invalidateCache } from "@/lib/feedCache";
 
 type Props = {
   ownerUid: string;
   workId: string;
+  variant?: "compact" | "hero";
 };
 
 function ListIcon({ filled }: { filled: boolean }) {
@@ -24,7 +26,7 @@ function ListIcon({ filled }: { filled: boolean }) {
   );
 }
 
-export default function WatchlistButton({ ownerUid, workId }: Props) {
+export default function WatchlistButton({ ownerUid, workId, variant = "compact" }: Props) {
   const { user, loading: authLoading } = useAuth();
   const { t } = useTranslations();
   const [saved, setSaved] = useState(false);
@@ -82,6 +84,7 @@ export default function WatchlistButton({ ownerUid, workId }: Props) {
       const data = (await res.json().catch(() => ({}))) as { saved?: boolean };
       if (res.ok) {
         setSaved(Boolean(data.saved ?? nextSaved));
+        invalidateCache(`watchlist:${user.uid}`);
       }
     } finally {
       setBusy(false);
@@ -90,6 +93,7 @@ export default function WatchlistButton({ ownerUid, workId }: Props) {
 
   const label = saved ? t("watchlist.inList") : t("watchlist.add");
   const title = !user && !authLoading ? t("watchlist.loginRequired") : label;
+  const isHero = variant === "hero";
 
   return (
     <button
@@ -98,14 +102,20 @@ export default function WatchlistButton({ ownerUid, workId }: Props) {
       disabled={busy || (Boolean(user) && !loaded)}
       title={title}
       aria-label={title}
-      className={`shrink-0 inline-flex items-center gap-1.5 text-sm border rounded-lg px-3 py-1.5 transition disabled:opacity-50 ${
+      className={`shrink-0 inline-flex items-center justify-center gap-2 border transition disabled:opacity-50 ${
+        isHero
+          ? "h-12 rounded-full px-7 text-[14px] font-medium backdrop-blur-sm"
+          : "rounded-lg px-3 py-1.5 text-sm"
+      } ${
         saved
           ? "text-white border-white/30 bg-white/10 hover:bg-white/15"
-          : "text-white/80 border-white/15 hover:text-white hover:border-white/25"
+          : isHero
+            ? "text-white border-white/30 bg-black/15 hover:bg-white/10 hover:border-white/45"
+            : "text-white/80 border-white/15 hover:text-white hover:border-white/25"
       }`}
     >
       <ListIcon filled={saved} />
-      <span className="hidden sm:inline">{label}</span>
+      <span className={isHero ? "inline" : "hidden sm:inline"}>{label}</span>
     </button>
   );
 }

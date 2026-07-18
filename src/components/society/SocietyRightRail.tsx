@@ -9,7 +9,7 @@ export default function SocietyRightRail() {
 
   return (
     <aside className="flex w-full flex-col gap-6 xl:w-[300px] xl:shrink-0">
-      <div className="relative overflow-hidden rounded-2xl border border-xiio-accent/25 bg-gradient-to-br from-xiio-accent/25 via-xiio-accent/10 to-transparent p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-xiio-gold/25 bg-gradient-to-br from-xiio-gold/20 via-xiio-gold/[0.06] to-transparent p-6">
         <div
           className="pointer-events-none absolute inset-0 opacity-30"
           aria-hidden
@@ -26,7 +26,7 @@ export default function SocietyRightRail() {
           <Link
             href="/society?tab=discover"
             prefetch={false}
-            className="mt-5 inline-flex rounded-full bg-xiio-accent px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 transition"
+            className="mt-5 inline-flex rounded-full bg-xiio-gold px-5 py-2.5 text-sm font-medium text-black hover:opacity-90 transition"
           >
             {t("society.ctaButton")}
           </Link>

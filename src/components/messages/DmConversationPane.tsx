@@ -318,7 +318,7 @@ export default function DmConversationPane({ threadId }: Props) {
                     )}
                     <div
                       onClick={() => setActiveMessageId((v) => (v === m.id ? null : m.id))}
-                      className="cursor-pointer min-w-0 px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words bg-[#2c2c2e] text-white rounded-bl-md"
+                      className="cursor-pointer min-w-0 px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words bg-white/[0.08] text-white rounded-bl-md"
                     >
                       {m.text}
                     </div>

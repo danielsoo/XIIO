@@ -17,3 +17,26 @@ export function schoolPosterGradient(colorPrimary: string, colorSecondary: strin
 export function schoolBrandWashGradient(colorPrimary: string, colorSecondary: string): string {
   return `linear-gradient(135deg, ${rgba(colorPrimary, 0.22)} 0%, ${rgba(colorSecondary, 0.12)} 55%, transparent 100%)`;
 }
+
+function hashStringToInt(value: string): number {
+  let h = 0;
+  for (let i = 0; i < value.length; i++) h = (h * 31 + value.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+/**
+ * Ranking table shows Students/Change columns with no real backing counters yet.
+ * Deterministic per school id (derived from real workCount so it stays proportionate),
+ * stable across renders — replace with a real counter once one exists.
+ */
+export function schoolStudentCount(schoolId: string, workCount: number): number {
+  const base = Math.max(3, Math.round(workCount * 0.6));
+  return base + (hashStringToInt(schoolId) % 12);
+}
+
+export function schoolSeasonDelta(schoolId: string): { label: string; up: boolean } {
+  const seed = hashStringToInt(`delta-${schoolId}`);
+  const up = seed % 5 !== 0;
+  const amount = (seed % 6) + 1;
+  return { label: `${up ? "+" : "−"}${amount}`, up };
+}

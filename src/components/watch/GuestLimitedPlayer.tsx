@@ -99,6 +99,9 @@ export default function GuestLimitedPlayer({
         preload="metadata"
         autoPlay={false}
         controls
+        preferHighStart
+        showQualitySelector
+        ariaLabel="XIIO video player"
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={handleTimeUpdate}
         onSeeking={handleSeeking}

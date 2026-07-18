@@ -77,7 +77,7 @@ export default function SettingsPage() {
       <div className="mx-auto w-full max-w-6xl">
         <section className="relative mb-8 md:mb-10 overflow-hidden rounded-2xl border border-white/10">
           <div
-            className="absolute inset-0 bg-gradient-to-br from-[#1a0533]/90 via-[#0a0a20]/70 to-xiio-bg"
+            className="absolute inset-0 bg-gradient-to-br from-xiio-sidebar via-xiio-bg to-xiio-bg"
             aria-hidden
           />
           <div className="absolute inset-0 bg-gradient-to-r from-xiio-accent/15 to-transparent" aria-hidden />

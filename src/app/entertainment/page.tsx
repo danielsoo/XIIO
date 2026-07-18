@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import CategoryMockPage from "@/components/category/CategoryMockPage";
 
 export default function EntertainmentPage() {
-  redirect("/movies");
+  return <CategoryMockPage variant="entertainment" />;
 }

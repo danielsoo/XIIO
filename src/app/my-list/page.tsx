@@ -8,6 +8,7 @@ import SubpageHeader from "@/components/layout/SubpageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { formatClientError } from "@/lib/clientErrors";
+import { getCached, getOrLoadCached } from "@/lib/feedCache";
 import { gradientForTitle, watchHref } from "@/lib/works/catalog-ui";
 import type { CatalogFeedItem } from "@/types/work";
 
@@ -20,20 +21,26 @@ export default function MyListPage() {
 
   const load = useCallback(async () => {
     if (!user) return;
-    setLoading(true);
+    const cacheKey = `watchlist:${user.uid}`;
+    const cached = getCached<CatalogFeedItem[]>(cacheKey);
+    if (cached) {
+      setItems(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setErr(null);
     try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/me/watchlist", {
-        headers: { Authorization: `Bearer ${token}` },
+      const next = await getOrLoadCached(cacheKey, async () => {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/me/watchlist", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = (await res.json().catch(() => ({}))) as { items?: CatalogFeedItem[] };
+        if (!res.ok) throw new Error("watchlist_load_failed");
+        return Array.isArray(data.items) ? data.items : [];
       });
-      const data = (await res.json().catch(() => ({}))) as { items?: CatalogFeedItem[] };
-      if (!res.ok) {
-        setErr(t("myList.loadError"));
-        setItems([]);
-        return;
-      }
-      setItems(Array.isArray(data.items) ? data.items : []);
+      setItems(next);
     } catch (e) {
       setErr(formatClientError(t, e, { titleKey: "myList.loadError" }));
       setItems([]);

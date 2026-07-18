@@ -1,4 +1,5 @@
-export const APP_SIDEBAR_WIDTH = "12rem";
+/** Final XIIO redesign shell width from the imported design handoff. */
+export const APP_SIDEBAR_WIDTH = "220px";
 
 export const HIDE_APP_SHELL_PATHS = [
   "/login",
@@ -34,6 +35,7 @@ export type AppNavIcon =
   | "home"
   | "discover"
   | "films"
+  | "entertainment"
   | "campus"
   | "society"
   | "series"
@@ -52,10 +54,23 @@ export type AppNavItem = {
   section?: "primary" | "secondary";
 };
 
+/** Browse group — Home, Discover, Films, Series, Entertainment */
 export const PRIMARY_NAV: AppNavItem[] = [
   { id: "home", labelKey: "nav.home", href: "/", icon: "home", section: "primary" },
-  { id: "series", labelKey: "nav.series", href: "/series", icon: "series", section: "primary" },
+  { id: "discover", labelKey: "nav.discover", href: "/discover", icon: "discover", section: "primary" },
   { id: "films", labelKey: "nav.films", href: "/movies", icon: "films", section: "primary" },
+  { id: "series", labelKey: "nav.series", href: "/series", icon: "series", section: "primary" },
+  {
+    id: "entertainment",
+    labelKey: "nav.entertainment",
+    href: "/entertainment",
+    icon: "entertainment",
+    section: "primary",
+  },
+];
+
+/** Network group — Schools, Society, My List, Messages */
+export const NETWORK_NAV: AppNavItem[] = [
   {
     id: "schools",
     labelKey: "nav.schools",
@@ -65,18 +80,18 @@ export const PRIMARY_NAV: AppNavItem[] = [
   },
   { id: "society", labelKey: "nav.society", href: "/society", icon: "society", section: "primary" },
   {
-    id: "messages",
-    labelKey: "nav.messages",
-    href: "/messages",
-    icon: "messages",
-    requiresAuth: true,
-    section: "primary",
-  },
-  {
     id: "myList",
     labelKey: "nav.myList",
     href: "/my-list",
     icon: "myList",
+    requiresAuth: true,
+    section: "primary",
+  },
+  {
+    id: "messages",
+    labelKey: "nav.messages",
+    href: "/messages",
+    icon: "messages",
     requiresAuth: true,
     section: "primary",
   },
