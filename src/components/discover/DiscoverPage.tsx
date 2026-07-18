@@ -20,7 +20,7 @@ import { gradientForTitle, watchHref } from "@/lib/works/catalog-ui";
 import type { CatalogFeedItem, PromoFeedItem } from "@/types/work";
 import type { PromoShort } from "@/types/promoShort";
 import type { SchoolListItem } from "@/types/school";
-import discoverHeroImage from "../../../discover_page_hero.png";
+import discoverHeroImage from "../../../discover_page_hero.webp";
 
 function FeaturedPromosRow({ items, t }: { items: PromoShort[]; t: (k: string) => string }) {
   if (items.length === 0) return null;
@@ -167,6 +167,8 @@ export default function DiscoverPage({ initialPromoItems, initialMovies, initial
           alt="A filmmaker operating a cinema camera on a production set"
           fill
           priority
+          unoptimized
+          placeholder="blur"
           sizes="(min-width: 1024px) calc(100vw - 220px), 100vw"
           className="object-contain object-center 2xl:object-cover"
         />

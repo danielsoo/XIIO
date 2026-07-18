@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import XiioWordmark from "@/components/layout/XiioWordmark";
 import { useTranslations } from "@/context/LocaleContext";
-import homeHeroImage from "../../../home_hero.png";
+import homeHeroImage from "../../../home_hero.webp";
 
 const FEATURES = [
   {
@@ -62,6 +62,8 @@ export default function LandingPage() {
           alt="A lighthouse standing in a stormy sea"
           fill
           priority
+          unoptimized
+          placeholder="blur"
           sizes="100vw"
           className="object-cover object-center"
         />

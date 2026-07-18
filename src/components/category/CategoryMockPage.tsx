@@ -19,7 +19,7 @@ import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { formatDurationMinutes, gradientForTitle, watchHref } from "@/lib/works/catalog-ui";
 import type { CatalogFeedItem, WorkSection } from "@/types/work";
 import type { SeriesDetail } from "@/types/series";
-import filmHeroImage from "../../../film_hero.png";
+import filmHeroImage from "../../../film_hero.webp";
 
 type CategoryVariant = "films" | "series" | "entertainment";
 
@@ -252,6 +252,8 @@ export default function CategoryMockPage({ variant }: { variant: CategoryVariant
             alt="A young filmmaker looking across a city at night"
             fill
             priority
+            unoptimized
+            placeholder="blur"
             sizes="(min-width: 1024px) calc(100vw - 220px), 100vw"
             className="object-cover object-center"
           />

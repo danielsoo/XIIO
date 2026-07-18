@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import filmHeroImage from "../../../film_hero.png";
+import filmHeroImage from "../../../film_hero.webp";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import ReportContentModal from "@/components/report/ReportContentModal";
@@ -124,7 +124,12 @@ export default function WatchPageContent({ ownerUid, workId }: Props) {
       <section className="relative min-h-[clamp(560px,68vh,700px)] overflow-hidden border-b border-white/[0.06]">
         <div
           className="absolute inset-0 bg-cover bg-center scale-[1.01]"
-          style={{ backgroundImage: `url(${JSON.stringify(heroImage)})` }}
+          style={{
+            backgroundImage:
+              heroImage === filmHeroImage.src
+                ? `url(${JSON.stringify(filmHeroImage.src)})`
+                : `url(${JSON.stringify(heroImage)}), url(${JSON.stringify(filmHeroImage.src)})`,
+          }}
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-black/5" aria-hidden="true" />

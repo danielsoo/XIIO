@@ -24,8 +24,8 @@ import { watchHref } from "@/lib/works/catalog-ui";
 import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { MOCKUP_MEASURES } from "@/lib/mockupLayout";
 import type { CatalogFeedItem, PromoFeedItem } from "@/types/work";
-import homeHeroImage from "../../../home_hero.png";
-import filmHeroImage from "../../../film_hero.png";
+import homeHeroImage from "../../../home_hero.webp";
+import filmHeroImage from "../../../film_hero.webp";
 
 type Props = {
   initialPromoItems?: PromoFeedItem[];
@@ -115,6 +115,8 @@ export default function HomeMockPage({
           alt="A lighthouse standing in a stormy sea"
           fill
           priority
+          unoptimized
+          placeholder="blur"
           sizes="(min-width: 1024px) calc(100vw - 220px), 100vw"
           className="object-cover object-center"
         />
