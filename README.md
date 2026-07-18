@@ -167,6 +167,7 @@ firebase.json
 | [`docs/firebase-deploy.md`](docs/firebase-deploy.md) | Firestore CI 배포 |
 | [`docs/content-moderation.md`](docs/content-moderation.md) | AI 콘텐츠 검열 |
 | [`docs/content-moderation-pricing.md`](docs/content-moderation-pricing.md) | 검열 벤더 요금 참고 |
+| [`docs/image-delivery-roadmap.md`](docs/image-delivery-roadmap.md) | 이미지 자동 변환·CDN·반응형 전송 성능 로드맵 |
 | [`docs/product-network.md`](docs/product-network.md) | 프로필·협업·포트폴리오 네트워크 |
 | [`docs/terms-of-service-draft.md`](docs/terms-of-service-draft.md) | 이용약관 초안 (저작권 귀속 조항 확정 전) |
 | [`docs/privacy-policy-draft.md`](docs/privacy-policy-draft.md) | 개인정보처리방침 초안 |
