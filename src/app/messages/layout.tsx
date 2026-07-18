@@ -14,7 +14,7 @@ export default function MessagesLayout({ children }: { children: ReactNode }) {
 
   if (!user) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-xiio-bg">
+      <main className="h-[calc(100dvh-60px)] flex items-center justify-center overflow-hidden bg-xiio-bg">
         <Link href="/login" className="text-xiio-accent hover:underline">
           {t("common.loginRequired")}
         </Link>
@@ -23,7 +23,7 @@ export default function MessagesLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AppPageShell className="pb-6">
+    <AppPageShell fitViewport className="pb-6" contentClassName="flex h-full min-h-0 items-center">
       <DmInboxProvider>
         <DmInboxLayout>{children}</DmInboxLayout>
       </DmInboxProvider>

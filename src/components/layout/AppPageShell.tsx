@@ -19,6 +19,9 @@ type Props = {
   /** Uploader / no global Navbar — less top padding. */
   standalone?: boolean;
   className?: string;
+  contentClassName?: string;
+  /** Lock the page to the viewport space below the 60px app top bar. */
+  fitViewport?: boolean;
 };
 
 export default function AppPageShell({
@@ -26,13 +29,18 @@ export default function AppPageShell({
   withNavbar = true,
   standalone = false,
   className = "",
+  contentClassName = "",
+  fitViewport = false,
 }: Props) {
   const pt = standalone ? "pt-6" : withNavbar ? "pt-6" : "pt-6";
   const gutter = standalone ? PAGE_GUTTER_STANDALONE : PAGE_GUTTER_IN_SHELL;
+  const height = fitViewport
+    ? "h-[calc(100dvh-60px)] min-h-0 overflow-hidden"
+    : "min-h-screen pb-16";
 
   return (
-    <main className={`min-h-screen bg-xiio-bg pb-16 ${pt} ${gutter} ${className}`.trim()}>
-      <div className={PAGE_CONTAINER}>{children}</div>
+    <main className={`${height} bg-xiio-bg ${pt} ${gutter} ${className}`.trim()}>
+      <div className={`${PAGE_CONTAINER} ${contentClassName}`.trim()}>{children}</div>
     </main>
   );
 }

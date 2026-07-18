@@ -61,40 +61,6 @@ function CriticsPicksSection({ items, t }: { items: CatalogFeedItem[]; t: (k: st
   );
 }
 
-function FestivalSelectionsRow({ items, t }: { items: CatalogFeedItem[]; t: (k: string) => string }) {
-  const picks = items.slice(0, 6);
-  if (picks.length === 0) return null;
-  return (
-    <section>
-      <div className={MOCKUP_CAMPUS.sectionHeaderRow}>
-        <SectionLabel>{t("category.mock.festivalSelections")}</SectionLabel>
-      </div>
-      <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: "none" }}>
-        {picks.map((item) => (
-          <Link
-            key={item.id}
-            href={watchHref(item.ownerUid, item.workId)}
-            className="group shrink-0 w-[220px]"
-          >
-            <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-xiio-gold/30 group-hover:border-xiio-gold/60 transition mb-2.5">
-              {item.thumbnailUrl ? (
-                <Image src={item.thumbnailUrl} alt="" fill sizes="220px" className="object-cover" unoptimized />
-              ) : (
-                <div className={`absolute inset-0 ${gradientForTitle(item.title)}`} />
-              )}
-              <div className="absolute top-2 left-2 rounded-full bg-black/60 border border-xiio-gold/40 px-2.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-xiio-gold">
-                Selection
-              </div>
-            </div>
-            <p className="text-[13px] font-semibold text-white truncate">{item.title}</p>
-            <p className="text-[11px] text-white/45 mt-0.5">{item.approvedCategory ?? item.section}</p>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function NewEpisodesRow({
   episodes,
   t,
@@ -306,9 +272,6 @@ export default function CategoryMockPage({ variant }: { variant: CategoryVariant
           />
         ) : null}
 
-        {variant === "films" ? <FestivalSelectionsRow items={items} t={t} /> : null}
-        {variant === "films" ? <CriticsPicksSection items={items} t={t} /> : null}
-
         {variant === "series" ? (
           <NewEpisodesRow episodes={newEpisodes} t={t} loggedIn={Boolean(user)} />
         ) : null}
@@ -341,6 +304,8 @@ export default function CategoryMockPage({ variant }: { variant: CategoryVariant
             </div>
           )}
         </section>
+
+        {variant === "films" ? <CriticsPicksSection items={items} t={t} /> : null}
       </div>
     </main>
   );

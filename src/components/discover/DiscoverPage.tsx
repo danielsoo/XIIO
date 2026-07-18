@@ -20,7 +20,7 @@ import { gradientForTitle, watchHref } from "@/lib/works/catalog-ui";
 import type { CatalogFeedItem, PromoFeedItem } from "@/types/work";
 import type { PromoShort } from "@/types/promoShort";
 import type { SchoolListItem } from "@/types/school";
-import discoverHeroImage from "../../../discover_page_hero.webp";
+import discoverHeroImage from "../../../discover_hero.webp";
 
 function FeaturedPromosRow({ items, t }: { items: PromoShort[]; t: (k: string) => string }) {
   if (items.length === 0) return null;
@@ -164,7 +164,7 @@ export default function DiscoverPage({ initialPromoItems, initialMovies, initial
       <section className="relative isolate min-h-[560px] overflow-hidden">
         <Image
           src={discoverHeroImage}
-          alt="A filmmaker operating a cinema camera on a production set"
+          alt="A film crew shooting a stormy ocean scene at dusk"
           fill
           priority
           unoptimized

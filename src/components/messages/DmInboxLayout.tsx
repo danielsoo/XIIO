@@ -21,7 +21,7 @@ export default function DmInboxLayout({ children }: Props) {
 
   return (
     <>
-      <div className="flex min-h-[calc(100vh-6rem)] max-h-[calc(100vh-6rem)] border border-white/15 rounded-2xl overflow-hidden bg-xiio-surface">
+      <div className="mx-auto flex h-[calc(100%_-_2rem)] min-h-0 w-full max-w-[1160px] border border-white/15 rounded-2xl overflow-hidden bg-xiio-surface">
         <aside
           className={`w-full md:w-[360px] shrink-0 flex flex-col border-r border-white/10 bg-xiio-surface ${
             hasThread ? "hidden md:flex" : "flex"
