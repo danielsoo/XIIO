@@ -5,7 +5,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
-type Props = { className?: string; initialDiscoverable?: boolean };
+type Props = {
+  className?: string;
+  initialDiscoverable?: boolean;
+};
 
 export default function ProfileDiscoverSettings({
   className = "",

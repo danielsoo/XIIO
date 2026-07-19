@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { normalizeHandle } from "@/lib/server/credits";
 import type { ProfessionalField } from "@/types/portfolio";
 import { isProfessionalField } from "@/types/portfolio";
+import { parseUserProfileDoc } from "@/lib/userAccess";
 
 export { isProfessionalField };
 
@@ -76,8 +77,16 @@ export async function searchUsersByHandlePrefix(
 ): Promise<
   { uid: string; handle: string; displayName: string; defaultDirectorName: string | null }[]
 > {
-  const prefix = normalizeHandle(query);
-  if (!prefix || prefix.length < 2) return [];
+  const prefix = query.trim().toLowerCase().replace(/^@/, "");
+  if (
+    prefix.length < 2 ||
+    prefix.length > 30 ||
+    !/^[a-z0-9_.]+$/.test(prefix) ||
+    prefix.startsWith(".") ||
+    prefix.includes("..")
+  ) {
+    return [];
+  }
 
   const { FieldPath } = await import("firebase-admin/firestore");
   const snap = await handlesCol(db)
@@ -99,17 +108,123 @@ export async function searchUsersByHandlePrefix(
     const userSnap = await db.collection("users").doc(uid).get();
     if (!userSnap.exists) continue;
     const data = userSnap.data() as Record<string, unknown>;
-    if (data.isDiscoverable === false) continue;
-    const defaultDirectorName =
-      typeof data.defaultDirectorName === "string" && data.defaultDirectorName.trim()
-        ? data.defaultDirectorName.trim().slice(0, 120)
-        : null;
+    const profile = parseUserProfileDoc(data);
+    if (profile.isDiscoverable === false) continue;
+    const defaultDirectorName = profile.defaultDirectorName ?? null;
     results.push({
       uid,
       handle: doc.id,
-      displayName: String(data.displayName ?? doc.id),
+      displayName: profile.displayName || doc.id,
       defaultDirectorName,
     });
   }
   return results;
+}
+
+export type CreditMemberSearchResult = {
+  uid: string;
+  handle: string;
+  displayName: string;
+  defaultDirectorName: string | null;
+};
+
+const EMAIL_SEARCH_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * 크레딧 회원 검색: 이름은 정확히 일치할 때만, 활동명/@handle은 prefix로 찾는다.
+ * 이메일 형태의 입력은 검색하지 않으며 결과에도 이메일을 포함하지 않는다.
+ */
+export async function searchUsersForCredits(
+  db: Firestore,
+  rawQuery: string,
+  limit = 10
+): Promise<CreditMemberSearchResult[]> {
+  const query = rawQuery.trim();
+  if (query.length < 2) return [];
+  const max = Math.min(Math.max(limit, 1), 20);
+  const results = new Map<string, CreditMemberSearchResult>();
+
+  const addUser = (uid: string, data: Record<string, unknown>) => {
+    if (results.size >= max) return;
+    const profile = parseUserProfileDoc(data);
+    const handle = profile.handle?.trim();
+    if (!handle || profile.isDiscoverable === false) return;
+    results.set(uid, {
+      uid,
+      handle,
+      displayName: profile.displayName,
+      defaultDirectorName: profile.defaultDirectorName ?? null,
+    });
+  };
+
+  if (EMAIL_SEARCH_REGEX.test(query.toLowerCase())) return [];
+
+  const exactNameVariants = new Set([
+    query,
+    query.toLocaleLowerCase(),
+    query.toLocaleUpperCase(),
+    query
+      .split(/\s+/)
+      .map((part) => part.charAt(0).toLocaleUpperCase() + part.slice(1).toLocaleLowerCase())
+      .join(" "),
+  ]);
+  const nameSnaps = await Promise.all(
+    [...exactNameVariants].map((name) =>
+      db.collection("users").where("displayName", "==", name).limit(max).get()
+    )
+  );
+  for (const snap of nameSnaps) {
+    for (const doc of snap.docs) addUser(doc.id, doc.data() as Record<string, unknown>);
+  }
+
+  const handleQuery = query.replace(/^@/, "");
+  const isHandlePrefix = /^[a-zA-Z0-9_.]{2,30}$/.test(handleQuery);
+  if (isHandlePrefix) {
+    const handleHits = await searchUsersByHandlePrefix(db, handleQuery, max);
+    for (const hit of handleHits) {
+      const userSnap = await db.collection("users").doc(hit.uid).get();
+      if (userSnap.exists) addUser(hit.uid, userSnap.data() as Record<string, unknown>);
+    }
+
+    if (results.size < max) {
+      const legacyHandlePrefix = handleQuery.toLocaleLowerCase();
+      const legacyHandleSnap = await db
+        .collection("users")
+        .orderBy("handle")
+        .startAt(legacyHandlePrefix)
+        .endAt(`${legacyHandlePrefix}\uf8ff`)
+        .limit(max)
+        .get();
+      for (const doc of legacyHandleSnap.docs) {
+        addUser(doc.id, doc.data() as Record<string, unknown>);
+      }
+    }
+  }
+
+  if (!query.startsWith("@") && results.size < max) {
+    const variants = new Set([
+      query,
+      query.toLocaleLowerCase(),
+      query.charAt(0).toLocaleUpperCase() + query.slice(1).toLocaleLowerCase(),
+    ]);
+    const stageSnaps = await Promise.all(
+      [...variants].map((prefix) =>
+        db
+          .collection("users")
+          .orderBy("defaultDirectorName")
+          .startAt(prefix)
+          .endAt(`${prefix}\uf8ff`)
+          .limit(max)
+          .get()
+      )
+    );
+    for (const snap of stageSnaps) {
+      for (const doc of snap.docs) {
+        if (results.size >= max) break;
+        addUser(doc.id, doc.data() as Record<string, unknown>);
+      }
+    }
+  }
+
+  return [...results.values()];
 }

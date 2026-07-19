@@ -40,4 +40,5 @@ describe("resolveWorkCreditDisplayNamePure", () => {
       "crew_one"
     );
   });
+
 });

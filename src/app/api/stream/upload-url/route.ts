@@ -104,7 +104,10 @@ export async function POST(request: Request) {
     proposedAspectRatio = defaultAspectRatioForSection(sectionRaw);
   }
 
-  const title = (body.title ?? "Untitled").trim().slice(0, 200) || "Untitled";
+  const title = String(body.title ?? "").trim().slice(0, 200);
+  if (!title) {
+    return jsonError("title_required", "작품 제목을 입력해 주세요.", 400);
+  }
 
   const description = body.description?.trim() ?? "";
   if (!description) {

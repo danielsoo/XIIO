@@ -7,6 +7,8 @@ export type SeriesEpisode = {
   durationSec: number;
   releaseDate: string;
   thumbnailUrl: string;
+  /** Temporary direct playback URL for fixture episodes; real series will use Cloudflare work playback. */
+  videoUrl?: string;
   ownerUid: string;
   workId: string;
 };

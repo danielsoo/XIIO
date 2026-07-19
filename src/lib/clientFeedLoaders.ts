@@ -7,8 +7,8 @@ export function normalizedCatalogLimit(limit: number): number {
 }
 
 export function catalogFeedCacheKey(section: WorkSection, limit: number): string {
-  // v3 replaces the small first-pass CDN thumbnails with retina-ready derivatives.
-  return `catalog:v3:${section}:${normalizedCatalogLimit(limit)}`;
+  // v4 includes publication timestamps and preserves newest-first catalog ordering.
+  return `catalog:v4:${section}:${normalizedCatalogLimit(limit)}`;
 }
 
 type ThumbnailItem = { thumbnailUrl?: string };

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
+import SectionLabel from "@/components/layout/SectionLabel";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import DirectorNameSetupModal from "@/components/uploader/DirectorNameSetupModal";
 import UploaderUploadForm from "@/components/uploader/UploaderUploadForm";
@@ -13,6 +14,12 @@ import { useDepositStatus } from "@/hooks/useDepositStatus";
 
 export default function UploaderUploadInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedDraftId = searchParams.get("draft")?.trim() || null;
+  const draftId = useMemo(
+    () => requestedDraftId ?? `draft-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    [requestedDraftId]
+  );
   const { user, loading: authLoading } = useAuth();
   const { t } = useTranslations();
   const { depositVerified, depositEnabled, checked } = useDepositStatus();
@@ -105,19 +112,40 @@ export default function UploaderUploadInner() {
 
   return (
     <AppPageShell>
-      <SubpageHeader
-        title={t("uploader.uploadTitle")}
-        description={t("uploader.uploadBody")}
-        backFallbackHref="/"
-      />
-      <div className="mb-6 flex justify-end -mt-4">
-        <Link
-          href="/uploader/works"
-          className="text-sm font-medium text-xiio-accent hover:underline"
-        >
-          {t("myWorks.title")}
-        </Link>
-      </div>
+      <header className="mb-8 border-b border-white/[0.08] pb-6 md:mb-10">
+        <SectionLabel>{t("uploader.uploadStudioLabel")}</SectionLabel>
+        <div className="mt-3 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.03em] text-white md:text-[34px]">
+                {requestedDraftId ? t("uploader.editUploadTitle") : t("uploader.uploadTitle")}
+              </h1>
+              {requestedDraftId ? (
+                <span className="text-[13px] text-white/40">{t("uploader.draftLabel")}</span>
+              ) : null}
+            </div>
+            <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-white/45 md:text-sm">
+              {t("uploader.uploadBody")}
+            </p>
+          </div>
+          <Link
+            href="/uploader/works"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/[0.025] px-5 text-[13px] font-semibold text-white/85 transition hover:border-white/45 hover:bg-white/[0.06] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+            </svg>
+            {t("myWorks.title")}
+          </Link>
+        </div>
+      </header>
 
       {err && (
         <div
@@ -138,7 +166,10 @@ export default function UploaderUploadInner() {
       />
 
       <UploaderUploadForm
+        key={draftId}
         user={user}
+        draftId={draftId}
+        restoreDraft={Boolean(requestedDraftId)}
         initialDirector={defaultDirectorName}
         initialSchoolNameHint={schoolNameHint}
         onSuccess={() => {

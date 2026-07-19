@@ -17,6 +17,8 @@ type Props = {
   onCropChange?: (next: PromoFrameCrop | null) => void;
   meta?: VideoFileMetadata | null;
   showPortraitPreview?: boolean;
+  previewAspectRatio?: number;
+  onRemoveFile?: (mode: "keep-edits" | "clear-edits") => void;
 };
 
 export default function VideoUploadDropzone({
@@ -27,13 +29,25 @@ export default function VideoUploadDropzone({
   onCropChange,
   meta,
   showPortraitPreview = false,
+  previewAspectRatio,
+  onRemoveFile,
 }: Props) {
   const { t } = useTranslations();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [removeDialogStep, setRemoveDialogStep] = useState<"confirm" | "edits" | null>(null);
   const effectiveCrop = normalizePromoFrameCrop(crop ?? defaultPromoFrameCrop());
+  const previewMaxWidth = previewAspectRatio
+    ? previewAspectRatio < 0.75
+      ? "min(360px, 100%)"
+      : previewAspectRatio <= 1.05
+        ? "min(620px, 100%)"
+        : previewAspectRatio < 1.5
+          ? "min(900px, 100%)"
+          : "100%"
+    : undefined;
 
   useEffect(() => {
     if (!file) {
@@ -54,6 +68,17 @@ export default function VideoUploadDropzone({
     },
     [disabled, onFileChange, onCropChange]
   );
+
+  const finishRemove = (mode: "keep-edits" | "clear-edits") => {
+    if (onRemoveFile) {
+      onRemoveFile(mode);
+    } else {
+      onFileChange(null);
+      onCropChange?.(null);
+    }
+    if (inputRef.current) inputRef.current.value = "";
+    setRemoveDialogStep(null);
+  };
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -80,8 +105,26 @@ export default function VideoUploadDropzone({
       />
 
       {file && previewUrl ? (
-        <div className="flex flex-1 flex-col rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
-          <div className="relative flex-1 min-h-[200px] bg-black">
+        <div
+          className="mx-auto flex w-full flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/40 transition-[max-width] duration-300"
+          style={{ maxWidth: previewMaxWidth }}
+        >
+          <div
+            className={`relative bg-black ${previewAspectRatio ? "w-full" : "min-h-[200px] flex-1"}`}
+            style={previewAspectRatio ? { aspectRatio: previewAspectRatio } : undefined}
+          >
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => setRemoveDialogStep("confirm")}
+              className="absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full border border-red-300/40 bg-red-600 text-white shadow-lg shadow-black/40 transition hover:bg-red-500 disabled:opacity-40"
+              aria-label={t("uploader.removeVideo")}
+              title={t("uploader.removeVideo")}
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+                <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
             <video
               src={previewUrl}
               className="absolute inset-0 w-full h-full object-contain"
@@ -99,9 +142,10 @@ export default function VideoUploadDropzone({
               type="button"
               disabled={disabled}
               onClick={() => {
-                onFileChange(null);
-                onCropChange?.(null);
-                if (inputRef.current) inputRef.current.value = "";
+                if (inputRef.current) {
+                  inputRef.current.value = "";
+                  inputRef.current.click();
+                }
               }}
               className="mt-2 text-sm text-xiio-accent hover:underline disabled:opacity-40"
             >
@@ -190,6 +234,76 @@ export default function VideoUploadDropzone({
           </div>
         </label>
       )}
+
+      {removeDialogStep ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 px-5 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`${inputId}-remove-title`}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#141416] p-6 shadow-2xl shadow-black/60">
+            {removeDialogStep === "confirm" ? (
+              <>
+                <h2 id={`${inputId}-remove-title`} className="text-lg font-semibold text-white">
+                  {t("uploader.removeVideoConfirmTitle")}
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-xiio-muted">
+                  {t("uploader.removeVideoConfirmBody", { name: file?.name ?? "" })}
+                </p>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRemoveDialogStep(null)}
+                    className="rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white/75 hover:border-white/30 hover:text-white"
+                  >
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRemoveDialogStep("edits")}
+                    className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
+                  >
+                    {t("uploader.removeVideoContinue")}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 id={`${inputId}-remove-title`} className="text-lg font-semibold text-white">
+                  {t("uploader.removeEditsTitle")}
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-xiio-muted">
+                  {t("uploader.removeEditsBody")}
+                </p>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => finishRemove("keep-edits")}
+                    className="rounded-xl border border-xiio-accent/50 bg-xiio-accent/10 px-4 py-3 text-sm font-semibold text-white hover:bg-xiio-accent/20"
+                  >
+                    {t("uploader.removeKeepEdits")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => finishRemove("clear-edits")}
+                    className="rounded-xl border border-red-400/35 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200 hover:bg-red-500/20"
+                  >
+                    {t("uploader.removeClearEdits")}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRemoveDialogStep(null)}
+                  className="mt-4 w-full text-center text-sm text-white/50 hover:text-white"
+                >
+                  {t("common.cancel")}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

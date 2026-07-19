@@ -1,5 +1,5 @@
-import CategoryMockPage from "@/components/category/CategoryMockPage";
+import SeriesCatalogPage from "@/components/series/SeriesCatalogPage";
 
 export default function SeriesPage() {
-  return <CategoryMockPage variant="series" />;
+  return <SeriesCatalogPage />;
 }

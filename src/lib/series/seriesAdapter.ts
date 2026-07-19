@@ -1,4 +1,5 @@
 import { SERIES_FIXTURES, type SeriesFixture } from "@/data/seriesFixtures";
+import { SERIES_MOCK_THUMBNAILS, SERIES_MOCK_VIDEO_URLS } from "@/data/seriesMockMedia";
 import type { CatalogFeedItem } from "@/types/work";
 import type { SeriesDetail, SeriesEpisode, SeriesSeason } from "@/types/series";
 
@@ -16,18 +17,45 @@ function releaseDateFor(seasonNumber: number, episodeNumber: number): string {
   return new Date(base + offsetDays * 86_400_000).toISOString();
 }
 
+function publishedAtIso(value: unknown): string | null {
+  if (typeof value === "string" || typeof value === "number") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }
+
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as {
+    toDate?: () => Date;
+    toMillis?: () => number;
+    seconds?: number;
+    _seconds?: number;
+  };
+
+  if (typeof candidate.toDate === "function") return candidate.toDate().toISOString();
+  if (typeof candidate.toMillis === "function") {
+    return new Date(candidate.toMillis()).toISOString();
+  }
+
+  const seconds = candidate.seconds ?? candidate._seconds;
+  return typeof seconds === "number" ? new Date(seconds * 1_000).toISOString() : null;
+}
+
 function pickRealItem(pool: CatalogFeedItem[], index: number): CatalogFeedItem | undefined {
   if (pool.length === 0) return undefined;
   return pool[index % pool.length];
 }
 
-function fixtureToSeriesDetail(fixture: SeriesFixture, pool: CatalogFeedItem[]): SeriesDetail {
+function fixtureToSeriesDetail(
+  fixture: SeriesFixture,
+  pool: CatalogFeedItem[],
+  poolOffset = 0
+): SeriesDetail {
   let globalIndex = 0;
   const seasons: SeriesSeason[] = fixture.seasons.map((season) => ({
     seasonNumber: season.seasonNumber,
     title: season.title,
     episodes: season.episodes.map((ep) => {
-      const real = pickRealItem(pool, globalIndex++);
+      const real = pickRealItem(pool, poolOffset + globalIndex++);
       const episode: SeriesEpisode = {
         id: `${fixture.id}-s${season.seasonNumber}e${ep.episodeNumber}`,
         seasonNumber: season.seasonNumber,
@@ -35,8 +63,14 @@ function fixtureToSeriesDetail(fixture: SeriesFixture, pool: CatalogFeedItem[]):
         title: ep.title,
         synopsis: ep.synopsis,
         durationSec: ep.durationMinutes * 60,
-        releaseDate: releaseDateFor(season.seasonNumber, ep.episodeNumber),
-        thumbnailUrl: real?.thumbnailUrl ?? "",
+        releaseDate:
+          publishedAtIso(real?.publishedAt) ??
+          releaseDateFor(season.seasonNumber, ep.episodeNumber),
+        thumbnailUrl:
+          real?.thumbnailUrl ??
+          SERIES_MOCK_THUMBNAILS[(poolOffset + globalIndex - 1) % SERIES_MOCK_THUMBNAILS.length],
+        videoUrl:
+          SERIES_MOCK_VIDEO_URLS[(poolOffset + globalIndex - 1) % SERIES_MOCK_VIDEO_URLS.length],
         ownerUid: real?.ownerUid ?? "",
         workId: real?.workId ?? "",
       };
@@ -64,6 +98,7 @@ function flatFallback(item: CatalogFeedItem): SeriesDetail {
     durationSec: 0,
     releaseDate: releaseDateFor(1, 1),
     thumbnailUrl: item.thumbnailUrl ?? "",
+    videoUrl: SERIES_MOCK_VIDEO_URLS[0],
     ownerUid: item.ownerUid,
     workId: item.workId,
   };
@@ -78,8 +113,9 @@ function flatFallback(item: CatalogFeedItem): SeriesDetail {
 
 /** Series catalog rows (New Episodes This Week, Binge-Worthy Collections, …). */
 export function buildSeriesCatalog(realItems: CatalogFeedItem[]): SeriesDetail[] {
-  if (realItems.length === 0) return [];
-  return SERIES_FIXTURES.map((fixture) => fixtureToSeriesDetail(fixture, realItems));
+  return SERIES_FIXTURES.map((fixture, index) =>
+    fixtureToSeriesDetail(fixture, realItems, index * 2)
+  );
 }
 
 /** All episodes across the mock catalog, newest release first — for a "New Episodes This Week" row. */

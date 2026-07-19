@@ -16,6 +16,12 @@ import { MOCKUP_HOME } from "@/lib/mockupHomeSpec";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
 import { gradientForTitle } from "@/lib/works/catalog-ui";
 import { publishedWorksForRow, thumbnailForWork } from "@/lib/works/my-works-ui";
+import {
+  clearNamedUploadDraftFiles,
+  clearNamedUploadDraftState,
+  listUploadDraftSummaries,
+  type UploadDraftSummary,
+} from "@/lib/upload-draft-store";
 import type { PlatformStatus, PromoPlatformStatus, StreamStatus, WorkListItem } from "@/types/work";
 
 function statusBadgeClass(status: PlatformStatus | PromoPlatformStatus): string {
@@ -79,6 +85,7 @@ export default function MyWorksContent() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [submitBanner, setSubmitBanner] = useState(justSubmitted);
+  const [drafts, setDrafts] = useState<UploadDraftSummary[]>([]);
 
   const spotlightItems = useMemo(
     () => (user ? publishedWorksForRow(works, user.uid) : []),
@@ -88,6 +95,28 @@ export default function MyWorksContent() {
   useEffect(() => {
     setSubmitBanner(justSubmitted);
   }, [justSubmitted]);
+
+  useEffect(() => {
+    if (!user) {
+      setDrafts([]);
+      return;
+    }
+    const refreshDrafts = () => setDrafts(listUploadDraftSummaries(user.uid));
+    refreshDrafts();
+    window.addEventListener("focus", refreshDrafts);
+    window.addEventListener("storage", refreshDrafts);
+    return () => {
+      window.removeEventListener("focus", refreshDrafts);
+      window.removeEventListener("storage", refreshDrafts);
+    };
+  }, [user]);
+
+  const deleteDraft = async (draftId: string) => {
+    if (!user || !window.confirm(t("myWorks.draftDeleteConfirm"))) return;
+    clearNamedUploadDraftState(user.uid, draftId);
+    await clearNamedUploadDraftFiles(user.uid, draftId).catch(() => undefined);
+    setDrafts(listUploadDraftSummaries(user.uid));
+  };
 
   const authFetch = async (url: string, init?: RequestInit) => {
     if (!user) throw new Error("no user");
@@ -245,16 +274,91 @@ export default function MyWorksContent() {
           </div>
         ) : null}
 
+        {drafts.length > 0 ? (
+          <section aria-labelledby="in-progress-works">
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div>
+                <SectionLabel>
+                  <span id="in-progress-works">{t("myWorks.inProgressTitle")}</span>
+                </SectionLabel>
+                <p className="mt-2 text-sm text-xiio-muted">{t("myWorks.inProgressHint")}</p>
+              </div>
+              <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-300">
+                {t("myWorks.inProgressCount", { count: drafts.length })}
+              </span>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              {drafts.map((draft) => {
+                const step = Math.max(0, Math.min(draft.stepIndex, 4));
+                const title = draft.title || draft.fileName || t("myWorks.untitledDraft");
+                return (
+                  <article
+                    key={draft.id}
+                    className="group rounded-2xl border border-amber-300/20 bg-gradient-to-br from-amber-300/[0.07] to-white/[0.025] p-5"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-amber-300/20 bg-black/25 text-amber-200">
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
+                          <path d="M4 4.5h16v15H4z" />
+                          <path d="M8 2.5v4M16 2.5v4M4 9h16" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="truncate text-base font-semibold text-white">{title}</h2>
+                          <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
+                            {t("myWorks.status.draft")}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-xs text-xiio-muted">
+                          {t(`myWorks.section.${draft.section}`)}
+                          {draft.fileName ? ` · ${draft.fileName}` : ""}
+                        </p>
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-amber-300 transition-all"
+                            style={{ width: `${((step + 1) / 5) * 100}%` }}
+                          />
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-xiio-muted">
+                          <span>{t("myWorks.draftStep", { current: step + 1, total: 5 })}</span>
+                          <span>{new Date(draft.savedAt).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void deleteDraft(draft.id)}
+                        className="rounded-full border border-red-400/25 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-400/10"
+                      >
+                        {t("myWorks.deleteDraft")}
+                      </button>
+                      <Link
+                        href={`/uploader/upload?draft=${encodeURIComponent(draft.id)}`}
+                        className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-white/85"
+                      >
+                        {t("myWorks.resumeDraft")}
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
         {loading ? (
           <p className="text-xiio-muted">{t("common.loading")}</p>
-        ) : works.length === 0 ? (
+        ) : works.length === 0 && drafts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center">
             <p className="text-xiio-muted mb-4">{t("myWorks.empty")}</p>
             <Link href="/uploader/upload" className="text-xiio-accent hover:underline text-sm">
               {t("myWorks.uploadNew")}
             </Link>
           </div>
-        ) : (
+        ) : works.length > 0 ? (
           <>
             {spotlightItems.length > 0 ? (
               <HomeContentRow
@@ -478,7 +582,7 @@ export default function MyWorksContent() {
               </ul>
             </section>
           </>
-        )}
+        ) : null}
       </div>
     </AppPageShell>
   );

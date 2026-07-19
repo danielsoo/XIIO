@@ -85,28 +85,28 @@ export default function AppTopBar({ onMenuOpen }: Props) {
         </svg>
       </button>
 
-      <div className="flex min-w-0 flex-1 justify-start">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const value = searchValue.trim();
-            router.push(value ? `/search?q=${encodeURIComponent(value)}` : "/search");
-          }}
-          className={`relative hidden sm:block ${MOCKUP_HOME.searchBar}`}
-        >
-          <label>
-            <span className="sr-only">{t("topBar.searchLabel")}</span>
-            <IconSearch className={`absolute top-1/2 -translate-y-1/2 ${MOCKUP_HOME.searchIconLeft} w-4 h-4 text-white/30`} />
-            <input
-              type="search"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              placeholder={t("topBar.searchPlaceholder")}
-              className="w-full h-full rounded-full bg-white/[0.04] border border-white/[0.08] py-2 pl-11 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent/50"
-            />
-          </label>
-        </form>
-      </div>
+      <div className="min-w-0 flex-1" aria-hidden />
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const value = searchValue.trim();
+          router.push(value ? `/search?q=${encodeURIComponent(value)}` : "/search");
+        }}
+        className={`absolute left-1/2 hidden -translate-x-1/2 sm:block ${MOCKUP_HOME.searchBar}`}
+      >
+        <label>
+          <span className="sr-only">{t("topBar.searchLabel")}</span>
+          <IconSearch className={`absolute top-1/2 -translate-y-1/2 ${MOCKUP_HOME.searchIconLeft} w-4 h-4 text-white/30`} />
+          <input
+            type="search"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder={t("topBar.searchPlaceholder")}
+            className="w-full h-full rounded-full bg-white/[0.04] border border-white/[0.08] py-2 pl-11 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:border-xiio-accent/50"
+          />
+        </label>
+      </form>
 
       <div className="flex items-center gap-1 shrink-0">
         <NotificationBell />

@@ -1,5 +1,5 @@
-import CategoryMockPage from "@/components/category/CategoryMockPage";
+import ShowCatalogPage from "@/components/show/ShowCatalogPage";
 
 export default function EntertainmentPage() {
-  return <CategoryMockPage variant="entertainment" />;
+  return <ShowCatalogPage />;
 }

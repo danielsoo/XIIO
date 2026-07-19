@@ -35,7 +35,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#08080a] text-[#f5f4f2]">
       <header className="sticky top-0 z-30 bg-gradient-to-b from-[#08080a]/90 to-transparent">
         <div className="flex items-center justify-between px-6 sm:px-14 py-6">
-          <XiioWordmark className="!text-[24px]" />
+          <XiioWordmark className="!h-[22px]" />
           <nav className="hidden md:flex items-center gap-10 text-sm text-white/60">
             <span>{t("landing.navForCreators")}</span>
             <span>{t("landing.navForStudios")}</span>

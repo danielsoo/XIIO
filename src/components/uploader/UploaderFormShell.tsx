@@ -21,10 +21,10 @@ export default function UploaderFormShell({
   footer,
 }: Props) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {banners}
       {layout === "stacked" ? (
-        <div className="flex flex-col gap-6 min-w-0">{children}</div>
+        <div className="flex min-w-0 flex-col gap-5">{children}</div>
       ) : (
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-10 lg:items-start">
           <div className="min-w-0">{left}</div>

@@ -32,6 +32,29 @@ type FeedCacheEntry<T> = { data: T; expiresAt: number };
 const resultCache = new Map<string, FeedCacheEntry<unknown>>();
 const inFlightLoads = new Map<string, Promise<unknown>>();
 
+function timestampMillis(value: unknown): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  if (!value || typeof value !== "object") return 0;
+
+  const candidate = value as {
+    toMillis?: () => number;
+    seconds?: number;
+    _seconds?: number;
+  };
+  if (typeof candidate.toMillis === "function") return candidate.toMillis();
+  const seconds = candidate.seconds ?? candidate._seconds;
+  return typeof seconds === "number" ? seconds * 1_000 : 0;
+}
+
+function timestampIso(value: unknown): string | undefined {
+  const millis = timestampMillis(value);
+  return millis > 0 ? new Date(millis).toISOString() : undefined;
+}
+
 async function getOrLoadFeed<T>(key: string, loader: () => Promise<T>): Promise<T> {
   const cached = resultCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.data as T;
@@ -143,14 +166,21 @@ async function loadCatalogWorksFeed(
     const work = parseWorkDoc(doc.id, doc.data() as Record<string, unknown>);
     if (work.streamStatus !== "ready" || !work.streamUid) return [];
     return [{ doc, ownerUid, work }];
-  }).slice(0, cappedLimit);
+  });
 
-  if (candidates.length === 0) return [];
+  candidates.sort(
+    (a, b) =>
+      timestampMillis(b.work.publishedAt) - timestampMillis(a.work.publishedAt) ||
+      a.work.title.localeCompare(b.work.title)
+  );
+  const selectedCandidates = candidates.slice(0, cappedLimit);
+
+  if (selectedCandidates.length === 0) return [];
   const promoSnaps = await db.getAll(
-    ...candidates.map((item) => promoRef(db, item.ownerUid, item.doc.id))
+    ...selectedCandidates.map((item) => promoRef(db, item.ownerUid, item.doc.id))
   );
 
-  const items = candidates.map((item, index) => {
+  const items = selectedCandidates.map((item, index) => {
     const promoSnap = promoSnaps[index];
     const promo = promoSnap?.exists
       ? parsePromoDoc(promoSnap.data() as Record<string, unknown>)
@@ -178,10 +208,15 @@ async function loadCatalogWorksFeed(
       ...(thumbnailCrop ? { thumbnailCrop } : {}),
       viewCount: item.work.viewCount ?? 0,
       likeCount: item.work.likeCount ?? 0,
+      publishedAt: timestampIso(item.work.publishedAt),
     } satisfies CatalogFeedItem;
   });
 
-  items.sort((a, b) => a.title.localeCompare(b.title));
+  items.sort(
+    (a, b) =>
+      timestampMillis(b.publishedAt) - timestampMillis(a.publishedAt) ||
+      a.title.localeCompare(b.title)
+  );
   return items;
 }
 

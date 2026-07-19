@@ -1,61 +1,20 @@
+import Image from "next/image";
+
 type Props = {
   className?: string;
 };
 
-const XIIO_CAP = "calc((0.72em + 0.1em) / sqrt(2))";
-const XIIO_STROKE = "0.1em";
-/** O 외곽 직경 — II cap + 스트로크 1회분 */
-const XIIO_O_SIZE = `calc(var(--xiio-cap) + ${XIIO_STROKE})`;
-/** X↔II, II↔O 그룹 간격 */
-const XIIO_GAP = "0.74em";
-/** II 두 막대 사이 간격 */
-const XIIO_II_GAP = "0.48em";
-/** X 두 막대 사이각 */
-const XIIO_X_INTER_ANGLE_DEG = 35;
-/** 막대당 회전각 = 사이각 / 2 */
-const XIIO_X_BAR_ANGLE_DEG = XIIO_X_INTER_ANGLE_DEG / 2;
-
-/** clip-path 양 끝 trim — polygon %와 보정 높이에 공용 */
-const X_CLIP_TRIM = 0.12;
-const X_CLIP_TRIM_PCT = `${X_CLIP_TRIM * 100}%`;
-const X_CLIP_KEEP = 1 - 2 * X_CLIP_TRIM;
-const X_CLIP_END_PCT = `${(1 - X_CLIP_TRIM) * 100}%`;
-
-/** 45° X 기준 팔 길이 — clip 손실 보정 */
-const XIIO_X_ARM = `calc(0.72em / ${X_CLIP_KEEP})`;
-
-/** 회전 후 상·하단이 수평으로 보이도록 끝만 잘림 */
-const X_ARM_CLIP_A = `polygon(0% ${X_CLIP_TRIM_PCT}, 100% 0%, 100% ${X_CLIP_END_PCT}, 0% 100%)`;
-const X_ARM_CLIP_B = `polygon(0% 0%, 100% ${X_CLIP_TRIM_PCT}, 100% 100%, 0% ${X_CLIP_END_PCT})`;
-
 export default function XiioWordmark({ className = "" }: Props) {
   return (
-    <span
-      className={`inline-flex items-center text-[28px] text-white leading-none ${className}`.trim()}
-      style={{
-        ["--xiio-cap" as string]: XIIO_CAP,
-        ["--xiio-gap" as string]: XIIO_GAP,
-        ["--xiio-ii-gap" as string]: XIIO_II_GAP,
-        ["--xiio-x-arm" as string]: XIIO_X_ARM,
-        ["--xiio-o-size" as string]: XIIO_O_SIZE,
-      }}
+    <Image
+      src="/images/brand/xiio_logo_small.png"
+      alt=""
+      width={574}
+      height={120}
+      sizes="120px"
+      unoptimized
       aria-hidden
-    >
-      <span className="relative inline-flex size-[var(--xiio-cap)] items-center justify-center overflow-visible mr-[var(--xiio-gap)] shrink-0">
-        <span
-          className="absolute h-[var(--xiio-x-arm)] w-[0.1em] bg-current"
-          style={{ transform: `rotate(${XIIO_X_BAR_ANGLE_DEG}deg)`, clipPath: X_ARM_CLIP_A }}
-        />
-        <span
-          className="absolute h-[var(--xiio-x-arm)] w-[0.1em] bg-current"
-          style={{ transform: `rotate(-${XIIO_X_BAR_ANGLE_DEG}deg)`, clipPath: X_ARM_CLIP_B }}
-        />
-      </span>
-      <span className="inline-flex h-[var(--xiio-cap)] items-center gap-[var(--xiio-ii-gap)] shrink-0">
-        <span className="w-[0.1em] h-full bg-current" />
-        <span className="w-[0.1em] h-full bg-current" />
-      </span>
-      <span className="ml-[var(--xiio-gap)] shrink-0 size-[var(--xiio-o-size)] rounded-full border-[0.1em] border-current box-border" />
-    </span>
+      className={`h-[25px] w-auto shrink-0 object-contain ${className}`.trim()}
+    />
   );
 }

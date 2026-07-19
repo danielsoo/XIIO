@@ -25,7 +25,13 @@ import CreditTagInput, {
 import { useLocale, useTranslations } from "@/context/LocaleContext";
 import { useImageFileMetadata } from "@/hooks/useImageFileMetadata";
 import { useVideoFileMetadata } from "@/hooks/useVideoFileMetadata";
-import { aspectRatioMessageKey, defaultAspectRatioForSection } from "@/lib/works/aspect-ratio";
+import {
+  aspectRatioMessageKey,
+  aspectRatioNumeric,
+  closestVideoAspectRatio,
+  defaultAspectRatioForSection,
+  videoDimensionsMatchAspectRatio,
+} from "@/lib/works/aspect-ratio";
 import {
   formatApiError,
   formatClientError,
@@ -55,6 +61,14 @@ import PrologueUploadChoiceTiles, {
   type PrologueUploadChoice,
 } from "@/components/uploader/PrologueUploadChoiceTiles";
 import { normalizeTags } from "@/lib/works/label-utils";
+import {
+  clearNamedUploadDraftFiles,
+  clearNamedUploadDraftState,
+  readNamedUploadDraftFile,
+  readNamedUploadDraftState,
+  writeNamedUploadDraftFile,
+  writeNamedUploadDraftState,
+} from "@/lib/upload-draft-store";
 import {
   WORK_SECTIONS,
   type PromoFrameCrop,
@@ -97,6 +111,8 @@ const UPLOAD_STEP_META: UploadWizardStepMeta[] = [
 
 type Props = {
   user: User;
+  draftId: string;
+  restoreDraft: boolean;
   initialDirector?: string | null;
   initialSchoolNameHint?: string | null;
   onSuccess: (payload: { workId: string; message: string }) => void;
@@ -112,8 +128,43 @@ type CollabInvitePostResponse = {
   error?: string;
 };
 
+type UploadDraftState = {
+  stepIndex: number;
+  title: string;
+  section: WorkSection;
+  aspectRatio: VideoAspectRatio;
+  aspectRatioManuallyChanged: boolean;
+  contentCategory: string;
+  tags: string[];
+  school: SchoolPickerValue;
+  credits: TaggedCredit[];
+  pendingEmailInvites: PendingEmailInvite[];
+  director: string;
+  description: string;
+  thumbnailCrop: PromoFrameCrop;
+  prologueChoice: PrologueUploadChoice | null;
+  prologueTitle: string;
+  prologueDescription: string;
+  promoCrop: PromoFrameCrop;
+  promoTitle: string;
+  promoDescription: string;
+};
+
+type DraftStatus = "idle" | "saving" | "saved" | "restored" | "error";
+type RequiredFieldTarget =
+  | "fullFile"
+  | "title"
+  | "description"
+  | "thumbnail"
+  | "prologueChoice"
+  | "prologueFile"
+  | "promoFile"
+  | "promoTitle";
+
 export default function UploaderUploadForm({
   user,
+  draftId,
+  restoreDraft,
   initialDirector,
   initialSchoolNameHint,
   onSuccess,
@@ -122,8 +173,12 @@ export default function UploaderUploadForm({
   const { t } = useTranslations();
   const { locale } = useLocale();
   const [stepIndex, setStepIndex] = useState(0);
-  const [formError, setFormError] = useState("");
+  const [requiredFieldError, setRequiredFieldError] = useState<{
+    target: RequiredFieldTarget;
+    message: string;
+  } | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const fullVideoMeta = useVideoFileMetadata(file);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [thumbnailCrop, setThumbnailCrop] = useState<PromoFrameCrop>(defaultPromoFrameCrop());
@@ -140,6 +195,7 @@ export default function UploaderUploadForm({
   const [title, setTitle] = useState("");
   const [section, setSection] = useState<WorkSection>("movies");
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("16:9");
+  const [aspectRatioManuallyChanged, setAspectRatioManuallyChanged] = useState(false);
   const [contentCategory, setContentCategory] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [school, setSchool] = useState<SchoolPickerValue>(null);
@@ -161,10 +217,89 @@ export default function UploaderUploadForm({
   const [fullPlaybackUrl, setFullPlaybackUrl] = useState<string | null>(null);
   const [promoPlaybackUrl, setPromoPlaybackUrl] = useState<string | null>(null);
   const [prologuePlaybackUrl, setProloguePlaybackUrl] = useState<string | null>(null);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<DraftStatus>("idle");
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+  const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fullFileRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const descriptionRef = useRef<HTMLDivElement>(null);
+  const thumbnailRef = useRef<HTMLDivElement>(null);
+  const prologueChoiceRef = useRef<HTMLDivElement>(null);
+  const prologueFileRef = useRef<HTMLDivElement>(null);
+  const promoFileRef = useRef<HTMLDivElement>(null);
+  const promoTitleRef = useRef<HTMLDivElement>(null);
 
   const currentStep = UPLOAD_STEPS[stepIndex] ?? "fullWork";
   const isLastStep = stepIndex === UPLOAD_STEPS.length - 1;
   const progress = ((stepIndex + 1) / UPLOAD_STEPS.length) * 100;
+
+  const draftSnapshot = useMemo<UploadDraftState>(
+    () => ({
+      stepIndex,
+      title,
+      section,
+      aspectRatio,
+      aspectRatioManuallyChanged,
+      contentCategory,
+      tags,
+      school,
+      credits,
+      pendingEmailInvites,
+      director,
+      description,
+      thumbnailCrop,
+      prologueChoice,
+      prologueTitle,
+      prologueDescription,
+      promoCrop,
+      promoTitle,
+      promoDescription,
+    }),
+    [
+      stepIndex,
+      title,
+      section,
+      aspectRatio,
+      aspectRatioManuallyChanged,
+      contentCategory,
+      tags,
+      school,
+      credits,
+      pendingEmailInvites,
+      director,
+      description,
+      thumbnailCrop,
+      prologueChoice,
+      prologueTitle,
+      prologueDescription,
+      promoCrop,
+      promoTitle,
+      promoDescription,
+    ]
+  );
+
+  const draftSummary = useMemo(
+    () => ({
+      title: title.trim(),
+      section,
+      stepIndex,
+      fileName: file?.name,
+    }),
+    [file?.name, section, stepIndex, title]
+  );
+
+  const hasMeaningfulDraft = Boolean(
+    file ||
+      thumbnailFile ||
+      prologueFile ||
+      promoFile ||
+      title.trim() ||
+      description.trim() ||
+      contentCategory.trim() ||
+      tags.length ||
+      credits.length
+  );
 
   const reportError = useCallback(
     (message: string) => {
@@ -172,6 +307,181 @@ export default function UploaderUploadForm({
       onError(message);
     },
     [onError]
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    const restoreSavedDraft = async () => {
+      try {
+        if (!restoreDraft) {
+          if (active) setDraftReady(true);
+          return;
+        }
+        const stored = readNamedUploadDraftState<UploadDraftState>(user.uid, draftId);
+        const [storedFull, storedThumbnail, storedPrologue, storedPromo] = await Promise.all([
+          readNamedUploadDraftFile(user.uid, draftId, "full"),
+          readNamedUploadDraftFile(user.uid, draftId, "thumbnail"),
+          readNamedUploadDraftFile(user.uid, draftId, "prologue"),
+          readNamedUploadDraftFile(user.uid, draftId, "promo"),
+        ]);
+        if (!active) return;
+
+        if (stored) {
+          const draft = stored.state;
+          setStepIndex(Math.max(0, Math.min(draft.stepIndex ?? 0, UPLOAD_STEPS.length - 1)));
+          setTitle(draft.title ?? "");
+          setSection(draft.section ?? "movies");
+          setAspectRatio(draft.aspectRatio ?? "16:9");
+          setAspectRatioManuallyChanged(Boolean(draft.aspectRatioManuallyChanged));
+          setContentCategory(draft.contentCategory ?? "");
+          setTags(draft.tags ?? []);
+          setSchool(draft.school ?? null);
+          setCredits(draft.credits ?? []);
+          setPendingEmailInvites(draft.pendingEmailInvites ?? []);
+          if (!directorLocked) setDirector(draft.director ?? "");
+          setDescription(draft.description ?? "");
+          setThumbnailCrop(normalizePromoFrameCrop(draft.thumbnailCrop));
+          setPrologueChoice(draft.prologueChoice ?? null);
+          setPrologueTitle(draft.prologueTitle ?? "");
+          setPrologueDescription(draft.prologueDescription ?? "");
+          setPromoCrop(normalizePromoFrameCrop(draft.promoCrop));
+          setPromoTitle(draft.promoTitle ?? "");
+          setPromoDescription(draft.promoDescription ?? "");
+          setDraftSavedAt(stored.savedAt);
+        }
+
+        setFile(storedFull);
+        setThumbnailFile(storedThumbnail);
+        setThumbnailPreview(storedThumbnail ? URL.createObjectURL(storedThumbnail) : null);
+        setPrologueFile(storedPrologue);
+        setPromoFile(storedPromo);
+
+        if (stored || storedFull || storedThumbnail || storedPrologue || storedPromo) {
+          setDraftStatus("restored");
+        }
+      } catch {
+        if (active) setDraftStatus("error");
+      } finally {
+        if (active) setDraftReady(true);
+      }
+    };
+
+    void restoreSavedDraft();
+    return () => {
+      active = false;
+    };
+  }, [directorLocked, draftId, restoreDraft, user.uid]);
+
+  useEffect(() => {
+    if (!draftReady || busy || uploadComplete || !hasMeaningfulDraft) return;
+    if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    setDraftStatus("saving");
+    draftSaveTimerRef.current = setTimeout(() => {
+      try {
+        const savedAt = writeNamedUploadDraftState(
+          user.uid,
+          draftId,
+          draftSnapshot,
+          draftSummary
+        );
+        setDraftSavedAt(savedAt);
+        setDraftStatus("saved");
+      } catch {
+        setDraftStatus("error");
+      }
+    }, 700);
+    return () => {
+      if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+    };
+  }, [busy, draftId, draftReady, draftSnapshot, draftSummary, hasMeaningfulDraft, uploadComplete, user.uid]);
+
+  useEffect(() => {
+    if (!draftReady || !hasMeaningfulDraft) return;
+    void writeNamedUploadDraftFile(user.uid, draftId, "full", file).catch(() => setDraftStatus("error"));
+  }, [draftId, draftReady, file, hasMeaningfulDraft, user.uid]);
+
+  useEffect(() => {
+    if (!draftReady || !hasMeaningfulDraft) return;
+    void writeNamedUploadDraftFile(user.uid, draftId, "thumbnail", thumbnailFile).catch(() =>
+      setDraftStatus("error")
+    );
+  }, [draftId, draftReady, hasMeaningfulDraft, thumbnailFile, user.uid]);
+
+  useEffect(() => {
+    if (!draftReady || !hasMeaningfulDraft) return;
+    void writeNamedUploadDraftFile(user.uid, draftId, "prologue", prologueFile).catch(() =>
+      setDraftStatus("error")
+    );
+  }, [draftId, draftReady, hasMeaningfulDraft, prologueFile, user.uid]);
+
+  useEffect(() => {
+    if (!draftReady || !hasMeaningfulDraft) return;
+    void writeNamedUploadDraftFile(user.uid, draftId, "promo", promoFile).catch(() =>
+      setDraftStatus("error")
+    );
+  }, [draftId, draftReady, hasMeaningfulDraft, promoFile, user.uid]);
+
+  const saveDraftNow = useCallback(async () => {
+    if (busy || uploadComplete) return;
+    setDraftStatus("saving");
+    try {
+      const savedAt = writeNamedUploadDraftState(
+        user.uid,
+        draftId,
+        draftSnapshot,
+        draftSummary
+      );
+      await Promise.all([
+        writeNamedUploadDraftFile(user.uid, draftId, "full", file),
+        writeNamedUploadDraftFile(user.uid, draftId, "thumbnail", thumbnailFile),
+        writeNamedUploadDraftFile(user.uid, draftId, "prologue", prologueFile),
+        writeNamedUploadDraftFile(user.uid, draftId, "promo", promoFile),
+      ]);
+      setDraftSavedAt(savedAt);
+      setDraftStatus("saved");
+    } catch {
+      setDraftStatus("error");
+    }
+  }, [busy, draftId, draftSnapshot, draftSummary, file, prologueFile, promoFile, thumbnailFile, uploadComplete, user.uid]);
+
+  const resetUploadForm = useCallback(
+    (clearPersisted: boolean) => {
+      setStepIndex(0);
+      setRequiredFieldError(null);
+      setFile(null);
+      setThumbnailFile(null);
+      setThumbnailPreview(null);
+      setThumbnailCrop(defaultPromoFrameCrop());
+      setThumbnailFieldError(null);
+      setPrologueChoice(null);
+      setPrologueFile(null);
+      setPrologueTitle("");
+      setPrologueDescription("");
+      setPromoFile(null);
+      setPromoCrop(defaultPromoFrameCrop());
+      setTitle("");
+      setSection("movies");
+      setAspectRatio("16:9");
+      setAspectRatioManuallyChanged(false);
+      setContentCategory("");
+      setTags([]);
+      setSchool(null);
+      setCredits([]);
+      setPendingEmailInvites([]);
+      setDirector(lockedDirectorName);
+      setDescription("");
+      setPromoTitle("");
+      setPromoDescription("");
+      setUploadError(null);
+      if (clearPersisted) {
+        clearNamedUploadDraftState(user.uid, draftId);
+        void clearNamedUploadDraftFiles(user.uid, draftId).catch(() => undefined);
+        setDraftSavedAt(null);
+        setDraftStatus("idle");
+      }
+    },
+    [draftId, lockedDirectorName, user.uid]
   );
 
   useEffect(() => {
@@ -204,8 +514,20 @@ export default function UploaderUploadForm({
   );
 
   useEffect(() => {
-    setAspectRatio(defaultAspectRatioForSection(section));
-  }, [section]);
+    if (!fullVideoMeta && !file) {
+      setAspectRatio(defaultAspectRatioForSection(section));
+    }
+  }, [section, fullVideoMeta, file]);
+
+  useEffect(() => {
+    if (!fullVideoMeta || aspectRatioManuallyChanged) return;
+    setAspectRatio(closestVideoAspectRatio(fullVideoMeta.width, fullVideoMeta.height));
+    setAspectRatioManuallyChanged(false);
+  }, [aspectRatioManuallyChanged, fullVideoMeta]);
+
+  const detectedAspectRatio = fullVideoMeta
+    ? closestVideoAspectRatio(fullVideoMeta.width, fullVideoMeta.height)
+    : null;
 
   useEffect(() => {
     if (initialDirector?.trim()) {
@@ -257,71 +579,124 @@ export default function UploaderUploadForm({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const requiredFieldRef = (target: RequiredFieldTarget) => {
+    switch (target) {
+      case "fullFile":
+        return fullFileRef;
+      case "title":
+        return titleRef;
+      case "description":
+        return descriptionRef;
+      case "thumbnail":
+        return thumbnailRef;
+      case "prologueChoice":
+        return prologueChoiceRef;
+      case "prologueFile":
+        return prologueFileRef;
+      case "promoFile":
+        return promoFileRef;
+      case "promoTitle":
+        return promoTitleRef;
+    }
+  };
+
+  const showRequiredFieldError = (target: RequiredFieldTarget, message: string) => {
+    setRequiredFieldError({ target, message });
+    window.requestAnimationFrame(() => {
+      requiredFieldRef(target).current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+    return false;
+  };
+
+  const clearRequiredFieldError = (target: RequiredFieldTarget) => {
+    setRequiredFieldError((current) => (current?.target === target ? null : current));
+  };
+
+  const fieldHasError = (target: RequiredFieldTarget) =>
+    requiredFieldError?.target === target;
+
+  const renderRequiredFieldError = (target: RequiredFieldTarget) => {
+    const message =
+      requiredFieldError?.target === target ? requiredFieldError.message : null;
+    return message ? (
+      <p className="mt-2 text-xs leading-relaxed text-red-400" role="alert">
+        {message}
+      </p>
+    ) : null;
+  };
+
   const validateStep = (step: UploadStepId): boolean => {
     switch (step) {
       case "fullWork":
         if (!file) {
-          setFormError(t("uploader.errorNoFile"));
-          return false;
+          return showRequiredFieldError("fullFile", t("uploader.errorNoFile"));
+        }
+        if (!title.trim()) {
+          return showRequiredFieldError("title", t("uploader.errorTitleRequired"));
         }
         if (!description.trim()) {
-          setFormError(t("uploader.errorDescriptionRequired"));
-          return false;
+          return showRequiredFieldError(
+            "description",
+            t("uploader.errorDescriptionRequired")
+          );
         }
         return true;
       case "catalog":
         if (!thumbnailFile) {
-          setFormError(t("uploader.errorThumbnailRequired"));
-          return false;
+          return showRequiredFieldError("thumbnail", t("uploader.errorThumbnailRequired"));
         }
         return true;
       case "prologue":
         if (!prologueChoice) {
-          setFormError(t("uploader.errorPrologueChoiceRequired"));
-          return false;
+          return showRequiredFieldError(
+            "prologueChoice",
+            t("uploader.errorPrologueChoiceRequired")
+          );
         }
         if (prologueChoice === "skip") return true;
         if (!prologueFile) {
-          setFormError(t("uploader.errorPrologueVideoRequired"));
-          return false;
+          return showRequiredFieldError(
+            "prologueFile",
+            t("uploader.errorPrologueVideoRequired")
+          );
         }
         if (prologueFileError === "loading") {
-          setFormError(t("uploader.errorPrologueVideoLoading"));
-          return false;
+          return showRequiredFieldError(
+            "prologueFile",
+            t("uploader.errorPrologueVideoLoading")
+          );
         }
         if (prologueFileError) {
-          setFormError(t("uploader.errorPrologueVideoInvalid"));
-          return false;
+          return showRequiredFieldError(
+            "prologueFile",
+            t("uploader.errorPrologueVideoInvalid")
+          );
         }
         return true;
       case "promo":
         if (!promoFile) {
-          setFormError(t("uploader.errorPromoVideoRequired"));
-          return false;
+          return showRequiredFieldError("promoFile", t("uploader.errorPromoVideoRequired"));
         }
         if (promoFileError === "loading") {
-          setFormError(t("uploader.errorPromoVideoLoading"));
-          return false;
+          return showRequiredFieldError("promoFile", t("uploader.errorPromoVideoLoading"));
         }
         if (promoFileError === "too_small") {
-          setFormError(t("uploader.errorPromoTooSmall"));
-          return false;
+          return showRequiredFieldError("promoFile", t("uploader.errorPromoTooSmall"));
         }
         if (promoFileError === "too_short") {
-          setFormError(t("uploader.errorPromoTooShort"));
-          return false;
+          return showRequiredFieldError("promoFile", t("uploader.errorPromoTooShort"));
         }
         if (promoFileError === "too_long") {
-          setFormError(t("uploader.errorPromoTooLong"));
-          return false;
+          return showRequiredFieldError("promoFile", t("uploader.errorPromoTooLong"));
         }
         if (promoFileError) {
-          setFormError(t("uploader.errorPromoVideoInvalid"));
-          return false;
+          return showRequiredFieldError("promoFile", t("uploader.errorPromoVideoInvalid"));
         }
         if (!promoTitle.trim()) {
-          setFormError(t("uploader.errorPromoTitleRequired"));
-          return false;
+          return showRequiredFieldError("promoTitle", t("uploader.errorPromoTitleRequired"));
         }
         return true;
       case "preview":
@@ -332,21 +707,21 @@ export default function UploaderUploadForm({
   };
 
   const handleNext = () => {
-    setFormError("");
+    setRequiredFieldError(null);
     if (!validateStep(currentStep)) return;
     setStepIndex((i) => Math.min(i + 1, UPLOAD_STEPS.length - 1));
     scrollWizardTop();
   };
 
   const handleBack = () => {
-    setFormError("");
+    setRequiredFieldError(null);
     setStepIndex((i) => Math.max(i - 1, 0));
     scrollWizardTop();
   };
 
   const handleStepClick = (index: number) => {
     if (busy || index >= stepIndex) return;
-    setFormError("");
+    setRequiredFieldError(null);
     setStepIndex(index);
     scrollWizardTop();
   };
@@ -377,6 +752,71 @@ export default function UploaderUploadForm({
     setThumbnailCrop(defaultPromoFrameCrop());
   };
 
+  const renderAspectRatioControl = () => (
+    <div>
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <p className="text-xs text-xiio-muted">{t("uploader.uploadAspectRatioLabel")}</p>
+        {fullVideoMeta && detectedAspectRatio ? (
+          <span
+            className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-[0.04em] ${
+              aspectRatioManuallyChanged
+                ? "border-white/15 bg-white/[0.04] text-white/55"
+                : "border-xiio-accent/35 bg-xiio-accent/10 text-xiio-accent"
+            }`}
+          >
+            {t(
+              aspectRatioManuallyChanged
+                ? "uploader.aspectRatioManualSelected"
+                : "uploader.aspectRatioAutoDetected"
+            )}
+          </span>
+        ) : null}
+      </div>
+      {fullVideoMeta && detectedAspectRatio ? (
+        <p className="mb-3 text-xs leading-relaxed text-white/55">
+          {aspectRatioManuallyChanged
+            ? t("uploader.aspectRatioManualSelectedHint", {
+                width: fullVideoMeta.width,
+                height: fullVideoMeta.height,
+                detected: t(aspectRatioMessageKey(detectedAspectRatio)),
+                selected: t(aspectRatioMessageKey(aspectRatio)),
+              })
+            : t("uploader.aspectRatioAutoDetectedHint", {
+                width: fullVideoMeta.width,
+                height: fullVideoMeta.height,
+                ratio: t(aspectRatioMessageKey(detectedAspectRatio)),
+              })}
+        </p>
+      ) : (
+        <p className="mb-3 text-xs leading-relaxed text-white/45">
+          {t("uploader.uploadAspectRatioHint")}
+        </p>
+      )}
+      <AspectRatioPicker
+        value={aspectRatio}
+        onChange={(next) => {
+          setAspectRatio(next);
+          setAspectRatioManuallyChanged(true);
+        }}
+        disabled={busy}
+        showHint={false}
+      />
+      {fullVideoMeta &&
+      !videoDimensionsMatchAspectRatio(
+        fullVideoMeta.width,
+        fullVideoMeta.height,
+        aspectRatio
+      ) ? (
+        <p className="mt-2 text-xs leading-relaxed text-amber-300/80">
+          {t("uploader.aspectRatioMismatchPreviewHint", {
+            width: fullVideoMeta.width,
+            height: fullVideoMeta.height,
+          })}
+        </p>
+      ) : null}
+    </div>
+  );
+
   const handleUpload = async () => {
     if (
       !validateStep("fullWork") ||
@@ -392,6 +832,10 @@ export default function UploaderUploadForm({
     }
     if (!file.size || !Number.isFinite(file.size)) {
       reportError(t("uploader.errorUploadLengthRequired"));
+      return;
+    }
+    if (!title.trim()) {
+      reportError(t("uploader.errorTitleRequired"));
       return;
     }
     if (!description.trim()) {
@@ -416,7 +860,7 @@ export default function UploaderUploadForm({
     setUploadError(null);
     setUploadPhase("creating");
     setUploadPercent(0);
-    setFormError("");
+    setRequiredFieldError(null);
 
     let stagingComplete = false;
     let succeeded = false;
@@ -442,7 +886,7 @@ export default function UploaderUploadForm({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            title: title || file.name,
+            title: title.trim(),
             section,
             aspectRatio,
             uploadLength: file.size,
@@ -673,6 +1117,8 @@ export default function UploaderUploadForm({
       setUploadError(null);
       setUploadPercent(100);
       setUploadComplete(true);
+      clearNamedUploadDraftState(user.uid, draftId);
+      void clearNamedUploadDraftFiles(user.uid, draftId).catch(() => undefined);
       succeeded = true;
       onSuccess({ workId, message: t("uploader.uploadSuccess") });
     } catch (unexpected) {
@@ -744,24 +1190,68 @@ export default function UploaderUploadForm({
         </div>
       </div>
 
-      {formError && (
-        <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-400 text-sm whitespace-pre-wrap break-words">
-          {formError}
+      <div className="mb-6 flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-[#101013] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full ${
+                draftStatus === "error"
+                  ? "bg-red-400"
+                  : draftStatus === "saving"
+                    ? "animate-pulse bg-amber-300"
+                    : "bg-emerald-400"
+              }`}
+            />
+            <p className="text-[13px] font-medium text-white/80">
+              {t(`uploader.draftStatus.${draftStatus}`)}
+            </p>
+          </div>
+          <p className="mt-1 text-[11px] leading-relaxed text-white/35">
+            {draftSavedAt
+              ? t("uploader.draftSavedAt", {
+                  time: new Intl.DateTimeFormat(locale === "ko" ? "ko-KR" : "en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  }).format(draftSavedAt),
+                })
+              : t("uploader.draftSaveHint")}
+          </p>
         </div>
-      )}
+        <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            disabled={!draftReady || busy || uploadComplete}
+            onClick={() => void saveDraftNow()}
+            className="inline-flex h-9 items-center rounded-full border border-white/25 bg-white/[0.025] px-4 text-[12px] font-semibold text-white/85 transition hover:border-white/45 hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+          >
+            {t("uploader.saveDraft")}
+          </button>
+          <button
+            type="button"
+            disabled={!draftReady || busy || uploadComplete}
+            onClick={() => {
+              if (window.confirm(t("uploader.clearDraftConfirm"))) {
+                resetUploadForm(true);
+              }
+            }}
+            className="inline-flex h-9 items-center rounded-full border border-white/10 px-4 text-[12px] font-medium text-white/40 transition hover:border-red-400/35 hover:text-red-300 disabled:opacity-40"
+          >
+            {t("uploader.clearDraft")}
+          </button>
+        </div>
+      </div>
 
-      <div className="lg:grid lg:grid-cols-[minmax(200px,240px)_1fr] lg:gap-8 lg:items-start">
-        <div className="hidden lg:block sticky top-28 self-start">
+      <div className="mb-6 hidden lg:block">
           <UploadWizardStepper
             steps={UPLOAD_STEP_META}
             currentIndex={stepIndex}
             onStepClick={handleStepClick}
             disabled={busy || uploadComplete}
           />
-        </div>
+      </div>
 
-        <div className="min-w-0">
-          <UploaderFormShell
+      <div className="min-w-0">
+        <UploaderFormShell
         layout="stacked"
         footer={
           <UploaderSubmitFooter
@@ -790,22 +1280,65 @@ export default function UploaderUploadForm({
             title={t("uploader.uploadZoneFullWorkTitle")}
             hint={t("uploader.uploadZoneFullWorkHint")}
           >
-            <div className="min-h-[320px] md:min-h-[400px]">
-              <VideoUploadDropzone file={file} onFileChange={setFile} disabled={busy} />
+            <div
+              ref={fullFileRef}
+              className={`scroll-mt-28 rounded-xl ${
+                fieldHasError("fullFile") ? "ring-1 ring-red-400/70" : ""
+              }`}
+            >
+              <div className="min-h-[320px] md:min-h-[400px]">
+                <VideoUploadDropzone
+                  file={file}
+                  onFileChange={(next) => {
+                    setFile(next);
+                    setAspectRatioManuallyChanged(false);
+                    if (next) clearRequiredFieldError("fullFile");
+                  }}
+                  meta={fullVideoMeta}
+                  previewAspectRatio={aspectRatioNumeric(aspectRatio)}
+                  onRemoveFile={(mode) => {
+                    if (mode === "clear-edits") {
+                      resetUploadForm(true);
+                      return;
+                    }
+                    setFile(null);
+                    setAspectRatioManuallyChanged(false);
+                  }}
+                  disabled={busy}
+                />
+              </div>
+              {renderRequiredFieldError("fullFile")}
             </div>
-            <div>
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 md:p-5">
+              {renderAspectRatioControl()}
+            </div>
+            <div ref={titleRef} className="scroll-mt-28">
               <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-title">
-                {t("uploader.uploadTitleLabel")}
+                {t("uploader.uploadTitleLabel")}{" "}
+                <span className="text-xiio-accent" aria-hidden>
+                  *
+                </span>
               </label>
               <input
                 id="upload-title"
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (e.target.value.trim()) clearRequiredFieldError("title");
+                }}
+                required
+                maxLength={200}
                 placeholder={t("uploader.uploadTitlePlaceholder")}
                 disabled={busy}
-                className={`${uploaderInputClass} text-lg font-semibold py-3`}
+                className={`${uploaderInputClass} py-3 text-lg font-semibold ${
+                  fieldHasError("title")
+                    ? "border-red-400/70 ring-1 ring-red-400/25"
+                    : ""
+                }`}
+                aria-invalid={fieldHasError("title")}
               />
+              {renderRequiredFieldError("title")}
             </div>
             {directorLocked ? (
               <div>
@@ -832,7 +1365,7 @@ export default function UploaderUploadForm({
                 />
               </div>
             )}
-            <div>
+            <div ref={descriptionRef} className="scroll-mt-28">
               <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="upload-description">
                 {t("uploader.uploadDescriptionLabel")}{" "}
                 <span className="text-xiio-accent" aria-hidden>
@@ -842,13 +1375,22 @@ export default function UploaderUploadForm({
               <textarea
                 id="upload-description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  if (e.target.value.trim()) clearRequiredFieldError("description");
+                }}
                 rows={4}
                 required
                 placeholder={t("uploader.uploadDescriptionPlaceholder")}
                 disabled={busy}
-                className={`${uploaderInputClass} resize-y min-h-[6rem]`}
+                className={`${uploaderInputClass} min-h-[6rem] resize-y ${
+                  fieldHasError("description")
+                    ? "border-red-400/70 ring-1 ring-red-400/25"
+                    : ""
+                }`}
+                aria-invalid={fieldHasError("description")}
               />
+              {renderRequiredFieldError("description")}
             </div>
           </UploaderFormSection>
         )}
@@ -934,17 +1476,27 @@ export default function UploaderUploadForm({
                 onPendingEmailInvitesChange={setPendingEmailInvites}
               />
             </div>
-            <div>
-              <p className="text-xs text-xiio-muted mb-1">{t("uploader.uploadAspectRatioLabel")}</p>
-              <AspectRatioPicker value={aspectRatio} onChange={setAspectRatio} disabled={busy} />
+            <div
+              ref={thumbnailRef}
+              className={`scroll-mt-28 rounded-xl ${
+                fieldHasError("thumbnail") ? "ring-1 ring-red-400/70" : ""
+              }`}
+            >
+              <ThumbnailUploadField
+                file={thumbnailFile}
+                previewUrl={thumbnailPreview}
+                onFileChange={(next, preview) => {
+                  handleThumbnailChange(next, preview);
+                  if (next) clearRequiredFieldError("thumbnail");
+                }}
+                disabled={busy}
+                error={
+                  fieldHasError("thumbnail")
+                    ? requiredFieldError?.message
+                    : thumbnailFieldError
+                }
+              />
             </div>
-            <ThumbnailUploadField
-              file={thumbnailFile}
-              previewUrl={thumbnailPreview}
-              onFileChange={handleThumbnailChange}
-              disabled={busy}
-              error={thumbnailFieldError}
-            />
             {thumbnailPreview ? (
               <UploaderCropPreviewGrid
                 cropHint={t("uploader.thumbnailCropHint")}
@@ -980,16 +1532,26 @@ export default function UploaderUploadForm({
             title={t("uploader.uploadZonePrologueTitle")}
             hint={t("uploader.uploadZonePrologueHint")}
           >
-            <PrologueUploadChoiceTiles
-              value={prologueChoice}
-              onChange={(choice) => {
-                setPrologueChoice(choice);
-                if (choice === "skip") {
-                  setPrologueFile(null);
-                }
-              }}
-              disabled={busy}
-            />
+            <div
+              ref={prologueChoiceRef}
+              className={`scroll-mt-28 rounded-xl ${
+                fieldHasError("prologueChoice") ? "ring-1 ring-red-400/70" : ""
+              }`}
+            >
+              <PrologueUploadChoiceTiles
+                value={prologueChoice}
+                onChange={(choice) => {
+                  setPrologueChoice(choice);
+                  clearRequiredFieldError("prologueChoice");
+                  if (choice === "skip") {
+                    setPrologueFile(null);
+                    clearRequiredFieldError("prologueFile");
+                  }
+                }}
+                disabled={busy}
+              />
+              {renderRequiredFieldError("prologueChoice")}
+            </div>
             {prologueChoice === "upload" ? (
               <div className="mt-6 space-y-4">
                 <p className="text-xs text-xiio-muted leading-relaxed">
@@ -997,13 +1559,32 @@ export default function UploaderUploadForm({
                     ratio: t(aspectRatioMessageKey(aspectRatio)),
                   })}
                 </p>
-                <div className="min-h-[280px] md:min-h-[320px]">
-                  <VideoUploadDropzone
-                    file={prologueFile}
-                    onFileChange={setPrologueFile}
-                    meta={prologueMeta}
-                    disabled={busy}
-                  />
+                <div
+                  ref={prologueFileRef}
+                  className={`scroll-mt-28 rounded-xl ${
+                    fieldHasError("prologueFile") ? "ring-1 ring-red-400/70" : ""
+                  }`}
+                >
+                  <div className="min-h-[280px] md:min-h-[320px]">
+                    <VideoUploadDropzone
+                      file={prologueFile}
+                      onFileChange={(next) => {
+                        setPrologueFile(next);
+                        if (next) clearRequiredFieldError("prologueFile");
+                      }}
+                      onRemoveFile={(mode) => {
+                        setPrologueFile(null);
+                        if (mode === "clear-edits") {
+                          setPrologueChoice(null);
+                          setPrologueTitle("");
+                          setPrologueDescription("");
+                        }
+                      }}
+                      meta={prologueMeta}
+                      disabled={busy}
+                    />
+                  </div>
+                  {renderRequiredFieldError("prologueFile")}
                 </div>
                 {prologueFile && prologueFileError && (
                   <p className="text-xs text-red-400">{t("uploader.errorPrologueVideoInvalid")}</p>
@@ -1051,15 +1632,34 @@ export default function UploaderUploadForm({
             hint={t("uploader.uploadZonePromoHint")}
           >
             <p className="text-xs text-xiio-muted leading-relaxed">{t("uploader.promoVideoFileHint")}</p>
-            <VideoUploadDropzone
-              file={promoFile}
-              onFileChange={setPromoFile}
-              crop={promoCrop}
-              onCropChange={(next) => setPromoCrop(normalizePromoFrameCrop(next))}
-              meta={promoMeta}
-              showPortraitPreview
-              disabled={busy}
-            />
+            <div
+              ref={promoFileRef}
+              className={`scroll-mt-28 rounded-xl ${
+                fieldHasError("promoFile") ? "ring-1 ring-red-400/70" : ""
+              }`}
+            >
+              <VideoUploadDropzone
+                file={promoFile}
+                onFileChange={(next) => {
+                  setPromoFile(next);
+                  if (next) clearRequiredFieldError("promoFile");
+                }}
+                onRemoveFile={(mode) => {
+                  setPromoFile(null);
+                  setPromoCrop(defaultPromoFrameCrop());
+                  if (mode === "clear-edits") {
+                    setPromoTitle("");
+                    setPromoDescription("");
+                  }
+                }}
+                crop={promoCrop}
+                onCropChange={(next) => setPromoCrop(normalizePromoFrameCrop(next))}
+                meta={promoMeta}
+                showPortraitPreview
+                disabled={busy}
+              />
+              {renderRequiredFieldError("promoFile")}
+            </div>
             {promoFile && promoFileError === "too_small" && (
               <p className="text-xs text-red-400">{t("uploader.errorPromoTooSmall")}</p>
             )}
@@ -1075,13 +1675,21 @@ export default function UploaderUploadForm({
             {promoFile && promoMeta && promoFileError === "too_long" && (
               <p className="text-xs text-red-400">{t("uploader.errorPromoTooLong")}</p>
             )}
-            <PromoShortFields
-              title={promoTitle}
-              onTitleChange={setPromoTitle}
-              description={promoDescription}
-              onDescriptionChange={setPromoDescription}
-              disabled={busy}
-            />
+            <div ref={promoTitleRef} className="scroll-mt-28">
+              <PromoShortFields
+                title={promoTitle}
+                onTitleChange={(next) => {
+                  setPromoTitle(next);
+                  if (next.trim()) clearRequiredFieldError("promoTitle");
+                }}
+                titleError={
+                  fieldHasError("promoTitle") ? requiredFieldError?.message : null
+                }
+                description={promoDescription}
+                onDescriptionChange={setPromoDescription}
+                disabled={busy}
+              />
+            </div>
           </UploaderFormSection>
         )}
 
@@ -1090,6 +1698,9 @@ export default function UploaderUploadForm({
             title={t("uploader.uploadZonePreviewTitle")}
             hint={t("uploader.uploadZonePreviewHint")}
           >
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 md:p-5">
+              {renderAspectRatioControl()}
+            </div>
             <SubmissionSurfacePreviews
               workTitle={title.trim() || promoTitle.trim()}
               liveThumbnailUrl={thumbnailPreview}
@@ -1100,12 +1711,12 @@ export default function UploaderUploadForm({
               frameCrop={promoCrop}
               promoPlaybackUrl={promoPlaybackUrl}
               fullPlaybackUrl={fullPlaybackUrl}
+              fullAspectRatio={aspectRatio}
               ownerUid={user.uid}
             />
           </UploaderFormSection>
         )}
-          </UploaderFormShell>
-        </div>
+        </UploaderFormShell>
       </div>
     </form>
   );

@@ -71,7 +71,11 @@ export async function GET(_request: Request, { params }: Params) {
           if (!userSnap.exists) return null;
           const profile = parseUserProfileDoc(userSnap.data() as Record<string, unknown>);
           const displayName = resolveWorkCreditDisplayName(
-            { displayName: profile.displayName, defaultDirectorName: profile.defaultDirectorName, handle: profile.handle },
+            {
+              displayName: profile.displayName,
+              defaultDirectorName: profile.defaultDirectorName,
+              handle: profile.handle,
+            },
             c.role
           );
           if (!displayName) return null;

@@ -54,6 +54,7 @@ export async function listDiscoverablePeople(
       const hay = [
         handle,
         profile.displayName,
+        profile.defaultDirectorName ?? "",
         profile.headline ?? "",
         profile.bio ?? "",
         ...(profile.crewRoles ?? []),

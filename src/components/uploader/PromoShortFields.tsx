@@ -10,6 +10,7 @@ type Props = {
   onDescriptionChange: (v: string) => void;
   disabled?: boolean;
   showRequiredHeader?: boolean;
+  titleError?: string | null;
 };
 
 export default function PromoShortFields({
@@ -19,6 +20,7 @@ export default function PromoShortFields({
   onDescriptionChange,
   disabled = false,
   showRequiredHeader = false,
+  titleError = null,
 }: Props) {
   const { t } = useTranslations();
 
@@ -44,8 +46,16 @@ export default function PromoShortFields({
           onChange={(e) => onTitleChange(e.target.value)}
           disabled={disabled}
           maxLength={200}
-          className={`${uploaderInputClass} font-semibold`}
+          className={`${uploaderInputClass} font-semibold ${
+            titleError ? "border-red-400/70 ring-1 ring-red-400/25" : ""
+          }`}
+          aria-invalid={Boolean(titleError)}
         />
+        {titleError ? (
+          <p className="mt-2 text-xs leading-relaxed text-red-400" role="alert">
+            {titleError}
+          </p>
+        ) : null}
       </div>
       <div>
         <label className="block text-xs text-xiio-muted mb-1.5" htmlFor="promo-short-description">

@@ -29,6 +29,189 @@ export type SeriesFixture = {
 
 export const SERIES_FIXTURES: SeriesFixture[] = [
   {
+    id: "late-bloom",
+    title: "Late Bloom",
+    synopsis:
+      "A group of young dreamers chase their passions in a city that never slows down. Some bloom early, some bloom late.",
+    genre: "Coming-of-age / Drama",
+    seasons: [
+      {
+        seasonNumber: 1,
+        title: "Season 1",
+        episodes: [
+          {
+            episodeNumber: 1,
+            title: "The City at Night",
+            synopsis: "Mia returns to Seoul with an unfinished film and nowhere certain to stay.",
+            durationMinutes: 32,
+          },
+          {
+            episodeNumber: 2,
+            title: "A Door Left Open",
+            synopsis: "A chance encounter reconnects Mia with the friends she quietly left behind.",
+            durationMinutes: 31,
+          },
+          {
+            episodeNumber: 3,
+            title: "Rushes",
+            synopsis: "Old footage forces the group to remember the night their plans changed.",
+            durationMinutes: 33,
+          },
+          {
+            episodeNumber: 4,
+            title: "Between Takes",
+            synopsis: "The crew reunites for one small shoot, but no one agrees on how the story ends.",
+            durationMinutes: 32,
+          },
+          {
+            episodeNumber: 5,
+            title: "Chapter 5",
+            synopsis: "Mia must confront a decision that could change the future she has been building.",
+            durationMinutes: 32,
+          },
+          {
+            episodeNumber: 6,
+            title: "Second Light",
+            synopsis: "A new opportunity arrives just as the group begins to drift apart again.",
+            durationMinutes: 34,
+          },
+          {
+            episodeNumber: 7,
+            title: "Last Train Home",
+            synopsis: "One long night gives everyone a final chance to say what they avoided all season.",
+            durationMinutes: 31,
+          },
+          {
+            episodeNumber: 8,
+            title: "Bloom",
+            synopsis: "Mia screens the finished film and discovers that arriving late is still arriving.",
+            durationMinutes: 36,
+          },
+        ],
+      },
+      {
+        seasonNumber: 2,
+        title: "Season 2",
+        episodes: [
+          {
+            episodeNumber: 1,
+            title: "After the Screening",
+            synopsis: "A year after the premiere, Mia returns to the city with a new camera and a harder question.",
+            durationMinutes: 34,
+          },
+          {
+            episodeNumber: 2,
+            title: "New Draft",
+            synopsis: "The group agrees to make one more film together, but their lives no longer fit the old roles.",
+            durationMinutes: 32,
+          },
+          {
+            episodeNumber: 3,
+            title: "Borrowed Time",
+            synopsis: "A disappearing location forces the crew to finish a crucial scene before sunrise.",
+            durationMinutes: 35,
+          },
+          {
+            episodeNumber: 4,
+            title: "In Full Bloom",
+            synopsis: "Mia chooses what to keep, what to release, and where the next story should begin.",
+            durationMinutes: 38,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "between-us",
+    title: "Between Us",
+    synopsis:
+      "Two former best friends meet again at a coastal residency and discover that memory has edited their shared past differently.",
+    genre: "Drama / Romance",
+    seasons: [
+      {
+        seasonNumber: 1,
+        title: "Season 1",
+        episodes: [
+          {
+            episodeNumber: 1,
+            title: "Low Tide",
+            synopsis: "Sora arrives at the residency and finds Jiwoo already unpacked in the room next door.",
+            durationMinutes: 28,
+          },
+          {
+            episodeNumber: 2,
+            title: "The Photograph",
+            synopsis: "A photograph neither remembers taking becomes the center of their uneasy reunion.",
+            durationMinutes: 30,
+          },
+          {
+            episodeNumber: 3,
+            title: "Weather Warning",
+            synopsis: "A storm traps the residents inside and turns polite distance into a real conversation.",
+            durationMinutes: 29,
+          },
+          {
+            episodeNumber: 4,
+            title: "What We Kept",
+            synopsis: "Jiwoo reveals why she never answered the last message Sora sent.",
+            durationMinutes: 31,
+          },
+          {
+            episodeNumber: 5,
+            title: "The Way Back",
+            synopsis: "On the final morning, both women must decide what belongs to the past.",
+            durationMinutes: 34,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "sunday-morning",
+    title: "Sunday Morning",
+    synopsis:
+      "Three generations gather for a weekly breakfast where ordinary conversation slowly reveals an extraordinary family history.",
+    genre: "Family / Drama",
+    seasons: [
+      {
+        seasonNumber: 1,
+        title: "Season 1",
+        episodes: [
+          {
+            episodeNumber: 1,
+            title: "Extra Place Setting",
+            synopsis: "An unexpected guest changes the rhythm of the family's Sunday table.",
+            durationMinutes: 27,
+          },
+          {
+            episodeNumber: 2,
+            title: "The Recipe Book",
+            synopsis: "A handwritten recipe opens a story the grandparents have never told.",
+            durationMinutes: 26,
+          },
+          {
+            episodeNumber: 3,
+            title: "After Church",
+            synopsis: "A small lie travels around the table faster than anyone can correct it.",
+            durationMinutes: 28,
+          },
+          {
+            episodeNumber: 4,
+            title: "Noon",
+            synopsis: "When the power goes out, the family stays longer than planned and finally listens.",
+            durationMinutes: 30,
+          },
+          {
+            episodeNumber: 5,
+            title: "Next Sunday",
+            synopsis: "The table looks different, but the ritual continues in a new form.",
+            durationMinutes: 32,
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: "campus-after-dark",
     title: "Campus After Dark",
     synopsis:

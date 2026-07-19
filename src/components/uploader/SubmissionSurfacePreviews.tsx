@@ -10,8 +10,9 @@ import { useTranslations } from "@/context/LocaleContext";
 import { gradientForTitle } from "@/lib/works/catalog-ui";
 import { buildEditorPreviewPromoShort } from "@/lib/works/editor-preview-promo";
 import { promoCropToVideoStyle } from "@/lib/works/promo-crop-interaction";
+import { aspectRatioNumeric } from "@/lib/works/aspect-ratio";
 import type { PromoShort } from "@/types/promoShort";
-import type { PromoFrameCrop } from "@/types/work";
+import type { PromoFrameCrop, VideoAspectRatio } from "@/types/work";
 
 type Props = {
   workTitle: string;
@@ -24,6 +25,7 @@ type Props = {
   frameCrop: PromoFrameCrop;
   promoPlaybackUrl?: string | null;
   fullPlaybackUrl?: string | null;
+  fullAspectRatio?: VideoAspectRatio;
   ownerUid?: string;
   workId?: string;
 };
@@ -56,6 +58,7 @@ export default function SubmissionSurfacePreviews({
   frameCrop,
   promoPlaybackUrl,
   fullPlaybackUrl,
+  fullAspectRatio = "16:9",
   ownerUid,
   workId,
 }: Props) {
@@ -161,7 +164,11 @@ export default function SubmissionSurfacePreviews({
           {fullPlaybackOpen ? (
             <div className="mt-3">
               <p className="text-xs text-xiio-muted mb-2">{t("promoEditor.fullVideoLabel")}</p>
-              <PlaybackVideo src={fullPlaybackUrl} maxHeightClass="max-h-[min(36vh,360px)]" />
+              <PlaybackVideo
+                src={fullPlaybackUrl}
+                aspectRatio={aspectRatioNumeric(fullAspectRatio)}
+                maxHeightClass="max-h-[min(36vh,360px)]"
+              />
             </div>
           ) : null}
         </div>

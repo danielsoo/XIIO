@@ -42,6 +42,9 @@ export async function POST(request: Request, { params }: Params) {
   if (!work.streamUid) {
     return jsonError("not_ready", "본편 영상이 없습니다.", 400);
   }
+  if (!work.title?.trim()) {
+    return jsonError("title_required", "작품 제목을 입력하세요.", 400);
+  }
 
   const promoRefDoc = promoRef(db, session.uid, workId);
   const promoSnap = await promoRefDoc.get();

@@ -29,6 +29,7 @@ export type PeopleProfilePayload = {
     bio?: string;
     openToCollaborate?: boolean;
     collaborationNote?: string;
+    defaultDirectorName?: string;
     profileLink?: string | null;
     followerCount?: number;
     followingCount?: number;

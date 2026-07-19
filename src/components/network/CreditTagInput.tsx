@@ -116,7 +116,6 @@ export default function CreditTagInput({
       };
       setHits(
         (data.items ?? [])
-          .filter((h) => h.uid !== user.uid)
           .map((h) => ({
             uid: h.uid,
             handle: h.handle,
@@ -445,28 +444,37 @@ export default function CreditTagInput({
           <p className="text-xs text-amber-400/90">{t("network.credits.addNoResults")}</p>
         )}
         {hits.length > 0 && (
-          <ul className="rounded-lg border border-white/10 bg-black/30 divide-y divide-white/5">
-            {hits.map((h, i) => {
-              const previewName = resolvedNameForHit(h, role);
-              return (
-                <li key={h.uid}>
-                  <button
-                    type="button"
-                    onClick={() => void addHit(h)}
-                    onMouseEnter={() => setHighlight(i)}
-                    className={`w-full text-left px-3 py-2 text-sm transition ${
-                      i === highlight ? "bg-xiio-accent/20 text-white" : "hover:bg-white/5"
-                    }`}
-                  >
-                    <span className="text-white">@{h.handle}</span>
-                    {previewName ? (
-                      <span className="text-xiio-muted ml-2">{previewName}</span>
-                    ) : null}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="overflow-hidden rounded-lg border border-white/10 bg-black/30">
+            {hits.length > 1 && (
+              <p className="border-b border-white/10 px-3 py-2 text-xs text-xiio-muted" aria-live="polite">
+                {t("network.credits.resultCount", { count: hits.length })}
+              </p>
+            )}
+            <ul className="max-h-64 divide-y divide-white/5 overflow-y-auto overscroll-contain">
+              {hits.map((h, i) => {
+                return (
+                  <li key={h.uid}>
+                    <button
+                      type="button"
+                      onClick={() => void addHit(h)}
+                      onMouseEnter={() => setHighlight(i)}
+                      className={`w-full text-left px-3 py-2 text-sm transition ${
+                        i === highlight ? "bg-xiio-accent/20 text-white" : "hover:bg-white/5"
+                      }`}
+                    >
+                      <span className="block font-medium text-white">{h.displayName}</span>
+                      <span className="mt-0.5 block text-xs text-xiio-muted">
+                        @{h.handle}
+                        {h.defaultDirectorName ? (
+                          <> · {t("network.credits.stageNameLabel")} {h.defaultDirectorName}</>
+                        ) : null}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         )}
       </div>
 

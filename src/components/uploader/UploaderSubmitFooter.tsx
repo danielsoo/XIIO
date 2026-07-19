@@ -37,9 +37,9 @@ export default function UploaderSubmitFooter({
   return (
     <div
       ref={footerRef}
-      className="sticky bottom-0 z-20 -mx-1 px-1 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-xiio-bg/95 backdrop-blur-md border-t border-white/10"
+      className="sticky bottom-0 z-20 -mx-1 border-t border-white/[0.08] bg-xiio-bg/95 px-1 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md"
     >
-      <div className="rounded-2xl border border-white/10 bg-xiio-surface p-4 md:p-6 space-y-4 shadow-lg shadow-black/30">
+      <div className="space-y-4 rounded-xl border border-white/[0.08] bg-[#101013] p-4 md:px-5">
         {uploadError ? (
           <div
             role="alert"
@@ -79,13 +79,13 @@ export default function UploaderSubmitFooter({
           </div>
         ) : null}
 
-        <div className="flex gap-3">
+        <div className="flex justify-end gap-3">
           {stepIndex > 0 ? (
             <button
               type="button"
               onClick={onBack}
               disabled={busy || uploadComplete}
-              className="flex-1 py-3 rounded-xl border border-white/20 text-white hover:bg-white/5 disabled:opacity-40 transition font-medium"
+              className="inline-flex h-11 min-w-32 items-center justify-center rounded-full border border-white/20 px-6 text-[13px] font-semibold text-white/80 transition hover:border-white/40 hover:bg-white/[0.05] hover:text-white disabled:opacity-40"
             >
               {t("common.previous")}
             </button>
@@ -94,9 +94,7 @@ export default function UploaderSubmitFooter({
             type="button"
             onClick={onPrimary}
             disabled={busy || uploadComplete}
-            className={`py-3 rounded-xl bg-xiio-accent hover:bg-xiio-accent-hover disabled:opacity-40 text-white font-semibold transition ${
-              stepIndex === 0 ? "w-full" : "flex-1"
-            }`}
+            className="inline-flex h-11 min-w-36 items-center justify-center rounded-full bg-[#f5f4f2] px-7 text-[13px] font-semibold text-[#0b0b0d] transition hover:bg-white disabled:opacity-40"
           >
             {uploadComplete
               ? t("uploader.uploadRedirecting")

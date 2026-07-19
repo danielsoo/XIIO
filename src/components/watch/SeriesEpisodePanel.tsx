@@ -13,6 +13,7 @@ import {
   watchHref,
 } from "@/lib/works/catalog-ui";
 import { aspectRatioMessageKey } from "@/lib/works/aspect-ratio";
+import { seriesThumbnailClassName } from "@/lib/series/thumbnailPresentation";
 import type { SeriesDetail, SeriesEpisode } from "@/types/series";
 import type { PublicWorkCredit } from "@/types/watch";
 import type { VideoAspectRatio } from "@/types/work";
@@ -27,13 +28,21 @@ type Props = {
   approvedSchoolId?: string;
   approvedSchoolName?: string;
   credits: PublicWorkCredit[];
+  onPlayEpisode?: (episode: SeriesEpisode) => void;
 };
 
 function EpisodeThumb({ episode, className }: { episode: SeriesEpisode; className?: string }) {
   if (episode.thumbnailUrl) {
     return (
       <div className={`relative overflow-hidden ${className ?? ""}`}>
-        <Image src={episode.thumbnailUrl} alt="" fill sizes="320px" className="object-cover" unoptimized />
+        <Image
+          src={episode.thumbnailUrl}
+          alt=""
+          fill
+          sizes="320px"
+          className={seriesThumbnailClassName(episode.thumbnailUrl)}
+          unoptimized
+        />
       </div>
     );
   }
@@ -50,6 +59,7 @@ export default function SeriesEpisodePanel({
   approvedSchoolId,
   approvedSchoolName,
   credits,
+  onPlayEpisode,
 }: Props) {
   const { t } = useTranslations();
   const [seasonIndex, setSeasonIndex] = useState(initialSeasonIndex);
@@ -151,7 +161,20 @@ export default function SeriesEpisodePanel({
             <p className="text-[13px] text-white/60 mt-2.5 leading-relaxed">{episode.synopsis}</p>
 
             <div className="flex items-center gap-2 mt-4">
-              {isNowPlaying || !episode.workId ? (
+              {episode.videoUrl && onPlayEpisode ? (
+                <button
+                  type="button"
+                  onClick={() => onPlayEpisode(episode)}
+                  className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[13px] rounded-full px-4 py-2 hover:bg-white/90 transition"
+                >
+                  <IconPlay className="w-3 h-3" />
+                  Watch Episode
+                </button>
+              ) : !episode.workId ? (
+                <span className="inline-flex items-center gap-2 bg-white/10 text-white/60 font-semibold text-[13px] rounded-full px-4 py-2 cursor-default">
+                  Coming Soon
+                </span>
+              ) : isNowPlaying ? (
                 <span className="inline-flex items-center gap-2 bg-white/10 text-white/60 font-semibold text-[13px] rounded-full px-4 py-2 cursor-default">
                   <IconPlay className="w-3 h-3" />
                   Now Playing
@@ -197,7 +220,7 @@ export default function SeriesEpisodePanel({
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className={`group relative shrink-0 w-[320px] aspect-[16/10] rounded-xl border border-white/[0.07] cursor-pointer overflow-hidden ${gradientForTitle(`${series.title}-bts-${i}`)}`}
+              className={`group relative shrink-0 w-[320px] aspect-video rounded-xl border border-white/[0.07] cursor-pointer overflow-hidden ${gradientForTitle(`${series.title}-bts-${i}`)}`}
             >
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                 <div className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center">
