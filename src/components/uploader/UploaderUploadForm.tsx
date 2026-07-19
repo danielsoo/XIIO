@@ -1241,40 +1241,42 @@ export default function UploaderUploadForm({
         </div>
       </div>
 
-      <div className="mb-6 hidden lg:block">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[15.5rem_minmax(0,1fr)] lg:items-start xl:grid-cols-[17.5rem_minmax(0,1fr)] xl:gap-8">
+        <div className="sticky top-24 hidden self-start lg:block">
           <UploadWizardStepper
             steps={UPLOAD_STEP_META}
             currentIndex={stepIndex}
             onStepClick={handleStepClick}
             disabled={busy || uploadComplete}
+            orientation="vertical"
           />
-      </div>
+        </div>
 
-      <div className="min-w-0">
-        <UploaderFormShell
-        layout="stacked"
-        footer={
-          <UploaderSubmitFooter
-            footerRef={footerRef}
-            busy={busy}
-            uploadComplete={uploadComplete}
-            uploadPercent={uploadPercent}
-            uploadPhase={uploadPhase}
-            uploadError={uploadError}
-            stepIndex={stepIndex}
-            isLastStep={isLastStep}
-            onBack={handleBack}
-            onPrimary={() => {
-              if (busy || uploadComplete) return;
-              if (isLastStep) {
-                void handleUpload();
-                return;
-              }
-              handleNext();
-            }}
-          />
-        }
-      >
+        <div className="min-w-0">
+          <UploaderFormShell
+            layout="stacked"
+            footer={
+              <UploaderSubmitFooter
+                footerRef={footerRef}
+                busy={busy}
+                uploadComplete={uploadComplete}
+                uploadPercent={uploadPercent}
+                uploadPhase={uploadPhase}
+                uploadError={uploadError}
+                stepIndex={stepIndex}
+                isLastStep={isLastStep}
+                onBack={handleBack}
+                onPrimary={() => {
+                  if (busy || uploadComplete) return;
+                  if (isLastStep) {
+                    void handleUpload();
+                    return;
+                  }
+                  handleNext();
+                }}
+              />
+            }
+          >
         {currentStep === "fullWork" && (
           <UploaderFormSection
             title={t("uploader.uploadZoneFullWorkTitle")}
@@ -1716,7 +1718,8 @@ export default function UploaderUploadForm({
             />
           </UploaderFormSection>
         )}
-        </UploaderFormShell>
+          </UploaderFormShell>
+        </div>
       </div>
     </form>
   );
