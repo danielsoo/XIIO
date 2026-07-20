@@ -19,13 +19,22 @@ export async function POST(request: Request, { params }: Params) {
   const { session } = auth;
   const { workId } = await params;
 
-  let body: { frameCrop?: unknown };
+  let body: {
+    frameCrop?: unknown;
+    trimRange?: { startSec?: unknown; endSec?: unknown } | null;
+  };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     body = {};
   }
   const frameCrop = normalizePromoFrameCrop(body.frameCrop);
+  const trimRange =
+    body.trimRange &&
+    typeof body.trimRange.startSec === "number" &&
+    typeof body.trimRange.endSec === "number"
+      ? { startSec: body.trimRange.startSec, endSec: body.trimRange.endSec }
+      : null;
 
   const db = await getDbOrNull();
   if (!db) return jsonError("admin_not_configured", "서버 DB를 사용할 수 없습니다.", 503);
@@ -34,7 +43,7 @@ export async function POST(request: Request, { params }: Params) {
   if (profileBlock) return profileBlock;
 
   try {
-    const result = await beginPromoStreamUpload(db, session.uid, workId, frameCrop);
+    const result = await beginPromoStreamUpload(db, session.uid, workId, frameCrop, trimRange);
     return NextResponse.json({ workId, ...result });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

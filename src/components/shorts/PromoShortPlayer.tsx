@@ -20,6 +20,7 @@ import { useElementFullscreen } from "@/hooks/useElementFullscreen";
 import { usePromoDescriptionExpand } from "@/hooks/usePromoDescriptionExpand";
 import { useRecordEngagementView } from "@/hooks/useRecordEngagementView";
 import { isLongDescription } from "@/lib/works/description";
+import { promoCropToVideoStyle } from "@/lib/works/promo-crop-interaction";
 import { watchHref as workWatchHref } from "@/lib/works/catalog-ui";
 import type { PromoShort } from "@/types/promoShort";
 
@@ -314,6 +315,7 @@ function PlayerChrome({
   const [reportOpen, setReportOpen] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [videoSourceSize, setVideoSourceSize] = useState({ width: 0, height: 0 });
   const hasBeenReadyRef = useRef(false);
   const readyItemIdRef = useRef<string | null>(null);
 
@@ -330,6 +332,7 @@ function PlayerChrome({
       hasBeenReadyRef.current = false;
     }
     setVideoFailed(false);
+    setVideoSourceSize({ width: 0, height: 0 });
     if (!hasBeenReadyRef.current) {
       setVideoReady(false);
     }
@@ -484,11 +487,16 @@ function PlayerChrome({
     fixedPortraitFrame || isCarouselCenterEmbed ? "object-cover" : "object-contain";
   const videoFrameStyle =
     item.frameCrop && (fixedPortraitFrame || isCarouselCenterEmbed)
-      ? {
-          objectPosition: `${item.frameCrop.focalX}% ${item.frameCrop.focalY}%`,
-          transform: `scale(${item.frameCrop.zoom})`,
-          transformOrigin: `${item.frameCrop.focalX}% ${item.frameCrop.focalY}%`,
-        }
+      ? promoCropToVideoStyle(
+          item.frameCrop,
+          videoSourceSize.width > 0 && videoSourceSize.height > 0
+            ? {
+                width: videoSourceSize.width,
+                height: videoSourceSize.height,
+                frameAspect: 9 / 16,
+              }
+            : undefined
+        )
       : undefined;
 
   const overlayBandClass = compact
@@ -706,6 +714,7 @@ function PlayerChrome({
             }`}
             loading="eager"
             decoding="async"
+            style={videoFrameStyle}
           />
         )}
         {videoFailed && item.thumbnailUrl && !isTeaser ? (
@@ -713,6 +722,7 @@ function PlayerChrome({
             src={item.thumbnailUrl}
             alt=""
             className={`absolute inset-0 w-full h-full object-cover ${videoObjectClass}`}
+            style={videoFrameStyle}
           />
         ) : (
           <StreamHlsVideo
@@ -731,6 +741,12 @@ function PlayerChrome({
             preferHighStart={isTeaser}
             autoPlay={shouldPlay}
             onReady={handleVideoReady}
+            onLoadedMetadata={(event) => {
+              const { videoWidth, videoHeight } = event.currentTarget;
+              if (videoWidth > 0 && videoHeight > 0) {
+                setVideoSourceSize({ width: videoWidth, height: videoHeight });
+              }
+            }}
             onEnded={
               onPlaybackEnded && isActive ? () => onPlaybackEnded() : undefined
             }

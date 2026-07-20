@@ -24,7 +24,13 @@ export async function PATCH(request: Request, { params }: Params) {
 
   let body: {
     full?: { path?: string; bytes?: number; contentType?: string };
-    promo?: { path?: string; bytes?: number; contentType?: string };
+    promo?: {
+      path?: string;
+      bytes?: number;
+      contentType?: string;
+      trimStartSec?: number;
+      trimEndSec?: number;
+    };
     prologue?: { path?: string; bytes?: number; contentType?: string };
   };
   try {
@@ -69,6 +75,23 @@ export async function PATCH(request: Request, { params }: Params) {
     next.promoPath = path;
     if (typeof body.promo.bytes === "number") next.promoBytes = body.promo.bytes;
     if (body.promo.contentType) next.promoContentType = body.promo.contentType;
+    const hasTrimStart = typeof body.promo.trimStartSec === "number";
+    const hasTrimEnd = typeof body.promo.trimEndSec === "number";
+    if (hasTrimStart !== hasTrimEnd) {
+      return jsonError("invalid_promo_trim", "쇼츠 자르기 시작과 끝 시간을 모두 지정해 주세요.", 400);
+    }
+    if (hasTrimStart && hasTrimEnd) {
+      const start = body.promo.trimStartSec as number;
+      const end = body.promo.trimEndSec as number;
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end <= start) {
+        return jsonError("invalid_promo_trim", "쇼츠 자르기 구간이 올바르지 않습니다.", 400);
+      }
+      next.promoTrimStartSec = start;
+      next.promoTrimEndSec = end;
+    } else {
+      delete next.promoTrimStartSec;
+      delete next.promoTrimEndSec;
+    }
   }
 
   if (body.prologue?.path) {

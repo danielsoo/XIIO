@@ -31,6 +31,10 @@ export type WorkVideoStaging = {
   fullContentType?: string;
   promoContentType?: string;
   prologueContentType?: string;
+  /** Optional source range used when a promo upload is longer than 120 seconds. */
+  promoTrimStartSec?: number;
+  /** Optional source range used when a promo upload is longer than 120 seconds. */
+  promoTrimEndSec?: number;
   updatedAt?: unknown;
 };
 
@@ -158,6 +162,12 @@ export type PromoShortDoc = {
   clipEndSec?: number;
   durationSec?: number;
   streamError?: string | null;
+  /** Temporary long source uploaded to Stream before the final <=120s clip is created. */
+  sourceStreamUid?: string;
+  sourceStreamStatus?: StreamStatus;
+  sourceClipStartSec?: number;
+  sourceClipEndSec?: number;
+  sourceClipStatus?: "creating" | "processing" | "error";
   title?: string;
   description?: string;
   thumbnailUrl?: string | null;

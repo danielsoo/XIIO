@@ -16,6 +16,7 @@ import UploadWizardStepper, {
 import { uploaderInputClass } from "@/components/uploader/uploaderFormStyles";
 import ThumbnailUploadField from "@/components/uploader/ThumbnailUploadField";
 import VideoUploadDropzone from "@/components/uploader/VideoUploadDropzone";
+import type { PromoTrimRange } from "@/lib/works/promo-clip";
 import WorkTagInput from "@/components/uploader/WorkTagInput";
 import SchoolPicker, { type SchoolPickerValue } from "@/components/uploader/SchoolPicker";
 import CreditTagInput, {
@@ -56,6 +57,8 @@ import {
   validatePromoThumbnailFile,
 } from "@/lib/works/promoThumbnailUpload";
 import { getPromoFileValidationError } from "@/lib/works/promo-file-validation";
+import { validatePromoClipRange } from "@/lib/works/promo-clip";
+import { PROMO_MAX_DURATION_SEC } from "@/lib/works/promo-video";
 import { getPrologueFileValidationError } from "@/lib/works/prologue-file-validation";
 import PrologueUploadChoiceTiles, {
   type PrologueUploadChoice,
@@ -148,6 +151,7 @@ type UploadDraftState = {
   promoCrop: PromoFrameCrop;
   promoTitle: string;
   promoDescription: string;
+  promoTrimRange: PromoTrimRange | null;
 };
 
 type DraftStatus = "idle" | "saving" | "saved" | "restored" | "error";
@@ -159,6 +163,7 @@ type RequiredFieldTarget =
   | "prologueChoice"
   | "prologueFile"
   | "promoFile"
+  | "promoTrim"
   | "promoTitle";
 
 export default function UploaderUploadForm({
@@ -191,6 +196,7 @@ export default function UploaderUploadForm({
   const [prologueDescription, setPrologueDescription] = useState("");
   const [promoFile, setPromoFile] = useState<File | null>(null);
   const promoMeta = useVideoFileMetadata(promoFile);
+  const [promoTrimRange, setPromoTrimRange] = useState<PromoTrimRange | null>(null);
   const [promoCrop, setPromoCrop] = useState<PromoFrameCrop>(defaultPromoFrameCrop());
   const [title, setTitle] = useState("");
   const [section, setSection] = useState<WorkSection>("movies");
@@ -255,6 +261,7 @@ export default function UploaderUploadForm({
       promoCrop,
       promoTitle,
       promoDescription,
+      promoTrimRange,
     }),
     [
       stepIndex,
@@ -276,6 +283,7 @@ export default function UploaderUploadForm({
       promoCrop,
       promoTitle,
       promoDescription,
+      promoTrimRange,
     ]
   );
 
@@ -348,6 +356,7 @@ export default function UploaderUploadForm({
           setPromoCrop(normalizePromoFrameCrop(draft.promoCrop));
           setPromoTitle(draft.promoTitle ?? "");
           setPromoDescription(draft.promoDescription ?? "");
+          setPromoTrimRange(draft.promoTrimRange ?? null);
           setDraftSavedAt(stored.savedAt);
         }
 
@@ -459,6 +468,7 @@ export default function UploaderUploadForm({
       setPrologueTitle("");
       setPrologueDescription("");
       setPromoFile(null);
+      setPromoTrimRange(null);
       setPromoCrop(defaultPromoFrameCrop());
       setTitle("");
       setSection("movies");
@@ -542,6 +552,19 @@ export default function UploaderUploadForm({
   }, [title, promoTitle]);
 
   const promoFileError = getPromoFileValidationError(Boolean(promoFile), promoMeta);
+  const promoNeedsTrim = Boolean(
+    promoMeta && promoMeta.duration > PROMO_MAX_DURATION_SEC
+  );
+  const promoTrimError =
+    promoNeedsTrim && promoTrimRange && promoMeta
+      ? validatePromoClipRange(
+          promoTrimRange.startSec,
+          promoTrimRange.endSec,
+          promoMeta.duration
+        )
+      : promoNeedsTrim
+        ? "invalid_clip"
+        : null;
   const prologueFileError = getPrologueFileValidationError(
     Boolean(prologueFile),
     prologueMeta
@@ -554,6 +577,22 @@ export default function UploaderUploadForm({
     }
     setPromoCrop((prev) => normalizePromoFrameCrop(prev));
   }, [promoFile, promoMeta]);
+
+  useEffect(() => {
+    if (!promoMeta || promoMeta.duration <= PROMO_MAX_DURATION_SEC) {
+      setPromoTrimRange(null);
+      return;
+    }
+    setPromoTrimRange((current) => {
+      if (
+        current &&
+        !validatePromoClipRange(current.startSec, current.endSec, promoMeta.duration)
+      ) {
+        return current;
+      }
+      return { startSec: 0, endSec: PROMO_MAX_DURATION_SEC };
+    });
+  }, [promoMeta]);
 
   useEffect(() => {
     if (!file) {
@@ -594,6 +633,8 @@ export default function UploaderUploadForm({
       case "prologueFile":
         return prologueFileRef;
       case "promoFile":
+        return promoFileRef;
+      case "promoTrim":
         return promoFileRef;
       case "promoTitle":
         return promoTitleRef;
@@ -690,9 +731,11 @@ export default function UploaderUploadForm({
           return showRequiredFieldError("promoFile", t("uploader.errorPromoTooShort"));
         }
         if (promoFileError === "too_long") {
-          return showRequiredFieldError("promoFile", t("uploader.errorPromoTooLong"));
+          if (promoTrimError) {
+            return showRequiredFieldError("promoTrim", t("uploader.errorPromoTrimInvalid"));
+          }
         }
-        if (promoFileError) {
+        if (promoFileError && promoFileError !== "too_long") {
           return showRequiredFieldError("promoFile", t("uploader.errorPromoVideoInvalid"));
         }
         if (!promoTitle.trim()) {
@@ -1018,6 +1061,12 @@ export default function UploaderUploadForm({
             path: promoStaged.path,
             bytes: promoStaged.bytes,
             contentType: promoStaged.contentType,
+            ...(promoNeedsTrim && promoTrimRange
+              ? {
+                  trimStartSec: promoTrimRange.startSec,
+                  trimEndSec: promoTrimRange.endSec,
+                }
+              : {}),
           },
         });
         setUploadPercent(uploadPercentForPhase("finalizing"));
@@ -1100,6 +1149,7 @@ export default function UploaderUploadForm({
           prologueFile: prologueChoice === "upload" ? prologueFile : null,
           promoFile,
           includePrologue: prologueChoice === "upload",
+          promoTrimRange: promoNeedsTrim ? promoTrimRange : null,
           onProgress: (p) => applySubmitProgress(p, setUploadPhase, setUploadPercent),
         });
         setUploadPercent(100);
@@ -1520,6 +1570,8 @@ export default function UploaderUploadForm({
                     embedded
                     src={thumbnailPreview}
                     crop={thumbnailCrop}
+                    sourceWidth={thumbnailImageMeta?.width}
+                    sourceHeight={thumbnailImageMeta?.height}
                     title={t("uploader.catalogThumbnailPreviewTitle")}
                     hint={t("uploader.catalogThumbnailPreviewHint")}
                   />
@@ -1644,10 +1696,12 @@ export default function UploaderUploadForm({
                 file={promoFile}
                 onFileChange={(next) => {
                   setPromoFile(next);
+                  setPromoTrimRange(null);
                   if (next) clearRequiredFieldError("promoFile");
                 }}
                 onRemoveFile={(mode) => {
                   setPromoFile(null);
+                  setPromoTrimRange(null);
                   setPromoCrop(defaultPromoFrameCrop());
                   if (mode === "clear-edits") {
                     setPromoTitle("");
@@ -1659,6 +1713,14 @@ export default function UploaderUploadForm({
                 meta={promoMeta}
                 showPortraitPreview
                 disabled={busy}
+                trimRange={promoNeedsTrim ? promoTrimRange : null}
+                onTrimRangeChange={(next) => {
+                  setPromoTrimRange(next);
+                  clearRequiredFieldError("promoTrim");
+                }}
+                trimError={
+                  fieldHasError("promoTrim") ? requiredFieldError?.message : null
+                }
               />
               {renderRequiredFieldError("promoFile")}
             </div>
@@ -1673,9 +1735,6 @@ export default function UploaderUploadForm({
             )}
             {promoFile && promoMeta && promoFileError === "too_short" && (
               <p className="text-xs text-red-400">{t("uploader.errorPromoTooShort")}</p>
-            )}
-            {promoFile && promoMeta && promoFileError === "too_long" && (
-              <p className="text-xs text-red-400">{t("uploader.errorPromoTooLong")}</p>
             )}
             <div ref={promoTitleRef} className="scroll-mt-28">
               <PromoShortFields
@@ -1712,6 +1771,7 @@ export default function UploaderUploadForm({
               director={(directorLocked ? lockedDirectorName : director).trim()}
               frameCrop={promoCrop}
               promoPlaybackUrl={promoPlaybackUrl}
+              promoTrimRange={promoNeedsTrim ? promoTrimRange : null}
               fullPlaybackUrl={fullPlaybackUrl}
               fullAspectRatio={aspectRatio}
               ownerUid={user.uid}

@@ -1,5 +1,6 @@
 import { uploadFileViaTus } from "@/lib/streamTusUpload";
 import { fetchStagingFile } from "@/lib/works/work-video-staging";
+import type { PromoTrimRange } from "@/lib/works/promo-clip";
 import type { PromoFrameCrop } from "@/types/work";
 
 export type SubmitProgressPhase =
@@ -81,6 +82,7 @@ export async function submitStagedWorkForReview(opts: {
   fullFile?: File | null;
   prologueFile?: File | null;
   promoFile?: File | null;
+  promoTrimRange?: PromoTrimRange | null;
   includePrologue?: boolean;
   onProgress?: (p: SubmitProgress) => void;
 }): Promise<void> {
@@ -153,7 +155,7 @@ export async function submitStagedWorkForReview(opts: {
     error?: string;
   }>(token, `/api/me/works/${workId}/promo/stream-upload-url`, {
     method: "POST",
-    body: JSON.stringify({ frameCrop }),
+    body: JSON.stringify({ frameCrop, trimRange: opts.promoTrimRange ?? null }),
   });
 
   if (!promoSession.ok || !promoSession.data.tusEndpoint) {

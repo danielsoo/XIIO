@@ -98,6 +98,28 @@ export function cropToFrameRect(
   return { left, top, width: frameW, height: frameH };
 }
 
+/**
+ * Convert the editor's focal-point crop into CSS object-position alignment.
+ *
+ * object-position percentages describe how the *remaining overflow* is aligned,
+ * not a point in the source image. They only equal focalX/focalY at the center.
+ */
+export function cropToObjectPosition(
+  crop: PromoFrameCropPure,
+  source: Size,
+  frameAspect: number = PORTRAIT_FRAME_ASPECT
+): { x: number; y: number } {
+  if (source.width <= 0 || source.height <= 0) return { x: 50, y: 50 };
+  const display: Rect = { left: 0, top: 0, width: source.width, height: source.height };
+  const frame = cropToFrameRect(crop, display, frameAspect);
+  const availableX = Math.max(0, source.width - frame.width);
+  const availableY = Math.max(0, source.height - frame.height);
+  return {
+    x: availableX > 1e-6 ? clampPercent((frame.left / availableX) * 100) : 50,
+    y: availableY > 1e-6 ? clampPercent((frame.top / availableY) * 100) : 50,
+  };
+}
+
 export function frameCenterToCrop(
   centerX: number,
   centerY: number,

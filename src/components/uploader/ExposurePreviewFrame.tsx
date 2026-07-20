@@ -12,6 +12,8 @@ type Props = {
   crop?: PromoFrameCrop;
   innerAspect?: InnerAspect;
   media?: MediaType;
+  sourceWidth?: number;
+  sourceHeight?: number;
 };
 
 export default function ExposurePreviewFrame({
@@ -19,8 +21,17 @@ export default function ExposurePreviewFrame({
   crop,
   innerAspect = "16/9",
   media = "image",
+  sourceWidth,
+  sourceHeight,
 }: Props) {
-  const mediaStyle: CSSProperties | undefined = crop ? promoCropToVideoStyle(crop) : undefined;
+  const frameAspect = innerAspect === "9/16" ? 9 / 16 : 16 / 9;
+  const source =
+    sourceWidth && sourceHeight
+      ? { width: sourceWidth, height: sourceHeight, frameAspect }
+      : undefined;
+  const mediaStyle: CSSProperties | undefined = crop
+    ? promoCropToVideoStyle(crop, source)
+    : undefined;
 
   const mediaClassName = "absolute inset-0 w-full h-full object-cover";
 

@@ -4,6 +4,7 @@ import { jsonError, requireUser } from "@/lib/server/api-auth";
 import { parseRevisionReviewStatus } from "@/lib/server/revision-parse";
 import {
   syncPromoRevisionStreamStatusIfNeeded,
+  syncPromoSourceStreamStatusIfNeeded,
   syncPromoStreamStatusIfNeeded,
   syncWorkStreamStatusIfNeeded,
 } from "@/lib/server/sync-stream-status";
@@ -18,7 +19,7 @@ import {
   worksCol,
 } from "@/lib/server/works";
 import { normalizePromoFrameCrop } from "@/lib/works/promo-crop";
-import { PROMO_SHORT_DOC_ID } from "@/types/work";
+import { PROMO_SHORT_DOC_ID, type StreamStatus } from "@/types/work";
 
 type Params = { params: Promise<{ workId: string }> };
 
@@ -59,7 +60,23 @@ export async function GET(request: Request, { params }: Params) {
   let pendingRevisionPlayback: string | undefined;
 
   if (promoSnap.exists) {
-    const raw = promoSnap.data() as Record<string, unknown>;
+    let raw = promoSnap.data() as Record<string, unknown>;
+    const sourceStreamUid =
+      typeof raw.sourceStreamUid === "string" ? raw.sourceStreamUid.trim() : "";
+    const sourceStreamStatus = raw.sourceStreamStatus as StreamStatus | undefined;
+    if (sourceStreamUid && sourceStreamStatus && sourceStreamStatus !== "error") {
+      await syncPromoSourceStreamStatusIfNeeded(
+        db,
+        session.uid,
+        workId,
+        sourceStreamUid,
+        sourceStreamStatus
+      );
+      const refreshedPromoSnap = await promoRef(db, session.uid, workId).get();
+      if (refreshedPromoSnap.exists) {
+        raw = refreshedPromoSnap.data() as Record<string, unknown>;
+      }
+    }
     let p = parsePromoDoc(raw);
     if (p.streamUid && p.streamStatus && p.streamStatus !== "ready" && p.streamStatus !== "error") {
       const synced = await syncPromoStreamStatusIfNeeded(

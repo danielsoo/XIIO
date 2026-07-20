@@ -5,6 +5,7 @@ import { getAdminDb } from "@/lib/server/firebase-admin";
 import { mapWebhookStreamStatus } from "@/lib/works/constants";
 import { finalizePromoStreamIfReady } from "@/lib/server/promo-stream-ready";
 import { finalizePrologueStreamIfReady } from "@/lib/server/prologue-stream-ready";
+import { materializePromoSourceClipIfReady } from "@/lib/server/promo-source-clip";
 import {
   isModerationKind,
   scheduleContentModerationByStreamUid,
@@ -35,6 +36,22 @@ async function applyStreamStatus(
   workId: string,
   kind: string
 ) {
+  if (kind === "promo_source") {
+    await promoRef(db, xiioUid, workId).set(
+      {
+        sourceStreamUid: streamUid,
+        sourceStreamStatus: streamStatus,
+        streamStatus: streamStatus === "error" ? "error" : "processing",
+        ...(streamStatus === "error" ? { streamError: "promo_source_upload_failed" } : {}),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    if (streamStatus === "ready") {
+      await materializePromoSourceClipIfReady(db, xiioUid, workId, streamUid);
+    }
+    return;
+  }
   if (kind === "promo_revision") {
     await promoRef(db, xiioUid, workId).set(
       {

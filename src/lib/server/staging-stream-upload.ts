@@ -3,6 +3,7 @@ import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { parseWorkDoc, prologueRef, promoRef, worksCol } from "@/lib/server/works";
 import { normalizePromoFrameCrop } from "@/lib/works/promo-crop";
 import { hasCompleteVideoStaging } from "@/lib/works/work-staging-ready";
+import { validatePromoClipRange } from "@/lib/works/promo-clip";
 import type { PromoFrameCrop } from "@/types/work";
 
 export async function beginFullStreamUpload(
@@ -51,7 +52,8 @@ export async function beginPromoStreamUpload(
   db: Firestore,
   uid: string,
   workId: string,
-  frameCrop: PromoFrameCrop
+  frameCrop: PromoFrameCrop,
+  requestedTrim?: { startSec: number; endSec: number } | null
 ): Promise<{ tusEndpoint: string; streamUid: string; uploadLength: number }> {
   if (!isStreamConfigured()) throw new Error("stream_not_configured");
 
@@ -69,22 +71,30 @@ export async function beginPromoStreamUpload(
     ? (promoSnap.data() as Record<string, unknown>)
     : null;
   const oldUid = existing?.streamUid as string | undefined;
-  if (oldUid) {
+  const oldSourceUid = existing?.sourceStreamUid as string | undefined;
+  for (const uidToDelete of new Set([oldUid, oldSourceUid].filter(Boolean) as string[])) {
     try {
-      await deleteStreamVideo(oldUid);
+      await deleteStreamVideo(uidToDelete);
     } catch {
       /* ignore */
     }
   }
 
   const crop = normalizePromoFrameCrop(frameCrop);
+  const trimStart = requestedTrim?.startSec ?? work.videoStaging.promoTrimStartSec;
+  const trimEnd = requestedTrim?.endSec ?? work.videoStaging.promoTrimEndSec;
+  const hasTrim = typeof trimStart === "number" && typeof trimEnd === "number";
+  if (hasTrim) {
+    const trimError = validatePromoClipRange(trimStart, trimEnd);
+    if (trimError) throw new Error(trimError);
+  }
 
   const upload = await createTusDirectUpload({
     uploadLength,
     meta: {
       xiio_uid: uid,
       xiio_work_id: workId,
-      xiio_kind: "promo",
+      xiio_kind: hasTrim ? "promo_source" : "promo",
     },
   });
 
@@ -92,8 +102,13 @@ export async function beginPromoStreamUpload(
   await promoDocRef.set(
     {
       platformStatus: "draft",
-      streamUid: upload.uid,
+      streamUid: hasTrim ? FieldValue.delete() : upload.uid,
       streamStatus: "uploading",
+      sourceStreamUid: hasTrim ? upload.uid : FieldValue.delete(),
+      sourceStreamStatus: hasTrim ? "uploading" : FieldValue.delete(),
+      sourceClipStartSec: hasTrim ? trimStart : FieldValue.delete(),
+      sourceClipEndSec: hasTrim ? trimEnd : FieldValue.delete(),
+      sourceClipStatus: FieldValue.delete(),
       title: draft?.title ?? work.title,
       description: draft?.description ?? work.description ?? null,
       thumbnailUrl: draft?.thumbnailUrl ?? null,

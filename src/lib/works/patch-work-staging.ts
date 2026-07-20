@@ -4,7 +4,13 @@ export async function patchWorkStagingMeta(
   workId: string,
   payload: {
     full?: { path: string; bytes: number; contentType: string };
-    promo?: { path: string; bytes: number; contentType: string };
+    promo?: {
+      path: string;
+      bytes: number;
+      contentType: string;
+      trimStartSec?: number;
+      trimEndSec?: number;
+    };
     prologue?: { path: string; bytes: number; contentType: string };
   }
 ): Promise<void> {

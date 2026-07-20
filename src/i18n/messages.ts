@@ -1498,13 +1498,25 @@ export const messages = {
       promoRequiredHint:
         "홈·숏츠 피드용 쇼츠 영상을 별도로 올립니다. 가로/세로 모두 가능하며, 업로드 후 9:16으로 노출되도록 프레임을 조정할 수 있습니다.",
       promoVideoFileHint:
-        "영상은 가로·세로 모두 업로드 가능합니다. 길이 3~120초, 최소 한 변 360px 이상이어야 하며, 아래에서 쇼츠(9:16) 노출 프레임을 조정하세요.",
+        "영상은 가로·세로 모두 업로드 가능합니다. 120초보다 긴 영상은 원하는 구간을 최대 120초로 잘라 사용할 수 있습니다.",
       errorPromoVideoRequired: "쇼츠 영상 파일을 선택해 주세요.",
       errorPromoVideoLoading: "영상 정보를 읽는 중입니다. 잠시 후 다시 시도해 주세요.",
       errorPromoNotPortrait: "쇼츠는 세로 영상(9:16에 가까운 비율)만 업로드할 수 있습니다.",
       errorPromoTooSmall: "쇼츠 영상은 가로/세로 중 짧은 변이 360px 이상이어야 합니다.",
       errorPromoTooShort: "쇼츠 영상은 3초 이상이어야 합니다.",
       errorPromoTooLong: "쇼츠 영상은 최대 120초입니다.",
+      promoTrimTitle: "쇼츠 구간 자르기",
+      promoTrimRequiredBadge: "최대 120초",
+      promoTrimHint:
+        "원본 영상({duration})에서 쇼츠로 사용할 구간을 선택하세요. 원본은 그대로 두고 선택한 구간만 최종 영상으로 생성합니다.",
+      promoTrimSelected: "선택 길이",
+      promoTrimStart: "시작 지점",
+      promoTrimEnd: "끝 지점",
+      promoTrimUseCurrentStart: "현재 재생 위치를 시작으로",
+      promoTrimUseCurrentEnd: "현재 재생 위치를 끝으로",
+      promoTrimRangeSummary: "{start}부터 {end}까지 사용",
+      promoTrimPreview: "선택 구간 미리보기",
+      errorPromoTrimInvalid: "3초 이상, 120초 이하의 구간을 선택해 주세요.",
       errorPromoVideoInvalid: "쇼츠 영상 파일을 확인해 주세요.",
       promoSourceMeta: "{width}x{height} · {sec}초",
       promoCropHint:
@@ -3396,13 +3408,25 @@ export const messages = {
       promoRequiredHint:
         "Upload a separate promo video for the home/shorts feed. Landscape and portrait are both allowed, and you can adjust the 9:16 framing before submit.",
       promoVideoFileHint:
-        "Landscape or portrait videos are accepted. Duration must be 3–120 seconds and the shorter side must be at least 360px. Adjust the visible 9:16 shorts frame below.",
+        "Landscape and portrait videos are accepted. If a video is longer than 120 seconds, you can trim a segment up to 120 seconds.",
       errorPromoVideoRequired: "Choose a promo short video file.",
       errorPromoVideoLoading: "Reading video metadata… try again in a moment.",
       errorPromoNotPortrait: "Promo shorts must be portrait (near 9:16).",
       errorPromoTooSmall: "Promo video must be at least 360px on its shorter side.",
       errorPromoTooShort: "Promo video must be at least 3 seconds.",
       errorPromoTooLong: "Promo video must be 120 seconds or less.",
+      promoTrimTitle: "Trim promo segment",
+      promoTrimRequiredBadge: "120s max",
+      promoTrimHint:
+        "Choose the segment to use from the {duration} source. The source stays intact and only the selected range becomes the final promo.",
+      promoTrimSelected: "Selected length",
+      promoTrimStart: "Start",
+      promoTrimEnd: "End",
+      promoTrimUseCurrentStart: "Use current position as start",
+      promoTrimUseCurrentEnd: "Use current position as end",
+      promoTrimRangeSummary: "Use {start} to {end}",
+      promoTrimPreview: "Preview selected segment",
+      errorPromoTrimInvalid: "Select a segment between 3 and 120 seconds.",
       errorPromoVideoInvalid: "Could not use this promo video file.",
       promoSourceMeta: "{width}x{height} · {sec}s",
       promoCropHint:

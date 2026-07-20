@@ -7,7 +7,9 @@ import ExposurePreviewFrame from "@/components/uploader/ExposurePreviewFrame";
 import PromoCropFrameEditor from "@/components/uploader/PromoCropFrameEditor";
 import UploaderCropPreviewGrid from "@/components/uploader/UploaderCropPreviewGrid";
 import { defaultPromoFrameCrop, normalizePromoFrameCrop } from "@/lib/works/promo-crop";
+import type { PromoTrimRange } from "@/lib/works/promo-clip";
 import type { PromoFrameCrop } from "@/types/work";
+import PromoTrimControls from "@/components/uploader/PromoTrimControls";
 
 type Props = {
   file: File | null;
@@ -19,6 +21,9 @@ type Props = {
   showPortraitPreview?: boolean;
   previewAspectRatio?: number;
   onRemoveFile?: (mode: "keep-edits" | "clear-edits") => void;
+  trimRange?: PromoTrimRange | null;
+  onTrimRangeChange?: (next: PromoTrimRange) => void;
+  trimError?: string | null;
 };
 
 export default function VideoUploadDropzone({
@@ -31,10 +36,14 @@ export default function VideoUploadDropzone({
   showPortraitPreview = false,
   previewAspectRatio,
   onRemoveFile,
+  trimRange,
+  onTrimRangeChange,
+  trimError,
 }: Props) {
   const { t } = useTranslations();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [removeDialogStep, setRemoveDialogStep] = useState<"confirm" | "edits" | null>(null);
@@ -126,6 +135,7 @@ export default function VideoUploadDropzone({
               </svg>
             </button>
             <video
+              ref={videoRef}
               src={previewUrl}
               className="absolute inset-0 w-full h-full object-contain"
               controls
@@ -161,6 +171,16 @@ export default function VideoUploadDropzone({
               </p>
             ) : null}
           </div>
+          {trimRange && onTrimRangeChange && meta ? (
+            <PromoTrimControls
+              durationSec={meta.duration}
+              value={trimRange}
+              onChange={onTrimRangeChange}
+              videoRef={videoRef}
+              disabled={disabled}
+              error={trimError}
+            />
+          ) : null}
           {showPortraitPreview && onCropChange ? (
             <div className="border-t border-white/10 px-4 py-4 bg-xiio-surface/90">
               <UploaderCropPreviewGrid
@@ -182,6 +202,8 @@ export default function VideoUploadDropzone({
                     crop={effectiveCrop}
                     innerAspect="9/16"
                     media="video"
+                    sourceWidth={meta?.width}
+                    sourceHeight={meta?.height}
                   />
                 }
               />

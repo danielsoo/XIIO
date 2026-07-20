@@ -8,6 +8,8 @@ type Props = {
   title: string;
   hint: string;
   crop?: PromoFrameCrop;
+  sourceWidth?: number;
+  sourceHeight?: number;
   /** When true, omit outer card (for use inside UploaderCropPreviewGrid). */
   embedded?: boolean;
 };
@@ -17,9 +19,20 @@ export default function ThumbnailPreviewStages({
   title,
   hint,
   crop,
+  sourceWidth,
+  sourceHeight,
   embedded = false,
 }: Props) {
-  const frame = <ExposurePreviewFrame src={src} crop={crop} innerAspect="16/9" media="image" />;
+  const frame = (
+    <ExposurePreviewFrame
+      src={src}
+      crop={crop}
+      innerAspect="16/9"
+      media="image"
+      sourceWidth={sourceWidth}
+      sourceHeight={sourceHeight}
+    />
+  );
 
   if (embedded) {
     return (

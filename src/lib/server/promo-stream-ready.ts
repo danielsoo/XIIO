@@ -1,5 +1,5 @@
 import type { Firestore } from "firebase-admin/firestore";
-import { getStreamVideo } from "@/lib/cloudflare/stream";
+import { deleteStreamVideo, getStreamVideo } from "@/lib/cloudflare/stream";
 import {
   validatePromoVideoDimensions,
   validatePromoVideoDuration,
@@ -25,6 +25,10 @@ export async function finalizePromoStreamIfReady(
 
   const ref = promoRef(db, ownerUid, workId);
   const prefix = target === "promo_revision" ? "pendingRevision." : "";
+  const promoSnap = target === "promo" ? await ref.get() : null;
+  const sourceStreamUid = promoSnap?.exists
+    ? String((promoSnap.data() as Record<string, unknown>).sourceStreamUid ?? "").trim()
+    : "";
 
   if (aspectErr || durationErr) {
     const reason = aspectErr ?? durationErr ?? "invalid";
@@ -62,7 +66,19 @@ export async function finalizePromoStreamIfReady(
     update.clipStartSec = 0;
     update.clipEndSec = clipEnd;
     update.streamError = FieldValue.delete();
+    update.sourceStreamUid = FieldValue.delete();
+    update.sourceStreamStatus = FieldValue.delete();
+    update.sourceClipStartSec = FieldValue.delete();
+    update.sourceClipEndSec = FieldValue.delete();
+    update.sourceClipStatus = FieldValue.delete();
   }
 
   await ref.set(update, { merge: true });
+  if (target === "promo" && sourceStreamUid && sourceStreamUid !== streamUid) {
+    try {
+      await deleteStreamVideo(sourceStreamUid);
+    } catch (error) {
+      console.warn("[promo clip] source cleanup failed", { ownerUid, workId, sourceStreamUid, error });
+    }
+  }
 }

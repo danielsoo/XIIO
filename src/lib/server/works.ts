@@ -110,6 +110,10 @@ function parseWorkVideoStaging(value: unknown): WorkVideoStaging | undefined {
     promoContentType: typeof row.promoContentType === "string" ? row.promoContentType : undefined,
     prologueContentType:
       typeof row.prologueContentType === "string" ? row.prologueContentType : undefined,
+    promoTrimStartSec:
+      typeof row.promoTrimStartSec === "number" ? row.promoTrimStartSec : undefined,
+    promoTrimEndSec:
+      typeof row.promoTrimEndSec === "number" ? row.promoTrimEndSec : undefined,
     updatedAt: row.updatedAt,
   };
 }
@@ -210,6 +214,18 @@ export function parsePromoDoc(data: Record<string, unknown>): PromoShortDoc {
       typeof data.streamError === "string" && data.streamError.trim()
         ? data.streamError.trim()
         : null,
+    sourceStreamUid: data.sourceStreamUid ? String(data.sourceStreamUid) : undefined,
+    sourceStreamStatus: data.sourceStreamStatus as StreamStatus | undefined,
+    sourceClipStartSec:
+      typeof data.sourceClipStartSec === "number" ? data.sourceClipStartSec : undefined,
+    sourceClipEndSec:
+      typeof data.sourceClipEndSec === "number" ? data.sourceClipEndSec : undefined,
+    sourceClipStatus:
+      data.sourceClipStatus === "creating" ||
+      data.sourceClipStatus === "processing" ||
+      data.sourceClipStatus === "error"
+        ? data.sourceClipStatus
+        : undefined,
     title: data.title ? String(data.title) : undefined,
     description: data.description ? String(data.description) : undefined,
     thumbnailUrl:

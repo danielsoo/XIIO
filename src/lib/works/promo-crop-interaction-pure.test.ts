@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   CATALOG_THUMBNAIL_FRAME_ASPECT,
   computeObjectContainRect,
+  cropToObjectPosition,
   cropToFrameRect,
   frameCenterToCrop,
   frameRectToCrop,
@@ -66,5 +67,25 @@ describe("crop round-trip", () => {
     assert.ok(Math.abs(restored.focalX - crop.focalX) < 0.01);
     assert.ok(Math.abs(restored.focalY - crop.focalY) < 0.01);
     assert.equal(restored.zoom, crop.zoom);
+  });
+});
+
+describe("cropToObjectPosition", () => {
+  it("maps a frame clamped to the left edge to CSS left alignment", () => {
+    const position = cropToObjectPosition(
+      { focalX: 10, focalY: 50, zoom: 1 },
+      { width: 1920, height: 1080 }
+    );
+    assert.equal(position.x, 0);
+    assert.equal(position.y, 50);
+  });
+
+  it("keeps a centered frame centered", () => {
+    const position = cropToObjectPosition(
+      { focalX: 50, focalY: 50, zoom: 1.4 },
+      { width: 1920, height: 1080 }
+    );
+    assert.ok(Math.abs(position.x - 50) < 0.001);
+    assert.ok(Math.abs(position.y - 50) < 0.001);
   });
 });

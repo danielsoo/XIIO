@@ -11,6 +11,7 @@ import { gradientForTitle } from "@/lib/works/catalog-ui";
 import { buildEditorPreviewPromoShort } from "@/lib/works/editor-preview-promo";
 import { promoCropToVideoStyle } from "@/lib/works/promo-crop-interaction";
 import { aspectRatioNumeric } from "@/lib/works/aspect-ratio";
+import type { PromoTrimRange } from "@/lib/works/promo-clip";
 import type { PromoShort } from "@/types/promoShort";
 import type { PromoFrameCrop, VideoAspectRatio } from "@/types/work";
 
@@ -24,6 +25,7 @@ type Props = {
   director: string;
   frameCrop: PromoFrameCrop;
   promoPlaybackUrl?: string | null;
+  promoTrimRange?: PromoTrimRange | null;
   fullPlaybackUrl?: string | null;
   fullAspectRatio?: VideoAspectRatio;
   ownerUid?: string;
@@ -57,6 +59,7 @@ export default function SubmissionSurfacePreviews({
   director,
   frameCrop,
   promoPlaybackUrl,
+  promoTrimRange,
   fullPlaybackUrl,
   fullAspectRatio = "16:9",
   ownerUid,
@@ -69,6 +72,11 @@ export default function SubmissionSurfacePreviews({
   const catalogThumbnailSrc = liveThumbnailUrl ?? catalogThumbnailUrl ?? null;
   const catalogImageStyle = thumbnailCrop ? promoCropToVideoStyle(thumbnailCrop) : undefined;
   const canPlayShorts = Boolean(promoPlaybackUrl?.trim());
+  const previewPromoUrl = useMemo(() => {
+    const url = promoPlaybackUrl?.trim() ?? "";
+    if (!url || !promoTrimRange) return url;
+    return `${url}#t=${promoTrimRange.startSec},${promoTrimRange.endSec}`;
+  }, [promoPlaybackUrl, promoTrimRange]);
 
   const previewPromo: PromoShort = useMemo(
     () =>
@@ -77,12 +85,12 @@ export default function SubmissionSurfacePreviews({
         description,
         thumbnailUrl: null,
         frameCrop,
-        videoUrl: promoPlaybackUrl ?? "",
+        videoUrl: previewPromoUrl,
         director,
         ownerUid,
         workId,
       }),
-    [title, description, frameCrop, promoPlaybackUrl, director, ownerUid, workId]
+    [title, description, frameCrop, previewPromoUrl, director, ownerUid, workId]
   );
 
   const carouselItems = useMemo(() => (canPlayShorts ? [previewPromo] : []), [canPlayShorts, previewPromo]);

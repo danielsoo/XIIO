@@ -901,6 +901,8 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
                   embedded
                   src={thumbnailPreview}
                   crop={thumbnailCrop}
+                  sourceWidth={thumbnailImageMeta?.width}
+                  sourceHeight={thumbnailImageMeta?.height}
                   title={t("uploader.catalogThumbnailPreviewTitle")}
                   hint={t("uploader.catalogThumbnailPreviewHint")}
                 />

@@ -1,3 +1,8 @@
+export type PromoTrimRange = {
+  startSec: number;
+  endSec: number;
+};
+
 /** 홍보 쇼츠 클립 구간 검증 — null이면 유효 */
 export function validatePromoClipRange(
   start: number,
