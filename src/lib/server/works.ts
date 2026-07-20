@@ -17,8 +17,10 @@ import type {
   PromoDraft,
   WorkDoc,
   WorkSection,
+  WorkVideoMaster,
   WorkVideoStaging,
 } from "@/types/work";
+import type { SourceVideoQuality } from "@/lib/works/source-video-quality";
 import { PROMO_SHORT_DOC_ID, PROLOGUE_SHORT_DOC_ID } from "@/types/work";
 import { parseContentModeration } from "@/lib/server/moderation/parse-content-moderation";
 import { getStreamThumbnailUrl, getStreamVideo } from "@/lib/cloudflare/stream";
@@ -118,6 +120,43 @@ function parseWorkVideoStaging(value: unknown): WorkVideoStaging | undefined {
   };
 }
 
+const SOURCE_VIDEO_QUALITIES = new Set<SourceVideoQuality>([
+  "sd",
+  "hd",
+  "full_hd",
+  "2k",
+  "4k",
+  "8k",
+]);
+
+function parseWorkVideoMaster(value: unknown): WorkVideoMaster | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const row = value as Record<string, unknown>;
+  const storagePath = typeof row.storagePath === "string" ? row.storagePath.trim() : "";
+  if (!storagePath) return undefined;
+  const sourceQuality =
+    typeof row.sourceQuality === "string" &&
+    SOURCE_VIDEO_QUALITIES.has(row.sourceQuality as SourceVideoQuality)
+      ? (row.sourceQuality as SourceVideoQuality)
+      : undefined;
+  return {
+    storagePath,
+    originalFileName:
+      typeof row.originalFileName === "string" ? row.originalFileName : undefined,
+    bytes: typeof row.bytes === "number" ? row.bytes : undefined,
+    contentType: typeof row.contentType === "string" ? row.contentType : undefined,
+    width: typeof row.width === "number" ? row.width : undefined,
+    height: typeof row.height === "number" ? row.height : undefined,
+    durationSec: typeof row.durationSec === "number" ? row.durationSec : undefined,
+    sourceQuality,
+    highResolutionEligible: row.highResolutionEligible === true,
+    playbackMaxHeight: 1080,
+    preservationStatus: "preserved",
+    storageProvider: "firebase",
+    updatedAt: row.updatedAt,
+  };
+}
+
 function parsePromoFrameCrop(value: unknown): PromoFrameCrop | undefined {
   if (!value || typeof value !== "object") return undefined;
   const row = value as Record<string, unknown>;
@@ -151,6 +190,7 @@ export function parseWorkDoc(id: string, data: Record<string, unknown>): WorkDoc
     streamStatus: (data.streamStatus as StreamStatus) ?? "uploading",
     streamUid: data.streamUid ? String(data.streamUid) : undefined,
     videoStaging: parseWorkVideoStaging(data.videoStaging),
+    videoMaster: parseWorkVideoMaster(data.videoMaster),
     sortOrder: typeof data.sortOrder === "number" ? data.sortOrder : 0,
     rejectReasonCode:
       typeof rejectCode === "string" && isRejectReasonCode(rejectCode) ? rejectCode : undefined,

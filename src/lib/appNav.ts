@@ -5,7 +5,6 @@ export const HIDE_APP_SHELL_PATHS = [
   "/login",
   "/signup",
   "/profiles",
-  "/admin",
   "/uploader",
   "/auth",
 ];

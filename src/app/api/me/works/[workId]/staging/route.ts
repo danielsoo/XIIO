@@ -3,6 +3,11 @@ import { jsonError, requireUser } from "@/lib/server/api-auth";
 import { requireCompleteMemberProfile } from "@/lib/server/member-access";
 import { FieldValue, getDbOrNull, parseWorkDoc, worksCol } from "@/lib/server/works";
 import type { WorkVideoStaging } from "@/types/work";
+import {
+  CURRENT_PLAYBACK_MAX_HEIGHT,
+  classifySourceVideoQuality,
+  supportsFutureHighResolutionDelivery,
+} from "@/lib/works/source-video-quality";
 
 type Params = { params: Promise<{ workId: string }> };
 
@@ -23,7 +28,15 @@ export async function PATCH(request: Request, { params }: Params) {
   const { workId } = await params;
 
   let body: {
-    full?: { path?: string; bytes?: number; contentType?: string };
+    full?: {
+      path?: string;
+      bytes?: number;
+      contentType?: string;
+      originalFileName?: string;
+      width?: number;
+      height?: number;
+      durationSec?: number;
+    };
     promo?: {
       path?: string;
       bytes?: number;
@@ -113,6 +126,34 @@ export async function PATCH(request: Request, { params }: Params) {
     videoStaging: next,
     updatedAt: FieldValue.serverTimestamp(),
   };
+  if (body.full?.path) {
+    const width = positiveFiniteNumber(body.full.width);
+    const height = positiveFiniteNumber(body.full.height);
+    const durationSec = positiveFiniteNumber(body.full.durationSec);
+    const sourceQuality =
+      width && height ? classifySourceVideoQuality(width, height) : undefined;
+    const originalFileName = safeOriginalFileName(body.full.originalFileName);
+
+    update.videoMaster = {
+      storagePath: body.full.path.trim(),
+      ...(originalFileName ? { originalFileName } : {}),
+      ...(typeof body.full.bytes === "number" && body.full.bytes > 0
+        ? { bytes: body.full.bytes }
+        : {}),
+      ...(body.full.contentType ? { contentType: body.full.contentType } : {}),
+      ...(width ? { width } : {}),
+      ...(height ? { height } : {}),
+      ...(durationSec ? { durationSec } : {}),
+      ...(sourceQuality ? { sourceQuality } : {}),
+      highResolutionEligible: sourceQuality
+        ? supportsFutureHighResolutionDelivery(sourceQuality)
+        : false,
+      playbackMaxHeight: CURRENT_PLAYBACK_MAX_HEIGHT,
+      preservationStatus: "preserved",
+      storageProvider: "firebase",
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+  }
   if (next.fullPath && next.promoPath) {
     update.streamStatus = "staged";
   }
@@ -120,4 +161,15 @@ export async function PATCH(request: Request, { params }: Params) {
   await workRef.update(update);
 
   return NextResponse.json({ ok: true, videoStaging: next });
+}
+
+function positiveFiniteNumber(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return undefined;
+  return value;
+}
+
+function safeOriginalFileName(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const name = value.split(/[\\/]/).pop()?.trim().slice(0, 255);
+  return name || undefined;
 }

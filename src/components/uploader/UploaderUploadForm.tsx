@@ -60,6 +60,10 @@ import {
 import { getPromoFileValidationError } from "@/lib/works/promo-file-validation";
 import { validatePromoClipRange } from "@/lib/works/promo-clip";
 import { PROMO_MAX_DURATION_SEC } from "@/lib/works/promo-video";
+import {
+  classifySourceVideoQuality,
+  sourceVideoQualityLabel,
+} from "@/lib/works/source-video-quality";
 import { getPrologueFileValidationError } from "@/lib/works/prologue-file-validation";
 import PrologueUploadChoiceTiles, {
   type PrologueUploadChoice,
@@ -1075,6 +1079,10 @@ export default function UploaderUploadForm({
             path: fullStaged.path,
             bytes: fullStaged.bytes,
             contentType: fullStaged.contentType,
+            originalFileName: file.name,
+            width: fullVideoMeta?.width,
+            height: fullVideoMeta?.height,
+            durationSec: fullVideoMeta?.duration,
           },
           ...(prologueStaged
             ? {
@@ -1420,6 +1428,38 @@ export default function UploaderUploadForm({
               </div>
               {renderRequiredFieldError("fullFile")}
             </div>
+            {file ? (
+              <div className="rounded-xl border border-xiio-accent/20 bg-xiio-accent/[0.06] p-4 md:p-5">
+                <div className="flex items-start gap-3">
+                  <span
+                    className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-400"
+                    aria-hidden
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white">
+                      {t("uploader.masterPreservationTitle")}
+                    </p>
+                    {fullVideoMeta ? (
+                      <p className="mt-1 text-xs text-white/65">
+                        {t("uploader.masterPreservationMeta", {
+                          width: fullVideoMeta.width,
+                          height: fullVideoMeta.height,
+                          quality: sourceVideoQualityLabel(
+                            classifySourceVideoQuality(
+                              fullVideoMeta.width,
+                              fullVideoMeta.height
+                            )
+                          ),
+                        })}
+                      </p>
+                    ) : null}
+                    <p className="mt-1.5 text-xs leading-relaxed text-white/45">
+                      {t("uploader.masterPreservationHint")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 md:p-5">
               {renderAspectRatioControl()}
             </div>

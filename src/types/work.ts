@@ -38,6 +38,25 @@ export type WorkVideoStaging = {
   updatedAt?: unknown;
 };
 
+export type WorkVideoMaster = {
+  /** Durable reference to the exact uploaded full-work source. */
+  storagePath: string;
+  originalFileName?: string;
+  bytes?: number;
+  contentType?: string;
+  width?: number;
+  height?: number;
+  durationSec?: number;
+  sourceQuality?: import("@/lib/works/source-video-quality").SourceVideoQuality;
+  /** True when the source can later produce a 1440p or 4K rendition. */
+  highResolutionEligible?: boolean;
+  /** Current Cloudflare Stream delivery ceiling. */
+  playbackMaxHeight: 1080;
+  preservationStatus: "preserved";
+  storageProvider: "firebase";
+  updatedAt?: unknown;
+};
+
 /** 업로드 시 선택하는 목표 화면 비율 */
 export const WORK_ASPECT_RATIOS = ["16:9", "9:16", "4:3", "1:1", "21:9"] as const;
 
@@ -132,6 +151,8 @@ export type WorkDoc = {
   streamUid?: string;
   /** 제출 전 원본 영상 경로 (Storage) */
   videoStaging?: WorkVideoStaging;
+  /** 고화질 재인코딩을 위해 보존하는 본편 원본 메타데이터 */
+  videoMaster?: WorkVideoMaster;
   sortOrder: number;
   rejectReasonCode?: RejectReasonCode;
   rejectReason?: string;

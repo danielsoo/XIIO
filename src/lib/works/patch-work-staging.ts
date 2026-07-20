@@ -3,7 +3,15 @@ export async function patchWorkStagingMeta(
   token: string,
   workId: string,
   payload: {
-    full?: { path: string; bytes: number; contentType: string };
+    full?: {
+      path: string;
+      bytes: number;
+      contentType: string;
+      originalFileName?: string;
+      width?: number;
+      height?: number;
+      durationSec?: number;
+    };
     promo?: {
       path: string;
       bytes: number;

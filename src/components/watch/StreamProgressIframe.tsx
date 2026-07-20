@@ -15,6 +15,7 @@ type Props = {
 /** Direct HLS player with manual quality selection and watch progress reporting. */
 export default function StreamProgressIframe({ src, title, ownerUid, workId, className }: Props) {
   const durationRef = useRef(0);
+  const resolutionHeightRef = useRef<number | null>(null);
   const { report, flush } = useWatchProgressReporter(ownerUid, workId);
 
   useEffect(() => {
@@ -44,10 +45,21 @@ export default function StreamProgressIframe({ src, title, ownerUid, workId, cla
         if (Number.isFinite(video.duration) && video.duration > 0) {
           durationRef.current = video.duration;
         }
-        report(video.currentTime, durationRef.current);
+        report(video.currentTime, durationRef.current, {
+          isPlaying: !video.paused,
+          resolutionHeight: resolutionHeightRef.current,
+        });
       }}
       onPause={(event) => {
-        report(event.currentTarget.currentTime, durationRef.current, { force: true });
+        report(event.currentTarget.currentTime, durationRef.current, {
+          force: true,
+          isPlaying: false,
+          resolutionHeight: resolutionHeightRef.current,
+        });
+      }}
+      onEnded={() => flush(durationRef.current)}
+      onQualityChange={(height) => {
+        resolutionHeightRef.current = height;
       }}
     />
   );

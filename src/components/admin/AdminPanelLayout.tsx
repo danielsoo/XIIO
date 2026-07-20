@@ -2,51 +2,45 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useTranslations } from "@/context/LocaleContext";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useAdminWorkStats } from "@/hooks/useAdminWorkStats";
+
+const ADMIN_NAV = [
+  { href: "/admin", label: "Overview", exact: true },
+  { href: "/admin/onboarding", label: "Onboarding" },
+  { href: "/admin/users", label: "Users" },
+  { href: "/admin/content", label: "Content review" },
+  { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/payments", label: "Payments" },
+];
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const { isAdmin, isSuperAdmin, checked, reason } = useAdminAccess();
   const { pendingTotal } = useAdminWorkStats(isAdmin);
-  const { t } = useTranslations();
-
-  const nav = useMemo(
-    () => [
-      { href: "/admin", label: t("admin.navDashboard"), exact: true },
-      { href: "/admin/onboarding", label: t("admin.navOnboarding") },
-      { href: "/admin/users", label: t("admin.navUsers") },
-      { href: "/admin/content", label: t("admin.navContent") },
-      { href: "/admin/reports", label: t("admin.navReports") },
-      { href: "/admin/payments", label: t("admin.navPayments") },
-    ],
-    [t]
-  );
 
   if (loading || !checked) {
     return (
-      <div className="min-h-screen bg-xiio-bg flex items-center justify-center text-white">
-        <p className="text-xiio-muted">{t("admin.loading")}</p>
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center text-white">
+        <p className="text-xiio-muted">Loading admin console…</p>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-xiio-bg flex flex-col items-center justify-center gap-6 px-4 text-center">
-        <p className="text-white text-lg">{t("admin.loginRequired")}</p>
+      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center gap-6 px-4 text-center">
+        <p className="text-white text-lg">Sign in to access the admin console.</p>
         <Link
           href="/login"
           className="px-6 py-3 rounded-lg bg-xiio-accent hover:bg-xiio-accent-hover text-white font-medium transition"
         >
-          {t("common.login")}
+          Sign in
         </Link>
         <Link href="/" className="text-sm text-xiio-muted hover:text-white transition">
-          {t("common.backToHome")}
+          Back to home
         </Link>
       </div>
     );
@@ -54,11 +48,11 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
 
   if (reason === "admin_sdk_missing") {
     return (
-      <div className="min-h-screen bg-xiio-bg flex flex-col items-center justify-center gap-4 px-4 max-w-lg mx-auto text-center">
-        <p className="text-amber-400 font-medium">{t("admin.sdkMissingTitle")}</p>
-        <p className="text-xiio-muted text-sm">{t("admin.sdkMissingBody")}</p>
+      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center gap-4 px-4 max-w-lg mx-auto text-center">
+        <p className="text-amber-400 font-medium">Admin services are not configured.</p>
+        <p className="text-xiio-muted text-sm">Configure the Firebase Admin SDK before opening this console.</p>
         <Link href="/" className="text-sm text-xiio-accent hover:underline">
-          {t("common.home")}
+          Home
         </Link>
       </div>
     );
@@ -66,59 +60,65 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-xiio-bg flex flex-col items-center justify-center gap-4 px-4 text-center">
-        <p className="text-red-400">{t("admin.noPermission")}</p>
+      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <p className="text-red-400">You do not have permission to access this page.</p>
         <Link href="/" className="text-sm text-xiio-muted hover:text-white transition">
-          {t("common.backToHome")}
+          Back to home
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-xiio-bg flex flex-col md:flex-row">
-      <aside className="md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-white/10 bg-xiio-sidebar">
-        <div className="p-4 border-b border-white/10">
-          <Link href="/admin" className="text-lg font-black tracking-widest text-white">
-            X<span className="text-xiio-accent">II</span>O
-          </Link>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35 mt-2">
-            {t("admin.consoleLabel")}
-          </p>
-          <p className="text-xs text-xiio-muted mt-1">
-            {isSuperAdmin ? t("admin.roleSuper") : t("admin.roleAdmin")}
-          </p>
+    <section className="min-h-[calc(100vh-64px)] bg-xiio-bg text-white">
+      <header className="border-b border-white/[0.08] px-5 pt-7 sm:px-8 sm:pt-9">
+        <div className="mx-auto w-full max-w-[1600px]">
+          <div className="flex flex-wrap items-end justify-between gap-4 pb-6">
+            <div>
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-xiio-accent">
+                <span className="h-1.5 w-1.5 rounded-full bg-xiio-accent" aria-hidden />
+                Admin workspace
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                Platform operations
+              </h1>
+            </div>
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/55">
+              {isSuperAdmin ? "Super admin" : "Admin"}
+            </span>
+          </div>
+
+          <nav className="flex gap-7 overflow-x-auto" aria-label="Admin sections">
+            {ADMIN_NAV.map(({ href, label, exact }) => {
+              const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  prefetch
+                  className={`relative flex shrink-0 items-center gap-2 pb-3 text-sm font-medium whitespace-nowrap transition ${
+                    active ? "text-white" : "text-white/40 hover:text-white/75"
+                  }`}
+                >
+                  <span>{label}</span>
+                  {href === "/admin/content" && pendingTotal > 0 && (
+                    <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-400 px-1.5 text-[10px] font-bold text-black">
+                      {pendingTotal > 99 ? "99+" : pendingTotal}
+                    </span>
+                  )}
+                  {active ? (
+                    <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-xiio-accent" aria-hidden />
+                  ) : null}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-        <nav className="p-2 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible">
-          {nav.map(({ href, label, exact }) => {
-            const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition ${
-                  active ? "bg-xiio-accent/20 text-white" : "text-xiio-muted hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <span>{label}</span>
-                {href === "/admin/content" && pendingTotal > 0 && (
-                  <span className="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-black text-xs font-bold flex items-center justify-center">
-                    {pendingTotal > 99 ? "99+" : pendingTotal}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="p-4 mt-auto border-t border-white/10 hidden md:block">
-          <Link href="/" className="text-sm text-xiio-muted hover:text-xiio-accent transition">
-            {t("admin.backToSite")}
-          </Link>
-        </div>
-      </aside>
-      <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8">
-        <div className="mx-auto w-full max-w-6xl">{children}</div>
+      </header>
+
+      <main className="min-w-0 px-5 py-7 sm:px-8 sm:py-9">
+        <div className="mx-auto w-full max-w-[1600px]">{children}</div>
       </main>
-    </div>
+    </section>
   );
 }

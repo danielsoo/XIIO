@@ -147,16 +147,16 @@ export default function AppTopBar({ onMenuOpen }: Props) {
                   {t("profileMenu.settings")}
                 </button>
                 {adminChecked && isAdmin ? (
-                  <button
-                    type="button"
+                  <Link
+                    href="/admin"
+                    prefetch
                     onClick={() => {
                       setMenuOpen(false);
-                      router.push("/admin");
                     }}
-                    className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5"
+                    className="block w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5"
                   >
                     {t("profileMenu.adminPanel")}
-                  </button>
+                  </Link>
                 ) : null}
                 <button
                   type="button"

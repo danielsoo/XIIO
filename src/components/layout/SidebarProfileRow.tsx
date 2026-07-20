@@ -94,13 +94,17 @@ export default function SidebarProfileRow({ onNavigate }: { onNavigate?: () => v
             {t("profileMenu.settings")}
           </button>
           {adminChecked && isAdmin ? (
-            <button
-              type="button"
-              onClick={() => go("/admin")}
-              className="w-full text-left px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5"
+            <Link
+              href="/admin"
+              prefetch
+              onClick={() => {
+                setOpen(false);
+                onNavigate?.();
+              }}
+              className="block w-full text-left px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5"
             >
               {t("profileMenu.adminPanel")}
-            </button>
+            </Link>
           ) : null}
           <button
             type="button"

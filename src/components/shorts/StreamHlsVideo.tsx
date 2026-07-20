@@ -42,6 +42,7 @@ type Props = {
   onTimeUpdate?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
   onSeeking?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
   onSeeked?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
+  onQualityChange?: (height: number | null) => void;
 };
 
 const HLS_BUFFER_OPTS: Partial<Hls["config"]> = {
@@ -111,6 +112,7 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
     onTimeUpdate,
     onSeeking,
     onSeeked,
+    onQualityChange,
   }: Props,
   ref: Ref<StreamHlsVideoHandle>
 ) {
@@ -120,6 +122,7 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
   const readyFiredRef = useRef(false);
   const onReadyRef = useRef(onReady);
   const onErrorRef = useRef(onError);
+  const onQualityChangeRef = useRef(onQualityChange);
   const playerShellRef = useRef<HTMLDivElement>(null);
   const qualityMenuRef = useRef<HTMLDetailsElement>(null);
   const controlsTimerRef = useRef<number | null>(null);
@@ -139,7 +142,8 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
   useEffect(() => {
     onReadyRef.current = onReady;
     onErrorRef.current = onError;
-  }, [onReady, onError]);
+    onQualityChangeRef.current = onQualityChange;
+  }, [onReady, onError, onQualityChange]);
 
   useImperativeHandle(ref, () => ({
     play: async () => {
@@ -249,6 +253,8 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
         hls.on(Hls.Events.MANIFEST_PARSED, onManifestParsed);
         hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
           setCurrentQuality(data.level);
+          const level = hls.levels[data.level];
+          onQualityChangeRef.current?.(displayQualityHeight(level?.width, level?.height) || null);
           tryFireReadyAtMaxLevel();
         });
         hls.on(Hls.Events.FRAG_BUFFERED, tryFireReadyAtMaxLevel);
@@ -269,6 +275,8 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
         });
         hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
           setCurrentQuality(data.level);
+          const level = hls.levels[data.level];
+          onQualityChangeRef.current?.(displayQualityHeight(level?.width, level?.height) || null);
         });
       }
 
@@ -405,6 +413,11 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
         setDuration(event.currentTarget.duration || 0);
         setVolume(event.currentTarget.volume);
         setIsMuted(event.currentTarget.muted);
+        const intrinsicHeight = displayQualityHeight(
+          event.currentTarget.videoWidth,
+          event.currentTarget.videoHeight
+        );
+        if (intrinsicHeight > 0) onQualityChangeRef.current?.(intrinsicHeight);
         onLoadedMetadata?.(event);
       }}
       onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
@@ -477,7 +490,7 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
               if (videoRef.current) videoRef.current.currentTime = Number(event.target.value);
               revealControls();
             }}
-            aria-label="재생 위치"
+            aria-label="Playback position"
             className="h-1 w-full cursor-pointer appearance-none rounded-full accent-white"
             style={{
               background: `linear-gradient(90deg, #ffffff ${playedPercent}%, rgba(255,255,255,0.34) ${playedPercent}%)`,
@@ -488,7 +501,7 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
               type="button"
               onClick={togglePlayback}
               className="flex h-8 w-8 items-center justify-center rounded-md text-lg transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-              aria-label={isPlaying ? "일시정지" : "재생"}
+              aria-label={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? "Ⅱ" : "▶"}
             </button>
@@ -500,7 +513,7 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
               type="button"
               onClick={toggleMute}
               className="h-8 rounded-md px-2 text-[11px] font-semibold tracking-wide text-white/85 transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-              aria-label={isMuted ? "음소거 해제" : "음소거"}
+              aria-label={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? "MUTE" : "VOL"}
             </button>
@@ -519,7 +532,7 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
                 }
                 revealControls();
               }}
-              aria-label="음량"
+              aria-label="Volume"
               className="h-1 w-20 cursor-pointer accent-white max-sm:hidden"
             />
             {qualityLevels.length > 0 ? (
@@ -537,14 +550,14 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
               >
                 <summary
                   className="flex h-8 list-none cursor-pointer items-center gap-1.5 rounded-md px-2 font-semibold transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                  aria-label="영상 화질 선택"
-                  title={`화질 ${currentLabel}`}
+                  aria-label="Select video quality"
+                  title={`Quality ${currentLabel}`}
                 >
                   <span aria-hidden="true">⚙</span>
                   <span className="hidden sm:inline">{currentLabel}</span>
                 </summary>
                 <div className="absolute bottom-full right-0 mb-3 min-w-[150px] overflow-hidden rounded-lg border border-white/15 bg-[#111214]/95 py-1.5 shadow-2xl backdrop-blur-xl">
-                  <p className="border-b border-white/10 px-3 py-2 text-[11px] font-semibold text-white/50">화질</p>
+                  <p className="border-b border-white/10 px-3 py-2 text-[11px] font-semibold text-white/50">Quality</p>
                   <button
                     type="button"
                     onClick={() => selectQuality(-1)}
@@ -560,7 +573,7 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
                       onClick={() => selectQuality(level.index)}
                       className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-white/10 ${selectedQuality === level.index ? "text-white" : "text-white/60"}`}
                     >
-                      <span>{level.label}{index === 0 ? " · 최고" : ""}</span>
+                      <span>{level.label}{index === 0 ? " · Highest" : ""}</span>
                       {selectedQuality === level.index ? <span>✓</span> : null}
                     </button>
                   ))}
@@ -571,8 +584,8 @@ const StreamHlsVideo = forwardRef(function StreamHlsVideo(
               type="button"
               onClick={() => void toggleFullscreen()}
               className="flex h-8 w-8 items-center justify-center rounded-md text-lg transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-              aria-label={isFullscreen ? "전체화면 종료" : "전체화면"}
-              title={isFullscreen ? "전체화면 종료" : "전체화면"}
+              aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+              title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? "↙" : "⛶"}
             </button>

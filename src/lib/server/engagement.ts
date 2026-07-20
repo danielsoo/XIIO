@@ -1,6 +1,7 @@
 import { FieldValue, type DocumentSnapshot, type Firestore, type Transaction } from "firebase-admin/firestore";
 import type { AnalyticsSummary, EngagementTarget, UploaderAnalyticsPayload, WorkAnalyticsBreakdown } from "@/types/engagement";
 import { isLoggedInViewerKey, upsertWatchHistory } from "@/lib/server/account-activity";
+import { recordPlatformView } from "@/lib/server/platform-analytics";
 import { parsePromoDoc, parseWorkDoc, promoRef, worksCol } from "@/lib/server/works";
 
 export function dayKeyUTC(d = new Date()): string {
@@ -199,6 +200,15 @@ export async function recordView(
     });
 
     await maybeHistory();
+    if (recorded) {
+      await recordPlatformView(db, {
+        ownerUid,
+        workId,
+        title: published.work.title,
+        section: published.work.section,
+        streamUid: published.work.streamUid,
+      }).catch(() => {});
+    }
     return { ok: true, recorded };
   }
 
@@ -218,6 +228,15 @@ export async function recordView(
   });
 
   await maybeHistory();
+  if (recorded) {
+    await recordPlatformView(db, {
+      ownerUid,
+      workId,
+      title: published.work.title,
+      section: published.work.section,
+      streamUid: published.work.streamUid,
+    }).catch(() => {});
+  }
   return { ok: true, recorded };
 }
 

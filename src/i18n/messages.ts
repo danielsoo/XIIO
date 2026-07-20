@@ -1482,6 +1482,10 @@ export const messages = {
       uploadDirectorReadOnlyHint: "업로드한 작품·숏폼에 이 이름이 표시됩니다. 변경은 설정에서 신청할 수 있습니다.",
       uploadDirectorDisplayValue: "감독 · {name}",
       uploadAspectRatioLabel: "화면 비율",
+      masterPreservationTitle: "고화질 원본을 보존합니다",
+      masterPreservationMeta: "{width}×{height} · {quality} 원본",
+      masterPreservationHint:
+        "현재 재생은 최대 1080p로 최적화됩니다. 원본은 이후 1440p·4K 제공을 위해 별도로 보존됩니다.",
       uploadAspectRatioHint: "업로드한 본편의 실제 크기를 감지해 화면 비율을 자동 선택합니다.",
       aspectRatioAutoDetected: "자동 감지됨",
       aspectRatioManualSelected: "직접 선택",
@@ -3441,6 +3445,10 @@ export const messages = {
       uploadDirectorReadOnlyHint: "This name appears on your work and short. Request a change in Settings.",
       uploadDirectorDisplayValue: "Director · {name}",
       uploadAspectRatioLabel: "Aspect ratio",
+      masterPreservationTitle: "High-quality original will be preserved",
+      masterPreservationMeta: "{width}×{height} · {quality} source",
+      masterPreservationHint:
+        "Playback is currently optimized up to 1080p. The original is kept for future 1440p and 4K delivery.",
       uploadAspectRatioHint: "The viewing format is selected automatically from the main video's actual dimensions.",
       aspectRatioAutoDetected: "Auto-detected",
       aspectRatioManualSelected: "Manual selection",
