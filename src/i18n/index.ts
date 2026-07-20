@@ -6,14 +6,13 @@ export { messages, LOCALES } from "./messages";
 const STORAGE_KEY = "xiio_locale";
 
 export function getStoredLocale(): Locale {
-  if (typeof window === "undefined") return "ko";
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw === "en" ? "en" : "ko";
+  if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, "en");
+  return "en";
 }
 
-export function setStoredLocale(locale: Locale): void {
+export function setStoredLocale(_locale: Locale): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, locale);
+  localStorage.setItem(STORAGE_KEY, "en");
 }
 
 function getByPath(tree: MessageTree, path: string): string | undefined {
@@ -42,7 +41,8 @@ export function translate(
   vars?: Record<string, string | number>
 ): string {
   const tree = messages[locale] as MessageTree;
-  const value = getByPath(tree, key) ?? getByPath(messages.ko as MessageTree, key);
+  const value =
+    getByPath(tree, key) ?? getByPath(messages.en as unknown as MessageTree, key);
   if (!value) return key;
   return interpolate(value, vars);
 }

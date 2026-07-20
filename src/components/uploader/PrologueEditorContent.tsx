@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
+import UploaderHeaderActions from "@/components/uploader/UploaderHeaderActions";
 import UploadWizardStepper, {
   type UploadWizardStepMeta,
 } from "@/components/uploader/UploadWizardStepper";
@@ -293,7 +294,7 @@ export default function PrologueEditorContent({ workId }: { workId: string }) {
   if (!workPublished && !prologue) {
     return (
       <AppPageShell>
-        <SubpageHeader title={t("prologueEditor.title")} backFallbackHref="/uploader/works" />
+        <SubpageHeader title={t("prologueEditor.title")} backFallbackHref="/uploader/works" endContent={<UploaderHeaderActions area="prologue-editor" />} />
         <p className="text-xiio-muted">{t("prologueEditor.workNotPublished")}</p>
         <Link href="/uploader/works" className="text-xiio-accent text-sm mt-4 inline-block">
           {t("prologueEditor.backToWorks")}
@@ -337,6 +338,7 @@ export default function PrologueEditorContent({ workId }: { workId: string }) {
         backHref="/uploader/works"
         backLabel={t("prologueEditor.backToWorks")}
         backFallbackHref="/uploader/works"
+        endContent={<UploaderHeaderActions area="prologue-editor" />}
       />
       <p className="text-sm text-xiio-muted mb-4">
         {resolveDisplayTitle(t("common.untitled"), work.title)} ·{" "}

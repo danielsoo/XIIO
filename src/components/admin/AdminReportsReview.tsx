@@ -4,18 +4,22 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AdminEntityLinks } from "@/components/admin/AdminEntityLinks";
 import AdminReviewVideo from "@/components/admin/AdminReviewVideo";
+import AdminErrorReportsReview from "@/components/admin/AdminErrorReportsReview";
+import AdminUploaderFeedbackReview from "@/components/admin/AdminUploaderFeedbackReview";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import type { AdminReportListItem, AdminReportsListResponse } from "@/types/admin";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 type Tab = "pending" | "resolved";
+type ReportMode = "content" | "errors" | "feedback";
 
 export default function AdminReportsReview() {
   const { user } = useAuth();
   const { t, formatDateTime } = useTranslations();
 
   const [tab, setTab] = useState<Tab>("pending");
+  const [mode, setMode] = useState<ReportMode>("content");
   const [items, setItems] = useState<AdminReportListItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,6 +104,30 @@ export default function AdminReportsReview() {
     <div>
       <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{t("admin.reportsTitle")}</h1>
       <p className="text-xiio-muted text-sm mb-6">{t("admin.reportsDesc")}</p>
+
+      <div className="mb-7 flex border-b border-white/10">
+        {(["content", "errors", "feedback"] as ReportMode[]).map((value) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setMode(value)}
+            className={`border-b-2 px-4 pb-3 pt-1 text-sm font-semibold transition ${
+              mode === value
+                ? "border-xiio-accent text-white"
+                : "border-transparent text-white/40 hover:text-white/70"
+            }`}
+          >
+            {value === "feedback" ? "Uploader feedback" : t(value === "content" ? "admin.reportsReview.modeContent" : "admin.reportsReview.modeErrors")}
+          </button>
+        ))}
+      </div>
+
+      {mode === "feedback" ? (
+        <AdminUploaderFeedbackReview />
+      ) : mode === "errors" ? (
+        <AdminErrorReportsReview />
+      ) : (
+        <>
 
       <div className="flex gap-2 mb-6">
         {(["pending", "resolved"] as Tab[]).map((q) => (
@@ -263,6 +291,8 @@ export default function AdminReportsReview() {
         >
           {loadingMore ? t("admin.loading") : t("admin.reportsReview.loadMore")}
         </button>
+      )}
+        </>
       )}
     </div>
   );

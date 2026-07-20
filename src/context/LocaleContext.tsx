@@ -17,12 +17,7 @@ import {
   setStoredTimezone,
   type XiioTimezoneId,
 } from "@/lib/timezone";
-import {
-  getStoredLocale,
-  setStoredLocale,
-  translate,
-  type Locale,
-} from "@/i18n";
+import { setStoredLocale, translate, type Locale } from "@/i18n";
 
 type LocaleContextValue = {
   locale: Locale;
@@ -37,19 +32,20 @@ type LocaleContextValue = {
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("ko");
+  const [locale, setLocaleState] = useState<Locale>("en");
   const [timezone, setTimezoneState] = useState<XiioTimezoneId>("korea");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setLocaleState(getStoredLocale());
+    setLocaleState("en");
+    setStoredLocale("en");
     setTimezoneState(getStoredTimezone());
     setReady(true);
   }, []);
 
-  const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
-    setStoredLocale(next);
+  const setLocale = useCallback((_next: Locale) => {
+    setLocaleState("en");
+    setStoredLocale("en");
   }, []);
 
   const setTimezone = useCallback((next: XiioTimezoneId) => {

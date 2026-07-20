@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
+import UploaderHeaderActions from "@/components/uploader/UploaderHeaderActions";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
 import UploadWizardStepper, {
   type UploadWizardStepMeta,
@@ -1039,6 +1040,7 @@ export default function PromoEditorContent({ workId }: { workId: string }) {
           backHref="/uploader/works"
           backLabel={t("promoEditor.backToWorks")}
           backFallbackHref="/uploader/works"
+          endContent={<UploaderHeaderActions area="promo-editor" />}
         />
         <p className="text-xiio-muted text-sm mb-6 -mt-2">{workDisplayTitle}</p>
 

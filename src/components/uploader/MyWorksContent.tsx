@@ -8,6 +8,7 @@ import HomeContentRow from "@/components/home/HomeContentRow";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SectionLabel from "@/components/layout/SectionLabel";
 import SubpageHeader from "@/components/layout/SubpageHeader";
+import UploaderHeaderActions from "@/components/uploader/UploaderHeaderActions";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useMyWorks } from "@/hooks/useMyWorks";
@@ -225,6 +226,7 @@ export default function MyWorksContent() {
         title={t("myWorks.title")}
         description={t("myWorks.subtitle")}
         backFallbackHref="/society"
+        endContent={<UploaderHeaderActions area="my-works" showMyWorks={false} />}
       />
 
       {submitBanner ? (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
+import UploaderHeaderActions from "@/components/uploader/UploaderHeaderActions";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import WorkTagInput from "@/components/uploader/WorkTagInput";
 import WorkCreditsSection from "@/components/uploader/WorkCreditsSection";
@@ -254,6 +255,7 @@ export default function WorkRevisionEditorContent({ workId }: { workId: string }
           backHref="/uploader/works"
           backLabel={t("workRevision.backToWorks")}
           backFallbackHref="/uploader/works"
+          endContent={<UploaderHeaderActions area="work-revision" />}
         />
         <p className="text-xiio-muted text-sm mb-6 -mt-2">{work.title}</p>
 

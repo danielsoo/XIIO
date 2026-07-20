@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import UploaderSubmitFooter from "@/components/uploader/UploaderSubmitFooter";
+import ErrorReportModal from "@/components/report/ErrorReportModal";
 import AspectRatioPicker from "@/components/uploader/AspectRatioPicker";
 import PromoShortFields from "@/components/uploader/PromoShortFields";
 import PromoCropFrameEditor from "@/components/uploader/PromoCropFrameEditor";
@@ -218,6 +219,10 @@ export default function UploaderUploadForm({
   const [uploadPercent, setUploadPercent] = useState(0);
   const [uploadPhase, setUploadPhase] = useState<UploadPhase | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadErrorCode, setUploadErrorCode] = useState<string | null>(null);
+  const [uploadErrorReportable, setUploadErrorReportable] = useState(false);
+  const [uploadErrorService, setUploadErrorService] = useState<string | null>(null);
+  const [errorReportOpen, setErrorReportOpen] = useState(false);
   const [inviteEmailSummaryLines, setInviteEmailSummaryLines] = useState<string[]>([]);
   const footerRef = useRef<HTMLDivElement>(null);
   const [fullPlaybackUrl, setFullPlaybackUrl] = useState<string | null>(null);
@@ -310,8 +315,14 @@ export default function UploaderUploadForm({
   );
 
   const reportError = useCallback(
-    (message: string) => {
+    (
+      message: string,
+      options?: { code?: string; reportable?: boolean; service?: string }
+    ) => {
       setUploadError(message);
+      setUploadErrorCode(options?.code ?? null);
+      setUploadErrorReportable(Boolean(options?.reportable));
+      setUploadErrorService(options?.service ?? null);
       onError(message);
     },
     [onError]
@@ -901,6 +912,9 @@ export default function UploaderUploadForm({
     setBusy(true);
     setUploadComplete(false);
     setUploadError(null);
+    setUploadErrorCode(null);
+    setUploadErrorReportable(false);
+    setUploadErrorService(null);
     setUploadPhase("creating");
     setUploadPercent(0);
     setRequiredFieldError(null);
@@ -914,7 +928,11 @@ export default function UploaderUploadForm({
       try {
         token = await user.getIdToken();
       } catch (authErr) {
-        reportError(formatClientError(t, authErr, { titleKey: "uploader.errorUploadAuth" }));
+        reportError(formatClientError(t, authErr, { titleKey: "uploader.errorUploadAuth" }), {
+          code: "AUTH_TOKEN_FAILED",
+          reportable: true,
+          service: "Authentication",
+        });
         return;
       }
 
@@ -958,7 +976,11 @@ export default function UploaderUploadForm({
           }),
         });
       } catch (fetchErr) {
-        reportError(formatClientError(t, fetchErr, { titleKey: "uploader.errorUploadFailed" }));
+        reportError(formatClientError(t, fetchErr, { titleKey: "uploader.errorUploadFailed" }), {
+          code: "UPLOAD_SESSION_NETWORK",
+          reportable: true,
+          service: "Upload session",
+        });
         return;
       }
 
@@ -974,7 +996,11 @@ export default function UploaderUploadForm({
         const body: ApiErrorBody = sessionData.error || sessionData.message
           ? sessionData
           : { message: sessionRaw.slice(0, 800) || `HTTP ${sessionRes.status}` };
-        reportError(formatApiError(t, sessionRes.status, body));
+        reportError(formatApiError(t, sessionRes.status, body), {
+          code: `UPLOAD_SESSION_HTTP_${sessionRes.status}`,
+          reportable: sessionRes.status >= 500 || sessionRes.status === 401 || sessionRes.status === 403,
+          service: "Upload session",
+        });
         return;
       }
 
@@ -990,7 +1016,8 @@ export default function UploaderUploadForm({
                 : "",
           ]
             .filter(Boolean)
-            .join("\n")
+            .join("\n"),
+          { code: "UPLOAD_SESSION_MISSING_WORK_ID", reportable: true, service: "Upload session" }
         );
         return;
       }
@@ -1010,7 +1037,8 @@ export default function UploaderUploadForm({
         setUploadPercent(uploadPercentForPhase("thumbnail"));
       } catch (thumbErr) {
         reportError(
-          formatClientError(t, thumbErr, { titleKey: "uploader.errorThumbnailUploadFailed" })
+          formatClientError(t, thumbErr, { titleKey: "uploader.errorThumbnailUploadFailed" }),
+          { code: "THUMBNAIL_UPLOAD_FAILED", reportable: true, service: "Media storage" }
         );
         return;
       }
@@ -1072,7 +1100,11 @@ export default function UploaderUploadForm({
         setUploadPercent(uploadPercentForPhase("finalizing"));
         stagingComplete = true;
       } catch (stageErr) {
-        reportError(formatClientError(t, stageErr, { titleKey: "uploader.errorStagingUploadFailed" }));
+        reportError(formatClientError(t, stageErr, { titleKey: "uploader.errorStagingUploadFailed" }), {
+          code: "STORAGE_STAGING_FAILED",
+          reportable: true,
+          service: "Media storage",
+        });
         return;
       }
 
@@ -1159,12 +1191,19 @@ export default function UploaderUploadForm({
           titleKey: "uploader.errorSubmitReviewFailed",
         });
         const detail = stagingComplete ? `\n\n${t("uploader.errorSubmitReviewStagedSaved")}` : "";
-        reportError(`${base}${detail}`);
+        reportError(`${base}${detail}`, {
+          code: "MEDIA_PROCESSING_SUBMIT_FAILED",
+          reportable: true,
+          service: "Media processing",
+        });
         keepProgressOnExit = stagingComplete;
         return;
       }
 
       setUploadError(null);
+      setUploadErrorCode(null);
+      setUploadErrorReportable(false);
+      setUploadErrorService(null);
       setUploadPercent(100);
       setUploadComplete(true);
       clearNamedUploadDraftState(user.uid, draftId);
@@ -1172,7 +1211,11 @@ export default function UploaderUploadForm({
       succeeded = true;
       onSuccess({ workId, message: t("uploader.uploadSuccess") });
     } catch (unexpected) {
-      reportError(formatClientError(t, unexpected, { titleKey: "uploader.errorUploadFailed" }));
+      reportError(formatClientError(t, unexpected, { titleKey: "uploader.errorUploadFailed" }), {
+        code: "UPLOAD_UNEXPECTED",
+        reportable: true,
+        service: "Uploader",
+      });
     } finally {
       if (succeeded) return;
       setBusy(false);
@@ -1190,6 +1233,18 @@ export default function UploaderUploadForm({
 
   return (
     <form onSubmit={handleFormSubmit}>
+      <ErrorReportModal
+        open={errorReportOpen && Boolean(uploadError)}
+        onClose={() => setErrorReportOpen(false)}
+        errorMessage={uploadError ?? ""}
+        errorCode={uploadErrorCode ?? undefined}
+        service={uploadErrorService ?? undefined}
+        context={{
+          stepId: currentStep,
+          uploadPhase: uploadPhase ?? undefined,
+          locale,
+        }}
+      />
       {uploadComplete ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-xiio-bg/90 backdrop-blur-sm px-6"
@@ -1313,6 +1368,8 @@ export default function UploaderUploadForm({
                 uploadPercent={uploadPercent}
                 uploadPhase={uploadPhase}
                 uploadError={uploadError}
+                uploadErrorCode={uploadErrorCode}
+                uploadErrorReportable={uploadErrorReportable}
                 stepIndex={stepIndex}
                 isLastStep={isLastStep}
                 onBack={handleBack}
@@ -1324,6 +1381,8 @@ export default function UploaderUploadForm({
                   }
                   handleNext();
                 }}
+                onReportError={() => setErrorReportOpen(true)}
+                onRetry={() => void handleUpload()}
               />
             }
           >

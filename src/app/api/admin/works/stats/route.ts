@@ -32,6 +32,7 @@ export async function GET(request: Request) {
     fullRemoval,
     promoRemoval,
     pendingReportsSnap,
+    pendingErrorReportsSnap,
   ] = await Promise.all([
     db.collectionGroup("works").where("platformStatus", "==", "pending").get(),
     db.collectionGroup("works").where("revisionReviewStatus", "==", "pending").get(),
@@ -62,6 +63,7 @@ export async function GET(request: Request) {
     db.collectionGroup("works").where("platformStatus", "==", "removal_requested").get(),
     db.collectionGroup("promoShort").where("platformStatus", "==", "removal_requested").get(),
     db.collection("reports").where("status", "==", "pending").get(),
+    db.collection("errorReports").where("status", "==", "pending").get(),
   ]);
 
   const aiKeys = new Set<string>();
@@ -76,6 +78,6 @@ export async function GET(request: Request) {
     pendingPrologue: prologuePending.size + prologueRevision.size,
     aiFlagged: aiKeys.size,
     removalRequested: fullRemoval.size + promoRemoval.size,
-    pendingReports: pendingReportsSnap.size,
+    pendingReports: pendingReportsSnap.size + pendingErrorReportsSnap.size,
   });
 }

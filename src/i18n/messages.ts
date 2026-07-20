@@ -1,7 +1,6 @@
 export type Locale = "ko" | "en";
 
 export const LOCALES: { code: Locale; label: string }[] = [
-  { code: "ko", label: "한국어" },
   { code: "en", label: "English" },
 ];
 
@@ -21,6 +20,7 @@ export const messages = {
       previous: "이전",
       next: "다음",
       cancel: "취소",
+      close: "닫기",
       retry: "다시 시도",
       save: "저장",
       saving: "저장 중...",
@@ -1123,6 +1123,8 @@ export const messages = {
         prologueSection: "프롤로그",
       },
       reportsReview: {
+        modeContent: "콘텐츠 신고",
+        modeErrors: "기술 오류",
         tabPending: "대기",
         tabResolved: "처리됨",
         empty: "해당하는 신고가 없습니다.",
@@ -1143,6 +1145,29 @@ export const messages = {
         statusDismissed: "기각됨",
         statusActionTaken: "조치됨",
         actionFailed: "처리에 실패했습니다.",
+      },
+      errorReports: {
+        tabPending: "확인 필요",
+        tabResolved: "처리 완료",
+        empty: "해당하는 기술 오류 신고가 없습니다.",
+        loadError: "기술 오류 신고를 불러오지 못했습니다.",
+        actionFailed: "오류 신고 처리에 실패했습니다.",
+        technicalError: "기술 오류 신고",
+        statusResolved: "처리 완료",
+        userDescription: "사용자 설명",
+        reporter: "신고자",
+        reportedAt: "접수 시각",
+        page: "발생 화면",
+        step: "발생 단계",
+        contact: "{email}로 연락하기",
+        noEmail: "이 계정에는 연락 가능한 이메일이 없습니다.",
+        adminNote: "관리자 처리 메모",
+        adminNotePlaceholder: "확인 결과나 사용자에게 안내한 내용을 기록하세요.",
+        markResolved: "연락·처리 완료",
+        loadMore: "더 보기",
+        emailSubject: "[XIIO 오류 신고 #{id}] 확인을 위해 연락드립니다",
+        emailBody:
+          "안녕하세요. XIIO 오류 신고 #{id} 건을 확인하고 있습니다. 추가 확인을 위해 연락드립니다.",
       },
       paymentsEvents: {
         envBanner: "보증금 결제 {status} · 활성 PG: {providers}",
@@ -1797,6 +1822,29 @@ export const messages = {
       "reason.inappropriate": "부적절한 콘텐츠",
       "reason.other": "기타",
     },
+    errorReport: {
+      reportButton: "오류 신고하기",
+      title: "이 오류를 신고하시겠어요?",
+      body:
+        "제대로 입력했는데도 오류가 계속된다면 발생 상황을 자세히 알려주세요. 관리자 팀이 최대한 빠르게 확인하고 연락드리겠습니다.",
+      errorLabel: "발생한 오류",
+      descriptionLabel: "어떤 상황에서 오류가 발생했나요?",
+      descriptionHint:
+        "오류 직전에 한 작업과 반복해서 발생하는지 등을 적어주시면 더 빠르게 확인할 수 있습니다.",
+      descriptionPlaceholder: "예: 모든 필수 항목을 입력하고 다음을 눌렀는데 같은 오류가 반복됩니다.",
+      descriptionRequired: "상황을 10자 이상 자세히 설명해 주세요.",
+      contactHint:
+        "접수 후 관리자가 최대한 빠르게 확인하며, 필요하면 계정 연락처({email})로 연락드리겠습니다.",
+      accountContact: "등록된 계정 연락처",
+      loginRequired: "오류를 신고하려면 로그인이 필요합니다.",
+      submit: "오류 신고 접수",
+      submitting: "접수 중…",
+      submitFailed: "오류 신고를 접수하지 못했습니다.",
+      receivedTitle: "오류 신고가 접수되었습니다",
+      receivedBody:
+        "관리자 팀이 내용을 최대한 빠르게 확인하겠습니다. 추가 확인이 필요하면 계정 이메일로 연락드리겠습니다.",
+      receiptNumber: "접수 번호: {id}",
+    },
     promoEditor: {
       title: "제출 전 확인",
       backToWorks: "내 작품",
@@ -1933,6 +1981,7 @@ export const messages = {
       previous: "Back",
       next: "Next",
       cancel: "Cancel",
+      close: "Close",
       retry: "Try again",
       save: "Save",
       saving: "Saving…",
@@ -3034,6 +3083,8 @@ export const messages = {
         prologueSection: "Prologue",
       },
       reportsReview: {
+        modeContent: "Content reports",
+        modeErrors: "Technical errors",
         tabPending: "Pending",
         tabResolved: "Resolved",
         empty: "No reports in this queue.",
@@ -3054,6 +3105,29 @@ export const messages = {
         statusDismissed: "Dismissed",
         statusActionTaken: "Action taken",
         actionFailed: "Action failed.",
+      },
+      errorReports: {
+        tabPending: "Needs review",
+        tabResolved: "Resolved",
+        empty: "No technical error reports in this queue.",
+        loadError: "Could not load technical error reports.",
+        actionFailed: "Could not update the error report.",
+        technicalError: "Technical error report",
+        statusResolved: "Resolved",
+        userDescription: "User description",
+        reporter: "Reporter",
+        reportedAt: "Reported",
+        page: "Page",
+        step: "Step",
+        contact: "Contact {email}",
+        noEmail: "This account has no contact email.",
+        adminNote: "Admin note",
+        adminNotePlaceholder: "Record the investigation result or guidance sent to the user.",
+        markResolved: "Contacted / resolved",
+        loadMore: "Load more",
+        emailSubject: "[XIIO error report #{id}] Follow-up",
+        emailBody:
+          "Hello. We are reviewing XIIO error report #{id} and are contacting you for additional information.",
       },
       paymentsEvents: {
         envBanner: "Uploader deposit {status} · Active PG: {providers}",
@@ -3708,6 +3782,30 @@ export const messages = {
       "reason.copyright": "Copyright",
       "reason.inappropriate": "Inappropriate content",
       "reason.other": "Other",
+    },
+    errorReport: {
+      reportButton: "Report this error",
+      title: "Report this error?",
+      body:
+        "If the error continues even after you completed everything correctly, tell us what happened. Our admin team will review it and contact you as quickly as possible.",
+      errorLabel: "Error shown",
+      descriptionLabel: "What were you doing when it happened?",
+      descriptionHint:
+        "Include what you did immediately before the error and whether it happens repeatedly so we can investigate faster.",
+      descriptionPlaceholder:
+        "Example: I completed every required field, but the same error appears whenever I select Next.",
+      descriptionRequired: "Please describe the situation in at least 10 characters.",
+      contactHint:
+        "An admin will review this as quickly as possible and may contact you at your account contact ({email}).",
+      accountContact: "registered account contact",
+      loginRequired: "Sign in to report an error.",
+      submit: "Submit error report",
+      submitting: "Submitting…",
+      submitFailed: "Could not submit the error report.",
+      receivedTitle: "Your error report was received",
+      receivedBody:
+        "Our admin team will review it as quickly as possible. We will contact your account email if we need more information.",
+      receiptNumber: "Report ID: {id}",
     },
     promoEditor: {
       title: "Pre-submission review",

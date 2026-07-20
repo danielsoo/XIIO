@@ -94,13 +94,18 @@ export default function SubpageHeader({
   if (variant === "withNavbar") {
     return (
       <header className={`mb-8 md:mb-10 ${className}`.trim()}>
-        {backControl}
-        {title ? (
-          <h1 className="mt-4 text-3xl md:text-4xl font-black text-white tracking-tight">{title}</h1>
-        ) : null}
-        {description ? (
-          <p className="mt-2 text-sm md:text-base text-xiio-muted max-w-2xl leading-relaxed">{description}</p>
-        ) : null}
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            {backControl}
+            {title ? (
+              <h1 className="mt-4 text-3xl md:text-4xl font-black text-white tracking-tight">{title}</h1>
+            ) : null}
+            {description ? (
+              <p className="mt-2 text-sm md:text-base text-xiio-muted max-w-2xl leading-relaxed">{description}</p>
+            ) : null}
+          </div>
+          {endContent ? <div className="shrink-0 sm:pt-1">{endContent}</div> : null}
+        </div>
       </header>
     );
   }

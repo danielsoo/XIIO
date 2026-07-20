@@ -9,7 +9,7 @@ export default async function PrologueEditorPage({ params }: Props) {
     <Suspense
       fallback={
         <main className="min-h-screen bg-xiio-bg flex items-center justify-center text-white">
-          <p className="text-xiio-muted">불러오는 중…</p>
+          <p className="text-xiio-muted">Loading…</p>
         </main>
       }
     >

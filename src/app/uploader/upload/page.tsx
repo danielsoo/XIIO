@@ -1,15 +1,10 @@
 import { Suspense } from "react";
+import UploaderPageLoading from "@/components/uploader/UploaderPageLoading";
 import UploaderUploadInner from "./UploaderUploadInner";
 
 export default function UploaderUploadPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="min-h-screen bg-xiio-bg flex items-center justify-center text-white">
-          <p className="text-xiio-muted">불러오는 중…</p>
-        </main>
-      }
-    >
+    <Suspense fallback={<UploaderPageLoading />}>
       <UploaderUploadInner />
     </Suspense>
   );

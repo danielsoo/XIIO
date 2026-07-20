@@ -8,6 +8,7 @@ import { useTranslations } from "@/context/LocaleContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
+import UploaderHeaderActions from "@/components/uploader/UploaderHeaderActions";
 import { formatApiError, formatClientError, readResponseJson } from "@/lib/clientErrors";
 
 export default function UploaderVerifyInner() {
@@ -78,7 +79,7 @@ export default function UploaderVerifyInner() {
   if (depositVerified) {
     return (
       <AppPageShell standalone>
-        <SubpageHeader variant="standalone" title={t("uploader.verifyDoneTitle")} backFallbackHref="/" />
+        <SubpageHeader variant="standalone" title={t("uploader.verifyDoneTitle")} backFallbackHref="/" endContent={<UploaderHeaderActions area="uploader-verification" />} />
         <div className="max-w-lg mx-auto rounded-2xl border border-white/10 bg-xiio-surface p-8 text-center">
           <p className="text-xiio-muted text-sm mb-6">{t("uploader.verifyDoneBody")}</p>
           <Link
@@ -94,7 +95,7 @@ export default function UploaderVerifyInner() {
 
   return (
     <AppPageShell standalone>
-      <SubpageHeader variant="standalone" title={t("uploader.verifyTitle")} backFallbackHref="/" />
+      <SubpageHeader variant="standalone" title={t("uploader.verifyTitle")} backFallbackHref="/" endContent={<UploaderHeaderActions area="uploader-verification" />} />
       <div className="max-w-lg mx-auto rounded-2xl border border-white/10 bg-xiio-surface p-8">
           <p className="text-xiio-muted text-sm mb-6">{t("uploader.verifyBody")}</p>
 

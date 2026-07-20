@@ -18,13 +18,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "XIIO — 다음 세대 콘텐츠 플랫폼",
-  description: "영화, 예능, 시리즈, 학교 대항전 — 대학생이 만드는 새로운 콘텐츠",
+  title: "XIIO — The next generation content platform",
+  description: "Films, series, shows, and emerging creators — all in one cinematic platform.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className="dark">
+    <html lang="en" className="dark">
       <body className={`font-sans ${playfair.variable} ${inter.variable} min-w-[360px]`}>
         <Providers initialHomeTheme={DEFAULT_HOME_HERO_THEME}>
           <AppShell>{children}</AppShell>

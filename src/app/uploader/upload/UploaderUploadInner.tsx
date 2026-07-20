@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SectionLabel from "@/components/layout/SectionLabel";
 import SubpageHeader from "@/components/layout/SubpageHeader";
 import DirectorNameSetupModal from "@/components/uploader/DirectorNameSetupModal";
+import UploaderPageLoading from "@/components/uploader/UploaderPageLoading";
 import UploaderUploadForm from "@/components/uploader/UploaderUploadForm";
+import UploaderHeaderActions from "@/components/uploader/UploaderHeaderActions";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import { useDepositStatus } from "@/hooks/useDepositStatus";
@@ -23,13 +25,6 @@ export default function UploaderUploadInner() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useTranslations();
   const { depositVerified, depositEnabled, checked } = useDepositStatus();
-  const [err, setErr] = useState<string | null>(null);
-  const topErrorRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!err) return;
-    topErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [err]);
   const [defaultDirectorName, setDefaultDirectorName] = useState<string | null>(null);
   const [schoolNameHint, setSchoolNameHint] = useState<string | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(true);
@@ -70,11 +65,7 @@ export default function UploaderUploadInner() {
   }, [user, needsDeposit, authLoading, checked]);
 
   if (authLoading || !checked || settingsLoading) {
-    return (
-      <AppPageShell>
-        <p className="text-xiio-muted py-16 text-center">{t("common.loading")}</p>
-      </AppPageShell>
-    );
+    return <UploaderPageLoading />;
   }
 
   if (!user) {
@@ -97,6 +88,7 @@ export default function UploaderUploadInner() {
           title={t("uploader.uploadDepositTitle")}
           description={t("uploader.uploadDepositBody")}
           backFallbackHref="/"
+          endContent={<UploaderHeaderActions area="uploader-verification" />}
         />
         <div className="max-w-lg rounded-2xl border border-white/10 bg-xiio-surface p-8">
           <Link
@@ -128,34 +120,9 @@ export default function UploaderUploadInner() {
               {t("uploader.uploadBody")}
             </p>
           </div>
-          <Link
-            href="/uploader/works"
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/[0.025] px-5 text-[13px] font-semibold text-white/85 transition hover:border-white/45 hover:bg-white/[0.06] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-xiio-accent"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              aria-hidden
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
-            </svg>
-            {t("myWorks.title")}
-          </Link>
+          <UploaderHeaderActions area="upload-studio" />
         </div>
       </header>
-
-      {err && (
-        <div
-          ref={topErrorRef}
-          role="alert"
-          className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-400 text-sm whitespace-pre-wrap break-words"
-        >
-          {err}
-        </div>
-      )}
 
       <DirectorNameSetupModal
         open={showDirectorModal}
@@ -173,12 +140,9 @@ export default function UploaderUploadInner() {
         initialDirector={defaultDirectorName}
         initialSchoolNameHint={schoolNameHint}
         onSuccess={() => {
-          setErr(null);
           router.replace("/uploader/works?submitted=1");
         }}
-        onError={(message) => {
-          setErr(message);
-        }}
+        onError={() => undefined}
       />
     </AppPageShell>
   );

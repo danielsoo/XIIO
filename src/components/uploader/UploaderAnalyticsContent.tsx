@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import AppPageShell from "@/components/layout/AppPageShell";
 import SubpageHeader from "@/components/layout/SubpageHeader";
+import UploaderHeaderActions from "@/components/uploader/UploaderHeaderActions";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslations } from "@/context/LocaleContext";
 import type { UploaderAnalyticsPayload } from "@/types/engagement";
@@ -111,6 +112,7 @@ export default function UploaderAnalyticsContent() {
           backHref="/uploader/works"
           backLabel={t("myWorks.title")}
           backFallbackHref="/uploader/works"
+          endContent={<UploaderHeaderActions area="analytics" />}
         />
 
         {loading ? (
