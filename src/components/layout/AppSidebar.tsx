@@ -82,7 +82,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         className="flex justify-center px-4 pt-6 pb-0"
         aria-label={t("common.logoHome")}
       >
-        <XiioWordmark className="!h-[20px]" />
+        <XiioWordmark className="!h-[16px]" />
       </Link>
 
       <nav className="flex flex-1 flex-col pl-2.5 pr-0 mt-20 min-h-0">
